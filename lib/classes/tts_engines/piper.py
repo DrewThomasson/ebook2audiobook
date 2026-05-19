@@ -19,7 +19,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"semitones": {}}
-            # effective language for TTS (target when translating, else source)
             self.language = self.session.get('language')
             self.language_iso1 = self.session.get('language_iso1')
             if self.session.get('translate_enabled'):
@@ -45,13 +44,15 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
                     raise ValueError(error)
             piper_lang = engine_langs[self.language]
-            voice_codes = default_engine_settings[tts_engine].get('voice_codes', {})
-            self.voice_code = self.session.get('piper_voice') or voice_codes.get(piper_lang)
-            if not self.voice_code:
-                error = f'No piper voice code mapped for language {self.language} ({piper_lang}). Set session["piper_voice"] or extend voice_codes.'
+            sub_list = default_engine_settings[tts_engine].get('sub', {})
+            voice_file = self.session.get('block_voice', self.session['voice'])
+            voice_name = Path(voice_file).stem if voice_file is not None else None
+            self.model_path =  voice_name if voice_name is not None and any(voice_name in voices for voices in sub.values()): else default_engine_settings['sub'][piper_lang][0]
+            self.is_builtin_voice = any(voice_name in voices for voices in sub.values())
+            if not self.model_path :
+                error = f'No piper voice code mapped for language {self.language} ({piper_lang}).'
                 raise ValueError(error)
             self.params['samplerate'] = model_cfg['samplerate']
-            self.model_path = self.voice_code
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
@@ -74,35 +75,50 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             engine = loaded_tts.get(self.tts_key)
             if not engine:
                 if self.session['custom_model'] is not None:
-                    try:
-                        model_dir = self.session['custom_model']
-                        # default_engine_settings[piper]['files'] is a 2-template list (['[code].onnx', '[code].onnx.json']).
-                        # For custom dirs we locate by extension rather than expecting an exact filename match.
-                        onnx_path = None
-                        config_path = None
-                        for fname in os.listdir(model_dir):
-                            full = os.path.join(model_dir, fname)
-                            if fname.endswith('.onnx.json') and config_path is None:
-                                config_path = full
-                            elif fname.endswith('.onnx') and onnx_path is None:
-                                onnx_path = full
-                        if onnx_path is None:
-                            error = f'load_engine(): no .onnx found in custom_model dir {model_dir}'
-                            raise FileNotFoundError(error)
-                        custom_model_name = os.path.basename(os.path.normpath(model_dir))
-                        self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
-                        engine = self._load_piper(self.tts_key, onnx_path, config_path, self.device)
-                    except Exception as e:
-                        error = f'load_engine(): custom checkpoint loading failed: {e}'
-                        raise RuntimeError(error) from e
+                    model_dir = self.session['custom_model']
+                    config_path = None
+                    onnx_path = None
+                    for fname in os.listdir(model_dir):
+                        full = os.path.join(model_dir, fname)
+                        if fname == 'config.onnx.json' and config_path is None:
+                            config_path = full
+                        elif fname == 'model.onnx' and onnx_path is None:
+                            onnx_path = full
+                    custom_model_name = os.path.basename(os.path.normpath(model_dir))
+                    self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
                 else:
-                    self.tts_key = f"{self.session['tts_engine']}-{self.voice_code}"
+                    from piper.download_voices import download_voice
+                    self.tts_key = f"{self.session['tts_engine']}-{self.model_path}"
+                    download_dir = Path(self.cache_dir) / self.session['tts_engine']
+                    download_dir.mkdir(parents=True, exist_ok=True)
+                    onnx_path = download_dir / f'{self.model_path}.onnx'
+                    config_path = download_dir / f'{self.model_path}.onnx.json'
+                    if not (onnx_path.exists() and config_path.exists()):
+                        msg = f'Downloading piper model {self.model_path} → {download_dir}'
+                        print(msg)
+                        download_voice(self.model_path, download_dir)
+                try:
+                    from piper import PiperVoice
+                    engine = loaded_tts.get(key)
+                    if engine:
+                        return engine
+                    use_cuda = self.device == devices['CUDA']['proc']
+                    engine = PiperVoice.load(onnx_path, config_path=config_path, use_cuda=use_cuda)
+                    self.output_sample_rate = int(engine.config.sample_rate)
                     try:
-                        onnx_path, config_path = self._ensure_piper_voice(self.voice_code)
-                        engine = self._load_piper(self.tts_key, onnx_path, config_path, self.device)
-                    except Exception as e:
-                        error = 'load_engine(): _load_piper() failed'
-                        raise RuntimeError(error) from e
+                        spk_map = getattr(engine.config, 'speaker_id_map', None) or {}
+                        self.speakers = list(spk_map.keys()) if spk_map else None
+                    except Exception:
+                        self.speakers = None
+                    vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
+                    self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
+                    models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
+                    if self.session['free_vram_gb'] > models_loaded_size_gb:
+                        loaded_tts[key] = engine
+                except Exception as e:
+                    error = f'_load_piper() error: {e}'
+                    print(error)
+                    raise
             if engine:
                 msg = f'TTS {self.tts_key} Loaded!'
                 print(msg)
@@ -113,65 +129,27 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             error = f"load_engine() error: {e}"
             raise RuntimeError(error) from e
 
-    def _ensure_piper_voice(self, voice_code:str)->tuple:
-        """Resolve the .onnx + .onnx.json pair for `voice_code`, downloading on first use.
-        Returns (onnx_path, config_path)."""
-        try:
-            from piper.download_voices import download_voice
-        except ImportError as e:
-            error = f'_ensure_piper_voice(): piper-tts not installed ({e}). pip install piper-tts'
-            raise RuntimeError(error) from e
-        download_dir = Path(self.cache_dir) / self.session['tts_engine']
-        download_dir.mkdir(parents=True, exist_ok=True)
-        onnx_path = download_dir / f'{voice_code}.onnx'
-        config_path = download_dir / f'{voice_code}.onnx.json'
-        if not (onnx_path.exists() and config_path.exists()):
-            msg = f'Downloading piper voice {voice_code} → {download_dir}'
-            print(msg)
-            download_voice(voice_code, download_dir)
-        return str(onnx_path), str(config_path)
+    def tts(self, text:str, **_:Any)->Any:
+        import numpy as np
+        chunks = []
+        for chunk in self.engine.synthesize(text):
+            arr = chunk.audio_float_array
+            if arr is not None and arr.size > 0:
+                chunks.append(arr)
+        if not chunks:
+            return np.zeros(0, dtype=np.float32)
+        return np.concatenate(chunks).astype(np.float32, copy=False)
 
-    def _load_piper(self, key:str, onnx_path:str, config_path:str|None, device:str)->Any:
-        """Load a PiperVoice and wrap it so .tts() / .tts_to_file() match the engine contract
-        used by convert(). Honors loaded_tts cache + free_vram_gb gating like _load_api()."""
-        try:
-            from piper import PiperVoice
-            engine = loaded_tts.get(key)
-            if engine:
-                return engine
-            use_cuda = False
-            if device == devices['CUDA']['proc']:
-                # Piper uses onnxruntime; CUDA needs onnxruntime-gpu installed and a working CUDA EP.
-                try:
-                    import onnxruntime as ort
-                    use_cuda = 'CUDAExecutionProvider' in ort.get_available_providers()
-                    if not use_cuda:
-                        msg = '_load_piper(): CUDAExecutionProvider not available — falling back to CPU. Install onnxruntime-gpu for CUDA.'
-                        print(msg)
-                except ImportError:
-                    msg = '_load_piper(): onnxruntime not importable — falling back to CPU.'
-                    print(msg)
-                    use_cuda = False
-            voice = PiperVoice.load(onnx_path, config_path=config_path, use_cuda=use_cuda)
-            engine = _PiperEngine(voice)
-            # VRAM gating mirrors _load_api(): piper has no torch params, so _model_size_bytes
-            # returns 0 — engine still gets cached, which is what we want for piper.
-            vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
-            self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
-            models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
-            if self.session['free_vram_gb'] > models_loaded_size_gb:
-                loaded_tts[key] = engine
-            return engine
-        except Exception as e:
-            error = f'_load_piper() error: {e}'
-            print(error)
-            raise
+    def tts_to_file(self, text:str, file_path:str, **_:Any)->str:
+        import wave
+        with wave.open(file_path, 'wb') as wav_file:
+            self.engine.synthesize_wav(text, wav_file)
+        return file_path
 
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
             import torchaudio
-            #import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
@@ -208,9 +186,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                         trim_audio_buffer = 0.002
                         if part.endswith("'"):
                             part = part[:-1]
-                        # NOTE: unlike fairseq we do NOT strip .,!?;:— here.
-                        # Piper phonemizes via espeak-ng natively and uses punctuation
-                        # to drive prosody (commas → pauses, ? → rising, ! → emphatic).
                         try:
                             if use_zs:
                                 tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
@@ -282,21 +257,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                             if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
-                                '''
-                                if is_audio_data_valid(audio_part):
-                                    src_tensor = self._tensor_type(audio_part)
-                                    part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                                    if part_tensor is not None and part_tensor.numel() > 0:
-                                        if part[-1].isalnum() or part[-1] == '—':
-                                            part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                        self.audio_segments.append(part_tensor)
-                                    else:
-                                        error = f'part_tensor not valid'
-                                        return False, error
-                                else:
-                                    error = f'audio_part not valid'
-                                    return False, error
-                                '''
                                 if not is_audio_data_valid(audio_part):
                                     error = 'audio_part not valid'
                                     return False, error
@@ -334,40 +294,3 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
         if self._build_vtt_file(all_sentences):
             return True
         return False
-
-
-class _PiperEngine:
-    """Adapter that wraps PiperVoice to expose the .tts(text) / .tts_to_file(text, file_path)
-    contract used by Piper.convert(). Float32 mono numpy, matching what _tensor_type and
-    _resample_audiodata expect on the Fairseq path."""
-
-    def __init__(self, voice:Any):
-        self.voice = voice
-        # Source-of-truth samplerate for downstream consumers (Piper.__init__ pins params from this).
-        self.output_sample_rate = int(voice.config.sample_rate)
-        # Mirror the .speakers attribute the Coqui engines expose (used by VC speaker resolution).
-        # Piper exposes a speaker_id_map only for multi-speaker voices; single-speaker → None.
-        try:
-            spk_map = getattr(voice.config, 'speaker_id_map', None) or {}
-            self.speakers = list(spk_map.keys()) if spk_map else None
-        except Exception:
-            self.speakers = None
-
-    def tts(self, text:str, **_:Any)->Any:
-        import numpy as np
-        # Concatenate all streaming chunks into a single float32 mono array in [-1, 1].
-        chunks = []
-        for chunk in self.voice.synthesize(text):
-            # AudioChunk.audio_float_array is already float32 mono in [-1, 1].
-            arr = chunk.audio_float_array
-            if arr is not None and arr.size > 0:
-                chunks.append(arr)
-        if not chunks:
-            return np.zeros(0, dtype=np.float32)
-        return np.concatenate(chunks).astype(np.float32, copy=False)
-
-    def tts_to_file(self, text:str, file_path:str, **_:Any)->str:
-        import wave
-        with wave.open(file_path, 'wb') as wav_file:
-            self.voice.synthesize_wav(text, wav_file)
-        return file_path

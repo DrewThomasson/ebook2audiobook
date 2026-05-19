@@ -17,7 +17,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
-            # effective language for TTS (target when translating, else source)
             self.language = self.session.get('language')
             self.language_iso1 = self.session.get('language_iso1')
             if self.session.get('translate_enabled'):
@@ -135,7 +134,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
         try:
             import torch
             import torchaudio
-            #import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
@@ -206,21 +204,6 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                             if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
-                                '''
-                                if is_audio_data_valid(audio_part):
-                                    src_tensor = self._tensor_type(audio_part)
-                                    part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                                    if part_tensor is not None and part_tensor.numel() > 0:
-                                        if part[-1].isalnum() or part[-1] == '—':
-                                            part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                        self.audio_segments.append(part_tensor)
-                                    else:
-                                        error = f'part_tensor not valid'
-                                        return False, error
-                                else:
-                                    error = f'audio_part not valid'
-                                    return False, error
-                                '''
                                 if not is_audio_data_valid(audio_part):
                                     error = 'audio_part not valid'
                                     return False, error
