@@ -327,7 +327,7 @@ class TTSUtils:
                         return engine
                     download_voice(Path(self.model_path).stem, Path(self.model_path))
                     use_cuda = self.device == devices['CUDA']['proc']
-                    engine = PiperVoice.load(onnx_path, config_path=config_path, use_cuda=use_cuda)
+                    engine = PiperVoice.load(checkpoint_path, config_path=config_path, use_cuda=use_cuda)
                 else:
                     import torch
                     import torch.nn as nn
