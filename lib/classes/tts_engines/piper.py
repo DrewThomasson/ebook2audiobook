@@ -48,11 +48,11 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             self.sub_list = model_cfg['sub']
             self.params['samplerate'] = model_cfg['samplerate']
             self.syn_config = SynthesisConfig(
-                volume=1.0,  # 0 to 1.0
-                length_scale=1.0,  # speed 0.1 to 3.0
+                volume=1.0,
+                length_scale=1.0,  # speed
                 noise_scale=0.8,  # more audio variation
                 noise_w_scale=0.8,  # more speaking variation
-                normalize_audio=True, # normalize amplitude
+                normalize_audio=True
             )
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
