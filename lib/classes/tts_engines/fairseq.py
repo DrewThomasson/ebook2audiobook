@@ -66,25 +66,17 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             engine = loaded_tts.get(self.tts_key)
             if not engine:
                 if self.session['custom_model'] is not None:
-                    try:
-                        model_path = self.session['custom_model']
-                        files = default_engine_settings[self.session['tts_engine']]['files']
-                        config_path = os.path.join(model_path, files[0])
-                        checkpoint_path = os.path.join(model_path, files[1])
-                        vocab_path = os.path.join(model_path, files[2])
-                        custom_model_name = os.path.basename(os.path.normpath(model_path))
-                        self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
-                        engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
-                    except Exception as e:
-                        error = f'load_engine(): custom checkpoint loading failed: {e}'
-                        raise RuntimeError(error) from e
+                    model_path = self.session['custom_model']
+                    files = default_engine_settings[self.session['tts_engine']]['files']
+                    config_path = os.path.join(model_path, files[0])
+                    checkpoint_path = os.path.join(model_path, files[1])
+                    vocab_path = os.path.join(model_path, files[2])
+                    custom_model_name = os.path.basename(os.path.normpath(model_path))
+                    self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
+                    engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
                 else:
                     self.tts_key = self.model_path
-                    try:
-                        engine = self._load_api(self.tts_key, self.model_path, self.device)
-                    except Exception as e:
-                        error = 'load_engine(): _load_api() failed'
-                        raise RuntimeError(error) from e
+                    engine = self._load_api(self.tts_key, self.model_path, self.device)
             if engine:
                 msg = f'TTS {self.tts_key} Loaded!'
                 print(msg)
