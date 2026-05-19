@@ -275,7 +275,7 @@ models = {
         "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
         "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
     },
-    "Konishev": {
+    "JuliaCasper": {
         "lang": "deu",
         "repo": "drewThomasson/fineTunedTTSModels",
         "sub": "xtts-v2/deu/JuliaCasper/",
