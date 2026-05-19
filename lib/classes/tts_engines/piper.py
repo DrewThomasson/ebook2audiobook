@@ -31,7 +31,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                 error = f'Invalid tts_engine {tts_engine}.'
                 raise ValueError(error)
             self.engine_langs = default_engine_settings[tts_engine].get('languages', {})
-            if self.language not in engine_langs:
+            if self.language not in self.engine_langs:
                 error = f'Language {self.language} not supported by engine {tts_engine}.'
                 raise ValueError(error)
             fine_tuned = self.session.get('fine_tuned')
