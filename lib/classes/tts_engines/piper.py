@@ -87,7 +87,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     self.tts_key = f"{self.session['tts_engine']}-{model_name}"
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
             if engine:
-                self.params['samplerate'] = int(getattr(self.engine, 'output_sample_rate', None) or getattr(getattr(self.engine, 'config', None), 'sample_rate', self.params['samplerate']))
+                self.params['samplerate'] = int(getattr(engine, 'output_sample_rate', None) or getattr(getattr(engine, 'config', None), 'sample_rate', self.params['samplerate']))
                 msg = f'TTS {self.tts_key} Loaded!'
                 print(msg)
                 return engine
