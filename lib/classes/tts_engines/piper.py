@@ -204,6 +204,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                         audio_part = None
                                         chunks = []
                                         for chunk in self.engine.synthesize(part):
+                                            print(f'----------------{chunk}----------------')
                                             arr = chunk.audio_float_array
                                             chunks.append(arr)
                                         audio_part = np.concatenate(chunks).astype(np.float32, copy=False)
