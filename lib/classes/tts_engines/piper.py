@@ -209,7 +209,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                                 chunks.append(arr)
                                         if not chunks:
                                             audio_part = np.zeros(0, dtype=np.float32)
-                                        audio_part = np.concatenate(audio_part).astype(np.float32, copy=False)
+                                        audio_part = np.concatenate(chunks).astype(np.float32, copy=False)
                             if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
