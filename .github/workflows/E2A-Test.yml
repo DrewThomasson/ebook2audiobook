@@ -207,13 +207,21 @@ jobs:
           
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON2
 
-      - name: English FAIRSEQ OCR headless single test
+      - name: FAIRSEQ Custom-Voice OCR headless single long test english -> spanish translate test
         shell: bash
         run: |
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
-          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+          $RUN_CMD --headless  --language eng --translate spa --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+
+      - name: FAIRSEQ Custom-Voice headless single long spanish -> german translate test
+        shell: bash
+        run: |
+          cd ~/ebook2audiobook
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language spa --translate deu --ebook "tools/workflow-testing/spa_long_test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
       - name: Haitian Creole FAIRSEQ OCR headless single test
         shell: bash
