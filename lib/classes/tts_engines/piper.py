@@ -46,6 +46,13 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             self.model_path = None
             self.sub_list = model_cfg['sub']
             self.params['samplerate'] = model_cfg['samplerate']
+            syn_config = SynthesisConfig(
+                volume=1.0,  # 0 to 1.0
+                length_scale=1.0,  # speed 0.1 to 3.0
+                noise_scale=0.8,  # more audio variation
+                noise_w_scale=0.8,  # more speaking variation
+                normalize_audio=True, # normalize amplitude
+            )
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
@@ -146,7 +153,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                 with torch.inference_mode():
                                     with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                         with wave.open(tmp_in_wav, 'wb') as wav_file:
-                                            self.engine.synthesize_wav(part, wav_file)
+                                            self.engine.synthesize_wav(part, wav_file, syn_config=self.syn_config)
                                 if self.params['current_voice'] in self.params['semitones'].keys():
                                     semitones = self.params['semitones'][self.params['current_voice']]
                                 else:
@@ -202,7 +209,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                     with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                         audio_part = None
                                         chunks = []
-                                        for chunk in self.engine.synthesize(part):
+                                        for chunk in self.engine.synthesize(part, syn_config=self.syn_config):
                                             arr = chunk.audio_float_array
                                             chunks.append(arr)
                                         if not chunks:
