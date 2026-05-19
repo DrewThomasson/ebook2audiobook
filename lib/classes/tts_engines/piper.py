@@ -204,7 +204,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                         audio_part = None
                                         chunks = []
                                         for chunk in self.engine.synthesize(part):
-                                            print(f'----------------{chunk}----------------')
                                             arr = chunk.audio_float_array
                                             chunks.append(arr)
                                         audio_part = np.concatenate(chunks).astype(np.float32, copy=False)
@@ -222,9 +221,9 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                 error = f'audio_part not valid'
                                 return False, error
                         except IndexError as e:
-                            error = f'tts_to_file() error at {e} segment: {part}'
+                            error = f'convert() error at {e} segment: {part}'
                             print(error)
-                            audio_part = False
+                            audio_part = None
                             pass
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
