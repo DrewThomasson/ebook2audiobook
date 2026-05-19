@@ -206,6 +206,9 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                         for chunk in self.engine.synthesize(part):
                                             arr = chunk.audio_float_array
                                             chunks.append(arr)
+                                        if not chunks:
+                                            error = f'synthesize() yielded no chunks for: {part}'
+                                            return False, error
                                         audio_part = np.concatenate(chunks).astype(np.float32, copy=False)
                             if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
@@ -217,14 +220,15 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                 if part_tensor.numel() == 0:
                                     error = 'part_tensor not valid'
                                     return False, error
+                                self.audio_segments.append(part_tensor)  # ← must be here, inside try
                             else:
                                 error = f'audio_part not valid'
                                 return False, error
                         except IndexError as e:
-                            error = f'convert() error at {e} segment: {part}'
-                            print(error)
-                            audio_part = None
-                            pass
+                            error = f'synthesize() IndexError at segment "{part}": {e}'
+                            return False, error  # ← propagate, don't swallow
+                        except Exception as e:
+                            return False, self.log_exception(f'{self.__class__.__name__}.convert() part loop', e)
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
