@@ -115,7 +115,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
-            import torchaudio
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
@@ -190,7 +189,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                             pass
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
-                    #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error

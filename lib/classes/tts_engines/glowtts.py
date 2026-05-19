@@ -90,7 +90,6 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
-            import torchaudio
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
@@ -224,7 +223,6 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                             pass
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
-                    #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error
