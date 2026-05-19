@@ -69,8 +69,8 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     files = default_engine_settings[self.session['tts_engine']]['files']
                     config_path = os.path.join(model_path, files[0])
                     checkpoint_path = os.path.join(model_path, files[1])
-                    custom_model_name = os.path.basename(os.path.normpath(model_path))
-                    self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
+                    model_name = os.path.basename(os.path.normpath(model_path))
+                    self.tts_key = f"{self.session['tts_engine']}-{model_name}"
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
                 else:
                     piper_lang = self.engine_langs[self.language]
