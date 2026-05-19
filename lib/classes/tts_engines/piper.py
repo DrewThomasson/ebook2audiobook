@@ -43,6 +43,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                 if required_key not in model_cfg:
                     error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
                     raise ValueError(error)
+            self.model_path = None
             self.sub_list = model_cfg['sub']
             self.params['samplerate'] = model_cfg['samplerate']
             enough_vram = self.session['free_vram_gb'] > 4.0
@@ -65,11 +66,11 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             engine = loaded_tts.get(self.tts_key)
             if not engine:
                 if self.session['custom_model'] is not None:
-                    model_path = self.session['custom_model']
+                    self.model_path = self.session['custom_model']
                     files = default_engine_settings[self.session['tts_engine']]['files']
-                    config_path = os.path.join(model_path, files[0])
-                    checkpoint_path = os.path.join(model_path, files[1])
-                    model_name = os.path.basename(os.path.normpath(model_path))
+                    config_path = os.path.join(self.model_path, files[0])
+                    checkpoint_path = os.path.join(self.model_path, files[1])
+                    model_name = os.path.basename(os.path.normpath(self.model_path))
                     self.tts_key = f"{self.session['tts_engine']}-{model_name}"
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
                 else:
@@ -79,10 +80,10 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     model_name = voice_name if any(voice_name in voices for voices in self.sub_list.values()) else self.sub_list[piper_lang][0]
                     engine_path = os.path.join(self.cache_dir, self.session['tts_engine'])
                     os.makedirs(engine_path, exist_ok=True)
-                    model_path = os.path.join(engine_path, model_name)
-                    os.makedirs(model_path, exist_ok=True)
-                    config_path = os.path.join(model_path, f'{model_name}.onnx.json')
-                    checkpoint_path = os.path.join(model_path, f'{model_name}.onnx')
+                    self.model_path = os.path.join(engine_path, model_name)
+                    os.makedirs(self.model_path, exist_ok=True)
+                    config_path = os.path.join(self.model_path, f'{model_name}.onnx.json')
+                    checkpoint_path = os.path.join(self.model_path, f'{model_name}.onnx')
                     self.tts_key = f"{self.session['tts_engine']}-{model_name}"
                     engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
             if engine:
