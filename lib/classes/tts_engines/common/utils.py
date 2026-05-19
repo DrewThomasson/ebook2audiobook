@@ -325,10 +325,7 @@ class TTSUtils:
                     engine = loaded_tts.get(key, False)
                     if engine:
                         return engine
-                    if not (config_path.exists() and checkpoint_path.exists()):
-                        msg = f'Downloading piper model {self.model_path}'
-                        print(msg)
-                        download_voice(Path(model_name).stem, self.model_path)
+                    download_voice(Path(model_name).stem, self.model_path)
                     use_cuda = self.device == devices['CUDA']['proc']
                     engine = PiperVoice.load(onnx_path, config_path=config_path, use_cuda=use_cuda)
                 else:
