@@ -108,8 +108,8 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
         try:
             import torch
             import numpy as np
-            from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             from piper import SynthesisConfig
+            from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
