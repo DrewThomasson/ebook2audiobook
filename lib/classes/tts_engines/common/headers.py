@@ -18,6 +18,7 @@ __all__ = [
     "random",
     "subprocess",
     "uuid",
+    "wave",
     "re",
     "Any",
     "Path",
