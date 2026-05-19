@@ -145,7 +145,9 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                 # Piper is ONNX; autocast is a no-op here but harmless and keeps parity.
                                 with torch.inference_mode():
                                     with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                        self.engine.synthesize_wav(part, tmp_in_wav)
+                                        with wave.open(tmp_in_wav, 'wb') as wav_file:
+                                            self.engine.synthesize_wav(part, wav_file)
+                                        return file_path
                                 if self.params['current_voice'] in self.params['semitones'].keys():
                                     semitones = self.params['semitones'][self.params['current_voice']]
                                 else:
