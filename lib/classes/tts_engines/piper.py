@@ -47,7 +47,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             sub_list = default_engine_settings[tts_engine].get('sub', {})
             voice_file = self.session.get('block_voice', self.session['voice'])
             voice_name = Path(voice_file).stem if voice_file is not None else None
-            self.model_path =  voice_name if any(voice_name in voices for voices in sub_list.values()) else default_engine_settings['sub'][piper_lang][0]
+            self.model_path =  voice_name if any(voice_name in voices for voices in sub_list.values()) else sub_list[piper_lang][0]
             self.is_builtin_voice = any(voice_name in voices for voices in sub_list.values())
             if not self.model_path :
                 error = f'No piper voice code mapped for language {self.language} ({piper_lang}).'
