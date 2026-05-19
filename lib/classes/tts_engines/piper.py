@@ -107,9 +107,9 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
-            import torchaudio
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
+            from piper import SynthesisConfig
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
@@ -149,11 +149,8 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                 tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                                 tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                                 result = False
-                                # Piper is ONNX; autocast is a no-op here but harmless and keeps parity.
-                                with torch.inference_mode():
-                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                        with wave.open(tmp_in_wav, 'wb') as wav_file:
-                                            self.engine.synthesize_wav(part, wav_file, syn_config=self.syn_config)
+                                with wave.open(tmp_in_wav, 'wb') as wav_file:
+                                    self.engine.synthesize_wav(part, wav_file, syn_config=self.syn_config)
                                 if self.params['current_voice'] in self.params['semitones'].keys():
                                     semitones = self.params['semitones'][self.params['current_voice']]
                                 else:
@@ -205,17 +202,15 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                     os.remove(source_wav)
                                 audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
                             else:
-                                with torch.inference_mode():
-                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                        audio_part = None
-                                        chunks = []
-                                        for chunk in self.engine.synthesize(part, syn_config=self.syn_config):
-                                            arr = chunk.audio_float_array
-                                            chunks.append(arr)
-                                        if not chunks:
-                                            error = f'synthesize() yielded no chunks for: {part}'
-                                            return False, error
-                                        audio_part = np.concatenate(chunks).astype(np.float32, copy=False)
+                                audio_part = None
+                                chunks = []
+                                for chunk in self.engine.synthesize(part, syn_config=self.syn_config):
+                                    arr = chunk.audio_float_array
+                                    chunks.append(arr)
+                                if not chunks:
+                                    error = f'synthesize() yielded no chunks for: {part}'
+                                    return False, error
+                                audio_part = np.concatenate(chunks).astype(np.float32, copy=False)
                             if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
