@@ -78,9 +78,9 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     voice_name = Path(voice_file).stem if voice_file is not None else None
                     model_name = voice_name if any(voice_name in voices for voices in self.sub_list.values()) else self.sub_list[piper_lang][0]
                     engine_path = os.path.join(self.cache_dir, self.session['tts_engine'])
-                    engine_path.mkdir(parents=True, exist_ok=True)
+                    os.makedirs(engine_path, exist_ok=True)
                     model_path = os.path.join(engine_path, model_name)
-                    model_path.mkdir(parents=True, exist_ok=True)
+                    os.makedirs(model_path, exist_ok=True)
                     config_path = os.path.join(model_path, f'{model_name}.onnx.json')
                     checkpoint_path = os.path.join(model_path, f'{model_name}.onnx')
                     self.tts_key = f"{self.session['tts_engine']}-{model_name}"
