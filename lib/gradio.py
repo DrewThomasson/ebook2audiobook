@@ -1880,19 +1880,20 @@ def build_interface(args:dict)->gr.Blocks:
                     )
                 return tuple(gr.update() for _ in range(4))
 
-            def _change_gr_translate_enabled(session_id:str, enabled:bool)->tuple:
+            def _click_gr_translate_enabled(session_id:str, checked:bool)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return tuple(gr.update() for _ in range(4))
-                if session['translate_enabled'] != enabled:
-                    session['translate_enabled'] = enabled
+                    return tuple(gr.update() for _ in range(5))
+                if session['translate_enabled'] != checked:
+                    session['translate_enabled'] = checked
                     return (
                         _update_gr_translate_list(session_id),
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
-                        _update_gr_fine_tuned_list(session_id)
+                        _update_gr_fine_tuned_list(session_id),
+                        _update_gr_voice_list(session_id)
                     )
-                return tuple(gr.update() for _ in range(4))
+                return tuple(gr.update() for _ in range(5))
 
             def _change_gr_translate(session_id:str, translate:str)->tuple:
                 session = context.get_session(session_id)
@@ -2909,9 +2910,9 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_progress]
             )
             gr_translate_enabled.change(
-                fn=_change_gr_translate_enabled,
+                fn=_click_gr_translate_enabled,
                 inputs=[gr_session, gr_translate_enabled],
-                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_voice_list],
                 show_progress_on=[gr_progress]
             )
             gr_translate.change(
