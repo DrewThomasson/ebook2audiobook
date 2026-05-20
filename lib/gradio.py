@@ -1185,6 +1185,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=translate_visible, choices=translate_options, value=translate),
                             _update_gr_voice_list(session_id),
                             _update_gr_tts_engine_list(session_id),
+                            gr.update(value=_show_rating(session['tts_engine'])),
                             _update_gr_custom_model_list(session_id),
                             _update_gr_fine_tuned_list(session_id),
                             gr.update(value=session['output_format']),
@@ -2785,7 +2786,7 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_restore_interface = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
-                gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, 
+                gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn
