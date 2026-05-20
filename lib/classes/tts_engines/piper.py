@@ -131,7 +131,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
                         if success:
-                             use_zs = self.params['current_voice'] is not None
+                             use_zs = self.params['current_voice'] is not None and Path(self.params['current_voice']).stem not in default_engine_settings[TTS_ENGINES['PIPER']]['voices'].keys()
                         else:
                             return False, error
                         continue
