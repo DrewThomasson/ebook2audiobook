@@ -106,7 +106,8 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                 custom_model_name = os.path.basename(self.session['custom_model']) if self.session['custom_model'] is not None else None
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 if self.speaker is not None and self.speaker != custom_model_name:
-                    use_zs = self.speaker not in default_engine_settings[self.tts_engine]['voices']
+                    if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
+                        use_zs = True
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
@@ -122,7 +123,8 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         if success:
                             self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                             if self.speaker is not None and self.speaker != custom_model_name:
-                                use_zs = self.speaker not in default_engine_settings[self.tts_engine]['voices']
+                                if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
+                                    use_zs = True
                         else:
                             return False, error
                         continue
