@@ -538,6 +538,8 @@ class TTSUtils:
                                     Path(proc_current_voice).unlink(missing_ok=True)
                                     gc.collect()
                                     self.engine = loaded_tts.get(self.tts_key, False)
+                                    if not self.engine:
+                                        self._load_engine()
                                     return new_current_voice
                                 else:
                                     error = 'normalize_audio() error:'
