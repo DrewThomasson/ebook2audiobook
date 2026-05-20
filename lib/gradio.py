@@ -703,7 +703,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Preset Models', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                     gr_group_custom_model = gr.Group(visible=False)
                                     with gr_group_custom_model:
-                                        gr_custom_model_label = gr.Textbox(label='', elem_id='gr_custom_model_label', elem_classes=['gr-label'], interactive=False)
                                         gr_custom_model_file = gr.File(show_label=True, label=f"Upload a ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
                                         gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
                                         with gr_row_custom_model_list:
@@ -1022,14 +1021,14 @@ def build_interface(args:dict)->gr.Blocks:
                 return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_buttons), gr.update(visible=visible_buttons))
 
             def _disable_on_custom_upload()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(11)])
-                return outputs + (gr.update(visible=False), gr.update(visible='hidden'))
+                outputs = tuple([gr.update(interactive=False) for _ in range(10)])
+                return outputs + (gr.update(visible='hidden'),)
 
             def _enable_on_custom_upload(custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
-                outputs = tuple([gr.update(interactive=True) for _ in range(10)])
+                outputs = tuple([gr.update(interactive=True) for _ in range(9)])
                 enabled_convert_btn = True if ebook_data or ebook_textarea else False
                 visible_custom_model_del_btn = True if custom_model is not None else False
-                return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=True), gr.update(visible=visible_custom_model_del_btn))
+                return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_custom_model_del_btn))
 
             def _show_gr_modal(type:str, msg:str)->str:
                 return f'''
@@ -1992,11 +1991,9 @@ def build_interface(args:dict)->gr.Blocks:
                             if supports_custom:
                                 file_label = f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"
                                 custom_model_list_update = _update_gr_custom_model_list(session_id)
-                                custom_model_label_value = f"My {session['tts_engine']} Custom Models"
                             else:
                                 file_label = f"*Upload Custom Model not available for {session['tts_engine']}"
                                 custom_model_list_update = gr.update()
-                                custom_model_label_value = ''
                             return (
                                 gr.update(value=_show_rating(session['tts_engine'])),
                                 gr.update(visible=visible_xtts),
@@ -2004,13 +2001,12 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(visible=visible_custom_model),
                                 _update_gr_fine_tuned_list(session_id),
                                 gr.update(label=file_label),
-                                custom_model_list_update,
-                                gr.update(value=custom_model_label_value)
+                                custom_model_list_update
                             )
                 except Exception as e:
                     error = f'_change_gr_tts_engine_list(): {e}'
                     exception_alert(session_id, error)
-                return tuple(gr.update() for _ in range(8))
+                return tuple(gr.update() for _ in range(7))
 
             def _change_gr_fine_tuned_list(session_id:str, selected:str)->dict:
                 try:
@@ -2817,7 +2813,7 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_on_custom_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
                 gr_fine_tuned_list, gr_voice_file, gr_session_switch_btn,
-                gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_label, gr_custom_model_del_btn
+                gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_del_btn
             ]
             
             ######### event triggers
@@ -2926,13 +2922,13 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=_change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_custom_model_label],
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list],
                 show_progress_on=[gr_progress]
             )
             gr_tts_engine_list.change(
                 fn=_change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_custom_model_label],
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
