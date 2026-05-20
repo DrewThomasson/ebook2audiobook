@@ -101,14 +101,13 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                     self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
-                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 self.audio_segments = []
-                current_voice_stem = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
+                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 custom_model_name = os.path.basename(self.session['custom_model']) if self.session['custom_model'] is not None else None
-                use_zs = (self.params['current_voice'] is not None and 
-                        current_voice_stem is not None and 
-                        current_voice_stem not in default_engine_settings[self.tts_engine]['voices'] and 
-                        current_voice_stem != custom_model_name)
+                use_zs = (
+                    (self.params['current_voice'] is not None and self.speaker is not None and self.speaker not in default_engine_settings[self.tts_engine]['voices']) or 
+                    (self.speaker != custom_model_name and custom_model_name is not None)
+                )
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
@@ -122,10 +121,11 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
                         if success:
-                            use_zs = (self.params['current_voice'] is not None and 
-                                    current_voice_stem is not None and 
-                                    current_voice_stem not in default_engine_settings[self.tts_engine]['voices'] and 
-                                    current_voice_stem != custom_model_name)
+                            self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
+                            use_zs = (
+                                (self.params['current_voice'] is not None and self.speaker is not None and self.speaker not in default_engine_settings[self.tts_engine]['voices']) or 
+                                (self.speaker != custom_model_name and custom_model_name is not None)
+                            )
                         else:
                             return False, error
                         continue

@@ -633,7 +633,10 @@ class TTSUtils:
         current_voice = (voice if voice is not None else self.models[self.session['fine_tuned']]['voice'])
         if current_voice is not None:
             speaker = Path(current_voice).stem
-            if(speaker not in {k for engine in default_engine_settings.values() for k in engine['voices']}) and (self.session['custom_model_dir'] not in current_voice):
+            if(
+                (speaker not in {k for engine in default_engine_settings.values() for k in engine['voices']}) and 
+                (self.session['custom_model_dir'] not in current_voice)
+              ):
                 current_voice = self._check_xtts_builtin_speakers(current_voice, speaker)
                 if not current_voice:
                     error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.language}"
