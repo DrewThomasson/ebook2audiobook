@@ -224,6 +224,7 @@ default_engine_settings = {
         "samplerate": 22050,
         "files": ['config.onnx.json', 'model.onnx'],
         "voice": None,
+        "speakers_path": os.path.join(voices_dir, '__piper'),
         "voices": {
             "ar_JO-kareem-medium": "Kareem", "ca_ES-upc_pau-medium": "Pau", "ca_ES-upc_ona-medium": "Ona",
             "cs_CZ-jirka-medium": "Jirka", "cy_GB-gwryw_gogleddol-medium": "Gwryw Gogleddol", "cy_GB-bu_tts-medium": "Bu TTS",

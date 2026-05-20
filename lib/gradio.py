@@ -1682,6 +1682,7 @@ def build_interface(args:dict)->gr.Blocks:
                         file_pattern = "*.wav"
                         eng_options = []
                         bark_options = []
+                        piper_options = []
                         builtin_dir = Path(os.path.join(voices_dir, lang_dir))
                         builtin_options = [
                             (base, str(f))
@@ -1708,7 +1709,18 @@ def build_interface(args:dict)->gr.Blocks:
                                     (pattern_speaker.sub(r"Speaker \1", f.stem), str(f.with_suffix(".wav")))
                                     for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
                                 ]
-                        voice_options = builtin_options + eng_options + bark_options
+                        elif session['tts_engine'] == TTS_ENGINES['PIPER']:
+                            engine_config = default_engine_settings[TTS_ENGINES['PIPER']]
+                            lang_piper = engine_config['languages'][session['language']]  # e.g., "en_GB"
+                            speakers_path = Path(engine_config['speakers_path'])
+                            voices_map = engine_config['voices']
+                            for f in speakers_path.iterdir():
+                                if f.name.startswith(lang_piper):
+                                    file_stem = f.stem
+                                    display_name = voices_map.get(file_stem, file_stem)
+                                    wav_path = str(f.with_suffix('.wav'))
+                                    piper_options.append((display_name, wav_path))
+                        voice_options = builtin_options + eng_options + bark_options + piper_options
                         session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
                         os.makedirs(session['voice_dir'], exist_ok=True)
                         if session['voice_dir'] is not None:
