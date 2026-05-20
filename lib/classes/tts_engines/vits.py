@@ -117,7 +117,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 self.audio_segments = []
                 current_voice_stem = Path(self.params['current_voice']).stem
-                use_zs = self.params['current_voice'] is not None and current_voice_stem not in default_engine_settings[self.tts_engine]['voices'] and current_voice_stem != self.session['custom_model']
+                use_zs = self.params['current_voice'] is not None and current_voice_stem is not None and current_voice_stem not in default_engine_settings[self.tts_engine]['voices'] and current_voice_stem != os.path.basename(self.session['custom_model'])
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
@@ -131,7 +131,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
                         if success:
-                            use_zs = self.params['current_voice'] is not None and current_voice_stem not in default_engine_settings[self.tts_engine]['voices'] and current_voice_stem != self.session['custom_model']
+                            use_zs = self.params['current_voice'] is not None and current_voice_stem is not None and current_voice_stem not in default_engine_settings[self.tts_engine]['voices'] and current_voice_stem != os.path.basename(self.session['custom_model'])
                         else:
                             return False, error
                         continue
