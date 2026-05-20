@@ -1,6 +1,6 @@
-import os, sys, threading, gc, ctypes, shutil, tempfile, warnings, regex as re
+import os, sys, threading, gc, ctypes, tempfile, regex as re
 
-from typing import Any, Union, Dict, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 from cryptography.fernet import Fernet
 from pathlib import Path
 
@@ -139,7 +139,7 @@ class TTSUtils:
             pass
         return total
 
-    def _loaded_tts_size_gb(self, loaded_tts:Dict[str, 'Module'])->float:
+    def _loaded_tts_size_gb(self, loaded_tts:dict[str, 'Module'])->float:
         total_bytes = 0
         for model in loaded_tts.values():
             try:
@@ -155,7 +155,7 @@ class TTSUtils:
             from huggingface_hub import hf_hub_download
             if len(xtts_builtin_speakers_list) > 0:
                 return xtts_builtin_speakers_list
-            speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTSv2']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+            speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTS']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
             loaded = torch.load(speakers_path, weights_only=False)
             if not isinstance(loaded, dict):
                 error = f'Invalid XTTS speakers format: {type(loaded)}'
@@ -341,7 +341,7 @@ class TTSUtils:
                         if not config_path or not os.path.exists(config_path):
                             error = f'Missing or invalid config_path: {config_path}'
                             raise FileNotFoundError(error)
-                        if engine_name == TTS_ENGINES['XTTSv2']:
+                        if engine_name == TTS_ENGINES['XTTS']:
                             from TTS.tts.configs.xtts_config import XttsConfig
                             from TTS.tts.models.xtts import Xtts
                             config = XttsConfig()
@@ -444,7 +444,7 @@ class TTSUtils:
             if (self.language in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.language == 'eng'):
                 if os.path.exists(current_voice):
                     return current_voice
-            xtts = TTS_ENGINES['XTTSv2']
+            xtts = TTS_ENGINES['XTTS']
             if self.language in default_engine_settings[xtts].get('languages', {}):
                 default_text_file = os.path.join(voices_dir, self.language, 'default.txt')
                 if os.path.exists(default_text_file):

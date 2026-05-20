@@ -5,13 +5,13 @@ loaded_tts = {}
 xtts_builtin_speakers_list = {}
 
 TTS_ENGINES = {
-    "XTTSv2": "xtts",
+    "XTTS": "xtts",
     "BARK": "bark",
     "TORTOISE": "tortoise",
     "VITS": "vits",
     "FAIRSEQ": "fairseq",
     "GLOWTTS": "glowtts",
-    "TACOTRON2": "tacotron",
+    "TACOTRON": "tacotron",
     "PIPER": "piper",
     "YOURTTS": "yourtts"
 }
@@ -59,21 +59,21 @@ IPA_REMAINING_PATTERN = re.compile(
     r']+'
 )
 
-default_tts_engine = TTS_ENGINES['XTTSv2']
+default_tts_engine = TTS_ENGINES['XTTS']
 default_fine_tuned = 'internal'
 default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
 default_voice_detection_model = 'drewThomasson/segmentation'
 default_speaker = os.path.join(voices_dir, 'eng', 'adult', 'male', 'KumarDahl.wav')
 
-tts_engines_from_coqui = [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK'], TTS_ENGINES['TORTOISE'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]
-tts_engines_with_inner_speaker = [TTS_ENGINES['PIPER'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]
-tts_engines_with_custom_model = (TTS_ENGINES['PIPER'], TTS_ENGINES['XTTSv2'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'])
+tts_engines_from_coqui = [TTS_ENGINES['XTTS'], TTS_ENGINES['BARK'], TTS_ENGINES['TORTOISE'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON'], TTS_ENGINES['YOURTTS']]
+tts_engines_with_inner_speaker = [TTS_ENGINES['PIPER'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON'], TTS_ENGINES['YOURTTS']]
+tts_engines_with_custom_model = (TTS_ENGINES['PIPER'], TTS_ENGINES['XTTS'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'])
 
 max_custom_model = 100
 max_custom_voices = 1000
 
 default_engine_settings = {
-    TTS_ENGINES['XTTSv2']: {
+    TTS_ENGINES['XTTS']: {
         "repo": "coqui/XTTS-v2",
         "languages": {"ara": "ar", "ces": "cs", "deu": "de", "eng": "en", "fra": "fr", "hin": "hi", "hun": "hu", "ita": "it", "jpn": "ja", "kor": "ko", "nld": "nl", "pol": "pl", "por": "pt", "rus": "ru", "spa": "es", "tur": "tr", "zho": "zh-cn"},
         "samplerate": 24000,
@@ -204,7 +204,7 @@ default_engine_settings = {
         "voices": {},
         "rating": {"VRAM": 1, "CPU": 4, "RAM": 2, "Realism": 3}
     },
-    TTS_ENGINES['TACOTRON2']: {
+    TTS_ENGINES['TACOTRON']: {
         "languages": {"deu": "de", "eng": "en", "fra": "fr", "spa": "es"},
         "samplerate": 22050,
         "files": [],

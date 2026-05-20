@@ -3,7 +3,7 @@ from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
-class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
+class XTTS(TTSUtils, TTSRegistry, name='xtts'):
 
     def __init__(self, session:DictProxy):
         try:
@@ -77,9 +77,9 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                 if self.session['custom_model'] is not None:
                     try:
                         model_path = self.session['custom_model']
-                        config_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
-                        checkpoint_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
-                        vocab_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][2])
+                        config_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTS']]['files'][0])
+                        checkpoint_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTS']]['files'][1])
+                        vocab_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTS']]['files'][2])
                         custom_model_name = os.path.basename(os.path.normpath(model_path))
                         self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
                         engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
@@ -148,8 +148,8 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         else:
                             msg = 'Computing speaker latents…'
                             print(msg)
-                            if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
+                            if self.speaker in default_engine_settings[TTS_ENGINES['XTTS']]['voices'].keys():
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTS']]['voices'][self.speaker]].values()
                             else:
                                 self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], load_sr=24000, sound_norm_refs=True)
                             self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']

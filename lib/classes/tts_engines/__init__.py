@@ -1,4 +1,4 @@
-from .xtts import XTTSv2
+from .xtts import XTTS
 from .bark import Bark
 from .vits import Vits
 from .fairseq import Fairseq

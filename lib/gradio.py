@@ -728,14 +728,14 @@ def build_interface(args:dict)->gr.Blocks:
                                     with gr.Row(elem_id='gr_row_session'):
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                                         gr_session_switch_btn = gr.Button('🔒︎', elem_id='gr_session_switch_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
-                    with gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
+                    with gr.Tab('XTTS Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
                                 label='Temperature',
                                 minimum=0.05,
                                 maximum=5.0,
                                 step=0.05,
-                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
+                                value=float(default_engine_settings[TTS_ENGINES['XTTS']]['temperature']),
                                 elem_id='gr_xtts_temperature',
                                 info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
                             )
@@ -744,7 +744,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=0.3,
                                 maximum=5.0,
                                 step=0.1,
-                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
+                                value=float(default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty']),
                                 elem_id='gr_xtts_length_penalty',
                                 info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
                                 visible=False
@@ -754,7 +754,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=1,
                                 maximum=10,
                                 step=1,
-                                value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
+                                value=int(default_engine_settings[TTS_ENGINES['XTTS']]['num_beams']),
                                 elem_id='gr_xtts_num_beams',
                                 info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
                                 visible=False
@@ -764,7 +764,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=1.0,
                                 maximum=5.0,
                                 step=0.1,
-                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
+                                value=float(default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty']),
                                 elem_id='gr_xtts_repetition_penalty',
                                 info='Penalizes repeated phrases. Higher values reduce repetition.'
                             )
@@ -773,7 +773,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=10,
                                 maximum=100,
                                 step=1,
-                                value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
+                                value=int(default_engine_settings[TTS_ENGINES['XTTS']]['top_k']),
                                 elem_id='gr_xtts_top_k',
                                 info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
                             )
@@ -782,7 +782,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=0.1,
                                 maximum=1.0, 
                                 step=0.01,
-                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']),
+                                value=float(default_engine_settings[TTS_ENGINES['XTTS']]['top_p']),
                                 elem_id='gr_xtts_top_p',
                                 info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
                             )
@@ -791,13 +791,13 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=0.5, 
                                 maximum=3.0, 
                                 step=0.1, 
-                                value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']),
+                                value=float(default_engine_settings[TTS_ENGINES['XTTS']]['speed']),
                                 elem_id='gr_xtts_speed',
                                 info='Adjusts how fast the narrator will speak.'
                             )
                             gr_xtts_enable_text_splitting = gr.Checkbox(
                                 label='Enable Text Splitting', 
-                                value=default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+                                value=default_engine_settings[TTS_ENGINES['XTTS']]['enable_text_splitting'],
                                 elem_id='gr_xtts_enable_text_splitting',
                                 info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                                 visible=False
@@ -1233,7 +1233,7 @@ def build_interface(args:dict)->gr.Blocks:
                             enabled_convert_btn = False
                             ebook_data = None
                             ebook_textarea = None
-                            if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                            if session['tts_engine'] == TTS_ENGINES['XTTS']:
                                 visible_xtts = visible_gr_tab_xtts_params
                             elif session['tts_engine'] == TTS_ENGINES['BARK']:
                                 visible_bark = visible_gr_tab_bark_params
@@ -1691,7 +1691,7 @@ def build_interface(args:dict)->gr.Blocks:
                             for base in [os.path.splitext(f.name)[0]]
                         ]
                         builtin_names = {t[0]: None for t in builtin_options}
-                        if language in default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {}):
+                        if language in default_engine_settings[TTS_ENGINES['XTTS']].get('languages', {}):
                             eng_dir = Path(os.path.join(voices_dir, "eng"))
                             eng_options = [
                                 (base, str(f))
@@ -1985,7 +1985,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['voice'] = None if session['voice'] == default_engine_settings[session['tts_engine']]['voice'] else session['voice']
                             session['tts_engine'] = engine
                             session['fine_tuned'] = default_fine_tuned
-                            visible_xtts = visible_gr_tab_xtts_params if session['tts_engine'] == TTS_ENGINES['XTTSv2'] else False
+                            visible_xtts = visible_gr_tab_xtts_params if session['tts_engine'] == TTS_ENGINES['XTTS'] else False
                             visible_bark = visible_gr_tab_bark_params if session['tts_engine'] == TTS_ENGINES['BARK'] else False
                             supports_custom = session['tts_engine'] in tts_engines_with_custom_model
                             visible_custom_model = supports_custom and session['fine_tuned'] == 'internal'
@@ -3134,7 +3134,7 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_audiobook_list]
             )
 
-            ########### XTTSv2 Params
+            ########### XTTS Params
 
             gr_tab_xtts_params.select(
                 fn=None,

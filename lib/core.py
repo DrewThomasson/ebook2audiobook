@@ -194,18 +194,18 @@ class SessionContext:
             "output_split": default_output_split,
             "output_split_hours": default_output_split_hours,
             ####### Xtts settings
-            "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
-            #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['codec_temperature'],
-            "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
-            "xtts_num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
-            "xtts_repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
-            #"xtts_cvvp_weight": default_engine_settings[TTS_ENGINES['XTTSv2']]['cvvp_weight'],
-            "xtts_top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
-            "xtts_top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'],
-            "xtts_speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
-            #"xtts_gpt_cond_len": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_cond_len'],
-            #"xtts_gpt_batch_size": default_engine_settings[TTS_ENGINES['XTTSv2']]['gpt_batch_size'],
-            "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+            "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['temperature'],
+            #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['codec_temperature'],
+            "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty'],
+            "xtts_num_beams": default_engine_settings[TTS_ENGINES['XTTS']]['num_beams'],
+            "xtts_repetition_penalty": default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty'],
+            #"xtts_cvvp_weight": default_engine_settings[TTS_ENGINES['XTTS']]['cvvp_weight'],
+            "xtts_top_k": default_engine_settings[TTS_ENGINES['XTTS']]['top_k'],
+            "xtts_top_p": default_engine_settings[TTS_ENGINES['XTTS']]['top_p'],
+            "xtts_speed": default_engine_settings[TTS_ENGINES['XTTS']]['speed'],
+            #"xtts_gpt_cond_len": default_engine_settings[TTS_ENGINES['XTTS']]['gpt_cond_len'],
+            #"xtts_gpt_batch_size": default_engine_settings[TTS_ENGINES['XTTS']]['gpt_batch_size'],
+            "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTS']]['enable_text_splitting'],
             ####### Bark settings
             "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
@@ -2435,7 +2435,7 @@ def block_hash(block: dict) -> str:
         '|'.join((
             (block.get('text') or '').strip(),
             block.get('voice') or '',
-            block.get('tts_engine') or TTS_ENGINES['XTTSv2'],
+            block.get('tts_engine') or TTS_ENGINES['XTTS'],
             block.get('fine_tuned') or 'internal',
             json.dumps(block.get('sentences') or [], ensure_ascii=False),
         )).encode('utf-8')
@@ -2480,7 +2480,7 @@ def convert_chapters2audio(session_id:str)->bool:
         blocks_saved = session['blocks_saved']
         prev_blocks_list = blocks_saved.get('blocks', [])
         prev_blocks = {b['id']: b for b in prev_blocks_list} if isinstance(prev_blocks_list, list) else prev_blocks_list
-        xtts_languages = default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {})
+        xtts_languages = default_engine_settings[TTS_ENGINES['XTTS']].get('languages', {})
         _lang = session['language']
         if session.get('translate_enabled') and session.get('translate'):
             _lang = session['translate']
