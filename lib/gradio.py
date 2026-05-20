@@ -1678,7 +1678,8 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         models = load_engine_presets(session['tts_engine'])
-                        lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
+                        language = session['translate'] if session['translate_enabled'] else session['language']
+                        lang_dir = language if language != 'con' else 'con-'  # Bypass Windows CON reserved name
                         file_pattern = "*.wav"
                         eng_options = []
                         bark_options = []
@@ -1690,7 +1691,7 @@ def build_interface(args:dict)->gr.Blocks:
                             for base in [os.path.splitext(f.name)[0]]
                         ]
                         builtin_names = {t[0]: None for t in builtin_options}
-                        if session['language'] in default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {}):
+                        if language in default_engine_settings[TTS_ENGINES['XTTSv2']].get('languages', {}):
                             eng_dir = Path(os.path.join(voices_dir, "eng"))
                             eng_options = [
                                 (base, str(f))
@@ -1699,7 +1700,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 if base not in builtin_names
                             ]
                         if session['tts_engine'] == TTS_ENGINES['BARK']:
-                            lang_dict = Lang(session['language'])
+                            lang_dict = Lang(language)
                             if lang_dict:
                                 lang_iso1 = lang_dict.pt1
                                 lang = lang_iso1.lower()
@@ -1711,7 +1712,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 ]
                         elif session['tts_engine'] == TTS_ENGINES['PIPER']:
                             engine_config = default_engine_settings[TTS_ENGINES['PIPER']]
-                            lang_piper = engine_config['languages'][session['language']]  # e.g., "en_GB"
+                            lang_piper = engine_config['languages'][language]  # e.g., "en_GB"
                             speakers_path = Path(engine_config['speakers_path'])
                             voices_map = engine_config['voices']
                             for f in speakers_path.iterdir():
@@ -1721,7 +1722,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     wav_path = str(f.with_suffix('.wav'))
                                     piper_options.append((display_name, wav_path))
                         voice_options = builtin_options + eng_options + bark_options + piper_options
-                        session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', session['language'])
+                        session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
                         os.makedirs(session['voice_dir'], exist_ok=True)
                         if session['voice_dir'] is not None:
                             session_voice_dir = Path(session['voice_dir'])
@@ -1748,7 +1749,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     if "voices" in parts:
                                         idx = parts.index("voices")
                                         if idx + 1 < len(parts):
-                                            parts[idx + 1] = session['language']
+                                            parts[idx + 1] = language
                                             new_voice_path = str(Path(*parts))
                                             if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
                                                 session['voice'] = new_voice_path
