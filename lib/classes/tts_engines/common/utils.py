@@ -328,7 +328,7 @@ class TTSUtils:
                     download_voice(Path(self.model_path).stem, Path(self.model_path))
                     use_cuda = self.device == devices['CUDA']['proc']
                     engine = PiperVoice.load(checkpoint_path, config_path=config_path, use_cuda=use_cuda)
-                else:
+                elif engine_name in :
                     import torch
                     import torch.nn as nn
                     engine = loaded_tts.get(key, False)
