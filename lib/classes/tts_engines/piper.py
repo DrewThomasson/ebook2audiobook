@@ -18,7 +18,8 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             self.resampler_cache = {}
             self.resampled_wav_cache = {}
             self.audio_segments = []
-            self.models = load_engine_presets(self.session['tts_engine'])
+            self.tts_engine = self.session['tts_engine']
+            self.models = load_engine_presets(self.tts_engine)
             self.params = {"semitones": {}}
             self.language = self.session.get('language')
             self.language_iso1 = self.session.get('language_iso1')
@@ -27,13 +28,12 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     self.language = self.session['translate']
                 if self.session.get('translate_iso1'):
                     self.language_iso1 = self.session['translate_iso1']
-            tts_engine = self.session.get('tts_engine')
-            if tts_engine not in default_engine_settings:
-                error = f'Invalid tts_engine {tts_engine}.'
+            if self.tts_engine not in default_engine_settings:
+                error = f'Invalid tts_engine {self.tts_engine}.'
                 raise ValueError(error)
-            self.engine_langs = default_engine_settings[tts_engine].get('languages', {})
+            self.engine_langs = default_engine_settings[self.tts_engine].get('languages', {})
             if self.language not in self.engine_langs:
-                error = f'Language {self.language} not supported by engine {tts_engine}.'
+                error = f'Language {self.language} not supported by engine {self.tts_engine}.'
                 raise ValueError(error)
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
@@ -71,25 +71,25 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             if not engine:
                 if self.session['custom_model'] is not None:
                     self.model_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'])
-                    files = default_engine_settings[self.session['tts_engine']]['files']
+                    files = default_engine_settings[self.tts_engine]['files']
                     config_path = os.path.join(self.model_path, files[0])
                     checkpoint_path = os.path.join(self.model_path, files[1])
                     model_name = os.path.basename(os.path.normpath(self.model_path))
-                    self.tts_key = f"{self.session['tts_engine']}-{model_name}"
-                    engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
+                    self.tts_key = f"{self.tts_engine}-{model_name}"
+                    engine = self._load_checkpoint(tts_engine=self.tts_engine, key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
                 else:
                     piper_lang = self.engine_langs[self.language]
                     voice_file = self.session.get('block_voice', self.session['voice'])
                     voice_name = Path(voice_file).stem if voice_file is not None else None
                     model_name = voice_name if any(voice_name in voices for voices in self.sub_list.values()) else self.sub_list[piper_lang][0]
-                    engine_path = os.path.join(self.cache_dir, self.session['tts_engine'])
+                    engine_path = os.path.join(self.cache_dir, self.tts_engine)
                     os.makedirs(engine_path, exist_ok=True)
                     self.model_path = os.path.join(engine_path, model_name)
                     os.makedirs(self.model_path, exist_ok=True)
                     config_path = os.path.join(self.model_path, f'{model_name}.onnx.json')
                     checkpoint_path = os.path.join(self.model_path, f'{model_name}.onnx')
-                    self.tts_key = f"{self.session['tts_engine']}-{model_name}"
-                    engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
+                    self.tts_key = f"{self.tts_engine}-{model_name}"
+                    engine = self._load_checkpoint(tts_engine=self.tts_engine, key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
             if engine:
                 self.params['samplerate'] = int(getattr(engine, 'output_sample_rate', None) or getattr(getattr(engine, 'config', None), 'sample_rate', self.params['samplerate']))
                 msg = f'TTS {self.tts_key} Loaded!'
@@ -117,7 +117,8 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                         return False, error
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 self.audio_segments = []
-                use_zs = self.params['current_voice'] is not None and Path(self.params['current_voice']).stem not in default_engine_settings[TTS_ENGINES['PIPER']]['voices'].keys()
+                current_voice_stem = Path(self.params['current_voice']).stem
+                use_zs = self.params['current_voice'] is not None and current_voice_stem not in default_engine_settings[TTS_ENGINES[self.tts_engine]]['voices'] and current_voice_stem != self.params['custom_model']
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
@@ -131,7 +132,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
                         if success:
-                             use_zs = self.params['current_voice'] is not None and Path(self.params['current_voice']).stem not in default_engine_settings[TTS_ENGINES['PIPER']]['voices'].keys()
+                             use_zs = self.params['current_voice'] is not None and current_voice_stem not in default_engine_settings[TTS_ENGINES['PIPER']]['voices'] and current_voice_stem != self.params['custom_model']
                         else:
                             return False, error
                         continue
@@ -237,7 +238,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                         return False, error
                 return True, None
             else:
-                error = f"TTS engine {self.session['tts_engine']} failed to load!"
+                error = f"TTS engine {self.tts_engine} failed to load!"
                 return False, error
         except Exception as e:
             self.cleanup_memory()

@@ -17,7 +17,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.resampler_cache = {}
             self.resampled_wav_cache = {}
             self.audio_segments = []
-            self.models = load_engine_presets(self.session['tts_engine'])
+            self.tts_engine = self.session.get('tts_engine')
+            self.models = load_engine_presets(self.tts_engine)
             self.params = {"semitones":{}}
             # effective language for TTS (target when translating, else source)
             self.language = self.session.get('language')
@@ -27,13 +28,12 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     self.language = self.session['translate']
                 if self.session.get('translate_iso1'):
                     self.language_iso1 = self.session['translate_iso1']
-            tts_engine = self.session.get('tts_engine')
-            if tts_engine not in default_engine_settings:
-                error = f'Invalid tts_engine {tts_engine}.'
+            if self.tts_engine not in default_engine_settings:
+                error = f'Invalid tts_engine {self.tts_engine}.'
                 raise ValueError(error)
-            engine_langs = default_engine_settings[tts_engine].get('languages', {})
+            engine_langs = default_engine_settings[self.tts_engine].get('languages', {})
             if self.language not in engine_langs:
-                error = f'Language {self.language} not supported by engine {tts_engine}.'
+                error = f'Language {self.language} not supported by engine {self.tts_engine}.'
                 raise ValueError(error)
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
@@ -48,7 +48,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             iso_dir = engine_langs[self.language]
             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
-                error = f'{tts_engine} checkpoint for {self.language} not found.'
+                error = f'{self.tts_engine} checkpoint for {self.language} not found.'
                 raise KeyError(error)
             self.params['samplerate'] = model_cfg['samplerate'][sub]
             self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
@@ -74,12 +74,12 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 if self.session['custom_model'] is not None:
                     try:
                         model_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'])
-                        files = default_engine_settings[self.session['tts_engine']]['files']
+                        files = default_engine_settings[self.tts_engine]['files']
                         config_path = os.path.join(model_path, files[0])
                         checkpoint_path = os.path.join(model_path, files[1])
                         custom_model_name = os.path.basename(os.path.normpath(model_path))
-                        self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
-                        engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
+                        self.tts_key = f"{self.tts_engine}-{custom_model_name}"
+                        engine = self._load_checkpoint(tts_engine=self.tts_engine, key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
                     except Exception as e:
                         error = f'load_engine(): custom checkpoint loading failed: {e}'
                         raise RuntimeError(error) from e
@@ -116,7 +116,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         return False, error
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 self.audio_segments = []
-                use_zs = self.params['current_voice'] is not None
+                current_voice_stem = Path(self.params['current_voice']).stem
+                use_zs = self.params['current_voice'] is not None and current_voice_stem not in default_engine_settings[TTS_ENGINES[self.tts_engine]]['voices'] and current_voice_stem != self.params['custom_model']
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
@@ -130,7 +131,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
                         if success:
-                             use_zs = self.params['current_voice'] is not None
+                            use_zs = self.params['current_voice'] is not None and current_voice_stem not in default_engine_settings[TTS_ENGINES[self.tts_engine]]['voices'] and current_voice_stem != self.params['custom_model']
                         else:
                             return False, error
                         continue
@@ -249,7 +250,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         return False, error
                 return True, None
             else:
-                error = f"TTS engine {self.session['tts_engine']} failed to load!"
+                error = f"TTS engine {self.tts_engine} failed to load!"
                 return False, error
         except Exception as e:
             self.cleanup_memory()
