@@ -40,10 +40,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
-            for required_key in ('repo', 'samplerate'):
-                if required_key not in model_cfg:
-                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
-                    raise ValueError(error)
             self.model_path = None
             self.sub_list = model_cfg['sub']
             self.params['samplerate'] = model_cfg['samplerate']
