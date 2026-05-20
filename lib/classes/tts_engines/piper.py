@@ -117,7 +117,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                         return False, error
                 self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 self.audio_segments = []
-                use_zs = self.params['current_voice'] is not None
+                use_zs = self.params['current_voice'] is not None and Path(self.params['current_voice']).stem not in default_engine_settings[TTS_ENGINES['PIPER']]['voices'].keys()
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
