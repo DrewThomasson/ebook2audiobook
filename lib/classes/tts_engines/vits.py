@@ -114,13 +114,12 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
+                use_zs = False
                 self.audio_segments = []
-                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                 custom_model_name = os.path.basename(self.session['custom_model']) if self.session['custom_model'] is not None else None
-                use_zs = (
-                    (self.params['current_voice'] is not None and self.speaker is not None and self.speaker not in default_engine_settings[self.tts_engine]['voices']) or 
-                    (self.speaker != custom_model_name and custom_model_name is not None)
-                )
+                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
+                if self.speaker is not None and self.speaker != custom_model_name:
+                    us_zs = self.speaker not in default_engine_settings[self.tts_engine]['voices']:
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
@@ -135,10 +134,8 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         success, error = self._convert_sml(part)
                         if success:
                             self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
-                            use_zs = (
-                                (self.params['current_voice'] is not None and self.speaker is not None and self.speaker not in default_engine_settings[self.tts_engine]['voices']) or 
-                                (self.speaker != custom_model_name and custom_model_name is not None)
-                            )
+                            if self.speaker is not None and self.speaker != custom_model_name:
+                                us_zs = self.speaker not in default_engine_settings[self.tts_engine]['voices']:
                         else:
                             return False, error
                         continue
