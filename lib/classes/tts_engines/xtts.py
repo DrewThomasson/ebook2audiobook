@@ -76,7 +76,7 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
             if not engine:
                 if self.session['custom_model'] is not None:
                     try:
-                        model_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'])
+                        model_path = self.session['custom_model']
                         config_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTS']]['files'][0])
                         checkpoint_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTS']]['files'][1])
                         vocab_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTS']]['files'][2])
