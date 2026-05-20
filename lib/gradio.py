@@ -1677,7 +1677,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         models = load_engine_presets(session['tts_engine'])
-                        language = session['translate'] if session['translate_enabled'] else session['language']
+                        language = session['translate'] if session['translate_enabled'] and session['translate'] is not None else session['language']
                         lang_dir = language if language != 'con' else 'con-'  # Bypass Windows CON reserved name
                         file_pattern = "*.wav"
                         eng_options = []
