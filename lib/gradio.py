@@ -1781,7 +1781,9 @@ def build_interface(args:dict)->gr.Blocks:
                 translate_iso1 = session['translate_iso1']
                 translate_options = _build_translate_targets(lang)
                 if translate_options:
-                    if not translate or not any(translate == name for name, val in translate_options):
+                    lang_order = {val: i for i, (_, val) in enumerate(language_options)}
+                    translate_options.sort(key=lambda item: lang_order.get(item[1], len(language_options)))
+                    if not translate or not any(translate == val for _, val in translate_options):
                         translate = translate_options[0][1]
                     try:
                         translate_iso1 = Lang(translate).pt1
