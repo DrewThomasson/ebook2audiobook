@@ -230,7 +230,7 @@ default_engine_settings = {
         "voices": {
             "ar_JO-kareem-medium": "Kareem", "ca_ES-upc_pau-medium": "Pau", "ca_ES-upc_ona-medium": "Ona",
             "cs_CZ-jirka-medium": "Jirka", "cy_GB-gwryw_gogleddol-medium": "Gwryw Gogleddol", "cy_GB-bu_tts-medium": "Bu TTS",
-            "da_DK-talesyntese-medium": "Talesyntese", "de_DE-thorsten-high": "Thorsten", "de_DE-thorsten_emotional-high": "Thorsten Emotional", "de_DE-eva_k-high": "Eva",
+            "da_DK-talesyntese-medium": "Talesyntese", "de_DE-thorsten-high": "Thorsten", "de_DE-thorsten_emotional-medium": "Thorsten Emotional", "de_DE-mls-medium": "Mls",
             "el_GR-rapunzelina-low": "Rapunzelina", "en_GB-alan-medium": "Alan", "en_GB-cori-high": "Cori",
             "es_ES-davefx-medium": "DaveFX", "es_ES-sharvard-medium": "Sharvard", "fa_IR-amir-medium": "Amir",
             "fi_FI-harri-medium": "Harri", "fr_FR-tom-medium": "Tom", "fr_FR-siwis-medium": "Siwis",
