@@ -396,7 +396,7 @@ def build_interface(args:dict)->gr.Blocks:
                     display: none !important;
                 }               
                 #gr_fine_tuned_list {
-                    height: 95px !important;
+                    height: 60px !important;
                 }
                 #gr_voice_list {
                     height: 60px !important;
