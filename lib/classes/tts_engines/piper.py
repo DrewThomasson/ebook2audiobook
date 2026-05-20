@@ -71,6 +71,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
             if not engine:
                 if self.session['custom_model'] is not None:
                     self.model_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'])
+                    print(f'------------------{self.model_path}----------')
                     files = default_engine_settings[self.session['tts_engine']]['files']
                     config_path = os.path.join(self.model_path, files[0])
                     checkpoint_path = os.path.join(self.model_path, files[1])
