@@ -417,10 +417,10 @@ def extract_custom_model(session_id)->str|None:
                         if session['is_gui_process']:
                             progress_bar((t.n + 1) / files_length, desc=msg)
             if model_path is not None:
-                if session['tts_engine'] in tts_engines_with_inner_speaker:
-                    if os.path.exists(file_src):
-                        os.remove(file_src)
-                    return model_path
+                #if session['tts_engine'] in tts_engines_with_inner_speaker:
+                #    if os.path.exists(file_src):
+                #        os.remove(file_src)
+                #    return model_path
                 msg = f'Normalizing ref.wav…'
                 print(msg)
                 voice_ref = os.path.join(model_path, 'ref.wav')
