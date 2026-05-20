@@ -631,7 +631,11 @@ class TTSUtils:
 
     def _set_voice(self, voice:str|None)->tuple:
         current_voice = (voice if voice is not None else self.models[self.session['fine_tuned']]['voice'])
-        if current_voice is not None:
+        if current_voice is None:
+            if self.session['custom_model'] is not None:
+                voice_file = f"{Path(self.session['custom_model']).stem}.wav"
+                current_voice = os.path.join(self.session['custom_model'], voice_file)
+        else:
             speaker = Path(current_voice).stem
             if(
                 (speaker not in {k for engine in default_engine_settings.values() for k in engine['voices']}) and 
