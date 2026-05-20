@@ -121,8 +121,8 @@ default_engine_settings = {
         "text_temp": 0.22,
         "waveform_temp": 0.44,
         "files": [],
-        "voice": default_speaker,
         "speakers_path": os.path.join(voices_dir, '__bark'),
+        "voice": default_speaker,
         "voices": {
             "de_speaker_0": "Speaker 0", "de_speaker_1": "Speaker 1", "de_speaker_2": "Speaker 2",
             "de_speaker_3": "Speaker 3", "de_speaker_4": "Speaker 4", "de_speaker_5": "Speaker 5",
@@ -209,6 +209,7 @@ default_engine_settings = {
         "samplerate": 22050,
         "files": [],
         "voice": None,
+        "voices": {},
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 3}
     },
     TTS_ENGINES['PIPER']: {
@@ -224,8 +225,8 @@ default_engine_settings = {
         },
         "samplerate": 22050,
         "files": ['config.onnx.json', 'model.onnx'],
-        "voice": None,
         "speakers_path": os.path.join(voices_dir, '__piper'),
+        "voice": None,
         "voices": {
             "ar_JO-kareem-medium": "Kareem", "ca_ES-upc_pau-medium": "Pau", "ca_ES-upc_ona-medium": "Ona",
             "cs_CZ-jirka-medium": "Jirka", "cy_GB-gwryw_gogleddol-medium": "Gwryw Gogleddol", "cy_GB-bu_tts-medium": "Bu TTS",
