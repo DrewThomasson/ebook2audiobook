@@ -416,7 +416,7 @@ class TTSUtils:
             print(error)
             raise
 
-    def _load_engine_zs(self, device:str)->Any:
+    def if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() + default_engine_settings[TTS_ENGINES['PIPER']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:_zs(self, device:str)->Any:
         try:
             msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
@@ -630,7 +630,7 @@ class TTSUtils:
         current_voice = (voice if voice is not None else self.models[self.session['fine_tuned']]['voice'])
         if current_voice is not None:
             speaker = re.sub(r'\.wav$', '', os.path.basename(current_voice))
-            if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() + default_engine_settings[TTS_ENGINES['PIPER']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:
+            if (current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() | default_engine_settings[TTS_ENGINES['PIPER']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice):
                 current_voice = self._check_xtts_builtin_speakers(current_voice, speaker)
                 if not current_voice:
                     error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.language}"
