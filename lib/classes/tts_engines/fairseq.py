@@ -66,7 +66,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             engine = loaded_tts.get(self.tts_key)
             if not engine:
                 if self.session['custom_model'] is not None:
-                    model_path = self.session['custom_model']
+                    model_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'])
                     files = default_engine_settings[self.session['tts_engine']]['files']
                     config_path = os.path.join(model_path, files[0])
                     checkpoint_path = os.path.join(model_path, files[1])
