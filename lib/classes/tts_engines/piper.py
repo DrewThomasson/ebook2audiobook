@@ -196,7 +196,6 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                 audio_part = self.engine_zs.voice_conversion(
                                     source_wav=source_wav,
                                     speaker=self.speaker,
-                                    k=4,
                                     **speaker_argument
                                 )
                                 if os.path.exists(tmp_in_wav):
