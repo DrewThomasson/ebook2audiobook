@@ -218,7 +218,7 @@ default_engine_settings = {
             "deu": "de_DE", "ell": "el_GR", "eng": "en_GB", "spa": "es_ES", "fas": "fa_IR",
             "fin": "fi_FI", "fra": "fr_FR", "hun": "hu_HU", "isl": "is_IS", "ita": "it_IT",
             "kat": "ka_GE", "kaz": "kk_KZ", "ltz": "lb_LU", "lav": "lv_LV", "nep": "ne_NP",
-            "nld": "nl_NL", "nor": "no_NO", "pol": "pl_PL", "por": "pt_PT", "ron": "ro_RO",
+            "nld": "nl_NL", "nob": "no_NO", "pol": "pl_PL", "por": "pt_PT", "ron": "ro_RO",
             "rus": "ru_RU", "slk": "sk_SK", "slv": "sl_SI", "srp": "sr_RS", "swe": "sv_SE",
             "swa": "sw_CD", "tur": "tr_TR", "ukr": "uk_UA", "urd": "ur_PK", "vie": "vi_VN",
             "zho": "zh_CN"
