@@ -416,7 +416,7 @@ class TTSUtils:
             print(error)
             raise
 
-    def if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() + default_engine_settings[TTS_ENGINES['PIPER']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:_zs(self, device:str)->Any:
+    def _load_engine_zs(self, device:str)->Any:
         try:
             msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
