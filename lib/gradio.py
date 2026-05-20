@@ -1717,7 +1717,7 @@ def build_interface(args:dict)->gr.Blocks:
                             for f in speakers_path.iterdir():
                                 if f.name.startswith(lang_piper):
                                     file_stem = f.stem
-                                    display_name = voices_map.get(file_stem, file_stem)
+                                    display_name = f'Speaker {voices_map.get(file_stem, file_stem)}'
                                     wav_path = str(f.with_suffix('.wav'))
                                     piper_options.append((display_name, wav_path))
                         voice_options = builtin_options + eng_options + bark_options + piper_options
