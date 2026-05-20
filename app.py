@@ -166,7 +166,7 @@ SML tags available:
         ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
-    tts_engine_list_keys = [*TTS_ENGINES, 'XTTSv2', 'TACOTRON2']
+    tts_engine_list_keys = [*TTS_ENGINES]
     tts_engine_list_values = list(TTS_ENGINES.values())
     all_group = parser.add_argument_group('**** The following options are for container only', 'Optional')
     all_group.add_argument(cli_options[0], type=str, help='Mandatory to build a container. The only value is: build_docker.')
