@@ -28,7 +28,7 @@ models = {
             "nl_NL": ["nl_NL-mls-medium", "nl_NL-mls_5809-low"],
             "no_NO": ["no_NO-talesyntese-medium", "no_NO-talesyntese-medium"],
             "pl_PL": ["pl_PL-darkman-medium", "pl_PL-gosia-medium"],
-            "pt_PT": ["pt_PT-tugão-medium", "pt_PT-tugão-medium"],
+            "pt_PT": ["pt_PT-tug%C3%A3o-medium", "pt_PT-tugão-medium"],
             "ro_RO": ["ro_RO-mihai-medium", "ro_RO-mihai-medium"],
             "ru_RU": ["ru_RU-denis-medium", "ru_RU-irina-medium"],
             "sk_SK": ["sk_SK-lili-medium", "sk_SK-lili-medium"],
