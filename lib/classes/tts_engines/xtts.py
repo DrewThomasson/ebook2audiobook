@@ -166,8 +166,13 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                                     )
                             if result:
                                 audio_part = result.get('wav')
-                                if is_audio_data_valid(audio_part):
-                                    part_tensor = self._tensor_type(audio_part).detach().unsqueeze(0)
+                                if audio_part is not None and len(audio_part) > 0:
+                                    if torch.is_tensor(audio_part):
+                                        audio_part = audio_part.detach().cpu()
+                                    if not is_audio_data_valid(audio_part):
+                                        error = 'audio_part not valid'
+                                        return False, error
+                                    part_tensor = self._tensor_type(audio_part).unsqueeze(0)
                                     if part_tensor.numel() == 0:
                                         error = 'part_tensor not valid'
                                         return False, error
@@ -181,13 +186,13 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                                     error = 'audio_part not valid'
                                     return False, error
                             else:
-                                error = f'audio_part not valid'
+                                error = 'audio_part not valid'
                                 return False, error
                         except IndexError as e:
-                            error = f'inference() error at {e} segment: {part}'
-                            print(error)
-                            result = False
-                            pass
+                            error = f'convert() error at {e} segment: {part}'
+                            return False, error
+                        except Exception as e:
+                            return False, self.log_exception(f'{self.__class__.__name__}.convert() part loop', e)
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
