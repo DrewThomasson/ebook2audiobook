@@ -159,7 +159,7 @@ class ArgosTranslator:
                 )
                 if direct_pkg is not None:
                     if not self.is_pair_installed(source_iso1, target_iso1):
-                        print(f'Downloading argos package {source_iso1} -> {target_iso1}…')
+                        print(f'Downloading argos package {source_iso1} -> {target_iso1}')
                         download_path = direct_pkg.download()
                         argostranslate.package.install_from_path(download_path)
                         msg = f'Installed argos package {source_iso1} -> {target_iso1}'
@@ -186,14 +186,14 @@ class ArgosTranslator:
                     if src_to_en is not None and en_to_tgt is not None:
                         print(f'No direct {source_iso1}->{target_iso1}; using English pivot.')
                         if not self.is_pair_installed(source_iso1, 'en'):
-                            msg = f'Downloading argos package {source_iso1} -> en…'
+                            msg = f'Downloading argos package {source_iso1} -> en'
                             print(msg)
                             download_path = src_to_en.download()
                             argostranslate.package.install_from_path(download_path)
                             msg = f'Installed argos package {source_iso1} -> en'
                             print(msg)
                         if not self.is_pair_installed('en', target_iso1):
-                            msg = f'Downloading argos package en -> {target_iso1}…'
+                            msg = f'Downloading argos package en -> {target_iso1}'
                             print(msg)
                             download_path = en_to_tgt.download()
                             argostranslate.package.install_from_path(download_path)
