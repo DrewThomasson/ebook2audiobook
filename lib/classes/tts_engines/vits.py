@@ -17,16 +17,23 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             self.resampler_cache = {}
             self.resampled_wav_cache = {}
             self.audio_segments = []
-            self.models = load_engine_presets(self.session['tts_engine'])
+            self.tts_engine = self.session.get('tts_engine')
+            self.models = load_engine_presets(self.tts_engine)
             self.params = {"semitones":{}}
+            # effective language for TTS (target when translating, else source)
             self.language = self.session.get('language')
-            tts_engine = self.session.get('tts_engine')
-            if tts_engine not in default_engine_settings:
-                error = f'Invalid tts_engine {tts_engine}.'
+            self.language_iso1 = self.session.get('language_iso1')
+            if self.session.get('translate_enabled'):
+                if self.session.get('translate'):
+                    self.language = self.session['translate']
+                if self.session.get('translate_iso1'):
+                    self.language_iso1 = self.session['translate_iso1']
+            if self.tts_engine not in default_engine_settings:
+                error = f'Invalid tts_engine {self.tts_engine}.'
                 raise ValueError(error)
-            engine_langs = default_engine_settings[tts_engine].get('languages', {})
+            engine_langs = default_engine_settings[self.tts_engine].get('languages', {})
             if self.language not in engine_langs:
-                error = f'Language {self.language} not supported by engine {tts_engine}.'
+                error = f'Language {self.language} not supported by engine {self.tts_engine}.'
                 raise ValueError(error)
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
@@ -41,7 +48,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             iso_dir = engine_langs[self.language]
             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
-                error = f'{tts_engine} checkpoint for {self.language} not found.'
+                error = f'{self.tts_engine} checkpoint for {self.language} not found.'
                 raise KeyError(error)
             self.params['samplerate'] = model_cfg['samplerate'][sub]
             self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
@@ -67,12 +74,12 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 if self.session['custom_model'] is not None:
                     try:
                         model_path = self.session['custom_model']
-                        files = default_engine_settings[self.session['tts_engine']]['files']
+                        files = default_engine_settings[self.tts_engine]['files']
                         config_path = os.path.join(model_path, files[0])
                         checkpoint_path = os.path.join(model_path, files[1])
                         custom_model_name = os.path.basename(os.path.normpath(model_path))
-                        self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
-                        engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
+                        self.tts_key = f"{self.tts_engine}-{custom_model_name}"
+                        engine = self._load_checkpoint(tts_engine=self.tts_engine, key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
                     except Exception as e:
                         error = f'load_engine(): custom checkpoint loading failed: {e}'
                         raise RuntimeError(error) from e
@@ -96,8 +103,6 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
-            import torchaudio
-            #import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
@@ -109,12 +114,13 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
-                    if self.session['voice'] == self.params['block_voice']:
-                        self.session['voice'] = self.params['current_voice']
-                    self.params['block_voice'] = self.params['current_voice']
-                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
+                use_zs = False
                 self.audio_segments = []
-                use_zs = self.params['current_voice'] is not None
+                custom_model_name = os.path.basename(self.session['custom_model']) if self.session['custom_model'] is not None else None
+                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
+                if self.speaker is not None and self.speaker != custom_model_name:
+                    if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
+                        use_zs = True
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
@@ -127,7 +133,12 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         continue
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
-                        if not success:
+                        if success:
+                            self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
+                            if self.speaker is not None and self.speaker != custom_model_name:
+                                if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
+                                    use_zs = True
+                        else:
                             return False, error
                         continue
                     if not any(c.isalnum() for c in part):
@@ -140,118 +151,116 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         speaker_argument = {}
                         if not self.session.get('custom_model'):
                             if self.language == 'eng' and 'vctk/vits' in self.models['internal']['sub']:
-                                if self.language in self.models['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['vctk/vits']:
+                                if self.language in self.models['internal']['sub']['vctk/vits'] or self.language_iso1 in self.models['internal']['sub']['vctk/vits']:
                                     speaker_argument = {"speaker": "p262"}
                             elif self.language == 'cat' and 'custom/vits' in self.models['internal']['sub']:
-                                if self.language in self.models['internal']['sub']['custom/vits'] or self.session['language_iso1'] in self.models['internal']['sub']['custom/vits']:
+                                if self.language in self.models['internal']['sub']['custom/vits'] or self.language_iso1 in self.models['internal']['sub']['custom/vits']:
                                     speaker_argument = {"speaker": "09901"}
-                        if use_zs:
-                            tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
-                            tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
-                            with torch.inference_mode():
-                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                    self.engine.tts_to_file(
-                                        text=part,
-                                        file_path=tmp_in_wav,
-                                        **speaker_argument
-                                    )
-                            if self.params['current_voice'] in self.params['semitones'].keys():
-                                semitones = self.params['semitones'][self.params['current_voice']]
-                            else:
-                                current_voice_gender = detect_gender(self.params['current_voice'])
-                                voice_builtin_gender = detect_gender(tmp_in_wav)
-                                msg = f'Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}'
-                                print(msg)
-                                if voice_builtin_gender != current_voice_gender:
-                                    semitones = -4 if current_voice_gender == 'male' else 4
-                                    msg = f'Adapting builtin voice frequencies from the clone voice…'
-                                    print(msg)
+                        try:
+                            if use_zs:
+                                tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
+                                tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
+                                with torch.inference_mode():
+                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                        self.engine.tts_to_file(
+                                            text=part,
+                                            file_path=tmp_in_wav,
+                                            **speaker_argument
+                                        )
+                                if self.params['current_voice'] in self.params['semitones'].keys():
+                                    semitones = self.params['semitones'][self.params['current_voice']]
                                 else:
-                                    semitones = 0
-                                self.params['semitones'][self.params['current_voice']] = semitones
-                            if semitones > 0:
-                                try:
-                                    cmd = [
-                                        shutil.which('sox'), tmp_in_wav,
-                                        '-r', str(self.params['samplerate']), tmp_out_wav,
-                                        'pitch', str(semitones * 100)
-                                    ]
-                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                except subprocess.CalledProcessError as e:
-                                    error = f'Subprocess error: {e.stderr}'
-                                    DependencyError(error)
-                                    return False, error
-                                except FileNotFoundError as e:
-                                    error = f'File not found: {e}'
-                                    DependencyError(error)
-                                    return False, error
+                                    current_voice_gender = detect_gender(self.params['current_voice'])
+                                    voice_builtin_gender = detect_gender(tmp_in_wav)
+                                    msg = f'Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}'
+                                    print(msg)
+                                    if voice_builtin_gender != current_voice_gender:
+                                        semitones = -4 if current_voice_gender == 'male' else 4
+                                        msg = f'Adapting builtin voice frequencies from the clone voice…'
+                                        print(msg)
+                                    else:
+                                        semitones = 0
+                                    self.params['semitones'][self.params['current_voice']] = semitones
+                                if semitones > 0:
+                                    try:
+                                        cmd = [
+                                            shutil.which('sox'), tmp_in_wav,
+                                            '-r', str(self.params['samplerate']), tmp_out_wav,
+                                            'pitch', str(semitones * 100)
+                                        ]
+                                        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                    except subprocess.CalledProcessError as e:
+                                        error = f'Subprocess error: {e.stderr}'
+                                        DependencyError(error)
+                                        return False, error
+                                    except FileNotFoundError as e:
+                                        error = f'File not found: {e}'
+                                        DependencyError(error)
+                                        return False, error
+                                else:
+                                    tmp_out_wav = tmp_in_wav
+                                samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
+                                source_wav = self._resample_wav(tmp_out_wav, samplerate)
+                                target_wav = self._resample_wav(self.params['current_voice'], samplerate)
+                                speaker_argument = {}
+                                if (self.engine_zs.speakers is not None and self.speaker not in self.engine_zs.speakers) or self.engine_zs.speakers is None:
+                                    speaker_argument['target_wav'] = target_wav
+                                audio_part = self.engine_zs.voice_conversion(
+                                    source_wav=source_wav,
+                                    speaker=self.speaker,
+                                    **speaker_argument
+                                )
+                                if os.path.exists(tmp_in_wav):
+                                    os.remove(tmp_in_wav)
+                                if os.path.exists(tmp_out_wav):
+                                    os.remove(tmp_out_wav)
+                                if os.path.exists(source_wav):
+                                    os.remove(source_wav)
+                                audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
                             else:
-                                tmp_out_wav = tmp_in_wav
-                            samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
-                            source_wav = self._resample_wav(tmp_out_wav, samplerate)
-                            target_wav = self._resample_wav(self.params['current_voice'], samplerate)
-                            speaker_argument = {}
-                            if (self.engine_zs.speakers is not None and self.speaker not in self.engine_zs.speakers) or self.engine_zs.speakers is None:
-                                speaker_argument['target_wav'] = target_wav
-                            audio_part = self.engine_zs.voice_conversion(
-                                source_wav=source_wav,
-                                speaker=self.speaker,
-                                **speaker_argument
-                            )
-                            if os.path.exists(tmp_in_wav):
-                                os.remove(tmp_in_wav)
-                            if os.path.exists(tmp_out_wav):
-                                os.remove(tmp_out_wav)
-                            if os.path.exists(source_wav):
-                                os.remove(source_wav)
-                            audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
-                        else:
-                            with torch.inference_mode():
-                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                    audio_part = self.engine.tts(
-                                        text=part,
-                                        **speaker_argument
-                                    )
-                        if torch.is_tensor(audio_part):
-                            audio_part = audio_part.detach().cpu()
-                        if is_audio_data_valid(audio_part):
-                            src_tensor = self._tensor_type(audio_part)
-                            part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                            if part_tensor is not None and part_tensor.numel() > 0:
+                                with torch.inference_mode():
+                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                        audio_part = self.engine.tts(
+                                            text=part,
+                                            **speaker_argument
+                                        )
+                            if audio_part is not None and len(audio_part) > 0:
+                                if torch.is_tensor(audio_part):
+                                    audio_part = audio_part.detach().cpu()
+                                if not is_audio_data_valid(audio_part):
+                                    error = 'audio_part not valid'
+                                    return False, error
+                                part_tensor = self._tensor_type(audio_part).detach().unsqueeze(0)
+                                if part_tensor.numel() == 0:
+                                    error = 'part_tensor not valid'
+                                    return False, error
                                 if part[-1].isalnum() or part[-1] == '—':
                                     part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
-                                del part_tensor
-                                """
-                                if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                    break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                    self.audio_segments.append(break_tensor.clone())
-                                """
                             else:
-                                error = f'part_tensor not valid'
+                                error = f'audio_part not valid'
                                 return False, error
-                        else:
-                            error = f'audio_part not valid'
-                            return False, error
+                        except IndexError as e:
+                            error = f'tts_to_file() error at {e} segment: {part}'
+                            print(error)
+                            audio_part = False
+                            pass
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
-                    #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error
-                    del segment_tensor
-                    self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
                         error = f'Cannot create {sentence_file}'
                         return False, error
                 return True, None
             else:
-                error = f"TTS engine {self.session['tts_engine']} failed to load!"
+                error = f"TTS engine {self.tts_engine} failed to load!"
                 return False, error
         except Exception as e:
             self.cleanup_memory()
+            self.audio_segments = []
             return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:

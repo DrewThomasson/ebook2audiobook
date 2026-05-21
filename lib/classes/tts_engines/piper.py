@@ -3,23 +3,24 @@ from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
-class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
+class Piper(TTSUtils, TTSRegistry, name='piper'):
 
-    def __init__(self, session:DictProxy):
+    def __init__(self, session: DictProxy):
         try:
+            from piper import SynthesisConfig
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
             self.speaker = None
             self.tts_key = self.session['model_cache']
-            self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
+            self.tts_zs_key = default_vc_model.rsplit('/', 1)[-1]
             self.pth_voice_file = None
             self.resampler_cache = {}
             self.resampled_wav_cache = {}
             self.audio_segments = []
-            self.models = load_engine_presets(self.session['tts_engine'])
-            self.params = {"semitones":{}}
-            # effective language for TTS (target when translating, else source)
+            self.tts_engine = self.session['tts_engine']
+            self.models = load_engine_presets(self.tts_engine)
+            self.params = {"semitones": {}}
             self.language = self.session.get('language')
             self.language_iso1 = self.session.get('language_iso1')
             if self.session.get('translate_enabled'):
@@ -27,34 +28,28 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     self.language = self.session['translate']
                 if self.session.get('translate_iso1'):
                     self.language_iso1 = self.session['translate_iso1']
-            tts_engine = self.session.get('tts_engine')
-            if tts_engine not in default_engine_settings:
-                error = f'Invalid tts_engine {tts_engine}.'
+            if self.tts_engine not in default_engine_settings:
+                error = f'Invalid tts_engine {self.tts_engine}.'
                 raise ValueError(error)
-            engine_langs = default_engine_settings[tts_engine].get('languages', {})
-            if self.language not in engine_langs:
-                error = f'Language {self.language} not supported by engine {tts_engine}.'
+            self.engine_langs = default_engine_settings[self.tts_engine].get('languages', {})
+            if self.language not in self.engine_langs:
+                error = f'Language {self.language} not supported by engine {self.tts_engine}.'
                 raise ValueError(error)
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
-            for required_key in ('repo', 'samplerate', 'sub'):
-                if required_key not in model_cfg:
-                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
-                    raise ValueError(error)
-            sub_dict = model_cfg['sub']
-            iso_dir = engine_langs[self.language]
-            sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-            if sub is None:
-                iso_dir = self.language
-                sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-            if sub is None:
-                error = f'{tts_engine} checkpoint for {self.language} not found.'
-                raise KeyError(error)
-            self.params['samplerate'] = model_cfg['samplerate'][sub]
-            self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
+            self.model_path = None
+            self.sub_list = model_cfg['sub']
+            self.params['samplerate'] = model_cfg['samplerate']
+            self.syn_config = SynthesisConfig(
+                volume=1.0,
+                #length_scale=1.0,  # speed
+                #noise_scale=0.8,  # more audio variation
+                #noise_w_scale=0.8,  # more speaking variation
+                normalize_audio=True
+            )
             enough_vram = self.session['free_vram_gb'] > 4.0
             seed = 0
             #random.seed(seed)
@@ -68,51 +63,51 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             raise ValueError(error)
 
     def load_engine(self)->Any:
-        msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
-        print(msg)
-        self.cleanup_memory()
-        engine = loaded_tts.get(self.tts_key)
-        if not engine:
-            #if self.session['custom_model'] is not None:
-            #    error = f"{self.session['tts_engine']} custom model not implemented yet!"
-            #    raise NotImplementedError(error)
-            self.tts_key = self.model_path
-            try:
-                engine = self._load_api(self.tts_key, self.model_path, self.device)
-            except Exception as e:
-                error = 'load_engine(): _load_api() failed'
-                raise RuntimeError(error) from e
-            try:
-                m = engine.synthesizer.tts_model
-                d = m.decoder
-                d.prenet_dropout = 0.0
-                d.attention_dropout = 0.0
-                d.decoder_dropout = 0.0
-                d.gate_threshold = 0.5
-                d.force_gate = True
-                d.gate_delay = 10
-                d.max_decoder_steps = 1000
-                d.attention_keeplast = True
-            except Exception as e:
-                error = 'load_engine(): decoder tuning failed'
-                raise RuntimeError(error) from e
-        if engine:
-            msg = f'TTS {self.tts_key} Loaded!'
+        try:
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
             print(msg)
-            return engine
-        error = 'load_engine(): engine is None'
-        raise RuntimeError(error)
+            self.cleanup_memory()
+            engine = loaded_tts.get(self.tts_key)
+            if not engine:
+                if self.session['custom_model'] is not None:
+                    self.model_path = self.session['custom_model']
+                    files = default_engine_settings[self.tts_engine]['files']
+                    config_path = os.path.join(self.model_path, files[0])
+                    checkpoint_path = os.path.join(self.model_path, files[1])
+                    model_name = os.path.basename(os.path.normpath(self.model_path))
+                    self.tts_key = f"{self.tts_engine}-{model_name}"
+                    engine = self._load_checkpoint(tts_engine=self.tts_engine, key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
+                else:
+                    piper_lang = self.engine_langs[self.language]
+                    voice_file = self.session.get('block_voice', self.session['voice'])
+                    voice_name = Path(voice_file).stem if voice_file is not None else None
+                    model_name = voice_name if any(voice_name in voices for voices in self.sub_list.values()) else self.sub_list[piper_lang][0]
+                    engine_path = os.path.join(self.cache_dir, self.tts_engine)
+                    os.makedirs(engine_path, exist_ok=True)
+                    self.model_path = os.path.join(engine_path, model_name)
+                    os.makedirs(self.model_path, exist_ok=True)
+                    config_path = os.path.join(self.model_path, f'{model_name}.onnx.json')
+                    checkpoint_path = os.path.join(self.model_path, f'{model_name}.onnx')
+                    self.tts_key = f"{self.tts_engine}-{model_name}"
+                    engine = self._load_checkpoint(tts_engine=self.tts_engine, key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
+            if engine:
+                self.params['samplerate'] = int(getattr(engine, 'output_sample_rate', None) or getattr(getattr(engine, 'config', None), 'sample_rate', self.params['samplerate']))
+                msg = f'TTS {self.tts_key} Loaded!'
+                print(msg)
+                return engine
+            error = 'load_engine(): engine is None'
+            raise RuntimeError(error)
+        except Exception as e:
+            error = f"load_engine() error: {e}"
+            raise RuntimeError(error) from e
 
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
+            import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
-                if self.language in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                    not_supported_punc_pattern = re.compile(r'\p{P}+')
-                else:
-                    not_supported_punc_pattern = re.compile(r'["—…¡¿]')
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
@@ -120,11 +115,13 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
-                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
-                proc_dir = os.path.join(self.session['voice_dir'], 'proc')
-                os.makedirs(proc_dir, exist_ok=True)
+                use_zs = False
                 self.audio_segments = []
-                use_zs = self.params['current_voice'] is not None
+                custom_model_name = os.path.basename(self.session['custom_model']) if self.session['custom_model'] is not None else None
+                self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
+                if self.speaker is not None and self.speaker != custom_model_name:
+                    if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
+                        use_zs = True
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
@@ -138,7 +135,10 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
                         if success:
-                             use_zs = self.params['current_voice'] is not None
+                            self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
+                            if self.speaker is not None and self.speaker != custom_model_name:
+                                if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
+                                    use_zs = True
                         else:
                             return False, error
                         continue
@@ -147,17 +147,13 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     else:
                         if part.endswith("'"):
                             part = part[:-1]
-                        part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         try:
                             if use_zs:
                                 tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                                 tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
-                                with torch.inference_mode():
-                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                        self.engine.tts_to_file(
-                                            text=part,
-                                            file_path=tmp_in_wav
-                                        )
+                                result = False
+                                with wave.open(tmp_in_wav, 'wb') as wav_file:
+                                    self.engine.synthesize_wav(part, wav_file, syn_config=self.syn_config)
                                 if self.params['current_voice'] in self.params['semitones'].keys():
                                     semitones = self.params['semitones'][self.params['current_voice']]
                                 else:
@@ -209,11 +205,15 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                     os.remove(source_wav)
                                 audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
                             else:
-                                with torch.inference_mode():
-                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                        audio_part = self.engine.tts(
-                                            text=part
-                                        )
+                                audio_part = None
+                                chunks = []
+                                for chunk in self.engine.synthesize(part, syn_config=self.syn_config):
+                                    arr = chunk.audio_float_array
+                                    chunks.append(arr)
+                                if not chunks:
+                                    error = f'synthesize() yielded no chunks for: {part}'
+                                    return False, error
+                                audio_part = np.concatenate(chunks).astype(np.float32, copy=False)
                             if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
@@ -224,14 +224,15 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                 if part_tensor.numel() == 0:
                                     error = 'part_tensor not valid'
                                     return False, error
+                                self.audio_segments.append(part_tensor)
                             else:
                                 error = f'audio_part not valid'
                                 return False, error
                         except IndexError as e:
-                            error = f'tts() error at {e} segment: {part}'
-                            print(error)
-                            audio_part = False
-                            pass
+                            error = f'synthesize() IndexError at segment "{part}": {e}'
+                            return False, error
+                        except Exception as e:
+                            return False, self.log_exception(f'{self.__class__.__name__}.convert() part loop', e)
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
@@ -243,7 +244,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                         return False, error
                 return True, None
             else:
-                error = f"TTS engine {self.session['tts_engine']} failed to load!"
+                error = f"TTS engine {self.tts_engine} failed to load!"
                 return False, error
         except Exception as e:
             self.cleanup_memory()

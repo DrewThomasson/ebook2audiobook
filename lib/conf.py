@@ -18,13 +18,17 @@ archs = {
 }
 
 cli_options = [
-    '--script_mode', '--docker_mode', '--session', '--share', '--headless', 
-    '--ebook', '--ebooks_dir', '--text', '--language', '--voice', '--voice_map',
-    '--device', '--tts_engine', '--custom_model', '--fine_tuned',
-    '--output_format', '--output_channel',
-    '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', 
-    '--top_k', '--top_p', '--speed', '--enable_text_splitting', '--text_temp',
-    '--waveform_temp', '--output_dir', '--version', '--docker_device', '--workflow', '--help'
+    '--script_mode', '--docker_mode', '--session',
+    '--share', '--headless', '--ebook', 
+    '--ebooks_dir', '--text', '--language', 
+    '--translate', '--voice', '--voice_map',
+    '--device', '--tts_engine', '--custom_model', 
+    '--fine_tuned', '--output_format', '--output_channel',
+    '--temperature', '--length_penalty', '--num_beams', 
+    '--repetition_penalty', '--top_k', '--top_p', 
+    '--speed', '--enable_text_splitting', '--text_temp',
+    '--waveform_temp', '--output_dir', '--version', 
+    '--docker_device', '--workflow', '--help'
 ]
 
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
@@ -61,6 +65,7 @@ devices = {
 }
 
 device_info_json = '.device_info.json'
+device_info_dict = {"gpu_count": 0, "gpu_backend": None}
 
 default_device = devices['CPU']['proc']
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
@@ -159,14 +164,16 @@ os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:True'
 os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
-os.environ['SUNO_OFFLOAD_CPU'] = 'False'
-os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
+os.environ['SUNO_OFFLOAD_CPU'] = 'FALSE'
+os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'
 os.environ['TORCH_CPP_LOG_LEVEL'] = 'ERROR'
 os.environ['MIOPEN_FIND_MODE'] = '2'
 os.environ['MIOPEN_FIND_ENFORCE'] = '0'
 os.environ['MIOPEN_LOG_LEVEL'] = '2'
 os.environ['MIOPEN_DEBUG_CONV_IMPLICIT_GEMM'] = '0'
 os.environ['HSA_NO_SCRATCH_RECLAIM'] = '0'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+os.environ['OMP_NUM_THREADS'] = '1'
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
 

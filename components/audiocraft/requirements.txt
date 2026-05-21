@@ -10,7 +10,7 @@ av==11.0.0
 ffmpeg-python==0.2.0
 
 # --- Transformers / HuggingFace stack ---
-transformers==5.0.0rc3
+transformers==5.8.0
 tokenizers==0.19.1
 sentencepiece==0.2.0
 accelerate==0.33.0
@@ -34,5 +34,5 @@ pydantic==1.10.14
 # --- Utilities ---
 tqdm==4.66.4
 requests==2.33.0
-urllib3==2.6.3
+urllib3==2.7.0
 packaging==24.1

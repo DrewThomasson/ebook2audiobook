@@ -1,6 +1,6 @@
-import os, sys, threading, gc, ctypes, shutil, tempfile, warnings, regex as re
+import os, sys, threading, gc, ctypes, tempfile, regex as re
 
-from typing import Any, Union, Dict, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 from cryptography.fernet import Fernet
 from pathlib import Path
 
@@ -139,7 +139,7 @@ class TTSUtils:
             pass
         return total
 
-    def _loaded_tts_size_gb(self, loaded_tts:Dict[str, 'Module'])->float:
+    def _loaded_tts_size_gb(self, loaded_tts:dict[str, 'Module'])->float:
         total_bytes = 0
         for model in loaded_tts.values():
             try:
@@ -155,7 +155,7 @@ class TTSUtils:
             from huggingface_hub import hf_hub_download
             if len(xtts_builtin_speakers_list) > 0:
                 return xtts_builtin_speakers_list
-            speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTSv2']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+            speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTS']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
             loaded = torch.load(speakers_path, weights_only=False)
             if not isinstance(loaded, dict):
                 error = f'Invalid XTTS speakers format: {type(loaded)}'
@@ -172,7 +172,7 @@ class TTSUtils:
         import torch
         using_gpu = self.session['device'] != devices['CPU']['proc']
         device = self.session['device']
-        torch.manual_seed(seed)
+        #torch.manual_seed(seed)
         has_cuda = hasattr(torch, 'cuda') and torch.cuda.is_available()
         has_mps = hasattr(torch.backends, 'mps') and torch.backends.mps.is_available()
         has_xpu = hasattr(torch, 'xpu') and torch.xpu.is_available()
@@ -188,10 +188,10 @@ class TTSUtils:
         if not using_gpu:
             return amp_dtype
         if has_cuda:
-            amp_dtype = torch.float16
-            # --- CUDA health check: fail fast instead of configuring a broken context ---
+            # --- CUDA health check: force lazy init, fail fast on a broken context ---
             try:
-                torch.cuda.manual_seed_all(seed)
+                #torch.cuda.manual_seed_all(seed)
+                torch.cuda.current_device()
             except Exception as e:
                 error = f'[_apply_gpu_policy] CUDA init failed ({e!r}), falling back to FP32'
                 print(error)
@@ -210,21 +210,17 @@ class TTSUtils:
                 is_jetson = is_cuda and platform.machine() in ('aarch64', 'arm64')
             except Exception:
                 is_jetson = False
-            # Memory pressure handling — only throttle on cards with headroom
-            if hasattr(torch.cuda, 'set_per_process_memory_fraction'):
-                try:
-                    total_gb = torch.cuda.get_device_properties(0).total_memory / 1024**3
-                    if total_gb >= 10:
-                        torch.cuda.set_per_process_memory_fraction(0.90 if quality_mode else 0.80)
-                    # else: let the caching allocator breathe on 6–8 GB cards
-                except Exception:
-                    pass
+            # BF16 on Ampere+, FP16 on Turing/Volta — BF16 is safer for autoregressive decoders (XTTS GPT)
+            if cc_major >= 8:
+                amp_dtype = torch.bfloat16
+            else:
+                amp_dtype = torch.float16
             # cuDNN base config — benchmark=True is bad for TTS (variable-length inputs)
             if hasattr(torch.backends, 'cudnn'):
                 try:
                     torch.backends.cudnn.enabled = True
                     torch.backends.cudnn.benchmark = False
-                    torch.backends.cudnn.deterministic = not quality_mode
+                    torch.backends.cudnn.deterministic = False
                 except Exception:
                     pass
             # TF32 — Ampere+, non-Jetson, non-ROCm, quality mode only
@@ -232,11 +228,11 @@ class TTSUtils:
                 is_cuda and not is_jetson and not is_rocm
                 and cc_major >= 8 and quality_mode
             )
-            # SDP attention — flash + mem-efficient are Ampere+ only; math kernel always on
+            # SDP attention — flash is Ampere+, mem-efficient is Volta+, math always on
             if hasattr(torch.backends, 'cuda'):
                 try:
                     torch.backends.cuda.enable_flash_sdp(cc_major >= 8)
-                    torch.backends.cuda.enable_mem_efficient_sdp(cc_major >= 8)
+                    torch.backends.cuda.enable_mem_efficient_sdp(cc_major >= 7)
                     torch.backends.cuda.enable_math_sdp(True)
                 except Exception:
                     pass
@@ -258,20 +254,19 @@ class TTSUtils:
             return amp_dtype
         # ================= Apple MPS =================
         if has_mps:
-            torch.mps.manual_seed(seed)
+            #torch.mps.manual_seed(seed)
             amp_dtype = torch.float16
             return amp_dtype
         # ================= Intel XPU =================
         if has_xpu:
-            try:
-                torch.xpu.manual_seed_all(seed)
-            except Exception:
-                try:
-                    torch.xpu.manual_seed(seed)
-                except Exception:
-                    pass
-            #return torch.bfloat16
-            return torch.float16
+            #try:
+            #    torch.xpu.manual_seed_all(seed)
+            #except Exception:
+            #    try:
+            #        torch.xpu.manual_seed(seed)
+            #    except Exception:
+            #        pass
+            return torch.bfloat16
         return amp_dtype
 
     def _load_api(self, key:str, model_path:str, device:str)->Any:
@@ -318,88 +313,99 @@ class TTSUtils:
     def _load_checkpoint(self,**kwargs:Any)->Any:
         try:
             with _lock:
-                import torch
-                import torch.nn as nn
                 key = kwargs.get('key')
-                engine = loaded_tts.get(key, False)
                 device = kwargs.get('device', 'cpu')
-                target_dev = torch.device(device)
-                is_accel = target_dev.type != 'cpu'
-                if not engine:
-                    engine_name = kwargs.get('tts_engine', None)
-                    checkpoint_path = kwargs.get('checkpoint_path')
-                    config_path = kwargs.get('config_path', None)
-                    vocab_path = kwargs.get('vocab_path', None)
-                    if not checkpoint_path or not os.path.exists(checkpoint_path):
-                        error = f'Missing or invalid checkpoint_path: {checkpoint_path}'
-                        raise FileNotFoundError(error)
-                    if not config_path or not os.path.exists(config_path):
-                        error = f'Missing or invalid config_path: {config_path}'
-                        raise FileNotFoundError(error)
-                    if engine_name == TTS_ENGINES['XTTSv2']:
-                        from TTS.tts.configs.xtts_config import XttsConfig
-                        from TTS.tts.models.xtts import Xtts
-                        config = XttsConfig()
-                        config.models_dir = os.path.join('models','tts')
-                        config.load_json(config_path)
-                        engine = Xtts.init_from_config(config)
-                        engine.load_checkpoint(
-                            config,
-                            checkpoint_path = checkpoint_path,
-                            vocab_path = vocab_path,
-                            eval = True
-                        )
-                    elif engine_name == TTS_ENGINES['VITS']:
-                        from TTS.api import TTS as TTSEngine
-                        engine = TTSEngine(model_path=checkpoint_path, config_path=config_path, progress_bar=False)
-                    elif engine_name == TTS_ENGINES['FAIRSEQ']:
-                        from TTS.utils.synthesizer import Synthesizer
-                        if not vocab_path or not os.path.exists(vocab_path):
-                            error = f'Missing or invalid vocab_path: {vocab_path}'
+                engine_name = kwargs.get('tts_engine', None)
+                checkpoint_path = kwargs.get('checkpoint_path')
+                config_path = kwargs.get('config_path', None)
+                vocab_path = kwargs.get('vocab_path', None)
+                if engine_name == TTS_ENGINES['PIPER']:
+                    from piper import PiperVoice
+                    from piper.download_voices import download_voice
+                    engine = loaded_tts.get(key, False)
+                    if engine:
+                        return engine
+                    if self.session['custom_model'] is None:
+                        download_voice(Path(self.model_path).stem, Path(self.model_path))
+                    use_cuda = self.device == devices['CUDA']['proc']
+                    engine = PiperVoice.load(checkpoint_path, config_path=config_path, use_cuda=use_cuda)
+                elif engine_name in tts_engines_from_coqui:
+                    import torch
+                    import torch.nn as nn
+                    engine = loaded_tts.get(key, False)
+                    target_dev = torch.device(device)
+                    is_accel = target_dev.type != 'cpu'
+                    if not engine:
+                        if not checkpoint_path or not os.path.exists(checkpoint_path):
+                            error = f'Missing or invalid checkpoint_path: {checkpoint_path}'
                             raise FileNotFoundError(error)
-                        custom_dir = os.path.dirname(checkpoint_path)
-                        syn = Synthesizer(model_dir=custom_dir, use_cuda=is_accel)
-                        class _FairseqEngine(nn.Module):
-                            def __init__(self, synthesizer:'Synthesizer'):
-                                super().__init__()
-                                self.synthesizer = synthesizer
-                                self.output_sample_rate = synthesizer.output_sample_rate
-                            def tts(self, text:str, **_:Any)->Any:
-                                return self.synthesizer.tts(text)
-                            def tts_to_file(self, text:str, file_path:str, **_:Any)->str:
-                                wav = self.synthesizer.tts(text)
-                                self.synthesizer.save_wav(wav, file_path)
-                                return file_path
-                        engine = _FairseqEngine(syn)
-                    else:
-                        error = f'_load_checkpoint(): unsupported tts_engine {engine_name}'
-                        raise ValueError(error)
-                if engine:
-                    engine.to(device)
-                    engine.eval()
-                    ## Walk the actual weight-bearing module(s).
-                    ## XTTS / fairseq shim: engine itself is an nn.Module that owns the params.
-                    ## VITS via TTS API: weights live inside engine.synthesizer (TTS class doesn't register it as a submodule).
-                    walk_targets = []
-                    syn = getattr(engine, 'synthesizer', None)
-                    if syn is not None:
-                        syn.use_cuda = is_accel
-                        walk_targets.append(syn)
-                    else:
-                        walk_targets.append(engine)
-                    for tgt in walk_targets:
-                        for _, m in tgt.named_modules():
-                            m.to(device)
-                            m.eval()
-                            for pname, p in list(m.named_parameters(recurse=False)):
-                                if p.device != target_dev:
-                                    with torch.no_grad():
-                                        new_p = nn.Parameter(p.data.to(device), requires_grad=p.requires_grad)
-                                    setattr(m, pname, new_p)
-                            for bname, b in list(m.named_buffers(recurse=False)):
-                                if b.device != target_dev:
-                                    persistent = bname not in m._non_persistent_buffers_set
-                                    m.register_buffer(bname, b.to(device), persistent=persistent)
+                        if not config_path or not os.path.exists(config_path):
+                            error = f'Missing or invalid config_path: {config_path}'
+                            raise FileNotFoundError(error)
+                        if engine_name == TTS_ENGINES['XTTS']:
+                            from TTS.tts.configs.xtts_config import XttsConfig
+                            from TTS.tts.models.xtts import Xtts
+                            config = XttsConfig()
+                            config.models_dir = os.path.join('models','tts')
+                            config.load_json(config_path)
+                            engine = Xtts.init_from_config(config)
+                            engine.load_checkpoint(
+                                config,
+                                checkpoint_path = checkpoint_path,
+                                vocab_path = vocab_path,
+                                eval = True
+                            )
+                        elif engine_name == TTS_ENGINES['VITS']:
+                            from TTS.api import TTS as TTSEngine
+                            engine = TTSEngine(model_path=checkpoint_path, config_path=config_path, progress_bar=False)
+                        elif engine_name == TTS_ENGINES['FAIRSEQ']:
+                            from TTS.utils.synthesizer import Synthesizer
+                            if not vocab_path or not os.path.exists(vocab_path):
+                                error = f'Missing or invalid vocab_path: {vocab_path}'
+                                raise FileNotFoundError(error)
+                            custom_dir = os.path.dirname(checkpoint_path)
+                            syn = Synthesizer(model_dir=custom_dir, use_cuda=is_accel)
+                            class _FairseqEngine(nn.Module):
+                                def __init__(self, synthesizer:'Synthesizer'):
+                                    super().__init__()
+                                    self.synthesizer = synthesizer
+                                    self.output_sample_rate = synthesizer.output_sample_rate
+                                def tts(self, text:str, **_:Any)->Any:
+                                    return self.synthesizer.tts(text)
+                                def tts_to_file(self, text:str, file_path:str, **_:Any)->str:
+                                    wav = self.synthesizer.tts(text)
+                                    self.synthesizer.save_wav(wav, file_path)
+                                    return file_path
+                            engine = _FairseqEngine(syn)
+                        else:
+                            error = f'_load_checkpoint(): unsupported tts_engine {engine_name}'
+                            raise ValueError(error)
+                    if engine:
+                        engine.to(device)
+                        engine.eval()
+                        ## Walk the actual weight-bearing module(s).
+                        ## XTTS / fairseq shim: engine itself is an nn.Module that owns the params.
+                        ## VITS via TTS API: weights live inside engine.synthesizer (TTS class doesn't register it as a submodule).
+                        walk_targets = []
+                        syn = getattr(engine, 'synthesizer', None)
+                        if syn is not None:
+                            syn.use_cuda = is_accel
+                            walk_targets.append(syn)
+                        else:
+                            walk_targets.append(engine)
+                        for tgt in walk_targets:
+                            for _, m in tgt.named_modules():
+                                m.to(device)
+                                m.eval()
+                                for pname, p in list(m.named_parameters(recurse=False)):
+                                    if p.device != target_dev:
+                                        with torch.no_grad():
+                                            new_p = nn.Parameter(p.data.to(device), requires_grad=p.requires_grad)
+                                        setattr(m, pname, new_p)
+                                for bname, b in list(m.named_buffers(recurse=False)):
+                                    if b.device != target_dev:
+                                        persistent = bname not in m._non_persistent_buffers_set
+                                        m.register_buffer(bname, b.to(device), persistent=persistent)
                     vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                     self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
@@ -436,14 +442,14 @@ class TTSUtils:
             import numpy as np
             from huggingface_hub import hf_hub_download
             voice_parts = Path(current_voice).parts
-            if (self.session['language'] in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.session['language'] == 'eng'):
+            if (self.language in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.language == 'eng'):
                 if os.path.exists(current_voice):
                     return current_voice
-            xtts = TTS_ENGINES['XTTSv2']
-            if self.session['language'] in default_engine_settings[xtts].get('languages', {}):
-                default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
+            xtts = TTS_ENGINES['XTTS']
+            if self.language in default_engine_settings[xtts].get('languages', {}):
+                default_text_file = os.path.join(voices_dir, self.language, 'default.txt')
                 if os.path.exists(default_text_file):
-                    msg = f"Converting builtin eng voice to {self.session['language']}…"
+                    msg = f"Converting builtin eng voice to {self.language}…"
                     print(msg)
                     key = f'{xtts}-internal'
                     default_text = Path(default_text_file).read_text(encoding='utf-8')
@@ -490,7 +496,7 @@ class TTSUtils:
                             with torch.autocast(device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                 result = engine.inference(
                                     text=default_text.strip(),
-                                    language=self.session['language_iso1'],
+                                    language=self.language_iso1,
                                     gpt_cond_latent=gpt_cond_latent,
                                     speaker_embedding=speaker_embedding,
                                     **fine_tuned_params,
@@ -504,7 +510,7 @@ class TTSUtils:
                             audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                             if audio_tensor is not None and audio_tensor.numel() > 0:
                                 # CON is a reserved name on windows
-                                lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
+                                lang_dir = 'con-' if self.language == 'con' else self.language
                                 # Rebuild the path under the new language folder.
                                 # Works for any old-language → any new-language swap (eng→fra, zho→fra, …),
                                 # not just eng→X. xtts voices are always absolute paths under voices_dir.
@@ -625,12 +631,19 @@ class TTSUtils:
 
     def _set_voice(self, voice:str|None)->tuple:
         current_voice = (voice if voice is not None else self.models[self.session['fine_tuned']]['voice'])
-        if current_voice is not None:
-            speaker = re.sub(r'\.wav$', '', os.path.basename(current_voice))
-            if current_voice not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and self.session['custom_model_dir'] not in current_voice:
+        if current_voice is None:
+            if self.session['custom_model'] is not None:
+                voice_file = f"{Path(self.session['custom_model']).stem}.wav"
+                current_voice = os.path.join(self.session['custom_model'], voice_file)
+        else:
+            speaker = Path(current_voice).stem
+            if(
+                (speaker not in {k for engine in default_engine_settings.values() for k in engine['voices']}) and 
+                (self.session['custom_model_dir'] not in current_voice)
+              ):
                 current_voice = self._check_xtts_builtin_speakers(current_voice, speaker)
                 if not current_voice:
-                    error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.session['language']}"
+                    error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.language}"
                     return None, error
         return current_voice, None
         
@@ -674,10 +687,10 @@ class TTSUtils:
             return True, None
         elif tag == 'voice':
             if close:
-                self.params['inline_voice'] = None
                 voice_orig, error = self._set_voice(self.params['block_voice'])
                 if voice_orig is None and error is not None:
                     return False, error
+                self.params['inline_voice'] = None
                 self.params['block_voice'] = self.params['current_voice'] = voice_orig
                 return True, None
             if not value:

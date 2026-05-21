@@ -50,7 +50,8 @@ class DeviceInstaller():
                     with open(device_info_json, 'w', encoding='utf-8') as f:
                         json.dump(device_info, f)
                 except OSError as e:
-                    print(f'warning: could not write .device_info.json: {e}', file=sys.stderr)
+                    error = f'warning: could not write .device_info.json: {e}'
+                    print(error, file=sys.stderr)
                 return json.dumps(device_info)
         elif mode == FULL_DOCKER:
             device_info = None
@@ -82,7 +83,8 @@ class DeviceInstaller():
                 with open(device_info_json, 'w', encoding='utf-8') as f:
                     json.dump(device_info, f)
             except OSError as e:
-                print(f'warning: could not write .device_info.json: {e}', file=sys.stderr)
+                error = f'warning: could not write .device_info.json: {e}'
+                print(error, file=sys.stderr)
             return json.dumps(device_info)
         return ''
         
@@ -1028,8 +1030,8 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
-        if self.system == systems['MACOS'] and self.arch == archs['X86_64']:
-            overrides['numba'] = 'numba==0.62.0'
+        if self.system == systems['MACOS']:
+            overrides['onnxruntime-gpu'] = None
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
@@ -1045,6 +1047,8 @@ class DeviceInstaller():
                     head = re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower()
                     if head in {'torch', 'torchaudio'}:
                         continue
+                    if head == 'onnxruntime-gpu' and self.system == systems['MACOS']:
+                        continue
                     if head in overrides:
                         pkg = overrides[head]
                     packages.append(pkg)
@@ -1058,7 +1062,8 @@ class DeviceInstaller():
                         if not self.eval_marker(marker_part):
                             continue
                     except Exception as e:
-                        print(f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}')
+                        error = f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}'
+                        print(error)
                     raw_pkg = pkg_part.strip()
                 clean_pkg = re.sub(r'\[.*?\]', '', raw_pkg)
                 local_path = None
@@ -1075,29 +1080,34 @@ class DeviceInstaller():
                 if 'git+' in raw_pkg or '://' in raw_pkg:
                     spec = importlib.util.find_spec(pkg_name)
                     if spec is None:
-                        print(f'{pkg_name} (git package) is missing.')
+                        msg = f'{pkg_name} (git package) is missing.'
+                        print(msg)
                         missing_packages.append(raw_pkg)
                     continue
                 if local_path:
                     pkg_name = os.path.basename(local_path)
                     vendor_version = self.version_pkg(None, local_path)
                     if not vendor_version:
-                        print(f'{local_path} has no detectable version.')
+                        msg = f'{local_path} has no detectable version.'
+                        print(msg)
                         missing_packages.append(raw_pkg)
                         continue
                     try:
                         installed_version = version(pkg_name)
                     except PackageNotFoundError:
-                        print(f'{pkg_name} is not installed.')
+                        error = f'{pkg_name} is not installed.'
+                        print(error)
                         missing_packages.append(raw_pkg)
                         continue
                     if installed_version != vendor_version:
-                        print(f'{pkg_name} version mismatch: installed {installed_version} != vendor {vendor_version}.')
+                        msg = f'{pkg_name} version mismatch: installed {installed_version} != vendor {vendor_version}.'
+                        print(msg)
                         missing_packages.append(raw_pkg)
                     continue
                 installed_version = self.version_pkg(pkg_name, None)
                 if not installed_version:
-                    print(f'{pkg_name} is not installed.')
+                    msg = f'{pkg_name} is not installed.'
+                    print(msg)
                     missing_packages.append(raw_pkg)
                     continue
                 if '+' in installed_version:
@@ -1113,25 +1123,32 @@ class DeviceInstaller():
                         short_version = norm_match.group(1) if norm_match else installed_version
                         installed_v = self.version_tuple(short_version, 3)
                         if op == '==' and installed_v != req_v:
-                            print(f'{pkg_name} (installed {installed_version}) != required {req_ver}.')
+                            msg = f'{pkg_name} (installed {installed_version}) != required {req_ver}.'
+                            print(msg)
                             missing_packages.append(raw_pkg)
                         elif op == '>=' and installed_v < req_v:
-                            print(f'{pkg_name} (installed {installed_version}) < required {req_ver}.')
+                            msg = f'{pkg_name} (installed {installed_version}) < required {req_ver}.'
+                            print(msg)
                             missing_packages.append(raw_pkg)
                         elif op == '<=' and installed_v > req_v:
-                            print(f'{pkg_name} (installed {installed_version}) > allowed {req_ver}.')
+                            msg = f'{pkg_name} (installed {installed_version}) > allowed {req_ver}.'
+                            print(msg)
                             missing_packages.append(raw_pkg)
                         elif op == '>' and installed_v <= req_v:
-                            print(f'{pkg_name} (installed {installed_version}) <= required {req_ver}.')
+                            msg = f'{pkg_name} (installed {installed_version}) <= required {req_ver}.'
+                            print(msg)
                             missing_packages.append(raw_pkg)
                         elif op == '<' and installed_v >= req_v:
-                            print(f'{pkg_name} (installed {installed_version}) >= restricted {req_ver}.')
+                            msg = f'{pkg_name} (installed {installed_version}) >= restricted {req_ver}.'
+                            print(msg)
                             missing_packages.append(raw_pkg)
                         elif op == '!=' and installed_v == req_v:
-                            print(f'{pkg_name} (installed {installed_version}) == excluded {req_ver}.')
+                            msg = f'{pkg_name} (installed {installed_version}) == excluded {req_ver}.'
+                            print(msg)
                             missing_packages.append(raw_pkg)
             if missing_packages:
-                print('\nInstalling missing or upgrade packages…\n')
+                msg = '\nInstalling missing or upgrade packages…\n'
+                print(msg)
                 subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
                 for raw_pkg in missing_packages:
@@ -1140,12 +1157,15 @@ class DeviceInstaller():
                         cmd.append(raw_pkg)
                         subprocess.check_call(cmd)
                     except subprocess.CalledProcessError as e:
-                        print(f'Failed to install {raw_pkg}: {e}')
+                        msg = f'Failed to install {raw_pkg}: {e}'
+                        print(msg)
                         return 1
-                print('\nAll required packages are installed.')
+                msg = '\nAll required packages are installed.'
+                print(msg)
             return self.check_dictionary()
         except Exception as e:
-            print(f'install_python_packages() error: {e}')
+            error = f'install_python_packages() error: {e}'
+            print(error)
             return 1
 
     def check_numpy(self)->bool:
@@ -1240,11 +1260,25 @@ class DeviceInstaller():
                 return True
             return False
 
+        def _probe_gpus()->dict:
+            script = os.path.abspath('./tools/detect_gpus.py')
+            try:
+                proc = subprocess.run(
+                    [sys.executable, script],
+                    capture_output=True, text=True, timeout=30,
+                )
+                if proc.returncode != 0:
+                    return {'count': 0, 'backend': None, 'error': proc.stderr.strip() or 'non-zero exit'}
+                return json.loads(proc.stdout.strip() or '{}')
+            except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as e:
+                return {'count': 0, 'backend': None, 'error': str(e)}
+
         try:
             if device_info_str:
                 device_info = json.loads(device_info_str)
                 if device_info:
-                    print(f'---> Hardware detected: {device_info}')
+                    msg = f'---> Hardware detected: {device_info}'
+                    print(msg)
                     tag = device_info.get('tag')
                     if tag in ['unknown','unsupported']:
                         return 0
@@ -1339,20 +1373,38 @@ class DeviceInstaller():
                     if device_info['os'] == 'linux' and ('jetpack' in device_info.get('note', '').lower() or device_info['name'] == devices['JETSON']['proc']):
                         libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
                         if os.path.exists(libgomp_src):
-                            libs_dir = os.path.join('python_env', 'lib', f'python{sys.version_info.major}.{sys.version_info.minor}', 'site-packages', 'scikit_learn.libs')
-                            if os.path.isdir(libs_dir):
-                                for libgomp_dst in glob(os.path.join(libs_dir, 'libgomp*')):
-                                    if os.path.islink(libgomp_dst):
-                                        if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
-                                            continue
-                                        os.unlink(libgomp_dst)
-                                    else:
-                                        os.unlink(libgomp_dst)
-                                    msg = 'Create symlink to use OS libgomp.'
-                                    print(msg)
-                                    os.symlink(libgomp_src, libgomp_dst)
+                            libs_list = ['ctranslate2.libs', 'scikit_learn.libs']
+                            libs_dir = os.path.join('python_env', 'lib', f'python{sys.version_info.major}.{sys.version_info.minor}', 'site-packages')
+                            for lib in libs_list:
+                                lib_path = os.path.join(libs_dir, lib)
+                                if os.path.isdir(lib_path):
+                                    for libgomp_dst in glob(os.path.join(lib_path, 'libgomp*')):
+                                        if os.path.islink(libgomp_dst):
+                                            if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
+                                                continue
+                                            os.unlink(libgomp_dst)
+                                        else:
+                                            os.unlink(libgomp_dst)
+                                        msg = 'Create symlink to use OS libgomp.'
+                                        print(msg)
+                                        os.symlink(libgomp_src, libgomp_dst)
                     if not self.check_numpy():
                         return 1
+                    gpu_info = _probe_gpus()
+                    device_info_dict['gpu_count'] = gpu_info['count']
+                    device_info_dict['gpu_backend'] = gpu_info['backend']
+                    if gpu_info.get('error'):
+                        error = f'GPU detection warning: {gpu_info["error"]}'
+                        print(error)
+                    if gpu_info['count'] > 0:
+                        idx = ','.join(str(i) for i in range(gpu_info['count']))
+                        if gpu_info['backend'] == 'cuda':
+                            os.environ['CUDA_VISIBLE_DEVICES'] = idx
+                        elif gpu_info['backend'] == 'rocm':
+                            os.environ['HIP_VISIBLE_DEVICES'] = idx
+                        elif gpu_info['backend'] == 'xpu':
+                            os.environ['ONEAPI_DEVICE_SELECTOR'] = f'level_zero:{idx}'
+                            os.environ['ZE_AFFINITY_MASK'] = idx
                     return 0
                 else:
                     error = 'install_device_packages() error: device_info_str is empty'

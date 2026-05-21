@@ -3,7 +3,7 @@ from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
-class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
+class XTTS(TTSUtils, TTSRegistry, name='xtts'):
 
     def __init__(self, session:DictProxy):
         try:
@@ -19,6 +19,14 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {"latent_embedding":{}}
+            # effective language for TTS (target when translating, else source)
+            self.language = self.session.get('language')
+            self.language_iso1 = self.session.get('language_iso1')
+            if self.session.get('translate_enabled'):
+                if self.session.get('translate'):
+                    self.language = self.session['translate']
+                if self.session.get('translate_iso1'):
+                    self.language_iso1 = self.session['translate_iso1']
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
                 error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
@@ -35,6 +43,24 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             self.amp_dtype = self._apply_gpu_policy(enough_vram=enough_vram, seed=seed)
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
+            self.fine_tuned_params = {
+                key.removeprefix('xtts_'): cast_type(self.session[key])
+                for key, cast_type in {
+                    'xtts_temperature': float,
+                    #'xtts_codec_temperature': float,
+                    'xtts_length_penalty': float,
+                    'xtts_num_beams': int,
+                    'xtts_repetition_penalty': float,
+                    #'xtts_cvvp_weight': float,
+                    'xtts_top_k': int,
+                    'xtts_top_p': float,
+                    'xtts_speed': float,
+                    #'xtts_gpt_cond_len': int,
+                    #'xtts_gpt_batch_size': int,
+                    'xtts_enable_text_splitting': bool
+                }.items()
+                if self.session.get(key) is not None
+            }
             self.engine = self.load_engine()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -51,9 +77,9 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                 if self.session['custom_model'] is not None:
                     try:
                         model_path = self.session['custom_model']
-                        config_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
-                        checkpoint_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
-                        vocab_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][2])
+                        config_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTS']]['files'][0])
+                        checkpoint_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTS']]['files'][1])
+                        vocab_path = os.path.join(model_path, default_engine_settings[TTS_ENGINES['XTTS']]['files'][2])
                         custom_model_name = os.path.basename(os.path.normpath(model_path))
                         self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
                         engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
@@ -89,7 +115,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
-            import torchaudio
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
@@ -101,27 +126,6 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     self.params['current_voice'], error = self._set_voice(self.params['block_voice'])
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
-                    if self.session['voice'] == self.params['block_voice']:
-                        self.session['voice'] = self.params['current_voice']
-                    self.params['block_voice'] = self.params['current_voice']
-                fine_tuned_params = {
-                    key.removeprefix('xtts_'): cast_type(self.session[key])
-                    for key, cast_type in {
-                        'xtts_temperature': float,
-                        #'xtts_codec_temperature': float,
-                        'xtts_length_penalty': float,
-                        'xtts_num_beams': int,
-                        'xtts_repetition_penalty': float,
-                        #'xtts_cvvp_weight': float,
-                        'xtts_top_k': int,
-                        'xtts_top_p': float,
-                        'xtts_speed': float,
-                        #'xtts_gpt_cond_len': int,
-                        #'xtts_gpt_batch_size': int,
-                        'xtts_enable_text_splitting': bool
-                    }.items()
-                    if self.session.get(key) is not None
-                }
                 self.audio_segments = []
                 for part in sentence_parts:
                     part = part.strip()
@@ -144,49 +148,50 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                         else:
                             msg = 'Computing speaker latents…'
                             print(msg)
-                            if self.speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][self.speaker]].values()
+                            if self.speaker in default_engine_settings[TTS_ENGINES['XTTS']]['voices'].keys():
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTS']]['voices'][self.speaker]].values()
                             else:
                                 self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], load_sr=24000, sound_norm_refs=True)
                             self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
-                        with torch.inference_mode():
-                            with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                result = self.engine.inference(
-                                    text=part,
-                                    language=self.session['language_iso1'],
-                                    gpt_cond_latent=self.params['gpt_cond_latent'],
-                                    speaker_embedding=self.params['speaker_embedding'],
-                                    **fine_tuned_params
-                                )
-                        audio_part = result.get('wav')
-                        if torch.is_tensor(audio_part):
-                            audio_part = audio_part.detach().cpu()
-                        if is_audio_data_valid(audio_part):
-                            src_tensor = self._tensor_type(audio_part)
-                            part_tensor = src_tensor.clone().detach().unsqueeze(0).cpu()
-                            if part_tensor is not None and part_tensor.numel() > 0:
+                        result = False
+                        try:
+                            with torch.inference_mode():
+                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                    result = self.engine.inference(
+                                        text=part,
+                                        language=self.language_iso1,
+                                        gpt_cond_latent=self.params['gpt_cond_latent'],
+                                        speaker_embedding=self.params['speaker_embedding'],
+                                        **self.fine_tuned_params
+                                    )
+                            if result:
+                                audio_part = result.get('wav')
+                                if not is_audio_data_valid(audio_part):
+                                    error = 'audio_part not valid'
+                                    return False, error
+                                part_tensor = self._tensor_type(audio_part).detach().unsqueeze(0)
+                                if part_tensor.numel() == 0:
+                                    error = 'part_tensor not valid'
+                                    return False, error
                                 if part[-1].isalnum() or part[-1] == '—':
                                     part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
-                                del part_tensor
                                 if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
                                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                    break_tensor = torch.zeros(1, int(self.params['samplerate'] * silence_time))
-                                    self.audio_segments.append(break_tensor.clone())
+                                    self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)))
                             else:
-                                error = f'part_tensor not valid'
+                                error = f'audio_part not valid'
                                 return False, error
-                        else:
-                            error = f'audio_part not valid'
-                            return False, error
+                        except IndexError as e:
+                            error = f'inference() error at {e} segment: {part}'
+                            print(error)
+                            result = False
+                            pass
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
-                    #torchaudio.save(sentence_file, segment_tensor, self.params['samplerate'])
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
                         error = f'audio_save() error: cannot save {sentence_file}'
                         return False, error
-                    del segment_tensor
-                    self.cleanup_memory()
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
                         error = f'Cannot create {sentence_file}'
@@ -197,6 +202,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                 return False, error
         except Exception as e:
             self.cleanup_memory()
+            self.audio_segments = []
             return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:

@@ -111,7 +111,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 💻 **Low-resource friendly** — runs on **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **SML tags supported** — fine-grained control of breaks, pauses, voice switching and more ([see below](#sml-tags-available))
-- 🧩 **Optional custom model** using your own trained model (XTTSv2 only, other on request)
+- 🧩 **Optional custom model** using your own trained model (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)
 - 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
      <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to the official preset list)</i>
 
@@ -254,7 +254,7 @@ to let the web page reconnect to the new connection socket.**
 ```bash
 usage: app.py [-h] [--session SESSION] [--share] [--headless] [--ebook EBOOK] [--ebooks_dir EBOOKS_DIR]
               [--language LANGUAGE] [--voice VOICE] [--voice_map VOICE_MAP] [--device {CPU,CUDA,MPS,ROCM,XPU,JETSON}]
-              [--tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}]
+              [--tts_engine {XTTS,BARK,VITS,FAIRSEQ,TACOTRON,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}]
               [--custom_model CUSTOM_MODEL] [--fine_tuned FINE_TUNED] [--output_format OUTPUT_FORMAT]
               [--output_channel OUTPUT_CHANNEL] [--temperature TEMPERATURE] [--length_penalty LENGTH_PENALTY]
               [--num_beams NUM_BEAMS] [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K] [--top_p TOP_P]
@@ -268,7 +268,7 @@ options:
   --session SESSION     Session to resume the conversion in case of interruption, crash,
                             or reuse of custom models and custom cloning voices.
 
-**** The following option are for gradio/gui mode only:
+**** The following option is for gradio/gui mode only:
   --share               (Optional) Enable a public shareable Gradio link.
 
 **** The following options are for --headless mode only:
@@ -292,8 +292,8 @@ optional parameters:
   --device {CPU,CUDA,MPS,ROCM,XPU,JETSON}
                         (Optional) Processor unit type for the conversion.
                             Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.
-  --tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}
-                        (Optional) Preferred TTS engine (available are: ['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
+  --tts_engine {XTTS,BARK,VITS,FAIRSEQ,TACOTRON,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}
+                        (Optional) Preferred TTS engine (available are: ['XTTS', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
                             Default depends on the selected language. The tts engine should be compatible with the chosen language
   --custom_model CUSTOM_MODEL
                         (Optional) Path to the custom model zip file cntaining mandatory model files.
@@ -349,10 +349,10 @@ Linux/Mac:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 
 SML tags available:
-        [break] — silence (random range **0.3–0.6 sec.**)
-        [pause] — silence (random range **1.0–1.6 sec.**)
-        [pause:N] — fixed pause (**N sec.**)
-        [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+	[break] — silence (random range **0.3–0.6 sec.**)
+	[pause] — silence (random range **1.0–1.6 sec.**)
+	[pause:N] — fixed pause (**N sec.**)
+	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
 
 ```
 

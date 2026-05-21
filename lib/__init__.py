@@ -2,7 +2,7 @@ from .conf import (
     DEVICE_SYSTEM, FULL_DOCKER, NATIVE, BUILD_DOCKER, workflow_id, fernet_key, fernet_data, audiobooks_cli_dir, audiobooks_gradio_dir,
     audiobooks_host_dir, debug_mode, default_audio_proc_samplerate, max_upload_size,
     default_audio_proc_format, default_device, default_gpu_wiki, 
-    default_output_format, default_output_channel, systems, archs, cli_options, devices, device_info_json, ebook_formats,
+    default_output_format, default_output_channel, systems, archs, cli_options, devices, device_info_json, device_info_dict, ebook_formats,
     ebooks_dir, interface_component_options, interface_concurrency_limit,
     interface_host, interface_port, interface_shared_tmp_expire,
     max_python_version, min_python_version, models_dir, os,
@@ -22,7 +22,7 @@ from .conf_lang import (
 
 from .conf_models import (
     TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, SML_TAG_PATTERN, IPA_REMAINING_PATTERN, sml_escape_tag, default_fine_tuned, default_tts_engine, 
-    default_engine_settings, default_vc_model, default_voice_detection_model, tts_engines_with_inner_speaker, tts_engines_with_custom_model,
+    default_engine_settings, default_vc_model, default_voice_detection_model, tts_engines_from_coqui, tts_engines_with_inner_speaker, tts_engines_with_custom_model,
     loaded_tts, xtts_builtin_speakers_list,
     max_custom_model, max_custom_voices, voices_dir
 )
@@ -33,7 +33,7 @@ __all__ = [
     "DEVICE_SYSTEM", "FULL_DOCKER", "NATIVE", "BUILD_DOCKER", "workflow_id", "fernet_key", "fernet_data", "audiobooks_cli_dir", "audiobooks_gradio_dir",
     "audiobooks_host_dir", "debug_mode", "default_audio_proc_samplerate", "max_upload_size",
     "default_audio_proc_format", "default_device", "default_gpu_wiki",
-    "default_output_format", "default_output_channel", "systems", "archs", "cli_options", "devices", "device_info_json", "ebook_formats",
+    "default_output_format", "default_output_channel", "systems", "archs", "cli_options", "devices", "device_info_json", "device_info_dict", "ebook_formats",
     "ebooks_dir", "interface_component_options", "interface_concurrency_limit",
     "interface_host", "interface_port", "interface_shared_tmp_expire",
     "max_python_version", "min_python_version", "models_dir", "os",
@@ -51,7 +51,7 @@ __all__ = [
     
     # from conf_models
     "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "SML_TAG_PATTERN", "IPA_REMAINING_PATTERN", "sml_escape_tag", "default_fine_tuned", "default_tts_engine",
-    "default_engine_settings", "default_vc_model", "default_voice_detection_model", "tts_engines_with_inner_speaker", "tts_engines_with_custom_model",
+    "default_engine_settings", "default_vc_model", "default_voice_detection_model", "tts_engines_from_coqui", "tts_engines_with_inner_speaker", "tts_engines_with_custom_model",
     "loaded_tts", "xtts_builtin_speakers_list", "max_custom_model",
     "max_custom_voices", "voices_dir"
 ]
