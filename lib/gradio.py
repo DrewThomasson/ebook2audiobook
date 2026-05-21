@@ -407,9 +407,6 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_row_output_split_hours {
                     border-radius: 0 !important;
                 }
-                #gr_progress_bar .progress-bar {
-                    background: #ff7b00 !important;
-                }
                 #gr_audiobook_sentence textarea{
                     margin: auto !important;
                     text-align: center !important;
@@ -419,8 +416,14 @@ def build_interface(args:dict)->gr.Blocks:
                     overflow-y: auto !important;
                     scrollbar-width: none !important;
                 }
+                #gr_progress_bar{
+                    height: 20px !important;
+                }
+                #gr_progress_bar .progress-bar {
+                    background: #ff7b00 !important;
+                }
                 #gr_progress textarea {
-                    height: 60px !important;
+                    height: 50px !important;
                 }
                 #gr_session textarea::-webkit-scrollbar, #gr_progress textarea::-webkit-scrollbar {
                     display: none !important; 
