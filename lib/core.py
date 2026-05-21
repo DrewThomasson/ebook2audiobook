@@ -2870,6 +2870,126 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             print(error)
             return False
 
+    try:
+        session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return None
+        is_gui_process = session['is_gui_process']
+        chapter_files = []
+        chapter_titles = []
+        chapter_positions = []
+        for x, block in enumerate(session['blocks_current']['blocks']):
+            if not (block['keep'] and block['text'].strip()):
+                continue
+            if not block.get('sentences'):
+                error = f"Block {x} (id {block['id']}) has no sentences but is marked keep"
+                print(error)
+                return None
+            block_id = block['id']
+            fname = f'{block_id}.{default_audio_proc_format}'
+            fpath = os.path.join(session['chapters_dir'], fname)
+            if not os.path.exists(fpath):
+                error = f'Missing chapter audio for block {x} (id {block_id}): {fpath}'
+                print(error)
+                return None
+            chapter_files.append(fname)
+            chapter_titles.append(block['sentences'][0])
+            chapter_positions.append(x)
+        if len(chapter_files) == 0:
+            print('No block files exist!')
+            return None
+        chunks_size = 892
+        total_duration = 0.0
+        durations = []
+        for i in range(0, len(chapter_files), chunks_size):
+            filepaths = [
+                os.path.join(session['chapters_dir'], f)
+                for f in chapter_files[i:i + chunks_size]
+            ]
+            durations_dict = get_audiolist_duration(filepaths)
+            for path in filepaths:
+                dur = durations_dict.get(path, 0.0)
+                durations.append(dur)
+                total_duration += dur
+        if len(durations) != len(chapter_files):
+            error = f'Duration count mismatch: {len(durations)} durations vs {len(chapter_files)} chapter files'
+            print(error)
+            return None
+        exported_files = []
+        concat_dir = session['process_dir']
+        if session.get('output_split'):
+            part_files = []
+            part_chapter_indices = []
+            cur_part = []
+            cur_indices = []
+            cur_duration = 0
+            max_part_duration = int(session['output_split_hours']) * 3600
+            for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
+                if session['cancellation_requested']:
+                    return None
+                if cur_part and (cur_duration + dur > max_part_duration):
+                    part_files.append(cur_part)
+                    part_chapter_indices.append(cur_indices)
+                    cur_part = []
+                    cur_indices = []
+                    cur_duration = 0
+                cur_part.append(file)
+                cur_indices.append(idx)
+                cur_duration += dur
+            if cur_part:
+                part_files.append(cur_part)
+                part_chapter_indices.append(cur_indices)
+            pad_width = len(str(len(part_files)))
+            is_multi_part = len(part_files) > 1
+            for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
+                concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:0{pad_width}d}.txt')
+                with open(concat_list, 'w') as f:
+                    for file in part_file_list:
+                        if session['cancellation_requested']:
+                            return None
+                        path = Path(session['chapters_dir']) / file
+                        f.write(f"file '{path.as_posix()}'\n")
+                merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1:0{pad_width}d}.{default_audio_proc_format}"
+                result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
+                if not result:
+                    error = f'assemble_audio_chunks() Final merge failed for part {part_idx+1}.'
+                    print(error)
+                    return None
+                metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
+                part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
+                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
+                final_file = os.path.join(
+                    session['audiobooks_dir'],
+                    f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
+                    if is_multi_part else session['final_name']
+                )
+                block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
+                if _export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
+                    exported_files.append(final_file)
+        else:
+            concat_list = os.path.join(concat_dir, 'concat_list_chapters_1.txt')
+            merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
+            with open(concat_list, 'w') as f:
+                for file in chapter_files:
+                    if session['cancellation_requested']:
+                        return None
+                    path = Path(session['chapters_dir']) / file
+                    f.write(f"file '{path.as_posix()}'\n")
+            result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
+            if not result:
+                print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
+                return None
+            metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
+            chapters_zip = list(zip(chapter_files, chapter_titles))
+            _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
+            final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
+            if _export_audio(merged_audio, metadata_file, final_file):
+                exported_files.append(final_file)
+        return exported_files if exported_files else None
+    except Exception as e:
+        DependencyError(e)
+        return None
+
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
     def _on_progress(p:float)->None:
