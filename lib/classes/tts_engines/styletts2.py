@@ -132,15 +132,78 @@ class StyleTTS2(TTSUtils, TTSRegistry, name='styletts2'):
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
                 
-            # Make auxiliary component paths absolute pointing to the cloned StyleTTS2 directory
-            if 'ASR_config' in config:
-                config['ASR_config'] = os.path.join(style_path, config['ASR_config'])
-            if 'ASR_path' in config:
-                config['ASR_path'] = os.path.join(style_path, config['ASR_path'])
-            if 'F0_path' in config:
-                config['F0_path'] = os.path.join(style_path, config['F0_path'])
-            if 'PLBERT_dir' in config:
-                config['PLBERT_dir'] = os.path.join(style_path, config['PLBERT_dir'])
+            # Make auxiliary component paths absolute pointing to the persistent models directory
+            import urllib.request
+            
+            def download_file(url, dest_path):
+                # Ensure parent directory exists
+                os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+                # Check if it needs download (doesn't exist or is LFS pointer under 1024 bytes)
+                if os.path.exists(dest_path) and os.path.getsize(dest_path) > 1024:
+                    return
+                print(f"Downloading auxiliary model {os.path.basename(dest_path)} from {url}...")
+                temp_dest = dest_path + ".tmp"
+                try:
+                    # Download to temp file
+                    with urllib.request.urlopen(url) as response, open(temp_dest, 'wb') as out_file:
+                        shutil.copyfileobj(response, out_file)
+                    os.replace(temp_dest, dest_path)
+                    print(f"Successfully downloaded {os.path.basename(dest_path)}")
+                except Exception as e:
+                    if os.path.exists(temp_dest):
+                        os.remove(temp_dest)
+                    raise RuntimeError(f"Failed to download {url}: {e}")
+
+            # Define persistent directory under models/
+            styletts2_models_dir = os.path.join(self.cache_dir, "styletts2")
+            
+            # Setup paths for ASR, JDC (F0), and PLBERT
+            asr_models_dir = os.path.join(styletts2_models_dir, "Utils", "ASR")
+            asr_config_dest = os.path.join(asr_models_dir, "config.yml")
+            asr_path_dest = os.path.join(asr_models_dir, "epoch_00080.pth")
+            
+            # Copy config file from cloned repository source
+            asr_config_src = os.path.join(style_path, "Utils", "ASR", "config.yml")
+            if os.path.exists(asr_config_src) and not os.path.exists(asr_config_dest):
+                os.makedirs(os.path.dirname(asr_config_dest), exist_ok=True)
+                shutil.copy2(asr_config_src, asr_config_dest)
+                
+            # Download ASR weights
+            download_file(
+                "https://raw.githubusercontent.com/yl4579/StyleTTS2/main/Utils/ASR/epoch_00080.pth",
+                asr_path_dest
+            )
+            
+            jdc_models_dir = os.path.join(styletts2_models_dir, "Utils", "JDC")
+            jdc_path_dest = os.path.join(jdc_models_dir, "bst.t7")
+            
+            # Download JDC weights
+            download_file(
+                "https://raw.githubusercontent.com/yl4579/StyleTTS2/main/Utils/JDC/bst.t7",
+                jdc_path_dest
+            )
+            
+            plbert_models_dir = os.path.join(styletts2_models_dir, "Utils", "PLBERT")
+            plbert_config_dest = os.path.join(plbert_models_dir, "config.yml")
+            plbert_path_dest = os.path.join(plbert_models_dir, "step_1000000.t7")
+            
+            # Copy PLBERT config from cloned repository source
+            plbert_config_src = os.path.join(style_path, "Utils", "PLBERT", "config.yml")
+            if os.path.exists(plbert_config_src) and not os.path.exists(plbert_config_dest):
+                os.makedirs(os.path.dirname(plbert_config_dest), exist_ok=True)
+                shutil.copy2(plbert_config_src, plbert_config_dest)
+                
+            # Download PLBERT weights
+            download_file(
+                "https://raw.githubusercontent.com/yl4579/StyleTTS2/main/Utils/PLBERT/step_1000000.t7",
+                plbert_path_dest
+            )
+            
+            # Update configuration with actual downloaded model paths
+            config['ASR_config'] = asr_config_dest
+            config['ASR_path'] = asr_path_dest
+            config['F0_path'] = jdc_path_dest
+            config['PLBERT_dir'] = plbert_models_dir
                 
             # Load submodules
             print("Loading ASR model...")
