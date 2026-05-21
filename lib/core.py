@@ -2626,8 +2626,8 @@ def convert_chapters2audio(session_id:str)->bool:
                     if not combine_audio_sentences(session_id, chapter_audio_file, block_id, block_len):
                         show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
                         return False
-            blocks_current['block_resume'] = 0
-            blocks_current['sentence_resume'] = 0
+            #blocks_current['block_resume'] = 0
+            #blocks_current['sentence_resume'] = 0
             session['blocks_current'] = blocks_current
             save_db_stamp(session_id)
             session['blocks_saved'] = copy.deepcopy(blocks_current)
