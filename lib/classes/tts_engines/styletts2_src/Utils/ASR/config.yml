@@ -1,0 +1,29 @@
+log_dir: "logs/20201006"
+save_freq: 5
+device: "cuda"
+epochs: 180
+batch_size: 64
+pretrained_model: ""
+train_data: "ASRDataset/train_list.txt"
+val_data: "ASRDataset/val_list.txt"
+
+dataset_params:
+  data_augmentation: false
+
+preprocess_parasm:
+  sr: 24000
+  spect_params:
+    n_fft: 2048
+    win_length: 1200
+    hop_length: 300
+  mel_params:
+    n_mels: 80
+
+model_params:
+   input_dim: 80
+   hidden_dim: 256
+   n_token: 178
+   token_embedding_dim: 512
+
+optimizer_params:
+  lr: 0.0005

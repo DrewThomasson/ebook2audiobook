@@ -1,0 +1,30 @@
+log_dir: "Checkpoint"
+mixed_precision: "fp16"
+data_folder: "wikipedia_20220301.en.processed"
+batch_size: 192
+save_interval: 5000
+log_interval: 10
+num_process: 1 # number of GPUs
+num_steps: 1000000
+
+dataset_params:
+    tokenizer: "transfo-xl-wt103"
+    token_separator: " " # token used for phoneme separator (space)
+    token_mask: "M" # token used for phoneme mask (M)
+    word_separator: 3039 # token used for word separator (<formula>)
+    token_maps: "token_maps.pkl" # token map path
+    
+    max_mel_length: 512 # max phoneme length
+    
+    word_mask_prob: 0.15 # probability to mask the entire word
+    phoneme_mask_prob: 0.1 # probability to mask each phoneme
+    replace_prob: 0.2 # probablity to replace phonemes
+    
+model_params:
+    vocab_size: 178
+    hidden_size: 768
+    num_attention_heads: 12
+    intermediate_size: 2048
+    max_position_embeddings: 512
+    num_hidden_layers: 12
+    dropout: 0.1

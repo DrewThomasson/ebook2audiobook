@@ -1,0 +1,4 @@
+munch
+einops
+einops-exts
+nltk
