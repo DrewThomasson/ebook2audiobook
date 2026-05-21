@@ -570,7 +570,7 @@ EOF
 				python3 -m pip uninstall -y lxml 2>/dev/null || true
 				echo -e "\e[33mInstalling Calibre…\e[0m"
 				if [[ "${OSTYPE-}" == darwin* ]]; then
-					eval "$PACK_MGR --cask --force calibre"
+					eval "$PACK_MGR --cask calibre"
 				else
 					tmp="$(mktemp)"
 					$WGET -nv -O "$tmp" "$CALIBRE_INSTALLER_URL" || return 1
