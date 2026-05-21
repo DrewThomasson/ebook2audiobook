@@ -421,7 +421,10 @@ def build_interface(args:dict)->gr.Blocks:
                     background-image: none !important;
                 }
                 #gr_progress textarea {
-                    height: 70px !important;
+                    height: 60px !important;
+                    min-height: 60px !important;
+                    max-height: 60px !important;
+                    resize: none;
                 }
                 #gr_session textarea::-webkit-scrollbar, #gr_progress textarea::-webkit-scrollbar {
                     display: none !important; 
