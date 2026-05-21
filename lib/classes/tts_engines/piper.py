@@ -229,7 +229,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                                 error = 'audio_part not valid'
                                 return False, error
                         except IndexError as e:
-                            error = f'synthesize() IndexError at segment "{part}": {e}'
+                            error = f'convert() error at segment "{part}": {e}'
                             return False, error
                         except Exception as e:
                             return False, self.log_exception(f'{self.__class__.__name__}.convert() part loop', e)

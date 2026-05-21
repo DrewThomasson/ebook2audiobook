@@ -145,10 +145,10 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                                 error = 'audio_part not valid'
                                 return False, error
                         except IndexError as e:
-                            error = f'tts() error at {e} segment: {part}'
-                            print(error)
-                            audio_part = False
-                            pass
+                            error = f'convert() error at {e} segment: {part}'
+                            return False, error
+                        except Exception as e:
+                            return False, self.log_exception(f'{self.__class__.__name__}.convert() part loop', e)
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):
