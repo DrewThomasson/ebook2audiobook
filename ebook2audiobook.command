@@ -20,7 +20,7 @@ else
 	script_path="$0"
 fi
 
-export BASHRCSOURCED=1
+export BASHRCSOURCED="1"
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -37,6 +37,7 @@ export PODMAN_DESKTOP="0"
 export DOCKER_DESKTOP="0"
 export DOCKER_DEVICE_STR=""
 export DEVICE_INFO_STR=""
+export HOMEBREW_NO_ENV_HINTS="1"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
