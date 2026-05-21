@@ -491,7 +491,7 @@ function check_required_programs {
 function install_programs {
 	if [[ "${OSTYPE-}" == darwin* ]]; then
 		echo -e "\e[33mInstalling required programs…\e[0m"
-		PACK_MGR="brew install"
+		PACK_MGR="brew install --force"
 		if ! command -v brew &> /dev/null; then
 			echo -e "\e[33mHomebrew is not installed. Installing Homebrew…\e[0m"
 			/usr/bin/env bash -c "$(curl -fsSL $BREW_INSTALLER_URL)"
