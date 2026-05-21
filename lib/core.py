@@ -2754,12 +2754,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             return False
 
     def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
-
-        def _build_vtt()->None:
-            vtt_result['ok'], vtt_result['err'] = build_vtt_file(
-                session, vtt_path=final_vtt, block_indices=block_indices
-            )
-
         try:
             if session['cancellation_requested']:
                 return False
@@ -2770,42 +2764,43 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             ]
             probe = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
             if probe.returncode != 0:
-                print(f'ffprobe failed for {combined_audio}: {probe.stderr.strip()}')
+                error = f'ffprobe failed for {combined_audio}: {probe.stderr.strip()}'
+                print(error)
                 return False
             codec_info = probe.stdout.strip().splitlines()
             input_codec = codec_info[0] if len(codec_info) > 0 else None
-            input_rate  = codec_info[1] if len(codec_info) > 1 else None
+            input_rate = codec_info[1] if len(codec_info) > 1 else None
             cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', combined_audio]
             target_codec, target_rate = None, None
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
-                target_rate  = '44100'
+                target_rate = '44100'
                 cmd += ['-map', '0:a', '-ar', target_rate, '-sample_fmt', 's16']
             elif session['output_format'] == 'aac':
                 target_codec = 'aac'
-                target_rate  = '44100'
+                target_rate = '44100'
                 cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart']
             elif session['output_format'] == 'flac':
                 target_codec = 'flac'
-                target_rate  = '44100'
+                target_rate = '44100'
                 cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', target_rate]
             else:
                 cmd += ['-f', 'ffmetadata', '-i', metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
                     target_codec = 'aac'
-                    target_rate  = '44100'
+                    target_rate = '44100'
                     cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart+use_metadata_tags']
                 elif session['output_format'] == 'mp3':
                     target_codec = 'mp3'
-                    target_rate  = '44100'
+                    target_rate = '44100'
                     cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', target_rate]
                 elif session['output_format'] == 'webm':
                     target_codec = 'opus'
-                    target_rate  = '48000'
+                    target_rate = '48000'
                     cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', target_rate]
                 elif session['output_format'] == 'ogg':
                     target_codec = 'opus'
-                    target_rate  = '48000'
+                    target_rate = '48000'
                     cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
                 cmd += ['-map_metadata', '1']
             if session['output_channel'] == 'stereo':
@@ -2824,193 +2819,56 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cmd += [
                     '-filter_threads', '0',
                     '-filter_complex_threads', '0',
+                    #'-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
                     '-af', 'dynaudnorm=f=150:g=15,afftdn=nf=-70',
                     '-threads', '0',
                     '-progress', 'pipe:2',
                     '-y', final_file
                 ]
-            # start VTT build in parallel with ffmpeg
-            final_vtt  = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
-            vtt_result:dict = {}
-            vtt_thread = threading.Thread(target=_build_vtt, daemon=True)
-            vtt_thread.start()
             progress_desc = f'Export Part {part_num}' if part_num is not None else 'Export'
-            proc_pipe = SubprocessPipe(
-                cmd, is_gui_process=is_gui_process,
-                total_duration=get_audio_duration(combined_audio),
-                msg='Export', on_progress=lambda p: _on_progress(p, progress_desc)
-            )
-            vtt_thread.join()
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=lambda p: _on_progress(p, progress_desc))
             if not proc_pipe.result:
-                print(f'ffmpeg export failed for {final_file}')
+                error = f'ffmpeg export failed for {final_file}'
+                print(error)
                 return False
             if not (os.path.exists(final_file) and os.path.getsize(final_file) > 0):
-                print(f'{Path(final_file).name} is corrupted or does not exist')
-                return False
-            if not vtt_result.get('ok'):
-                error = f'build_vtt_file() error: {vtt_result.get("err")}'
+                error = f'{Path(final_file).name} is corrupted or does not exist'
                 print(error)
                 return False
             if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4'] and session['cover'] is not None:
                 cover_path = session['cover']
-                print(f'Adding cover {cover_path} into the final audiobook file…')
-                ffmpeg_bin = shutil.which('ffmpeg')
-                tmp_file   = final_file + '.covtmp' + Path(final_file).suffix
-                os.rename(final_file, tmp_file)
-                try:
-                    if session['output_format'] == 'mp3':
-                        cover_cmd = [
-                            ffmpeg_bin, '-hide_banner', '-nostats',
-                            '-i', tmp_file, '-i', cover_path,
-                            '-map', '0', '-map', '1',
-                            '-c', 'copy', '-id3v2_version', '3',
-                            '-metadata:s:v', 'title=Cover',
-                            '-metadata:s:v', 'comment=Cover (front)',
-                            '-y', final_file
-                        ]
-                    else:
-                        cover_cmd = [
-                            ffmpeg_bin, '-hide_banner', '-nostats',
-                            '-i', tmp_file, '-i', cover_path,
-                            '-map', '0:a', '-map', '1:v',
-                            '-c', 'copy', '-disposition:v:0', 'attached_pic',
-                            '-y', final_file
-                        ]
-                    result = subprocess.run(cover_cmd, capture_output=True, text=True)
-                    if result.returncode != 0:
-                        os.rename(tmp_file, final_file)
-                        print(f'Cover embed failed, continuing without cover: {result.stderr.strip()}')
-                    else:
-                        os.remove(tmp_file)
-                        print(f'Cover embedded via ffmpeg stream-copy')
-                except Exception as e:
-                    if os.path.exists(tmp_file):
-                        os.rename(tmp_file, final_file)
-                    print(f'Cover embed error: {e}')
+                msg = f'Adding cover {cover_path} into the final audiobook file…'
+                print(msg)
+                audio = None
+                if session['output_format'] == 'mp3':
+                    from mutagen.mp3 import MP3
+                    from mutagen.id3 import ID3, APIC, error as id3_error
+                    audio = MP3(final_file, ID3=ID3)
+                    try:
+                        audio.add_tags()
+                    except id3_error:
+                        pass
+                    with open(cover_path, 'rb') as img:
+                        audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=img.read()))
+                elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
+                    from mutagen.mp4 import MP4, MP4Cover
+                    audio = MP4(final_file)
+                    with open(cover_path, 'rb') as f:
+                        cover_data = f.read()
+                    audio['covr'] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
+                if audio is not None:
+                    audio.save()
+            final_vtt = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
+            vtt_built, error = build_vtt_file(session, vtt_path=final_vtt, block_indices=block_indices)
+            if not vtt_built:
+                error = f'build_vtt_file() error: {error}'
+                print(error)
+                return False
             return True
         except Exception as e:
-            print(f'Export failed: {e}')
-            return False
-
-    try:
-        session = context.get_session(session_id)
-        if not (session and session.get('id', False)):
-            return None
-        is_gui_process = session['is_gui_process']
-        chapter_files = []
-        chapter_titles = []
-        chapter_positions = []
-        for x, block in enumerate(session['blocks_current']['blocks']):
-            if not (block['keep'] and block['text'].strip()):
-                continue
-            if not block.get('sentences'):
-                error = f"Block {x} (id {block['id']}) has no sentences but is marked keep"
-                print(error)
-                return None
-            block_id = block['id']
-            fname = f'{block_id}.{default_audio_proc_format}'
-            fpath = os.path.join(session['chapters_dir'], fname)
-            if not os.path.exists(fpath):
-                error = f'Missing chapter audio for block {x} (id {block_id}): {fpath}'
-                print(error)
-                return None
-            chapter_files.append(fname)
-            chapter_titles.append(block['sentences'][0])
-            chapter_positions.append(x)
-        if len(chapter_files) == 0:
-            print('No block files exist!')
-            return None
-        chunks_size = 892
-        total_duration = 0.0
-        durations = []
-        for i in range(0, len(chapter_files), chunks_size):
-            filepaths = [
-                os.path.join(session['chapters_dir'], f)
-                for f in chapter_files[i:i + chunks_size]
-            ]
-            durations_dict = get_audiolist_duration(filepaths)
-            for path in filepaths:
-                dur = durations_dict.get(path, 0.0)
-                durations.append(dur)
-                total_duration += dur
-        if len(durations) != len(chapter_files):
-            error = f'Duration count mismatch: {len(durations)} durations vs {len(chapter_files)} chapter files'
+            error = f'Export failed: {e}'
             print(error)
-            return None
-        exported_files = []
-        concat_dir = session['process_dir']
-        if session.get('output_split'):
-            part_files = []
-            part_chapter_indices = []
-            cur_part = []
-            cur_indices = []
-            cur_duration = 0
-            max_part_duration = int(session['output_split_hours']) * 3600
-            for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
-                if session['cancellation_requested']:
-                    return None
-                if cur_part and (cur_duration + dur > max_part_duration):
-                    part_files.append(cur_part)
-                    part_chapter_indices.append(cur_indices)
-                    cur_part = []
-                    cur_indices = []
-                    cur_duration = 0
-                cur_part.append(file)
-                cur_indices.append(idx)
-                cur_duration += dur
-            if cur_part:
-                part_files.append(cur_part)
-                part_chapter_indices.append(cur_indices)
-            pad_width = len(str(len(part_files)))
-            is_multi_part = len(part_files) > 1
-            for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:0{pad_width}d}.txt')
-                with open(concat_list, 'w') as f:
-                    for file in part_file_list:
-                        if session['cancellation_requested']:
-                            return None
-                        path = Path(session['chapters_dir']) / file
-                        f.write(f"file '{path.as_posix()}'\n")
-                merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1:0{pad_width}d}.{default_audio_proc_format}"
-                result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
-                if not result:
-                    error = f'assemble_audio_chunks() Final merge failed for part {part_idx+1}.'
-                    print(error)
-                    return None
-                metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
-                part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                final_file = os.path.join(
-                    session['audiobooks_dir'],
-                    f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
-                    if is_multi_part else session['final_name']
-                )
-                block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
-                if _export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
-                    exported_files.append(final_file)
-        else:
-            concat_list = os.path.join(concat_dir, 'concat_list_chapters_1.txt')
-            merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
-            with open(concat_list, 'w') as f:
-                for file in chapter_files:
-                    if session['cancellation_requested']:
-                        return None
-                    path = Path(session['chapters_dir']) / file
-                    f.write(f"file '{path.as_posix()}'\n")
-            result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
-            if not result:
-                print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
-                return None
-            metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-            chapters_zip = list(zip(chapter_files, chapter_titles))
-            _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
-            final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-            if _export_audio(merged_audio, metadata_file, final_file):
-                exported_files.append(final_file)
-        return exported_files if exported_files else None
-    except Exception as e:
-        DependencyError(e)
-        return None
+            return False
 
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
 
