@@ -416,11 +416,9 @@ def build_interface(args:dict)->gr.Blocks:
                     overflow-y: auto !important;
                     scrollbar-width: none !important;
                 }
-                #gr_progress_bar{
-                    height: 20px !important;
-                }
-                #gr_progress_bar .progress-bar {
-                    background: #ff7b00 !important;
+                #gr_group_progress .progress-bar, #gr_group_progress [role="progressbar"] > div {
+                    background-color: #ff007f !important;
+                    background-image: none !important;
                 }
                 #gr_progress textarea {
                     height: 50px !important;
@@ -438,8 +436,7 @@ def build_interface(args:dict)->gr.Blocks:
                 #gr_custom_model_list span[data-testid="block-info"],
                 #gr_audiobook_sentence span[data-testid="block-info"],
                 #gr_audiobook_list span[data-testid="block-info"],
-                #gr_progress span[data-testid="block-info"],
-                #gr_progress_bar span[data-testid="block-info"]{
+                #gr_progress span[data-testid="block-info"]{
                     display: none !important;
                 }
                 #gr_row_ebook_mode { align-items: center !important; }
@@ -2720,7 +2717,7 @@ def build_interface(args:dict)->gr.Blocks:
                     fn=_check_override_ebook,
                     inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event, gr_translate_enabled, gr_translate],
                     outputs=[gr_modal, gr_event],
-                    #show_progress_on=[gr_progress_bar]
+                    #show_progress_on=[gr_progress]
                 )
 
             def _chain_refresh(event):
@@ -2728,7 +2725,7 @@ def build_interface(args:dict)->gr.Blocks:
                     fn=_refresh_interface,
                     inputs=[gr_session],
                     outputs=outputs_refresh_interface,
-                    #show_progress_on=[gr_progress_bar]
+                    #show_progress_on=[gr_progress]
                 )
 
             def _chain_enable(event, always=False):
@@ -2742,7 +2739,7 @@ def build_interface(args:dict)->gr.Blocks:
                         ),
                         inputs=[gr_session],
                         outputs=outputs_enable_components + [gr_end_event],
-                        #show_progress_on=[gr_progress_bar]
+                        #show_progress_on=[gr_progress]
                     ).then(
                         fn=None,
                         inputs=[gr_end_event],
@@ -2763,7 +2760,7 @@ def build_interface(args:dict)->gr.Blocks:
                         ),
                         inputs=[gr_session],
                         outputs=outputs_enable_components + [gr_end_event],
-                        #show_progress_on=[gr_progress_bar]
+                        #show_progress_on=[gr_progress]
                     ).then(
                         fn=None,
                         inputs=[gr_end_event],
@@ -2855,7 +2852,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_change_gr_ebook_mode,
                 inputs=[gr_session, gr_ebook_mode],
                 outputs=[gr_ebook_src, gr_ebook_textarea, gr_convert_btn, gr_voice_highlight_css, gr_row_voice_player, gr_voice_selected_filename],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             ).then(
                 fn=None,
                 inputs=[gr_ebook_mode],
@@ -2892,13 +2889,13 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_change_gr_voice_list,
                 inputs=[gr_session, gr_voice_list],
                 outputs=[gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_voice_del_btn.click(
                 fn=_click_gr_voice_del_btn,
                 inputs=[gr_session, gr_voice_list],
                 outputs=[gr_modal, gr_data_field_hidden],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_device.change(
                 fn=_change_gr_device,
@@ -2909,51 +2906,51 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_change_gr_language,
                 inputs=[gr_session, gr_language],
                 outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
                 inputs=[gr_session],
                 outputs=[gr_voice_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_translate_enabled.change(
                 fn=_click_gr_translate_enabled,
                 inputs=[gr_session, gr_translate_enabled],
                 outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_voice_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_translate.change(
                 fn=_change_gr_translate,
                 inputs=[gr_session, gr_translate],
                 outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             ).then(
                 fn=_change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
                 outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_tts_engine_list.change(
                 fn=_change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
                 outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
                 inputs=[gr_session],
                 outputs=[gr_voice_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_fine_tuned_list.change(
                 fn=_change_gr_fine_tuned_list,
                 inputs=[gr_session, gr_fine_tuned_list],
                 outputs=[gr_group_custom_model],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
                 inputs=[gr_session],
                 outputs=[gr_voice_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_custom_model_file.upload(
                 fn=_disable_on_custom_upload,
@@ -2980,13 +2977,13 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_change_gr_custom_model_list,
                 inputs=[gr_session, gr_custom_model_list],
                 outputs=[gr_fine_tuned_list, gr_voice_list, gr_custom_model_del_btn],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_custom_model_del_btn.click(
                 fn=_click_gr_custom_model_del_btn,
                 inputs=[gr_session, gr_custom_model_list],
                 outputs=[gr_modal, gr_data_field_hidden],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_output_format_list.change(
                 fn=_change_gr_output_format_list,
@@ -3002,7 +2999,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_change_gr_output_split,
                 inputs=[gr_session, gr_output_split],
                 outputs=[gr_row_output_split_hours],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_output_split_hours.change(
                 fn=lambda session_id, val: _change_param('output_split_hours', session_id, str(val)),
@@ -3249,7 +3246,7 @@ def build_interface(args:dict)->gr.Blocks:
                         fn=_disable_components,
                         inputs=[gr_session],
                         outputs=outputs_disable_components,
-                        #show_progress_on=[gr_progress_bar],
+                        #show_progress_on=[gr_progress],
                         queue=False
                     )
                 ),
@@ -3262,7 +3259,7 @@ def build_interface(args:dict)->gr.Blocks:
                     fn=_click_gr_override_cancel_btn,
                     inputs=[gr_session],
                     outputs=[gr_modal],
-                    #show_progress_on=[gr_progress_bar]
+                    #show_progress_on=[gr_progress]
                 ),
                 always=True
             )
@@ -3270,7 +3267,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_click_gr_override_confirm_btn,
                 inputs=[gr_session, gr_event, gr_audiobook_files_state],
                 outputs=[gr_modal, gr_event, gr_audiobook_list, gr_audiobook_files, gr_audiobook_files_state],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             _chain_enable(
                 _chain_check_override(
@@ -3279,7 +3276,7 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=_disable_components,
                             inputs=[gr_session],
                             outputs=outputs_disable_components,
-                            #show_progress_on=[gr_progress_bar],
+                            #show_progress_on=[gr_progress],
                             queue=False
                         ).then(
                             fn=lambda: None,
@@ -3288,12 +3285,12 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=_start_conversion,
                             inputs=inputs_start_conversion,
                             outputs=[gr_progress],
-                            #show_progress_on=[gr_progress_bar],
+                            #show_progress_on=[gr_progress],
                         ).then(
                             fn=_edit_blocks,
                             inputs=[gr_session],
                             outputs=outputs_edit_blocks,
-                            #show_progress_on=[gr_progress_bar]
+                            #show_progress_on=[gr_progress]
                         )
                     )
                 ),
@@ -3303,13 +3300,13 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_blocks_cancel_btn.click(
                     fn=lambda: (gr.update(interactive=False), gr.update(interactive=False)),
                     outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn],
-                    #show_progress_on=[gr_progress_bar],
+                    #show_progress_on=[gr_progress],
                     queue=False
                 ).then(
                     fn=_click_gr_blocks_cancel_btn,
                     inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                     outputs=[gr_convert_btn, gr_group_main, gr_audiobook_list, gr_group_blocks, gr_blocks_data],
-                    #show_progress_on=[gr_progress_bar]
+                    #show_progress_on=[gr_progress]
                 ),
                 always=True
             )
@@ -3318,12 +3315,12 @@ def build_interface(args:dict)->gr.Blocks:
                     fn=lambda page, blocks, expands, *args: _collect_page(page, blocks, expands, *args),
                     inputs=[gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                     outputs=[gr_blocks_data],
-                    #show_progress_on=[gr_progress_bar]
+                    #show_progress_on=[gr_progress]
                 ).then(
                     fn=_click_gr_blocks_confirm_btn,
                     inputs=[gr_session, gr_blocks_event, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
                     outputs=[gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_group_main, gr_group_blocks, gr_audiobook_list, gr_blocks_event],
-                    #show_progress_on=[gr_progress_bar]
+                    #show_progress_on=[gr_progress]
                 )
             )
             _chain_enable(
@@ -3333,7 +3330,7 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=finalize_audiobook,
                             inputs=[gr_session],
                             outputs=[gr_progress, gr_dummy_bool],
-                            #show_progress_on=[gr_progress_bar],
+                            #show_progress_on=[gr_progress],
                         )
                     )
                 ),
@@ -3390,22 +3387,22 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_change_gr_restore_session,
                 inputs=[gr_restore_session, gr_session_update],
                 outputs=[gr_save_session, gr_session_update, gr_session, gr_glassmask],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             ).then(
                 fn=_restore_interface,
                 inputs=[gr_session],
                 outputs=outputs_restore_interface,
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             ).then(
                 fn=_restore_audiobook_player,
                 inputs=[gr_session, gr_audiobook_list],
                 outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_timer],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             ).then(
                 fn=lambda session: _update_gr_glassmask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
                 inputs=[gr_session],
                 outputs=[gr_glassmask],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             ).then(
                 fn=None,
                 inputs=None,
@@ -3415,13 +3412,13 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_click_gr_deletion,
                 inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_data_field_hidden],
                 outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             gr_deletion_cancel_btn.click(
                 fn=_click_gr_deletion,
                 inputs=[gr_session, gr_voice_list, gr_custom_model_list, gr_audiobook_list],
                 outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list],
-                #show_progress_on=[gr_progress_bar]
+                #show_progress_on=[gr_progress]
             )
             ############
             app.load(
