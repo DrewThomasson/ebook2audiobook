@@ -1283,7 +1283,9 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['audiobook'] is not None and not isinstance(session['audiobook'], list): 
+                        if isinstance(session['audiobook'], list):
+                            return gr.update(), gr.update(), gr.update()
+                        if session['audiobook'] is not None: 
                             vtt = Path(session['audiobook']).with_suffix('.vtt')
                             if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
                                 error = f"{Path(session['audiobook']).name} does not exist!"
