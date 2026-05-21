@@ -282,6 +282,10 @@ options:
                             in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py
 
 optional parameters:
+  --translate ISO3      (Optional) Translate ebook to a target language (ISO 639-3 code, e.g. eng, fra, deu) before TTS synthesis.
+                            Uses argostranslate. The target language becomes the effective TTS language for the run.
+                            A copy of the source ebook is made with the _<iso3> suffix so translated and non-translated
+                            outputs stay isolated (independent process folder, audio chunks, and final file).
   --voice VOICE         (Optional) Path to the voice cloning file for TTS engine.
                             Uses the default voice if not present.
   --voice_map VOICE_MAP
