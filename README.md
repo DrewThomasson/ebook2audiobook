@@ -456,8 +456,6 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - My NVIDIA/ROCm/XPU/MPS GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU is slow (better on server smp CPU) while GPU can have almost real time conversion.
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
-   For faster multilingual generation I would suggest my other
-   [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead
    (It doesn't have zero-shot voice cloning though, and is Siri quality voices, but it is much faster on cpu).
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode,
    add `--help` parameter at the end of the docker run command for more information.
@@ -468,7 +466,6 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - All Features open to public Contributions ⭐
 - Any help from people speaking any of the supported languages to help us improve the models ⭐
 - [x] Preview Blocks/Chapters before to start the conversion
-- [ ] Parallel sentences conversion with workers
 - [ ] Edit by sentence converted for surgical text change
 - [x] SML tags integration for voice, pause, break, and more changes 
 - [x] -h -help parameter info in different languages
@@ -485,7 +482,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Audiobookshelf integration
 
 #### Extra Options
-- [ ] Ebook Translation option
+- [x] Ebook Translation option
 - [x] Output format choices
 - [x] Batch ebook folder
 - [x] Multiprocessing conversion
@@ -493,7 +490,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU Device detection
 - [x] Denoise any reference audio for upload voice cloning,
 - [x] Custom model upload (XTTSv2 only for now. more on request)
-- [ ]  Add Portuguese Xttsv2 model fine tuned for EU portuguese (help wanted)
+- [ ]  Add Portuguese pt_PT Xttsv2 model fine tuned for EU portuguese (help wanted)
 
 #### TTS engines
 - [x] XTTSv2
@@ -504,7 +501,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] YourTTS
 - [x] Tortoise
 - [x] GlowTTS
-- [ ] Piper-TTS
+- [x] Piper-TTS
 - [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
 - [ ] Kokoro-TTS
 - [ ] Orpheus-TTS
