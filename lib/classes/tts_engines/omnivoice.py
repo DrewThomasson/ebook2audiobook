@@ -43,6 +43,7 @@ class OmniVoiceEngine(TTSUtils, TTSRegistry, name='omnivoice'):
             self.resampler_cache = {}
             self.resampled_wav_cache = {}
             self.audio_segments = []
+            self.xtts_speakers = self._load_xtts_builtin_list()
             
             self.models = load_engine_presets(self.session['tts_engine'])
             self.params = {}
