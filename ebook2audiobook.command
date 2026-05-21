@@ -38,6 +38,7 @@ export DOCKER_DESKTOP="0"
 export DOCKER_DEVICE_STR=""
 export DEVICE_INFO_STR=""
 export HOMEBREW_NO_ENV_HINTS="1"
+export HOMEBREW_NO_INSTALL_CLEANUP="1"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
