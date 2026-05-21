@@ -416,6 +416,9 @@ def build_interface(args:dict)->gr.Blocks:
                     overflow-y: auto !important;
                     scrollbar-width: none !important;
                 }
+                #gr_group_progress {
+                    height: 300px !important;
+                }
                 #gr_group_progress .progress-bar, #gr_group_progress [role="progressbar"] > div {
                     background-color: #ff007f !important;
                     background-image: none !important;
