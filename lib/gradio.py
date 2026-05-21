@@ -1283,8 +1283,6 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if isinstance(session['audiobook'], list):
-                            return gr.update(), gr.update(), gr.update()
                         if session['audiobook'] is not None: 
                             vtt = Path(session['audiobook']).with_suffix('.vtt')
                             if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
@@ -2404,7 +2402,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if file_converting:
                             idx = next((i for i, t in enumerate(audiobook_options) if t[1] == file_converting), -1)
                             new_list = [t for t in audiobook_options if t[1] != file_converting]
-                            if session['audiobook'] == file_converting or not new_list:
+                            if session['audiobook'] == file_converting or session['audiobook'] in new_list:
                                 print('_click_gr_override_confirm_btn():  select audiobook is the converting file')
                                 new_selected = None
                                 if new_list:
