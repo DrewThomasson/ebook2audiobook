@@ -420,7 +420,7 @@ def build_interface(args:dict)->gr.Blocks:
                     background-color: #ff007f !important;
                     background-image: none !important;
                 }
-                #gr_progress textarea {
+                #gr_progress, #gr_progress textarea {
                     height: 60px !important;
                     min-height: 60px !important;
                     max-height: 60px !important;
