@@ -231,13 +231,13 @@ jobs:
 
           $RUN_CMD --headless  --language hat --ebook "tools/workflow-testing/odc_test_haitian.pdf" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
-      - name: English FAIRSEQ Custom-Voice headless single test
+      - name: English FAIRSEQ Custom-Voice(short-hand voice name) headless single test
         shell: bash
         run: |
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
-          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice DavidAttenborough --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
        
       - name: Unusual FAIRSEQ Custom-Voice headless single test
         shell: bash
