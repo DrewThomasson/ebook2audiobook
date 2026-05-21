@@ -126,22 +126,18 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
                             if audio_part is not None and len(audio_part) > 0:
                                 if torch.is_tensor(audio_part):
                                     audio_part = audio_part.detach().cpu()
-                                if is_audio_data_valid(audio_part):
-                                    if not is_audio_data_valid(audio_part):
-                                        error = 'audio_part not valid'
-                                        return False, error
-                                    part_tensor = self._tensor_type(audio_part).detach().cpu().unsqueeze(0)
-                                    if part_tensor.numel() == 0:
-                                        error = 'part_tensor not valid'
-                                        return False, error
-                                    if part[-1].isalnum() or part[-1] == '—':
-                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                    self.audio_segments.append(part_tensor)
-                                else:
-                                    error = f'audio_part not valid'
+                                if not is_audio_data_valid(audio_part):
+                                    error = 'audio_part not valid'
                                     return False, error
+                                part_tensor = self._tensor_type(audio_part).unsqueeze(0)
+                                if part_tensor.numel() == 0:
+                                    error = 'part_tensor not valid'
+                                    return False, error
+                                if part[-1].isalnum() or part[-1] == '—':
+                                    part_tensor = trim_audio(part_tensor.squeeze(0), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                self.audio_segments.append(part_tensor)
                             else:
-                                error = f'audio_part not valid'
+                                error = 'audio_part not valid'
                                 return False, error
                         except IndexError as e:
                             error = f'tts() error at {e} segment: {part}'

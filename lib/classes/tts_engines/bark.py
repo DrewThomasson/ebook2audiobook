@@ -205,12 +205,13 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                                 if not is_audio_data_valid(audio_part):
                                     error = 'audio_part not valid'
                                     return False, error
-                                part_tensor = self._tensor_type(audio_part).detach().unsqueeze(0)
+                                part_tensor = self._tensor_type(audio_part).unsqueeze(0)
                                 if part_tensor.numel() == 0:
                                     error = 'part_tensor not valid'
                                     return False, error
+                                self.audio_segments.append(part_tensor)
                             else:
-                                error = f'audio_part not valid'
+                                error = 'audio_part not valid'
                                 return False, error
                         except IndexError as e:
                             error = f'tts() error at {e} segment: {part}'
