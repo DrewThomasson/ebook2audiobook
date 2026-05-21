@@ -2848,7 +2848,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 print(f'{Path(final_file).name} is corrupted or does not exist')
                 return False
             if not vtt_result.get('ok'):
-                print(f'build_vtt_file() error: {vtt_result.get("err")}')
+                error = f'build_vtt_file() error: {vtt_result.get("err")}'
+                print(error)
                 return False
             if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4'] and session['cover'] is not None:
                 cover_path = session['cover']
