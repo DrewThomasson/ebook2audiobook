@@ -2754,10 +2754,15 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             return False
 
     def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
+
+        def _build_vtt()->None:
+            vtt_result['ok'], vtt_result['err'] = build_vtt_file(
+                session, vtt_path=final_vtt, block_indices=block_indices
+            )
+
         try:
             if session['cancellation_requested']:
                 return False
-
             ffprobe_cmd = [
                 shutil.which('ffprobe'), '-v', 'error', '-threads', '0', '-select_streams', 'a:0',
                 '-show_entries', 'stream=codec_name,sample_rate,sample_fmt',
@@ -2767,29 +2772,23 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             if probe.returncode != 0:
                 print(f'ffprobe failed for {combined_audio}: {probe.stderr.strip()}')
                 return False
-
             codec_info = probe.stdout.strip().splitlines()
             input_codec = codec_info[0] if len(codec_info) > 0 else None
             input_rate  = codec_info[1] if len(codec_info) > 1 else None
-
             cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', combined_audio]
             target_codec, target_rate = None, None
-
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
                 target_rate  = '44100'
                 cmd += ['-map', '0:a', '-ar', target_rate, '-sample_fmt', 's16']
-
             elif session['output_format'] == 'aac':
                 target_codec = 'aac'
                 target_rate  = '44100'
                 cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart']
-
             elif session['output_format'] == 'flac':
                 target_codec = 'flac'
                 target_rate  = '44100'
                 cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', target_rate]
-
             else:
                 cmd += ['-f', 'ffmetadata', '-i', metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
@@ -2809,12 +2808,10 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     target_rate  = '48000'
                     cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
                 cmd += ['-map_metadata', '1']
-
             if session['output_channel'] == 'stereo':
                 cmd += ['-ac', '2']
             else:
                 cmd += ['-ac', '1']
-
             if input_codec == target_codec and input_rate == target_rate:
                 cmd = [
                     shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', combined_audio,
@@ -2832,41 +2829,27 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-progress', 'pipe:2',
                     '-y', final_file
                 ]
-
-            # start VTT build in parallel with ffmpeg — no dependency on the encoded file
+            # start VTT build in parallel with ffmpeg
             final_vtt  = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
             vtt_result:dict = {}
-
-            def _build_vtt()->None:
-                vtt_result['ok'], vtt_result['err'] = build_vtt_file(
-                    session, vtt_path=final_vtt, block_indices=block_indices
-                )
-
             vtt_thread = threading.Thread(target=_build_vtt, daemon=True)
             vtt_thread.start()
-
             progress_desc = f'Export Part {part_num}' if part_num is not None else 'Export'
             proc_pipe = SubprocessPipe(
                 cmd, is_gui_process=is_gui_process,
                 total_duration=get_audio_duration(combined_audio),
                 msg='Export', on_progress=lambda p: _on_progress(p, progress_desc)
             )
-
             vtt_thread.join()
-
             if not proc_pipe.result:
                 print(f'ffmpeg export failed for {final_file}')
                 return False
-
             if not (os.path.exists(final_file) and os.path.getsize(final_file) > 0):
                 print(f'{Path(final_file).name} is corrupted or does not exist')
                 return False
-
             if not vtt_result.get('ok'):
                 print(f'build_vtt_file() error: {vtt_result.get("err")}')
                 return False
-
-            # embed cover via ffmpeg stream-copy (avoids mutagen full-file rewrite)
             if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4'] and session['cover'] is not None:
                 cover_path = session['cover']
                 print(f'Adding cover {cover_path} into the final audiobook file…')
@@ -2903,9 +2886,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     if os.path.exists(tmp_file):
                         os.rename(tmp_file, final_file)
                     print(f'Cover embed error: {e}')
-
             return True
-
         except Exception as e:
             print(f'Export failed: {e}')
             return False
