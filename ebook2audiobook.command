@@ -38,7 +38,6 @@ export DOCKER_DESKTOP="0"
 export DOCKER_DEVICE_STR=""
 export DEVICE_INFO_STR=""
 export HOMEBREW_NO_ENV_HINTS="1"
-export HOMEBREW_NO_INSTALL_CLEANUP="1"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
@@ -634,6 +633,13 @@ EOF
 						echo "Tesseract OCR language '$ISO3_LANG' not installed properly."
 					fi
 				fi
+			else
+				echo -e "\e[31m=============== $program failed.\e[0m"
+			fi
+		elif [[ "$program" == "nodejs" ]]; then
+			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
+			if command -v node >/dev/null 2>&1; then
+				echo -e "\e[32m=============== $program OK! ===============\e[0m"
 			else
 				echo -e "\e[31m=============== $program failed.\e[0m"
 			fi
