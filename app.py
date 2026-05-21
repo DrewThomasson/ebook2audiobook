@@ -1,7 +1,6 @@
 import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warnings
 
 from pathlib import Path
-from iso639 import Lang
 
 from lib.conf import *
 from lib.conf_lang import default_language_code, language_mapping
@@ -312,6 +311,7 @@ SML tags available:
             args['translate'] = None
             args['translate_iso1'] = None
             if _user_translate_raw:
+                from iso639 import Lang
                 tgt = str(_user_translate_raw).strip().lower()
                 try:
                     if len(tgt) in (2, 3):
