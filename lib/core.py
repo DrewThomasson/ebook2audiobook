@@ -3383,249 +3383,241 @@ def convert_ebook(args:dict)->tuple:
                             else:
                                 error = f'VoiceExtractor.extract_voice() failed! {msg}'
             if error is None:
-                if session['script_mode'] == NATIVE:
-                    is_installed = check_programs('Calibre', 'ebook-convert', '--version')
-                    if not is_installed:
-                        error = f'check_programs() Calibre failed: {e}'
-                    is_installed = check_programs('FFmpeg', 'ffmpeg', '-version')
-                    if not is_installed:
-                        error = f'check_programs() FFMPEG failed: {e}'
-                if error is None:
-                    if prepare_dirs(session_id):
-                        session['ebook'] = os.path.join(session['process_dir'], ebook_file)
-                        shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
-                        session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
-                        msg = ''
-                        msg_extra = ''                      
-                        if session['device'] == devices['CUDA']['proc']:
-                            if not devices['CUDA']['found']:
-                                session['device'] = devices['CPU']['proc']
-                                msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
-                        elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
-                            if not devices['JETSON']['found']:
-                                session['device'] = devices['CPU']['proc']
-                                msg += f'JETSON CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
-                        elif session['device'] == devices['MPS']['proc']:
-                            if not devices['MPS']['found']:
-                                session['device'] = devices['CPU']['proc']
-                                msg += f'MPS not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
-                        elif session['device'] == devices['ROCM']['proc']:
-                            if not devices['ROCM']['found']:
-                                session['device'] = devices['CPU']['proc']
-                                msg += f'ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
-                        elif session['device'] == devices['XPU']['proc']:
-                            if not devices['XPU']['found']:
-                                session['device'] = devices['CPU']['proc']
-                                msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
-                        vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
-                        print(f'vram_dict: {vram_dict}')
-                        total_vram_gb = vram_dict.get('total_vram_gb', 0)
-                        detected_free_vram_gb = vram_dict.get('free_vram_gb', 0)
-                        session['free_vram_gb'] = detected_free_vram_gb
-                        if session['free_vram_gb'] == 0:
-                            msg_extra += f"<br/>Memory capacity not detected! restrict to {session['free_vram_gb']}GB max"
-                        else:
-                            msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
-                            if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
-                                msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
-                            if session['free_vram_gb'] > 4.0:
-                                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'  
-                        if session['tts_engine'] == TTS_ENGINES['BARK']:
-                            if session['free_vram_gb'] < 12.0:
-                                os.environ['SUNO_OFFLOAD_CPU'] = "TRUE"
-                                os.environ['SUNO_USE_SMALL_MODELS'] = "TRUE"
-                                msg_extra += f"<br/>Switching BARK to SMALL models"  
-                            else:
-                                os.environ['SUNO_OFFLOAD_CPU'] = "FALSE"
-                                os.environ['SUNO_USE_SMALL_MODELS'] = "FALSE"
-                        if msg == '':
-                            msg_extra = f"Using {session['device'].upper()}" + msg_extra
-                        device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
-                        if float(total_vram_gb) >= float(device_vram_required):
-                            if msg:
-                                show_alert(session_id, {"type": "warning", "msg": msg + msg_extra})
-                            else:
-                                show_alert(session_id, {"type": "info", "msg": msg_extra})
-                            session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
-                            session['blocks_orig_json'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
-                            session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
-                            session['blocks_current_db']   = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.db")
-                            checksum, error = compare_checksums(session_id)
-                            if not checksum or not os.path.exists(session['epub_path']):
-                                result_epub = convert2epub(session_id)
-                                if result_epub:
-                                    if os.path.exists(session['epub_path']):
-                                        for jf in (session['blocks_orig_json'], session['blocks_saved_json']):
-                                            if os.path.exists(jf):
-                                                os.unlink(jf)
-                                        db = session['blocks_current_db']
-                                        for f in (db, db + '-wal', db + '-shm'):
-                                            if os.path.exists(f):
-                                                os.unlink(f)
-                                        msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
-                                        print(msg)
-                                    else:
-                                        error = f"convert2epub() {session['epub_path']} does not exists! check write permissions."
-                                else:
-                                    error = 'convert2epub() error: could not convert to epub file!'
-                            if error is None:
-                                missing_orig_json = True
-                                if os.path.exists(session['blocks_orig_json']):
-                                    missing_orig_json = False
-                                    blocks_orig = load_json_blocks(session['blocks_orig_json'])
-                                    is_changed = False
-                                    is_reset = False
-                                    if blocks_orig:
-                                        blocks = blocks_orig.get('blocks', [])
-                                        new_blocks = []
-                                        for block in blocks:
-                                            if any(c.isalnum() for c in block.get('text','')):
-                                                if not block.get('id'):
-                                                    block['id'] = str(uuid.uuid4())
-                                                    is_changed = True
-                                                new_blocks.append(block)
-                                            else:
-                                                is_reset = True
-                                        blocks_orig['blocks'] = new_blocks
-                                        session['blocks_orig'] = blocks_orig
-                                    if is_changed or is_reset:
-                                        save_json_blocks(session_id, 'blocks_orig')
-                                    if os.path.exists(session['blocks_saved_json']):
-                                        blocks_saved = load_json_blocks(session['blocks_saved_json'])
-                                        if blocks_saved:
-                                            session['blocks_saved'] = blocks_saved
-                                            if is_changed or is_reset:
-                                                if is_changed:
-                                                    blocks = blocks_saved.get('blocks', [])
-                                                    for i, block in enumerate(blocks):
-                                                        if i < len(blocks_orig['blocks']):
-                                                            block['id'] = blocks_orig['blocks'][i]['id']
-                                                    blocks_saved['blocks'] = blocks
-                                                    session['blocks_saved'] = blocks_saved
-                                                elif is_reset:
-                                                    session['blocks_saved'] = copy.deepcopy(blocks_orig)
-                                                save_json_blocks(session_id, 'blocks_saved')
-                                    if os.path.exists(session['blocks_current_db']):
-                                        blocks_current = load_db_blocks(session['blocks_current_db'])
-                                        if blocks_current:
-                                            session['blocks_current'] = blocks_current
-                                            if is_changed or is_reset:
-                                                if is_changed:
-                                                    blocks = blocks_current.get('blocks', [])
-                                                    for i, block in enumerate(blocks):
-                                                        if i < len(blocks_orig['blocks']):
-                                                            block['id'] = blocks_orig['blocks'][i]['id']
-                                                    blocks_current['blocks'] = blocks
-                                                    session['blocks_current'] = blocks_current
-                                                elif is_reset:
-                                                    session['blocks_current'] = copy.deepcopy(blocks_orig)
-                                                save_db_blocks(session_id)
-                                epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
-                                if epubBook:
-                                    metadata = dict(session['metadata'])
-                                    for key, value in metadata.items():
-                                        data = epubBook.get_metadata('DC', key)
-                                        if data:
-                                            for value, attributes in data:
-                                                metadata[key] = value
-                                    metadata['language'] = language
-                                    metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_', ' ')
-                                    metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
-                                    session['metadata'] = metadata
-                                    try:
-                                        if len(session['metadata']['language']) == 2:
-                                            lang_dict = Lang(language)
-                                            if lang_dict:
-                                                session['metadata']['language'] = lang_dict.pt3
-                                    except Exception as e:
-                                        pass
-                                    if not session.get('translate_enabled'):
-                                        if session['metadata']['language'] != session['language']:
-                                            error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                            show_alert(session_id, {'type': 'warning', 'msg': error})
-                                    is_lang_in_tts_engine = (
-                                        session.get('tts_engine') in default_engine_settings and
-                                        language in default_engine_settings[session['tts_engine']].get('languages', {})
-                                    )
-                                    if is_lang_in_tts_engine:
-                                        session['cover'] = get_cover(epubBook, session_id)
-                                        if session.get('cover', False):
-                                            if missing_orig_json:
-                                                raw_blocks = get_blocks(session_id, epubBook)
-                                                if raw_blocks and session.get('translate_enabled'):
-                                                    raw_blocks, error = translate_blocks(session_id, list(raw_blocks))
-                                                    if error is not None:
-                                                        return error, False
-                                                if raw_blocks:
-                                                    session['blocks_orig'] = {
-                                                        "page": 0,
-                                                        "block_resume": 0,
-                                                        "sentence_resume": 0,
-                                                        "voice": session['voice'],
-                                                        "tts_engine": session['tts_engine'],
-                                                        "fine_tuned": session['fine_tuned'],
-                                                        "blocks": [
-                                                            {
-                                                                "id": str(uuid.uuid4()),
-                                                                "expand": False,
-                                                                "keep": True,
-                                                                "text": t,
-                                                                "voice": session['voice'],
-                                                                "tts_engine": session['tts_engine'],
-                                                                "fine_tuned": session['fine_tuned'],
-                                                                "sentences": [],
-                                                            }
-                                                            for t in raw_blocks if t
-                                                        ],
-                                                    }
-                                                if session.get('blocks_orig', {}):
-                                                    save_json_blocks(session_id, 'blocks_orig')
-                                            if not session.get('blocks_current', {}):
-                                                session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
-                                                save_db_blocks(session_id)
-                                            # --- legacy upgrade: old snapshots may lack top-level scalars (TO REMOVE AFTER A WHILE) ---
-                                            for key in ('blocks_orig', 'blocks_current', 'blocks_saved'):
-                                                snap = session.get(key)
-                                                if snap:
-                                                    changed = False
-                                                    if 'voice' not in snap:
-                                                        snap['voice'] = session.get('voice')
-                                                        snap['tts_engine'] = session.get('tts_engine')
-                                                        snap['fine_tuned'] = session.get('fine_tuned')
-                                                        changed = True
-                                                    if 'page' not in snap:
-                                                        snap['page'] = 0
-                                                        changed = True
-                                                    if changed:
-                                                        session[key] = snap
-                                                        if key == 'blocks_current':
-                                                            save_db_blocks(session_id)
-                                                        else:
-                                                            save_json_blocks(session_id, key)
-                                            # --------------------------------#
-                                            if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
-                                                sync_globals_to_blocks(session_id)
-                                                if session['blocks_preview']:
-                                                    msg = f'Chapters preview requested. Select which block to convert:'
-                                                    print(msg)
-                                                    progress_status = os.path.basename(session['ebook'])
-                                                    return progress_status, True
-                                                else:
-                                                    progress_status, passed = finalize_audiobook(session_id)
-                                                    return progress_status, passed
-                                            else:
-                                                error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
-                                        else:
-                                            error = 'get_cover() failed!'
-                                    else:
-                                        error = f"language {language} not supported by {session['tts_engine']}!"
-                                else:
-                                    error = 'epubBook.read_epub failed!'
-                        else:
-                            error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
+                if prepare_dirs(session_id):
+                    session['ebook'] = os.path.join(session['process_dir'], ebook_file)
+                    shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
+                    session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
+                    msg = ''
+                    msg_extra = ''                      
+                    if session['device'] == devices['CUDA']['proc']:
+                        if not devices['CUDA']['found']:
+                            session['device'] = devices['CPU']['proc']
+                            msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                    elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
+                        if not devices['JETSON']['found']:
+                            session['device'] = devices['CPU']['proc']
+                            msg += f'JETSON CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                    elif session['device'] == devices['MPS']['proc']:
+                        if not devices['MPS']['found']:
+                            session['device'] = devices['CPU']['proc']
+                            msg += f'MPS not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                    elif session['device'] == devices['ROCM']['proc']:
+                        if not devices['ROCM']['found']:
+                            session['device'] = devices['CPU']['proc']
+                            msg += f'ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                    elif session['device'] == devices['XPU']['proc']:
+                        if not devices['XPU']['found']:
+                            session['device'] = devices['CPU']['proc']
+                            msg += f"XPU not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU"
+                    vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
+                    print(f'vram_dict: {vram_dict}')
+                    total_vram_gb = vram_dict.get('total_vram_gb', 0)
+                    detected_free_vram_gb = vram_dict.get('free_vram_gb', 0)
+                    session['free_vram_gb'] = detected_free_vram_gb
+                    if session['free_vram_gb'] == 0:
+                        msg_extra += f"<br/>Memory capacity not detected! restrict to {session['free_vram_gb']}GB max"
                     else:
-                        error = f"Temporary directory {session['process_dir']} not removed due to failure."
+                        msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
+                        if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
+                            msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
+                        if session['free_vram_gb'] > 4.0:
+                            if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'  
+                    if session['tts_engine'] == TTS_ENGINES['BARK']:
+                        if session['free_vram_gb'] < 12.0:
+                            os.environ['SUNO_OFFLOAD_CPU'] = "TRUE"
+                            os.environ['SUNO_USE_SMALL_MODELS'] = "TRUE"
+                            msg_extra += f"<br/>Switching BARK to SMALL models"  
+                        else:
+                            os.environ['SUNO_OFFLOAD_CPU'] = "FALSE"
+                            os.environ['SUNO_USE_SMALL_MODELS'] = "FALSE"
+                    if msg == '':
+                        msg_extra = f"Using {session['device'].upper()}" + msg_extra
+                    device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
+                    if float(total_vram_gb) >= float(device_vram_required):
+                        if msg:
+                            show_alert(session_id, {"type": "warning", "msg": msg + msg_extra})
+                        else:
+                            show_alert(session_id, {"type": "info", "msg": msg_extra})
+                        session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
+                        session['blocks_orig_json'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
+                        session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
+                        session['blocks_current_db']   = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.db")
+                        checksum, error = compare_checksums(session_id)
+                        if not checksum or not os.path.exists(session['epub_path']):
+                            result_epub = convert2epub(session_id)
+                            if result_epub:
+                                if os.path.exists(session['epub_path']):
+                                    for jf in (session['blocks_orig_json'], session['blocks_saved_json']):
+                                        if os.path.exists(jf):
+                                            os.unlink(jf)
+                                    db = session['blocks_current_db']
+                                    for f in (db, db + '-wal', db + '-shm'):
+                                        if os.path.exists(f):
+                                            os.unlink(f)
+                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
+                                    print(msg)
+                                else:
+                                    error = f"convert2epub() {session['epub_path']} does not exists! check write permissions."
+                            else:
+                                error = 'convert2epub() error: could not convert to epub file!'
+                        if error is None:
+                            missing_orig_json = True
+                            if os.path.exists(session['blocks_orig_json']):
+                                missing_orig_json = False
+                                blocks_orig = load_json_blocks(session['blocks_orig_json'])
+                                is_changed = False
+                                is_reset = False
+                                if blocks_orig:
+                                    blocks = blocks_orig.get('blocks', [])
+                                    new_blocks = []
+                                    for block in blocks:
+                                        if any(c.isalnum() for c in block.get('text','')):
+                                            if not block.get('id'):
+                                                block['id'] = str(uuid.uuid4())
+                                                is_changed = True
+                                            new_blocks.append(block)
+                                        else:
+                                            is_reset = True
+                                    blocks_orig['blocks'] = new_blocks
+                                    session['blocks_orig'] = blocks_orig
+                                if is_changed or is_reset:
+                                    save_json_blocks(session_id, 'blocks_orig')
+                                if os.path.exists(session['blocks_saved_json']):
+                                    blocks_saved = load_json_blocks(session['blocks_saved_json'])
+                                    if blocks_saved:
+                                        session['blocks_saved'] = blocks_saved
+                                        if is_changed or is_reset:
+                                            if is_changed:
+                                                blocks = blocks_saved.get('blocks', [])
+                                                for i, block in enumerate(blocks):
+                                                    if i < len(blocks_orig['blocks']):
+                                                        block['id'] = blocks_orig['blocks'][i]['id']
+                                                blocks_saved['blocks'] = blocks
+                                                session['blocks_saved'] = blocks_saved
+                                            elif is_reset:
+                                                session['blocks_saved'] = copy.deepcopy(blocks_orig)
+                                            save_json_blocks(session_id, 'blocks_saved')
+                                if os.path.exists(session['blocks_current_db']):
+                                    blocks_current = load_db_blocks(session['blocks_current_db'])
+                                    if blocks_current:
+                                        session['blocks_current'] = blocks_current
+                                        if is_changed or is_reset:
+                                            if is_changed:
+                                                blocks = blocks_current.get('blocks', [])
+                                                for i, block in enumerate(blocks):
+                                                    if i < len(blocks_orig['blocks']):
+                                                        block['id'] = blocks_orig['blocks'][i]['id']
+                                                blocks_current['blocks'] = blocks
+                                                session['blocks_current'] = blocks_current
+                                            elif is_reset:
+                                                session['blocks_current'] = copy.deepcopy(blocks_orig)
+                                            save_db_blocks(session_id)
+                            epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
+                            if epubBook:
+                                metadata = dict(session['metadata'])
+                                for key, value in metadata.items():
+                                    data = epubBook.get_metadata('DC', key)
+                                    if data:
+                                        for value, attributes in data:
+                                            metadata[key] = value
+                                metadata['language'] = language
+                                metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_', ' ')
+                                metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                session['metadata'] = metadata
+                                try:
+                                    if len(session['metadata']['language']) == 2:
+                                        lang_dict = Lang(language)
+                                        if lang_dict:
+                                            session['metadata']['language'] = lang_dict.pt3
+                                except Exception as e:
+                                    pass
+                                if not session.get('translate_enabled'):
+                                    if session['metadata']['language'] != session['language']:
+                                        error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                        show_alert(session_id, {'type': 'warning', 'msg': error})
+                                is_lang_in_tts_engine = (
+                                    session.get('tts_engine') in default_engine_settings and
+                                    language in default_engine_settings[session['tts_engine']].get('languages', {})
+                                )
+                                if is_lang_in_tts_engine:
+                                    session['cover'] = get_cover(epubBook, session_id)
+                                    if session.get('cover', False):
+                                        if missing_orig_json:
+                                            raw_blocks = get_blocks(session_id, epubBook)
+                                            if raw_blocks and session.get('translate_enabled'):
+                                                raw_blocks, error = translate_blocks(session_id, list(raw_blocks))
+                                                if error is not None:
+                                                    return error, False
+                                            if raw_blocks:
+                                                session['blocks_orig'] = {
+                                                    "page": 0,
+                                                    "block_resume": 0,
+                                                    "sentence_resume": 0,
+                                                    "voice": session['voice'],
+                                                    "tts_engine": session['tts_engine'],
+                                                    "fine_tuned": session['fine_tuned'],
+                                                    "blocks": [
+                                                        {
+                                                            "id": str(uuid.uuid4()),
+                                                            "expand": False,
+                                                            "keep": True,
+                                                            "text": t,
+                                                            "voice": session['voice'],
+                                                            "tts_engine": session['tts_engine'],
+                                                            "fine_tuned": session['fine_tuned'],
+                                                            "sentences": [],
+                                                        }
+                                                        for t in raw_blocks if t
+                                                    ],
+                                                }
+                                            if session.get('blocks_orig', {}):
+                                                save_json_blocks(session_id, 'blocks_orig')
+                                        if not session.get('blocks_current', {}):
+                                            session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
+                                            save_db_blocks(session_id)
+                                        # --- legacy upgrade: old snapshots may lack top-level scalars (TO REMOVE AFTER A WHILE) ---
+                                        for key in ('blocks_orig', 'blocks_current', 'blocks_saved'):
+                                            snap = session.get(key)
+                                            if snap:
+                                                changed = False
+                                                if 'voice' not in snap:
+                                                    snap['voice'] = session.get('voice')
+                                                    snap['tts_engine'] = session.get('tts_engine')
+                                                    snap['fine_tuned'] = session.get('fine_tuned')
+                                                    changed = True
+                                                if 'page' not in snap:
+                                                    snap['page'] = 0
+                                                    changed = True
+                                                if changed:
+                                                    session[key] = snap
+                                                    if key == 'blocks_current':
+                                                        save_db_blocks(session_id)
+                                                    else:
+                                                        save_json_blocks(session_id, key)
+                                        # --------------------------------#
+                                        if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
+                                            sync_globals_to_blocks(session_id)
+                                            if session['blocks_preview']:
+                                                msg = f'Chapters preview requested. Select which block to convert:'
+                                                print(msg)
+                                                progress_status = os.path.basename(session['ebook'])
+                                                return progress_status, True
+                                            else:
+                                                progress_status, passed = finalize_audiobook(session_id)
+                                                return progress_status, passed
+                                        else:
+                                            error = f"get_blocks() or save_json_blocks() failed! {session['blocks_orig']}"
+                                    else:
+                                        error = 'get_cover() failed!'
+                                else:
+                                    error = f"language {language} not supported by {session['tts_engine']}!"
+                            else:
+                                error = 'epubBook.read_epub failed!'
+                    else:
+                        error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
+                else:
+                    error = f"Temporary directory {session['process_dir']} not removed due to failure."
         if session['cancellation_requested']:
             error = 'Conversion Cancelled'
         return error, False
