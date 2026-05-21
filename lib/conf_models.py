@@ -13,7 +13,8 @@ TTS_ENGINES = {
     "GLOWTTS": "glowtts",
     "TACOTRON2": "tacotron",
     "YOURTTS": "yourtts",
-    "STYLETTS2": "styletts2"
+    "STYLETTS2": "styletts2",
+    "OMNIVOICE": "omnivoice"
 }
 
 TTS_VOICE_CONVERSION = {
@@ -222,6 +223,17 @@ default_engine_settings = {
         "languages": {"eng": "en"},
         "samplerate": 24000,
         "files": ["config.yml", "epochs_2nd_00020.pth"],
+        "voice": default_speaker,
+        "voices": {},
+        "rating": {"VRAM": 4, "CPU": 3, "RAM": 4, "Realism": 5}
+    },
+    TTS_ENGINES['OMNIVOICE']: {
+        "languages": {
+            "eng": "en", "zho": "zh", "fra": "fr", "deu": "de", "ita": "it", "jpn": "ja", "kor": "ko", "por": "pt", "rus": "ru", "spa": "es",
+            "ara": "ar", "hin": "hi", "tur": "tr", "nld": "nl", "pol": "pl", "swe": "sv", "ukr": "uk", "vie": "vi"
+        },
+        "samplerate": 24000,
+        "files": [],
         "voice": default_speaker,
         "voices": {},
         "rating": {"VRAM": 4, "CPU": 3, "RAM": 4, "Realism": 5}
