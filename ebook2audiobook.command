@@ -20,7 +20,7 @@ else
 	script_path="$0"
 fi
 
-export BASHRCSOURCED=1
+export BASHRCSOURCED="1"
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -37,6 +37,7 @@ export PODMAN_DESKTOP="0"
 export DOCKER_DESKTOP="0"
 export DOCKER_DEVICE_STR=""
 export DEVICE_INFO_STR=""
+export HOMEBREW_NO_ENV_HINTS="1"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
@@ -635,6 +636,13 @@ EOF
 			else
 				echo -e "\e[31m=============== $program failed.\e[0m"
 			fi
+		elif [[ "$program" == "nodejs" ]]; then
+			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
+			if command -v node >/dev/null 2>&1; then
+				echo -e "\e[32m=============== $program OK! ===============\e[0m"
+			else
+				echo -e "\e[31m=============== $program failed.\e[0m"
+			fi
 		else
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
@@ -969,7 +977,8 @@ function build_docker_image {
 ######################################## END of functions
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
-	python -u "$SCRIPT_DIR/app.py" "${ARGS[@]}"
+	check_python || exit 1
+	python3 -u "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
@@ -998,7 +1007,7 @@ else
 			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		else
-			if ! python - "$DOCKER_DEVICE_STR" <<'EOF'
+			if ! python3 - "$DOCKER_DEVICE_STR" <<'EOF'
 import json
 import sys
 json.loads(sys.argv[1])
@@ -1040,12 +1049,12 @@ EOF
 		conda activate "$SCRIPT_DIR/$PYTHON_ENV" || { echo -e "\e[31m=============== conda activate failed.\e[0m"; exit 1; }
 		check_sitecustomized || exit 1
 		check_desktop_app || exit 1
-		python -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
+		python3 -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 		conda deactivate > /dev/null 2>&1
 		conda deactivate > /dev/null 2>&1
 	elif [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
 		check_sitecustomized || exit 1
-		python -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
+		python3 -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 	else
 		echo -e "\e[31m=============== ebook2audiobook is not correctly installed.\e[0m"
 	fi
