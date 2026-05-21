@@ -2819,7 +2819,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cmd += [
                     '-filter_threads', '0',
                     '-filter_complex_threads', '0',
-                    #'-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
                     '-af', 'dynaudnorm=f=150:g=15,afftdn=nf=-70',
                     '-threads', '0',
                     '-progress', 'pipe:2',
