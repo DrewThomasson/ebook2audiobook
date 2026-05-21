@@ -199,7 +199,7 @@ jobs:
           conda deactivate 2>/dev/null || true
           sed -i.bak '1s;^;set -e\n;' ebook2audiobook.command && rm -f ebook2audiobook.command.bak
 
-      - name: English TACOTRON2 Custom-Voice headless single test
+      - name: English TACOTRON Custom-Voice headless single test
         shell: bash
         run: |
           cd ~/ebook2audiobook
@@ -287,7 +287,7 @@ jobs:
 
           $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine GLOWTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/GLOWTTS
 
-      - name: Default XTTSv2 headless Custom-Voice single test
+      - name: Default XTTS headless Custom-Voice single test
         shell: bash
         run: |
           cd ~/ebook2audiobook
@@ -295,7 +295,7 @@ jobs:
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTS
 
-      - name: Hungarian XTTSv2 headless Custom-Voice single test
+      - name: Hungarian XTTS headless Custom-Voice single test
         shell: bash
         run: |
           cd ~/ebook2audiobook
@@ -304,7 +304,7 @@ jobs:
           $RUN_CMD --headless  --language hun --ebook "tools/workflow-testing/hun-test.txt" --tts_engine XTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTS
 
 
-      - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
+      - name: English XTTS headless fine-tuned XTTS model single test
         shell: bash
         run: |
           cd ~/ebook2audiobook
@@ -312,7 +312,7 @@ jobs:
 
           $RUN_CMD --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTS --fine_tuned AiExplained --output_dir ~/ebook2audiobook/audiobooks/XTTSFineTune
 
-      - name: English XTTSv2 headless custom fine-tuned XTTSv2 model single test
+      - name: English XTTS headless custom fine-tuned XTTS model single test
         shell: bash
         run: |
           cd ~/ebook2audiobook
