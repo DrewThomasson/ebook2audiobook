@@ -187,8 +187,8 @@ jobs:
       - name: Create Audiobook Output folders for Artifacts
         shell: bash
         run: |
-          mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK,TORTOISE,GLOWTTS}
-          find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK,TORTOISE,GLOWTTS} -mindepth 1 -exec rm -rf {} +
+          mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTS,XTTSFineTune,XTTSFineTuneCustom,BARK,TORTOISE,GLOWTTS}
+          find ~/ebook2audiobook/audiobooks/{TACOTRON,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTS,XTTSFineTune,XTTSFineTuneCustom,BARK,TORTOISE,GLOWTTS} -mindepth 1 -exec rm -rf {} +
 
       # This step only runs on non-windows because we don't need to modify the .command file if we are running .cmd
       - name: Add set -e at beginning of ebook2audiobook.command (for error passing)
@@ -205,15 +205,23 @@ jobs:
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
           
-          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON2
+          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON
 
-      - name: English FAIRSEQ OCR headless single test
+      - name: FAIRSEQ Custom-Voice OCR headless single long test english -> spanish translate test
         shell: bash
         run: |
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
-          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+          $RUN_CMD --headless  --language eng --translate spa --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+
+      - name: FAIRSEQ Custom-Voice headless single long spanish -> german translate test
+        shell: bash
+        run: |
+          cd ~/ebook2audiobook
+          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
+
+          $RUN_CMD --headless  --language spa --translate deu --ebook "tools/workflow-testing/spa_long_test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
       - name: Haitian Creole FAIRSEQ OCR headless single test
         shell: bash
@@ -285,7 +293,7 @@ jobs:
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
-          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
+          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTS
 
       - name: Hungarian XTTSv2 headless Custom-Voice single test
         shell: bash
@@ -293,7 +301,7 @@ jobs:
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
-          $RUN_CMD --headless  --language hun --ebook "tools/workflow-testing/hun-test.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
+          $RUN_CMD --headless  --language hun --ebook "tools/workflow-testing/hun-test.txt" --tts_engine XTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTS
 
 
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
@@ -302,7 +310,7 @@ jobs:
           cd ~/ebook2audiobook
           if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
-          $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTune
+          $RUN_CMD --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTS --fine_tuned AiExplained --output_dir ~/ebook2audiobook/audiobooks/XTTSFineTune
 
       - name: English XTTSv2 headless custom fine-tuned XTTSv2 model single test
         shell: bash
@@ -312,7 +320,7 @@ jobs:
 
           [ ! -f BadCartmanSouthPark.zip ] && curl -L "https://huggingface.co/drewThomasson/fineTunedTTSModels/resolve/main/xtts-v2/eng/BadCartmanSouthPark/BadCartmanSouthPark.zip" -o BadCartmanSouthPark.zip || echo "BadCartmanSouthPark.zip already exists"
           
-          $RUN_CMD --headless --language eng --ebook "tools/workflow-testing/test1.txt" --custom_model "BadCartmanSouthPark.zip" --tts_engine XTTSv2 --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTuneCustom
+          $RUN_CMD --headless --language eng --ebook "tools/workflow-testing/test1.txt" --custom_model "BadCartmanSouthPark.zip" --tts_engine XTTS --output_dir ~/ebook2audiobook/audiobooks/XTTSFineTuneCustom
           
           # Clean up sessions, careful with path on windows, but rm -rf works in git bash
           ls -lhR ./models/__sessions || true
