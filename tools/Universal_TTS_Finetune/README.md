@@ -80,7 +80,12 @@ After training, load the generated `artifacts.json` (or the training folder) and
 Install the required dependencies using pip:
 
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/DrewThomasson/ebook2audiobook.git
+cd ebook2audiobook
+./ebook2audiobook.command #Mac/Linux or ebook2audiobook.cmd #Window | locally install ebook2audiobook first
+conda activate ./python_env  # Activate the created python env for E2A
+cd ebook2audiobook/tools/Universal_TTS_Finetune # Go into Universal_TTS_Finetune dir
+pip install -r requirements.txt # Install additional requirments for E2A SML
 ```
 
 ## Run the web GUI
