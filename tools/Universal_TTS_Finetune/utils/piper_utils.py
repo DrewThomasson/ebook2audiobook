@@ -9,6 +9,14 @@ import subprocess
 from pathlib import Path
 import torch
 
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_MAIN_MODELS_DIR = _PROJECT_ROOT.parent.parent / "models"
+if _MAIN_MODELS_DIR.exists() and _MAIN_MODELS_DIR.is_dir():
+    _MODELS_DIR = _MAIN_MODELS_DIR
+else:
+    _MODELS_DIR = _PROJECT_ROOT / "models"
+    _MODELS_DIR.mkdir(exist_ok=True)
+
 def ensure_monotonic_align_compiled():
     """Auto-compiles the monotonic_align Cython extension for Piper training if not already compiled."""
     base_dir = Path(__file__).resolve().parent.parent / "piper" / "piper_train" / "vits" / "monotonic_align"
@@ -157,7 +165,7 @@ def download_piper_checkpoint(checkpoint_info: dict[str, str], progress_callback
     
     base_url = f"https://huggingface.co/datasets/rhasspy/piper-checkpoints/resolve/main/{lang}/{locale}/{voice}/{quality}"
     
-    local_dir = Path(__file__).resolve().parent.parent / "models" / "piper" / "checkpoints" / lang / locale / voice / quality
+    local_dir = _MODELS_DIR / "piper" / "checkpoints" / lang / locale / voice / quality
     local_dir.mkdir(parents=True, exist_ok=True)
     
     ckpt_path = local_dir / ckpt_filename

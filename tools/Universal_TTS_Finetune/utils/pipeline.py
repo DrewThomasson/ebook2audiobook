@@ -43,8 +43,12 @@ import os
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-_MODELS_DIR = _PROJECT_ROOT / "models"
-_MODELS_DIR.mkdir(exist_ok=True)
+_MAIN_MODELS_DIR = _PROJECT_ROOT.parent.parent / "models"
+if _MAIN_MODELS_DIR.exists() and _MAIN_MODELS_DIR.is_dir():
+    _MODELS_DIR = _MAIN_MODELS_DIR
+else:
+    _MODELS_DIR = _PROJECT_ROOT / "models"
+    _MODELS_DIR.mkdir(exist_ok=True)
 
 os.environ["HF_HOME"] = str(_MODELS_DIR)
 os.environ["TTS_HOME"] = str(_MODELS_DIR)
@@ -809,6 +813,70 @@ def _download_restore_path(spec_key: str, use_pretrained: bool, restore_path: st
     return model_path
 
 
+def _resolve_xtts_base_model(spec_key: str) -> dict[str, str] | str:
+    """
+    Finds the 4 base model files for XTTS (v1 or v2) in the models directory.
+    If all 4 files are found, returns a dict with keys:
+      - 'dvae_checkpoint'
+      - 'mel_norm_file'
+      - 'tokenizer_file'
+      - 'xtts_checkpoint'
+    pointing to their absolute paths.
+    
+    If not found, returns the path of a shared folder to download them to.
+    """
+    version_str = "v2.0" if spec_key == "xtts_v2" else "v1.1"
+    folder_name = f"XTTS_{version_str}_original_model_files"
+    
+    # Determine the shared download path
+    if (_MODELS_DIR / "tts").is_dir():
+        shared_dir = _MODELS_DIR / "tts" / folder_name
+    else:
+        shared_dir = _MODELS_DIR / folder_name
+        
+    # List of candidate directories to search for existing files
+    candidates = []
+    
+    # Check if the shared directory already has them
+    candidates.append(shared_dir)
+    
+    # Check HuggingFace cache style folders under both models/ and models/tts/
+    hf_repo_name = "models--coqui--XTTS-v2" if spec_key == "xtts_v2" else "models--coqui--XTTS-v1"
+    for base in [_MODELS_DIR, _MODELS_DIR / "tts", _PROJECT_ROOT / "models"]:
+        hf_dir = base / hf_repo_name / "snapshots"
+        if hf_dir.is_dir():
+            try:
+                for sub in hf_dir.iterdir():
+                    if sub.is_dir():
+                        candidates.append(sub)
+            except Exception:
+                pass
+                
+    # Check simple folder candidates
+    for base in [_MODELS_DIR, _MODELS_DIR / "tts", _PROJECT_ROOT / "models"]:
+        candidates.append(base / folder_name)
+        
+    # Search candidates for the 4 required files
+    for cand in candidates:
+        if not cand.is_dir():
+            continue
+        dvae = cand / "dvae.pth"
+        mel = cand / "mel_stats.pth"
+        vocab = cand / "vocab.json"
+        model = cand / "model.pth"
+        if dvae.is_file() and mel.is_file() and vocab.is_file() and model.is_file():
+            return {
+                "dvae_checkpoint": str(dvae.resolve()),
+                "mel_norm_file": str(mel.resolve()),
+                "tokenizer_file": str(vocab.resolve()),
+                "xtts_checkpoint": str(model.resolve())
+            }
+            
+    # If not found, make sure the shared download directory exists and return it
+    shared_dir.mkdir(parents=True, exist_ok=True)
+    return str(shared_dir.resolve())
+
+
 def _patch_recipe_script(
     script_path: Path,
     *,
@@ -869,6 +937,26 @@ def _patch_recipe_script(
         source = re.sub(r"SPEAKER_REFERENCE\s*=\s*\[[^\]]*\]", speaker_value, source, count=1, flags=re.DOTALL)
         if restore_path:
             source = _replace_keyword_value(source, "XTTS_CHECKPOINT", repr(restore_path))
+            
+        # Resolve base model files to avoid duplicate downloads and grab from ebook2audiobook/models
+        resolved = _resolve_xtts_base_model(spec_key)
+        if isinstance(resolved, dict):
+            # We found the files in the cache or some candidate folder, point directly to them
+            source = _replace_literal(source, 'DVAE_CHECKPOINT = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(DVAE_CHECKPOINT_LINK))', f'DVAE_CHECKPOINT = r"{resolved["dvae_checkpoint"]}"')
+            source = _replace_literal(source, 'DVAE_CHECKPOINT = os.path.join(CHECKPOINTS_OUT_PATH, DVAE_CHECKPOINT_LINK.split("/")[-1])', f'DVAE_CHECKPOINT = r"{resolved["dvae_checkpoint"]}"')
+            
+            source = _replace_literal(source, 'MEL_NORM_FILE = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(MEL_NORM_LINK))', f'MEL_NORM_FILE = r"{resolved["mel_norm_file"]}"')
+            source = _replace_literal(source, 'MEL_NORM_FILE = os.path.join(CHECKPOINTS_OUT_PATH, MEL_NORM_LINK.split("/")[-1])', f'MEL_NORM_FILE = r"{resolved["mel_norm_file"]}"')
+            
+            source = _replace_literal(source, 'TOKENIZER_FILE = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(TOKENIZER_FILE_LINK))', f'TOKENIZER_FILE = r"{resolved["tokenizer_file"]}"')
+            source = _replace_literal(source, 'TOKENIZER_FILE = os.path.join(CHECKPOINTS_OUT_PATH, TOKENIZER_FILE_LINK.split("/")[-1])', f'TOKENIZER_FILE = r"{resolved["tokenizer_file"]}"')
+            
+            source = _replace_literal(source, 'XTTS_CHECKPOINT = os.path.join(CHECKPOINTS_OUT_PATH, os.path.basename(XTTS_CHECKPOINT_LINK))', f'XTTS_CHECKPOINT = r"{resolved["xtts_checkpoint"]}"')
+            source = _replace_literal(source, 'XTTS_CHECKPOINT = os.path.join(CHECKPOINTS_OUT_PATH, XTTS_CHECKPOINT_LINK.split("/")[-1])', f'XTTS_CHECKPOINT = r"{resolved["xtts_checkpoint"]}"')
+        else:
+            # We didn't find the files, point CHECKPOINTS_OUT_PATH to the shared directory so they download there and can be reused next time
+            source = _replace_literal(source, 'CHECKPOINTS_OUT_PATH = os.path.join(OUT_PATH, "XTTS_v2.0_original_model_files/")', f'CHECKPOINTS_OUT_PATH = r"{resolved}"')
+            source = _replace_literal(source, 'CHECKPOINTS_OUT_PATH = os.path.join(OUT_PATH, "XTTS_v1.1_original_model_files/")', f'CHECKPOINTS_OUT_PATH = r"{resolved}"')
     elif restore_path:
         if "restore_path=None" in source:
             source = source.replace("restore_path=None", f"restore_path=r\"{restore_path}\"", 1)
