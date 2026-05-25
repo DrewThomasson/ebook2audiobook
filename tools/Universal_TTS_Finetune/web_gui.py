@@ -477,15 +477,15 @@ def run_training(model_key, dataset_dir, language, num_epochs, batch_size, grad_
             result["artifacts_file"],
             result["checkpoint"],
             result["config"],
-            result.get("reference_wav", ""),
+            result.get("reference_wav") or None,
             result["artifacts_file"],
-            result.get("reference_wav", ""),
+            result.get("reference_wav") or None,
             model_key,
             gr.update(choices=updated_models, value=new_val),
             gr.update(choices=[("None", "")] + updated_models, value=""),
         )
     except Exception as exc:
-        return format_exception(exc), "", "", "", "", "", "", "", model_key, gr.update(), gr.update()
+        return format_exception(exc), "", "", "", "", None, "", None, model_key, gr.update(), gr.update()
 
 
 def locate_artifacts(out_path, model_key):
@@ -499,9 +499,9 @@ def locate_artifacts(out_path, model_key):
             artifacts["artifacts_file"],
             artifacts["checkpoint"],
             artifacts["config"],
-            artifacts.get("reference_wav", ""),
+            artifacts.get("reference_wav") or None,
             artifacts["artifacts_file"],
-            artifacts.get("reference_wav", ""),
+            artifacts.get("reference_wav") or None,
             artifacts["model_key"],
             gr.update(choices=updated_models, value=new_val),
         )
@@ -518,11 +518,11 @@ def inspect_artifacts(artifacts_path, model_key):
             artifacts["artifacts_file"],
             artifacts["checkpoint"],
             artifacts["config"],
-            artifacts.get("reference_wav", ""),
-            artifacts.get("reference_wav", ""),
+            artifacts.get("reference_wav") or None,
+            artifacts.get("reference_wav") or None,
         )
     except Exception as exc:
-        return format_exception(exc), "", "", "", "", "", ""
+        return format_exception(exc), "", "", "", "", None, None
 
 
 def run_inference(artifacts_path, model_key, language, tts_text, speaker_audio_file, out_path, progress=gr.Progress()):
@@ -660,7 +660,7 @@ def preprocess_and_train(
         status_msg, dataset_dir = preprocess_res[0], preprocess_res[1]
         if not dataset_dir or "failed" in status_msg.lower():
             train_status_msg = f"Training skipped because dataset preparation failed: {status_msg}"
-            empty_train = (train_status_msg, "", "", "", "", "", "", "", model_key, gr.update(), gr.update())
+            empty_train = (train_status_msg, "", "", "", "", "", "", None, model_key, gr.update(), gr.update())
             empty_infer = (f"Inference skipped: Preprocessing failed.", None, None)
             return empty_train + preprocess_res + empty_infer
             
@@ -687,7 +687,7 @@ def preprocess_and_train(
         return train_res + preprocess_res + infer_res
     except Exception as exc:
         err = format_exception(exc)
-        empty_train = (f"Pipeline error: {err}", "", "", "", "", "", "", "", model_key, gr.update(), gr.update())
+        empty_train = (f"Pipeline error: {err}", "", "", "", "", "", "", None, model_key, gr.update(), gr.update())
         empty_prep = (err, "", "", "", "", gr.update(choices=list_datasets(out_path), value=None), "", gr.update(visible=False, choices=[]), gr.update(visible=False), None, "", [])
         empty_infer = (f"Pipeline error: {err}", None, None)
         return empty_train + empty_prep + empty_infer
@@ -847,7 +847,11 @@ if __name__ == "__main__":
                 interactive=True,
             )
             infer_artifacts = gr.Textbox(label="Artifacts file or ready/training folder", value="")
-            speaker_reference_audio = gr.Textbox(label="Speaker reference WAV (Required for XTTS)", value="")
+            speaker_reference_audio = gr.Audio(
+                label="Speaker reference audio – drag & drop or click to upload (Required for XTTS)",
+                type="filepath",
+                sources=["upload"],
+            )
             infer_language = gr.Dropdown(label="Inference language", choices=LANGUAGE_CHOICES, value="en")
             tts_text = gr.Textbox(label="Input text", value="This fine-tuned model is ready to test.")
             infer_status = gr.Textbox(label="Status", interactive=False)
