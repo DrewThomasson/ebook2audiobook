@@ -67,7 +67,7 @@ LANGUAGE_CHOICES = [
     "ko",
     "ja",
 ]
-WHISPER_CHOICES = ["large-v3", "large-v2", "large", "medium", "small", "base"]
+WHISPER_CHOICES = ["large-v3", "large-v2", "large", "distil-large-v3", "distil-large-v2", "medium", "medium.en", "small", "small.en", "base", "base.en", "tiny", "tiny.en"]
 MODEL_CHOICES = [(label, key) for key, label in dropdown_choices()]
 
 
@@ -755,7 +755,7 @@ if __name__ == "__main__":
             audio_dir = gr.Textbox(label="Audio folder path (optional)", value="")
             transcript_file = gr.File(label="Optional transcript map (csv, tsv, pipe-delimited txt, or json)")
             language = gr.Dropdown(label="Dataset language", choices=LANGUAGE_CHOICES, value="en")
-            whisper_model = gr.Dropdown(label="Whisper model", choices=WHISPER_CHOICES, value="small")
+            whisper_model = gr.Dropdown(label="Whisper model", choices=WHISPER_CHOICES, value="small", allow_custom_value=True)
             diarize_speakers = gr.Checkbox(label="Diarize speakers (split multi-speaker audio)", value=False)
             with gr.Row(visible=False) as diarize_options:
                 expected_speakers = gr.Slider(label="Expected speaker count (0 for auto)", minimum=0, maximum=20, step=1, value=0)
