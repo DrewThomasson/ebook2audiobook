@@ -359,8 +359,6 @@ def preprocess_dataset(audio_files, audio_dir, transcript_file, language, whispe
             choices = sorted(choices)
 
         show_speakers = gr.update(visible=bool(speakers_list), choices=speaker_choices, value=default_speaker_dir if speakers_list else None)
-        show_container = gr.update(visible=bool(speakers_list))
-        
         return (
             message,
             default_speaker_dir,
@@ -368,7 +366,7 @@ def preprocess_dataset(audio_files, audio_dir, transcript_file, language, whispe
             result["metadata_val"],
             default_ref,
             gr.update(choices=choices, value=default_speaker_dir),
-            default_ref,
+            _clean_audio_path(default_ref),
             show_speakers,
             show_container,
             _clean_audio_path(default_ref),
@@ -378,7 +376,7 @@ def preprocess_dataset(audio_files, audio_dir, transcript_file, language, whispe
     except Exception as exc:
         return (
             format_exception(exc), "", "", "", "",
-            gr.update(choices=list_datasets(out_path), value=None), "",
+            gr.update(choices=list_datasets(out_path), value=None), None,
             gr.update(visible=False, choices=[]), gr.update(visible=False),
             None, "", []
         )
@@ -422,8 +420,6 @@ def preprocess_re_diarize(dataset_dir, expected_speakers, diarize_threshold, out
             choices = sorted(choices)
 
         show_speakers = gr.update(visible=bool(speakers_list), choices=speaker_choices, value=default_speaker_dir if speakers_list else None)
-        show_container = gr.update(visible=bool(speakers_list))
-        
         return (
             message,
             default_speaker_dir,
@@ -431,7 +427,7 @@ def preprocess_re_diarize(dataset_dir, expected_speakers, diarize_threshold, out
             result["metadata_val"],
             default_ref,
             gr.update(choices=choices, value=default_speaker_dir),
-            default_ref,
+            _clean_audio_path(default_ref),
             show_speakers,
             show_container,
             _clean_audio_path(default_ref),
@@ -441,7 +437,7 @@ def preprocess_re_diarize(dataset_dir, expected_speakers, diarize_threshold, out
     except Exception as exc:
         return (
             format_exception(exc), "", "", "", "",
-            gr.update(choices=list_datasets(out_path), value=None), "",
+            gr.update(choices=list_datasets(out_path), value=None), None,
             gr.update(visible=False, choices=[]), gr.update(visible=False),
             None, "", []
         )
@@ -479,7 +475,7 @@ def run_training(model_key, dataset_dir, language, num_epochs, batch_size, grad_
             result["config"],
             result.get("reference_wav") or None,
             result["artifacts_file"],
-            result.get("reference_wav") or None,
+            _clean_audio_path(result.get("reference_wav")),
             model_key,
             gr.update(choices=updated_models, value=new_val),
             gr.update(choices=[("None", "")] + updated_models, value=""),
@@ -501,12 +497,12 @@ def locate_artifacts(out_path, model_key):
             artifacts["config"],
             artifacts.get("reference_wav") or None,
             artifacts["artifacts_file"],
-            artifacts.get("reference_wav") or None,
+            _clean_audio_path(artifacts.get("reference_wav")),
             artifacts["model_key"],
             gr.update(choices=updated_models, value=new_val),
         )
     except Exception as exc:
-        return format_exception(exc), "", "", "", "", "", "", "", model_key, gr.update()
+        return format_exception(exc), "", "", "", "", "", "", None, model_key, gr.update()
 
 
 def inspect_artifacts(artifacts_path, model_key):
@@ -519,7 +515,7 @@ def inspect_artifacts(artifacts_path, model_key):
             artifacts["checkpoint"],
             artifacts["config"],
             artifacts.get("reference_wav") or None,
-            artifacts.get("reference_wav") or None,
+            _clean_audio_path(artifacts.get("reference_wav")),
         )
     except Exception as exc:
         return format_exception(exc), "", "", "", "", None, None
@@ -556,11 +552,11 @@ def on_model_change(selected_model):
 
 def on_select_speaker(selected_dir, speakers_state):
     if not selected_dir or not speakers_state:
-        return gr.update(), "", "", "", gr.update()
+        return gr.update(), "", None, "", gr.update()
     
     speaker_info = next((s for s in speakers_state if s["dataset_dir"] == selected_dir), None)
     if not speaker_info:
-        return gr.update(), "", "", "", gr.update()
+        return gr.update(), "", None, "", gr.update()
         
     info_md = f"**Dataset path**: `{selected_dir}`\n**Duration**: {speaker_info['total_audio_seconds']} seconds\n**Total clips**: {speaker_info['created_sample_count']}"
     ref_wav = speaker_info["reference_wav"]
@@ -688,7 +684,7 @@ def preprocess_and_train(
     except Exception as exc:
         err = format_exception(exc)
         empty_train = (f"Pipeline error: {err}", "", "", "", "", "", "", None, model_key, gr.update(), gr.update())
-        empty_prep = (err, "", "", "", "", gr.update(choices=list_datasets(out_path), value=None), "", gr.update(visible=False, choices=[]), gr.update(visible=False), None, "", [])
+        empty_prep = (err, "", "", "", "", gr.update(choices=list_datasets(out_path), value=None), None, gr.update(visible=False, choices=[]), gr.update(visible=False), None, "", [])
         empty_infer = (f"Pipeline error: {err}", None, None)
         return empty_train + empty_prep + empty_infer
 
