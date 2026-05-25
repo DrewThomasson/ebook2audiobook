@@ -97,7 +97,31 @@ ap = AudioProcessor(**config.audio.to_dict())
 
 tokenizer, config = TTSTokenizer.init_from_config(config)
 
-train_samples, eval_samples = load_tts_samples(dataset_config, eval_split=True)
+try:
+    train_samples, eval_samples = load_tts_samples(
+        dataset_config,
+        eval_split=True,
+        eval_split_max_size=config.eval_split_max_size,
+        eval_split_size=config.eval_split_size,
+    )
+except AssertionError as e:
+    if "You do not have enough samples for the evaluation set" in str(e):
+        total_samples = load_tts_samples(dataset_config, eval_split=False)
+        num_samples = len(total_samples)
+        if num_samples > 0:
+            new_eval_split_size = 1.0 / num_samples
+            print(f" > Recalculating eval_split_size to {new_eval_split_size} (at least 1 evaluation sample)")
+            config.eval_split_size = new_eval_split_size
+            train_samples, eval_samples = load_tts_samples(
+                dataset_config,
+                eval_split=True,
+                eval_split_max_size=config.eval_split_max_size,
+                eval_split_size=config.eval_split_size,
+            )
+        else:
+            raise e
+    else:
+        raise e
 
 model = Tacotron2(config, ap, tokenizer, speaker_manager=None)
 

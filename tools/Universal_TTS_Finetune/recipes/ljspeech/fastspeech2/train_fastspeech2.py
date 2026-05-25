@@ -85,12 +85,31 @@ tokenizer, config = TTSTokenizer.init_from_config(config)
 # You can define your custom sample loader returning the list of samples.
 # Or define your custom formatter and pass it to the `load_tts_samples`.
 # Check `TTS.tts.datasets.load_tts_samples` for more details.
-train_samples, eval_samples = load_tts_samples(
-    dataset_config,
-    eval_split=True,
-    eval_split_max_size=config.eval_split_max_size,
-    eval_split_size=config.eval_split_size,
-)
+try:
+    train_samples, eval_samples = load_tts_samples(
+        dataset_config,
+        eval_split=True,
+        eval_split_max_size=config.eval_split_max_size,
+        eval_split_size=config.eval_split_size,
+    )
+except AssertionError as e:
+    if "You do not have enough samples for the evaluation set" in str(e):
+        total_samples = load_tts_samples(dataset_config, eval_split=False)
+        num_samples = len(total_samples)
+        if num_samples > 0:
+            new_eval_split_size = 1.0 / num_samples
+            print(f" > Recalculating eval_split_size to {new_eval_split_size} (at least 1 evaluation sample)")
+            config.eval_split_size = new_eval_split_size
+            train_samples, eval_samples = load_tts_samples(
+                dataset_config,
+                eval_split=True,
+                eval_split_max_size=config.eval_split_max_size,
+                eval_split_size=config.eval_split_size,
+            )
+        else:
+            raise e
+    else:
+        raise e
 
 # init the model
 model = ForwardTTS(config, ap, tokenizer, speaker_manager=None)
