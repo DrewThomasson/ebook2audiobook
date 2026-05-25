@@ -4,7 +4,11 @@ from trainer import Trainer, TrainerArgs
 
 from TTS.config.shared_configs import BaseDatasetConfig
 from TTS.tts.datasets import load_tts_samples
-from TTS.tts.layers.xtts.trainer.gpt_trainer import GPTArgs, GPTTrainer, GPTTrainerConfig, XttsAudioConfig
+try:
+    from TTS.tts.layers.xtts.trainer.gpt_trainer import GPTArgs, GPTTrainer, GPTTrainerConfig, XttsAudioConfig
+except ImportError:
+    from TTS.tts.layers.xtts.trainer.gpt_trainer import GPTArgs, GPTTrainer, GPTTrainerConfig
+    from TTS.tts.configs.xtts_config import XttsAudioConfig
 from TTS.utils.manage import ModelManager
 
 # Logging parameters
@@ -148,12 +152,31 @@ def main():
     model = GPTTrainer.init_from_config(config)
 
     # load training samples
-    train_samples, eval_samples = load_tts_samples(
-        DATASETS_CONFIG_LIST,
-        eval_split=True,
-        eval_split_max_size=config.eval_split_max_size,
-        eval_split_size=config.eval_split_size,
-    )
+    try:
+        train_samples, eval_samples = load_tts_samples(
+            DATASETS_CONFIG_LIST,
+            eval_split=True,
+            eval_split_max_size=config.eval_split_max_size,
+            eval_split_size=config.eval_split_size,
+        )
+    except AssertionError as e:
+        if "You do not have enough samples for the evaluation set" in str(e):
+            total_samples = load_tts_samples(DATASETS_CONFIG_LIST, eval_split=False)
+            num_samples = len(total_samples)
+            if num_samples > 0:
+                new_eval_split_size = 1.0 / num_samples
+                print(f" > Recalculating eval_split_size to {new_eval_split_size} (at least 1 evaluation sample)")
+                config.eval_split_size = new_eval_split_size
+                train_samples, eval_samples = load_tts_samples(
+                    DATASETS_CONFIG_LIST,
+                    eval_split=True,
+                    eval_split_max_size=config.eval_split_max_size,
+                    eval_split_size=config.eval_split_size,
+                )
+            else:
+                raise e
+        else:
+            raise e
 
     # init the trainer and 🚀
     trainer = Trainer(
