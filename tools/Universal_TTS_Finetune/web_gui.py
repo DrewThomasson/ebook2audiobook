@@ -769,7 +769,7 @@ if __name__ == "__main__":
                 re_diarize_source = gr.Dropdown(
                     label="Select dataset to re-diarize",
                     choices=list_datasets(args.out_path),
-                    value="",
+                    value=None,
                     allow_custom_value=True,
                     interactive=True,
                 )
@@ -786,7 +786,7 @@ if __name__ == "__main__":
             train_dataset_dir = gr.Dropdown(
                 label="Dataset directory",
                 choices=list_datasets(args.out_path),
-                value="",
+                value=None,
                 allow_custom_value=True,
                 interactive=True,
             )
@@ -795,7 +795,7 @@ if __name__ == "__main__":
                 restore_model_dropdown = gr.Dropdown(
                     label="Resume from previous training run",
                     choices=[("None", "")] + list_trained_models(args.out_path, "xtts_v2"),
-                    value="",
+                    value=None,
                     interactive=True,
                 )
                 restore_path = gr.Textbox(label="Optional checkpoint to continue from", value="")
@@ -840,7 +840,7 @@ if __name__ == "__main__":
             infer_trained_model = gr.Dropdown(
                 label="Select previously fine-tuned model",
                 choices=list_trained_models(args.out_path, "xtts_v2"),
-                value="",
+                value=None,
                 interactive=True,
             )
             infer_artifacts = gr.Textbox(label="Artifacts file or ready/training folder", value="")
