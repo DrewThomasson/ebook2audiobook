@@ -50,6 +50,30 @@ def ensure_monotonic_align_compiled():
     except Exception as e:
         print(f"Warning: Failed to compile monotonic_align Cython extension: {e}. Training might be slow or fail.")
 
+def get_voices_json_languages() -> set[str]:
+    """Retrieves all language codes and families supported by pre-built Piper models in voices.json."""
+    paths = [
+        _PROJECT_ROOT / "voices.json",
+        _PROJECT_ROOT / "piper" / "piper" / "voices.json"
+    ]
+    langs = set()
+    for path in paths:
+        if path.exists():
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    for voice in data.values():
+                        lang_info = voice.get("language", {})
+                        if "code" in lang_info:
+                            code = lang_info["code"].lower()
+                            langs.add(code)
+                            langs.add(code.replace("_", "-"))
+                        if "family" in lang_info:
+                            langs.add(lang_info["family"].lower())
+            except Exception:
+                pass
+    return langs
+
 def resolve_piper_checkpoint(language: str, quality: str = "medium") -> dict[str, str]:
     """Resolves the pre-trained checkpoint for a given language code.
     Tries HF API dynamically, falling back to a static catalog of common models.

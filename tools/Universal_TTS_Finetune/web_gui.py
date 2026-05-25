@@ -594,16 +594,31 @@ def update_training_options(model_key, language, use_pretrained):
 
     # 2. Piper family
     elif family == "piper":
-        from utils.piper_utils import resolve_piper_checkpoint
+        from utils.piper_utils import resolve_piper_checkpoint, get_voices_json_languages
         try:
             checkpoint_info = resolve_piper_checkpoint(language)
             resolved_lang = checkpoint_info.get("lang")
             normalized_req_lang = language.split("-")[0].split("_")[0].lower()
 
+            # Check if language exists in prebuilt voices.json
+            prebuilt_exists = False
+            try:
+                prebuilt_langs = get_voices_json_languages()
+                prebuilt_exists = language.lower() in prebuilt_langs or normalized_req_lang in prebuilt_langs
+            except Exception:
+                pass
+
             if resolved_lang == normalized_req_lang:
                 msg = f"🟢 **Piper TTS** has a pre-trained checkpoint for `{language}`: `{checkpoint_info['voice']}` ({checkpoint_info['quality']}).\n\n"
                 if use_pretrained:
                     msg += f"Fine-tuning will download and use the official `{language}` pre-trained checkpoint."
+                else:
+                    msg += "**Training from scratch** (random initialization). *Note: Training from scratch is not recommended unless you have a very large dataset and plan to train for many steps.*"
+                return msg, gr.update(interactive=True)
+            elif prebuilt_exists:
+                msg = f"🟢 **Piper TTS** has pre-built ONNX models for `{language}` (listed in `voices.json`), but **no official training checkpoint (`.ckpt`)** is hosted in the official `rhasspy/piper-checkpoints` repository.\n\n"
+                if use_pretrained:
+                    msg += f"Fine-tuning will default to using the English base model (`{checkpoint_info['voice']}`) as a starting point (cross-lingual transfer)."
                 else:
                     msg += "**Training from scratch** (random initialization). *Note: Training from scratch is not recommended unless you have a very large dataset and plan to train for many steps.*"
                 return msg, gr.update(interactive=True)
