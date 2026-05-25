@@ -1176,4 +1176,10 @@ if __name__ == "__main__":
             outputs=[model_checkpoint_warning, use_pretrained],
         )
 
-    demo.launch(share=args.share, debug=False, server_port=args.port)
+    allowed = [
+        str(Path(args.out_path).resolve()),
+        str(Path.home()),
+        str(Path.cwd().resolve()),
+        str(Path.cwd().parent.parent.resolve())
+    ]
+    demo.launch(share=args.share, debug=False, server_port=args.port, allowed_paths=allowed)
