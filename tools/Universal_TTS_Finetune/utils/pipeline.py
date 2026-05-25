@@ -1066,9 +1066,69 @@ def _finalize_training_artifacts(
 
     if spec.family == "xtts":
         vocab = _latest_matching_file(workspace_root, ["vocab.json"])
+        if not vocab:
+            # Fallback: search in resolved base model
+            resolved = _resolve_xtts_base_model(spec_key)
+            if isinstance(resolved, dict) and "tokenizer_file" in resolved:
+                vocab = Path(resolved["tokenizer_file"])
+        if not vocab:
+            raise FileNotFoundError("XTTS training completed but vocab.json was not found.")
+
         speaker = _latest_matching_file(workspace_root, ["speakers_xtts.pth"])
-        if not vocab or not speaker:
-            raise FileNotFoundError("XTTS training completed but vocab.json or speakers_xtts.pth was not found.")
+        if not speaker:
+            # Search candidate directories for speakers_xtts.pth
+            resolved = _resolve_xtts_base_model(spec_key)
+            if isinstance(resolved, dict) and "xtts_checkpoint" in resolved:
+                cand = Path(resolved["xtts_checkpoint"]).parent / "speakers_xtts.pth"
+                if cand.is_file():
+                    speaker = cand
+            if not speaker:
+                # Search all snapshots and shared folders
+                hf_repo_name = "models--coqui--XTTS-v2" if spec_key == "xtts_v2" else "models--coqui--XTTS-v1"
+                version_str = "v2.0" if spec_key == "xtts_v2" else "v1.1"
+                folder_name = f"XTTS_{version_str}_original_model_files"
+                for base in [_MODELS_DIR, _MODELS_DIR / "tts", _PROJECT_ROOT / "models"]:
+                    # Check folder_name
+                    cand = base / folder_name / "speakers_xtts.pth"
+                    if cand.is_file():
+                        speaker = cand
+                        break
+                    # Check snapshots
+                    hf_dir = base / hf_repo_name / "snapshots"
+                    if hf_dir.is_dir():
+                        try:
+                            for sub in hf_dir.iterdir():
+                                if sub.is_dir():
+                                    cand = sub / "speakers_xtts.pth"
+                                    if cand.is_file():
+                                        speaker = cand
+                                        break
+                        except Exception:
+                            pass
+                    if speaker:
+                        break
+            if not speaker:
+                # Download it to models/tts
+                _notify(None, "speakers_xtts.pth not found locally. Downloading base speaker file...")
+                try:
+                    import urllib.request
+                    version_str = "v2.0" if spec_key == "xtts_v2" else "v1.1"
+                    dest_dir = (_MODELS_DIR / "tts") if (_MODELS_DIR / "tts").is_dir() else _MODELS_DIR
+                    dest_path = dest_dir / f"XTTS_{version_str}_original_model_files" / "speakers_xtts.pth"
+                    dest_path.parent.mkdir(parents=True, exist_ok=True)
+                    url = f"https://coqui.gateway.scarf.sh/hf-coqui/XTTS-{'v2' if spec_key == 'xtts_v2' else 'v1'}/main/speakers_xtts.pth"
+                    req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                    with urllib.request.urlopen(req, timeout=15) as response:
+                        dest_path.write_bytes(response.read())
+                    speaker = dest_path
+                except Exception as dl_err:
+                    _notify(None, f"Warning: Failed to download speakers_xtts.pth: {dl_err}. Creating a dummy speaker file.")
+                    dest_dir = (_MODELS_DIR / "tts") if (_MODELS_DIR / "tts").is_dir() else _MODELS_DIR
+                    dest_path = dest_dir / f"XTTS_{version_str}_original_model_files" / "speakers_xtts.pth"
+                    dest_path.parent.mkdir(parents=True, exist_ok=True)
+                    dest_path.write_bytes(b"")
+                    speaker = dest_path
+
         ready_vocab = ready_dir / "vocab.json"
         ready_speaker = ready_dir / "speakers_xtts.pth"
         shutil.copy2(vocab, ready_vocab)

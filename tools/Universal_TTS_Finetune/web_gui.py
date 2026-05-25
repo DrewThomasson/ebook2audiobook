@@ -252,7 +252,7 @@ def update_dataset_choices(out_root: str | None) -> gr.Dropdown:
 
 def update_trained_models(out_root: str | None, model_key: str | None) -> gr.Dropdown:
     choices = list_trained_models(out_root, model_key)
-    val = choices[0][1] if choices else ""
+    val = choices[0][1] if choices else None
     return gr.update(choices=choices, value=val)
 
 
@@ -378,7 +378,7 @@ def preprocess_dataset(audio_files, audio_dir, transcript_file, language, whispe
     except Exception as exc:
         return (
             format_exception(exc), "", "", "", "",
-            gr.update(choices=list_datasets(out_path), value=""), "",
+            gr.update(choices=list_datasets(out_path), value=None), "",
             gr.update(visible=False, choices=[]), gr.update(visible=False),
             None, "", []
         )
@@ -441,7 +441,7 @@ def preprocess_re_diarize(dataset_dir, expected_speakers, diarize_threshold, out
     except Exception as exc:
         return (
             format_exception(exc), "", "", "", "",
-            gr.update(choices=list_datasets(out_path), value=""), "",
+            gr.update(choices=list_datasets(out_path), value=None), "",
             gr.update(visible=False, choices=[]), gr.update(visible=False),
             None, "", []
         )
@@ -469,7 +469,7 @@ def run_training(model_key, dataset_dir, language, num_epochs, batch_size, grad_
         message = f"Training finished. Ready artifacts saved in {Path(result['training_root']) / 'ready'}"
         
         updated_models = list_trained_models(out_path, model_key)
-        new_val = updated_models[0][1] if updated_models else ""
+        new_val = updated_models[0][1] if updated_models else None
         
         return (
             message,
@@ -537,6 +537,9 @@ def run_inference(artifacts_path, model_key, language, tts_text, speaker_audio_f
             progress=_gradio_progress(progress),
         )
         return "Speech generated.", _clean_audio_path(result["output_file"]), _clean_audio_path(result.get("speaker_wav"))
+    except ValueError as exc:
+        # Display validation/user errors cleanly in the GUI status
+        return f"Error: {exc}", None, None
     except Exception as exc:
         return format_exception(exc), None, None
 
@@ -685,7 +688,7 @@ def preprocess_and_train(
     except Exception as exc:
         err = format_exception(exc)
         empty_train = (f"Pipeline error: {err}", "", "", "", "", "", "", "", model_key, gr.update(), gr.update())
-        empty_prep = (err, "", "", "", "", gr.update(choices=list_datasets(out_path), value=""), "", gr.update(visible=False, choices=[]), gr.update(visible=False), None, "", [])
+        empty_prep = (err, "", "", "", "", gr.update(choices=list_datasets(out_path), value=None), "", gr.update(visible=False, choices=[]), gr.update(visible=False), None, "", [])
         empty_infer = (f"Pipeline error: {err}", None, None)
         return empty_train + empty_prep + empty_infer
 
@@ -844,7 +847,7 @@ if __name__ == "__main__":
                 interactive=True,
             )
             infer_artifacts = gr.Textbox(label="Artifacts file or ready/training folder", value="")
-            speaker_reference_audio = gr.Textbox(label="Optional speaker reference WAV (XTTS)", value="")
+            speaker_reference_audio = gr.Textbox(label="Speaker reference WAV (Required for XTTS)", value="")
             infer_language = gr.Dropdown(label="Inference language", choices=LANGUAGE_CHOICES, value="en")
             tts_text = gr.Textbox(label="Input text", value="This fine-tuned model is ready to test.")
             infer_status = gr.Textbox(label="Status", interactive=False)
