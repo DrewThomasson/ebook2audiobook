@@ -411,6 +411,137 @@ def _extract_speaker_embeddings_pyannote(entries: list[dict[str, Any]], progress
     return np.array(embeddings)
 
 
+def format_timestamp(seconds: float) -> str:
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    millis = int(round((seconds - int(seconds)) * 1000))
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}"
+
+
+def align_audio_and_text_to_vtt(
+    audio_path: Path,
+    text_path: Path,
+    language: str,
+    output_vtt_path: Path,
+    progress: ProgressCallback = None,
+) -> None:
+    from uroman import Uroman
+    from torchaudio.pipelines import MMS_FA as bundle
+    import re
+
+    _notify(progress, f"Reading transcript from {text_path.name}...")
+    lines = text_path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    lines = [line.strip() for line in lines if line.strip()]
+    if not lines:
+        raise ValueError(f"The transcript file {text_path.name} is empty.")
+
+    _notify(progress, f"Loading and preprocessing audio: {audio_path.name}...")
+    waveform, sample_rate = _load_waveform(audio_path, sample_rate=16000)
+    duration_seconds = waveform.shape[-1] / sample_rate
+
+    # Safety: if audio is longer than 10 minutes, run on CPU to avoid GPU OOM
+    if duration_seconds > 600:
+        device = torch.device("cpu")
+        _notify(progress, f"Audio is long ({duration_seconds:.1f}s). Running alignment on CPU to prevent Out-Of-Memory...")
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        _notify(progress, f"Running alignment on {device}...")
+
+    _notify(progress, f"Loading MMS Forced Alignment model...")
+    model = bundle.get_model(with_star=False).to(device)
+    tokenizer = bundle.get_tokenizer()
+    aligner = bundle.get_aligner()
+
+    waveform = waveform.to(device)
+
+    _notify(progress, f"Romanizing and cleaning transcript words...")
+    u = Uroman()
+    
+    line_word_maps = []
+    all_words = []
+    cleaned_words = []
+    
+    for line_idx, line in enumerate(lines):
+        line_text = re.sub(r"\s+", " ", line).strip()
+        if not line_text:
+            continue
+        words = line_text.split()
+        if not words:
+            continue
+        
+        start_idx = len(all_words)
+        for w in words:
+            all_words.append((w, line_text))
+            rom_w = u.romanize_string(w)
+            w_clean = rom_w.lower()
+            w_clean = re.sub("([^a-z' ])", "", w_clean).strip()
+            if not w_clean:
+                w_clean = "a"  # Fallback for punctuation-only words
+            cleaned_words.append(w_clean)
+        end_idx = len(all_words)
+        line_word_maps.append({
+            "line_idx": line_idx,
+            "text": line_text,
+            "start_word_idx": start_idx,
+            "end_word_idx": end_idx,
+        })
+
+    if not cleaned_words:
+        raise ValueError("No clean words found in transcript to align.")
+
+    _notify(progress, f"Tokenizing transcript...")
+    tokens = tokenizer(cleaned_words)
+
+    _notify(progress, f"Running acoustic model...")
+    with torch.inference_mode():
+        emission, _ = model(waveform)
+        emission = emission.squeeze(0)
+
+    _notify(progress, f"Computing forced alignment...")
+    try:
+        spans = aligner(emission, tokens)
+    except Exception as e:
+        raise RuntimeError(f"Forced alignment failed: {e}. Please check if the audio matches the text.")
+
+    frame_duration = 0.02
+    word_timestamps = []
+    for word_idx, span_list in enumerate(spans):
+        if not span_list:
+            word_timestamps.append((0.0, 0.0))
+            continue
+        w_start = span_list[0].start * frame_duration
+        w_end = span_list[-1].end * frame_duration
+        word_timestamps.append((w_start, w_end))
+
+    # Construct WebVTT lines
+    vtt_lines = ["WEBVTT\n"]
+    for mapping in line_word_maps:
+        start_w = mapping["start_word_idx"]
+        end_w = mapping["end_word_idx"]
+        
+        sentence_word_timestamps = word_timestamps[start_w:end_w]
+        valid_timestamps = [t for t in sentence_word_timestamps if t != (0.0, 0.0)]
+        
+        if valid_timestamps:
+            s_start = min(t[0] for t in valid_timestamps)
+            s_end = max(t[1] for t in valid_timestamps)
+        else:
+            s_start = (start_w / len(word_timestamps)) * duration_seconds
+            s_end = (end_w / len(word_timestamps)) * duration_seconds
+
+        if s_end <= s_start:
+            s_end = s_start + 1.0
+
+        start_str = format_timestamp(s_start)
+        end_str = format_timestamp(s_end)
+        
+        vtt_lines.append(f"{start_str} --> {end_str}\n{mapping['text']}\n")
+
+    _notify(progress, f"Writing WebVTT file to {output_vtt_path.name}...")
+    output_vtt_path.write_text("\n".join(vtt_lines) + "\n", encoding="utf-8")
+
+
 def prepare_dataset(
     *,
     output_root: str,
@@ -442,13 +573,44 @@ def prepare_dataset(
         shutil.rmtree(dataset_dir)
     wavs_dir.mkdir(parents=True, exist_ok=True)
 
-    # Check if transcript_file is a VTT file
+    # Check if transcript_file is a VTT file or needs forced alignment
     is_vtt = False
     vtt_path = None
     if transcript_file:
-        vtt_path = _resolve_user_path(transcript_file, must_exist=True, expect_directory=False)
-        if vtt_path.suffix.lower() == ".vtt":
+        resolved_transcript_path = _resolve_user_path(transcript_file, must_exist=True, expect_directory=False)
+        suffix = resolved_transcript_path.suffix.lower()
+        if suffix == ".vtt":
             is_vtt = True
+            vtt_path = resolved_transcript_path
+        elif suffix == ".txt":
+            is_mapping = False
+            try:
+                sample = resolved_transcript_path.read_text(encoding="utf-8", errors="ignore")[:2048]
+                if "|" in sample or ("," in sample and "\n" in sample) or ("\t" in sample and "\n" in sample):
+                    is_mapping = True
+            except Exception:
+                pass
+                
+            if not is_mapping:
+                temp_vtt_dir = output_root_path / "temp"
+                temp_vtt_dir.mkdir(parents=True, exist_ok=True)
+                vtt_path = temp_vtt_dir / f"{resolved_transcript_path.stem}_aligned.vtt"
+                
+                if len(resolved_audio_files) != 1:
+                    raise ValueError(
+                        f"Forced alignment requires exactly 1 audio file (e.g. the full audiobook chapter), "
+                        f"but found {len(resolved_audio_files)} audio files."
+                    )
+                
+                _notify(progress, f"Starting forced alignment between {Path(resolved_audio_files[0]).name} and {resolved_transcript_path.name}...")
+                align_audio_and_text_to_vtt(
+                    audio_path=Path(resolved_audio_files[0]),
+                    text_path=resolved_transcript_path,
+                    language=language,
+                    output_vtt_path=vtt_path,
+                    progress=progress
+                )
+                is_vtt = True
 
     transcript_map = {} if is_vtt else _load_transcript_map(transcript_file)
     use_whisper = not transcript_map and not is_vtt
@@ -543,6 +705,7 @@ def prepare_dataset(
             language=language,
             vad_filter=True,
             word_timestamps=True,
+            condition_on_previous_text=False,
         )
         words = _extract_transcribed_words(segments)
         if not words:
@@ -569,24 +732,41 @@ def prepare_dataset(
             cleaned = _clean_text(sentence_text, language)
             duration_seconds = clip_end - sentence_start
             if cleaned and duration_seconds >= min_segment_seconds:
-                sample_id = f"{base_name}_{clip_index:08d}"
-                destination = wavs_dir / f"{sample_id}.wav"
-                start_frame = max(0, int(sentence_start * sample_rate))
-                end_frame = min(waveform.shape[-1], int(clip_end * sample_rate))
-                clip = waveform[:, start_frame:end_frame]
-                if clip.shape[-1] >= int(min_segment_seconds * sample_rate):
-                    _save_waveform(destination, clip, sample_rate)
-                    entry = {
-                        "id": sample_id,
-                        "text": cleaned,
-                        "original_text": sentence_text,
-                        "audio_path": str(destination),
-                        "duration_seconds": duration_seconds,
-                    }
-                    entries.append(entry)
-                    if longest_entry is None or duration_seconds > longest_entry["duration_seconds"]:
-                        longest_entry = entry
-                    clip_index += 1
+                # Guard against Whisper hallucination loops & excessive speed
+                cps = len(cleaned) / duration_seconds if duration_seconds > 0 else 0
+                
+                def has_loops(text):
+                    w_list = text.lower().split()
+                    for idx in range(len(w_list) - 3):
+                        if w_list[idx] == w_list[idx+1] == w_list[idx+2]:
+                            return True
+                        if w_list[idx:idx+2] == w_list[idx+2:idx+4] == w_list[idx+4:idx+6]:
+                            return True
+                    return False
+
+                is_hallucination = cps > 28.0 or has_loops(cleaned)
+                
+                if not is_hallucination:
+                    sample_id = f"{base_name}_{clip_index:08d}"
+                    destination = wavs_dir / f"{sample_id}.wav"
+                    start_frame = max(0, int(sentence_start * sample_rate))
+                    end_frame = min(waveform.shape[-1], int(clip_end * sample_rate))
+                    clip = waveform[:, start_frame:end_frame]
+                    if clip.shape[-1] >= int(min_segment_seconds * sample_rate):
+                        _save_waveform(destination, clip, sample_rate)
+                        entry = {
+                            "id": sample_id,
+                            "text": cleaned,
+                            "original_text": sentence_text,
+                            "audio_path": str(destination),
+                            "duration_seconds": duration_seconds,
+                        }
+                        entries.append(entry)
+                        if longest_entry is None or duration_seconds > longest_entry["duration_seconds"]:
+                            longest_entry = entry
+                        clip_index += 1
+                else:
+                    _notify(progress, f"Filtered out segment due to Whisper loop/hallucination detection (CPS: {cps:.1f})")
             sentence_words = []
             sentence_start = None
 

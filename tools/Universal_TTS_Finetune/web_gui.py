@@ -776,7 +776,14 @@ if __name__ == "__main__":
                 label="Audio files (wav, mp3, flac, m4a, ogg)",
             )
             audio_dir = gr.Textbox(label="Audio folder path (optional)", value="")
-            transcript_file = gr.File(label="Optional transcript map (csv, tsv, pipe-delimited txt, or json)")
+            transcript_file = gr.File(label="Optional transcript map or alignment file (.vtt, .txt, .csv, .tsv, .json)")
+            gr.Markdown(
+                "💡 **How to provide text/transcripts:**\n"
+                "- **None**: Leave blank to auto-transcribe audio from scratch using Whisper.\n"
+                "- **WebVTT (.vtt)**: Upload a WebVTT file along with the full audiobook file to slice it automatically with 0% transcription errors.\n"
+                "- **Plain Text (.txt)**: Upload a plain text book file (one sentence/paragraph per line) along with the full audiobook file to run **Forced Alignment**.\n"
+                "- **Transcript Map (.csv, .tsv, .json, or delimited .txt)**: Upload a mapping file of `audio_file|text` matching a folder of pre-split audio files."
+            )
             language = gr.Dropdown(label="Dataset language", choices=LANGUAGE_CHOICES, value="en")
             whisper_model = gr.Dropdown(label="Whisper model", choices=WHISPER_CHOICES, value="small", allow_custom_value=True)
             diarize_speakers = gr.Checkbox(label="Diarize speakers (split multi-speaker audio)", value=False)
