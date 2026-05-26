@@ -430,20 +430,28 @@ def prepare_dataset(
     dataset_name: str = "LJSpeech-1.1",
     progress: ProgressCallback = None,
 ) -> dict[str, Any]:
-    resolved_audio_files = resolve_audio_files(audio_files, audio_dir)
-    if not resolved_audio_files:
-        raise ValueError("No audio files found. Provide files directly or point to a folder that contains audio.")
-
     output_root_path = _resolve_user_path(output_root, expect_directory=True)
     dataset_name = dataset_name or "LJSpeech-1.1"
     dataset_dir = output_root_path / "dataset" / dataset_name
     wavs_dir = dataset_dir / "wavs"
+
+    resolved_audio_files = resolve_audio_files(audio_files, audio_dir)
+    if not resolved_audio_files:
+        raise ValueError("No audio files found. Provide files directly or point to a folder that contains audio.")
     if dataset_dir.exists():
         shutil.rmtree(dataset_dir)
     wavs_dir.mkdir(parents=True, exist_ok=True)
 
-    transcript_map = _load_transcript_map(transcript_file)
-    use_whisper = not transcript_map
+    # Check if transcript_file is a VTT file
+    is_vtt = False
+    vtt_path = None
+    if transcript_file:
+        vtt_path = _resolve_user_path(transcript_file, must_exist=True, expect_directory=False)
+        if vtt_path.suffix.lower() == ".vtt":
+            is_vtt = True
+
+    transcript_map = {} if is_vtt else _load_transcript_map(transcript_file)
+    use_whisper = not transcript_map and not is_vtt
     asr_model: WhisperModel | None = None
     if use_whisper:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -462,6 +470,47 @@ def prepare_dataset(
         total_duration = waveform.shape[-1] / sample_rate
         total_seconds += total_duration
         base_name = _safe_name(audio_path.stem)
+
+        if is_vtt:
+            _notify(progress, f"Slicing audio with VTT transcript file: {vtt_path.name}...")
+            vtt_content = vtt_path.read_text(encoding="utf-8", errors="ignore")
+            pattern = r"((?:\d{2}:)?\d{2}:\d{2}\.\d{3})\s+-->\s+((?:\d{2}:)?\d{2}:\d{2}\.\d{3})\n(.*?)(?=\n\n|\Z|\n\d|\n\[)"
+            matches = re.findall(pattern, vtt_content, re.DOTALL)
+            
+            for clip_index, (start_str, end_str, text_val) in enumerate(matches):
+                def to_secs(t_str):
+                    parts = t_str.split(":")
+                    if len(parts) == 3:
+                        return float(parts[0]) * 3600 + float(parts[1]) * 60 + float(parts[2])
+                    elif len(parts) == 2:
+                        return float(parts[0]) * 60 + float(parts[1])
+                    return float(parts[0])
+                
+                sentence_start = max(to_secs(start_str) - segment_buffer_seconds, 0.0)
+                clip_end = min(to_secs(end_str) + segment_buffer_seconds, total_duration)
+                duration_seconds = clip_end - sentence_start
+                sentence_text = re.sub(r"\s+", " ", text_val).strip()
+                cleaned = _clean_text(sentence_text, language)
+                
+                if cleaned and duration_seconds >= min_segment_seconds:
+                    sample_id = f"{base_name}_{clip_index:08d}"
+                    destination = wavs_dir / f"{sample_id}.wav"
+                    start_frame = max(0, int(sentence_start * sample_rate))
+                    end_frame = min(waveform.shape[-1], int(clip_end * sample_rate))
+                    clip = waveform[:, start_frame:end_frame]
+                    if clip.shape[-1] >= int(min_segment_seconds * sample_rate):
+                        _save_waveform(destination, clip, sample_rate)
+                        entry = {
+                            "id": sample_id,
+                            "text": cleaned,
+                            "original_text": sentence_text,
+                            "audio_path": str(destination),
+                            "duration_seconds": duration_seconds,
+                        }
+                        entries.append(entry)
+                        if longest_entry is None or duration_seconds > longest_entry["duration_seconds"]:
+                            longest_entry = entry
+            continue
 
         if transcript_map:
             transcript = _lookup_transcript(audio_path, transcript_map)

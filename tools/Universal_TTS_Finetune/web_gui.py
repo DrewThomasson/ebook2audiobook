@@ -317,9 +317,29 @@ def _clean_audio_path(path_val):
     return None
 
 
-def preprocess_dataset(audio_files, audio_dir, transcript_file, language, whisper_model, out_path, dataset_name, diarize_speakers, expected_speakers=0, diarize_threshold=0.3, progress=gr.Progress()):
+def preprocess_dataset(
+    audio_files, audio_dir, transcript_file, language, whisper_model, out_path, dataset_name, diarize_speakers,
+    expected_speakers=0, diarize_threshold=0.3,
+    generate_synthetic=False, synthetic_audio_file=None, synthetic_vtt_file=None,
+    progress=gr.Progress()
+):
     try:
         tracker = PreprocessProgressTracker(progress)
+        
+        if generate_synthetic:
+            if not synthetic_audio_file:
+                raise ValueError("Synthetic data import active, but no synthesized audiobook file was uploaded.")
+            if not synthetic_vtt_file:
+                raise ValueError("Synthetic data import active, but no matching .vtt file was uploaded.")
+            
+            resolved_audio = _path_value(synthetic_audio_file)
+            resolved_vtt = _path_value(synthetic_vtt_file)
+            
+            audio_files = [resolved_audio]
+            audio_dir = None
+            transcript_file = resolved_vtt
+            diarize_speakers = False
+
         result = prepare_dataset(
             output_root=out_path,
             audio_files=audio_files,
@@ -657,6 +677,7 @@ def update_training_options(model_key, language, use_pretrained):
 def preprocess_and_train(
     audio_files, audio_dir, transcript_file, language, whisper_model, out_path, dataset_name, diarize_speakers,
     expected_speakers, diarize_threshold,
+    generate_synthetic, synthetic_audio_file, synthetic_vtt_file,
     model_key, train_language, num_epochs, batch_size, grad_accum, max_audio_length, restore_path, use_pretrained, extra_overrides_json,
     sample_epoch_interval, sample_text,
     tts_text,
@@ -666,7 +687,9 @@ def preprocess_and_train(
         progress(0, desc="Starting step 1: Preprocessing dataset...")
         preprocess_res = preprocess_dataset(
             audio_files, audio_dir, transcript_file, language, whisper_model, out_path, dataset_name, diarize_speakers,
-            expected_speakers, diarize_threshold, progress
+            expected_speakers, diarize_threshold,
+            generate_synthetic, synthetic_audio_file, synthetic_vtt_file,
+            progress
         )
         status_msg, dataset_dir = preprocess_res[0], preprocess_res[1]
         if not dataset_dir or "failed" in status_msg.lower():
@@ -760,6 +783,31 @@ if __name__ == "__main__":
             with gr.Row(visible=False) as diarize_options:
                 expected_speakers = gr.Slider(label="Expected speaker count (0 for auto)", minimum=0, maximum=20, step=1, value=0)
                 diarize_threshold = gr.Slider(label="Diarization threshold (distance, only if auto)", minimum=0.05, maximum=1.0, step=0.05, value=0.35)
+
+            # Synthetic Data Generation Option
+            generate_synthetic = gr.Checkbox(
+                label="Don't have enough training data? Import synthetic data from ebook2audiobook",
+                value=False
+            )
+            with gr.Group(visible=False) as synthetic_options:
+                gr.Markdown("### Import Synthetic Data")
+                synthetic_audio_file = gr.File(
+                    label="Upload synthesized audiobook (mp3, wav, flac, etc.)",
+                    file_count="single"
+                )
+                synthetic_vtt_file = gr.File(
+                    label="Upload matching .vtt file",
+                    file_count="single"
+                )
+
+            def _toggle_synthetic_group(enabled):
+                return gr.update(visible=enabled)
+
+            generate_synthetic.change(
+                fn=_toggle_synthetic_group,
+                inputs=[generate_synthetic],
+                outputs=[synthetic_options]
+            )
             
             # Speaker preview group (initially hidden)
             speakers_state = gr.State([])
@@ -884,6 +932,9 @@ if __name__ == "__main__":
                 diarize_speakers,
                 expected_speakers,
                 diarize_threshold,
+                generate_synthetic,
+                synthetic_audio_file,
+                synthetic_vtt_file,
             ],
             outputs=[
                 dataset_status,
@@ -945,6 +996,9 @@ if __name__ == "__main__":
                 diarize_speakers,
                 expected_speakers,
                 diarize_threshold,
+                generate_synthetic,
+                synthetic_audio_file,
+                synthetic_vtt_file,
                 # Training inputs
                 model_key,
                 train_language,
