@@ -20,4 +20,5 @@ onnxscript>=0.7.0
 
 # Speaker Diarization Upgrade
 pyannote-audio
+uroman
 
