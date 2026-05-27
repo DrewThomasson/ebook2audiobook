@@ -1,0 +1,5 @@
+accelerate==1.12.0
+einops
+librosa
+sox
+onnxruntime

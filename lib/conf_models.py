@@ -13,7 +13,8 @@ TTS_ENGINES = {
     "FAIRSEQ": "fairseq",
     "GLOWTTS": "glowtts",
     "TACOTRON": "tacotron",
-    "YOURTTS": "yourtts"
+    "YOURTTS": "yourtts",
+    "QWEN3TTS": "qwen3tts"
 }
 
 TTS_VOICE_CONVERSION = {
@@ -285,5 +286,18 @@ default_engine_settings = {
         "voice": None,
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
+    },
+    TTS_ENGINES['QWEN3TTS']: {
+        "repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+        "languages": {"zho": "Chinese", "eng": "English", "jpn": "Japanese", "kor": "Korean", "deu": "German", "fra": "French", "rus": "Russian", "por": "Portuguese", "spa": "Spanish", "ita": "Italian"},
+        "samplerate": 24000,
+        "files": [],
+        "voice": default_speaker,
+        "voices": {
+            "Vivian": "Vivian", "Ryan": "Ryan", "Bella": "Bella",
+            "Diana": "Diana", "Jack": "Jack", "John": "John",
+            "Lilly": "Lilly", "Sarah": "Sarah", "Tom": "Tom"
+        },
+        "rating": {"VRAM": 6, "CPU": 2, "RAM": 8, "Realism": 5}
     }
 }

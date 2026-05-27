@@ -7,3 +7,4 @@ from .glowtts import GlowTTS
 from .tacotron import Tacotron2
 from .piper import Piper
 from .yourtts import YourTTS
+from .qwen3_tts import Qwen3TTS
