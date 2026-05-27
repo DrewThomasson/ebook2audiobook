@@ -148,6 +148,20 @@ python headless_cli.py prepare-dataset \
   --transcript-file /absolute/path/to/alignment.vtt
 ```
 
+Prepare a dataset from an audiobook and ePUB/text using **Forced Alignment** (bypasses Whisper transcription entirely):
+
+1. Convert your ePUB chapter/book to a plain text `.txt` file (e.g. using Calibre).
+2. Split the text into **one sentence per line** so the aligner knows where to slice. You can do this easily in any text editor by search-replacing the regex `(?<=[.!?])\s+` with a newline `\n`.
+3. Run the aligner by passing exactly 1 audio file (e.g. a chapter) and the `.txt` file:
+
+```bash
+python headless_cli.py prepare-dataset \
+  --output-root /absolute/path/to/output \
+  --audio-file /absolute/path/to/chapter1.mp3 \
+  --transcript-file /absolute/path/to/chapter1_transcript.txt \
+  --language en
+```
+
 Dry-run a training workspace:
 
 ```bash

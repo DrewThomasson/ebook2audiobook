@@ -585,9 +585,24 @@ def prepare_dataset(
         elif suffix == ".txt":
             is_mapping = False
             try:
-                sample = resolved_transcript_path.read_text(encoding="utf-8", errors="ignore")[:2048]
-                if "|" in sample or ("," in sample and "\n" in sample) or ("\t" in sample and "\n" in sample):
-                    is_mapping = True
+                sample = resolved_transcript_path.read_text(encoding="utf-8", errors="ignore")[:4096]
+                lines_sample = [l.strip() for l in sample.splitlines() if l.strip()]
+                if lines_sample:
+                    for delim in ("|", "\t", ","):
+                        consistent = True
+                        has_delim_count = 0
+                        for line in lines_sample[:10]:
+                            if delim not in line:
+                                consistent = False
+                                break
+                            has_delim_count += 1
+                            part1 = line.split(delim, 1)[0].strip()
+                            if " " in part1 or part1.startswith(("“", "\"", "\x27", "‘")) or len(part1) > 100 or not part1:
+                                consistent = False
+                                break
+                        if consistent and has_delim_count > 0:
+                            is_mapping = True
+                            break
             except Exception:
                 pass
                 
