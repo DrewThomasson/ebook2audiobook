@@ -13,7 +13,7 @@ def main():
 
     assert (args.speaker_number is not None) or (args.speaker_name is not None)
 
-    reader = csv.reader(sys.stdin, delimiter="|")
+    reader = csv.reader(sys.stdin, delimiter="|", quoting=csv.QUOTE_NONE)
     writer = csv.writer(sys.stdout, delimiter="|")
 
     if args.speaker_name is not None:

@@ -426,7 +426,7 @@ def ljspeech_dataset(args: argparse.Namespace) -> Iterable[Utterance]:
         wav_dir = dataset_dir / "wavs"
 
     with open(metadata_path, "r", encoding="utf-8") as csv_file:
-        reader = csv.reader(csv_file, delimiter="|")
+        reader = csv.reader(csv_file, delimiter="|", quoting=csv.QUOTE_NONE)
         for row in reader:
             assert len(row) >= 2, "Not enough columns"
 
@@ -475,7 +475,7 @@ def mycroft_dataset(args: argparse.Namespace) -> Iterable[Utterance]:
         speaker = metadata_path.parent.name if not is_single_speaker else None
         with open(metadata_path, "r", encoding="utf-8") as csv_file:
             # filename|text|length
-            reader = csv.reader(csv_file, delimiter="|")
+            reader = csv.reader(csv_file, delimiter="|", quoting=csv.QUOTE_NONE)
             for row in reader:
                 filename, text = row[0], row[1]
                 wav_path = metadata_path.parent / filename

@@ -69,7 +69,7 @@ def main():
     if not wav_dir.is_dir():
         wav_dir = dataset_dir / "wavs"
 
-    reader = csv.reader(sys.stdin, delimiter="|")
+    reader = csv.reader(sys.stdin, delimiter="|", quoting=csv.QUOTE_NONE)
 
     text_and_audio = []
     for row in reader:
