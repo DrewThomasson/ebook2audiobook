@@ -202,6 +202,20 @@ python headless_cli.py synthesize \
   --language en
 ```
 
+## Early Stopping and Exporting Checkpoints (Ctrl+C Support)
+
+During long training runs (especially on CPU-only machines), you can stop the training early once you are satisfied with the generated voice quality.
+
+1. **Listen to samples:** By running training with `--sample-epoch-interval <N>` (e.g. `1` or `5`), the trainer will automatically write periodic audio samples inside `<run_dir>/epoch_samples/`.
+2. **Stop early:** Press `Ctrl+C` to terminate the training process. PyTorch Lightning automatically saves intermediate model checkpoints (`.ckpt` files) at the end of every epoch.
+3. **Export and package:** Since the training run was interrupted, it will not have automatically packaged the final model. You can run the included helper script `export_checkpoint.py` to manually package your latest checkpoint (converts to ONNX for Piper, or optimizes and copies `.pth` files for Coqui/XTTS):
+
+```bash
+python export_checkpoint.py /path/to/your/training_run/<timestamp>
+```
+
+This will create a `ready/` directory inside your training run with `model.onnx` and `artifacts.json`, making it immediately loadable inside the web GUI or CLI.
+
 ## Transcript file formats
 
 Accepted transcript formats:
