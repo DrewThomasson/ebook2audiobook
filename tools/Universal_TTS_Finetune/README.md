@@ -151,8 +151,7 @@ python headless_cli.py prepare-dataset \
 Prepare a dataset from an audiobook and ePUB/text using **Forced Alignment** (bypasses Whisper transcription entirely):
 
 1. Convert your ePUB chapter/book to a plain text `.txt` file (e.g. using Calibre).
-2. Split the text into **one sentence per line** so the aligner knows where to slice. You can do this easily in any text editor by search-replacing the regex `(?<=[.!?])\s+` with a newline `\n`.
-3. Run the aligner by passing exactly 1 audio file (e.g. a chapter) and the `.txt` file:
+2. Run the aligner by passing exactly 1 audio file (e.g. a chapter) and the `.txt` file:
 
 ```bash
 python headless_cli.py prepare-dataset \
@@ -160,6 +159,18 @@ python headless_cli.py prepare-dataset \
   --audio-file /absolute/path/to/chapter1.mp3 \
   --transcript-file /absolute/path/to/chapter1_transcript.txt \
   --language en
+```
+
+* **Automatic Sentence Splitting**: By default, the pipeline automatically splits paragraphs/blocks of text into individual sentences (using multilingual quote-aware regular expressions) to ensure optimal audio slice lengths (1-12s) for TTS training.
+* **Custom Sentence Line Formatting**: If you have manually formatted your text file to have one sentence per line and want to bypass the automatic splitting, pass the `--no-auto-split-sentences` CLI flag (or uncheck **Auto-split sentences for forced alignment** in the Web GUI):
+
+```bash
+python headless_cli.py prepare-dataset \
+  --output-root /absolute/path/to/output \
+  --audio-file /absolute/path/to/chapter1.mp3 \
+  --transcript-file /absolute/path/to/chapter1_transcript.txt \
+  --language en \
+  --no-auto-split-sentences
 ```
 
 Dry-run a training workspace:

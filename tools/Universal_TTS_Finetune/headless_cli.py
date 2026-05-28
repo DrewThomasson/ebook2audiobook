@@ -82,6 +82,8 @@ def _build_parser() -> argparse.ArgumentParser:
     prepare.add_argument("--diarize-speakers", action="store_true", help="Automatically cluster audio into separate speaker datasets")
     prepare.add_argument("--expected-speakers", type=int, default=0, help="Expected number of speaker clusters (0 to auto-detect based on threshold)")
     prepare.add_argument("--diarize-threshold", type=float, default=0.3, help="Distance threshold for speaker clustering auto-detection (used if expected-speakers is 0)")
+    prepare.add_argument("--no-auto-split-sentences", dest="auto_split_sentences", action="store_false", help="Disable automatic sentence splitting for forced alignment")
+    prepare.set_defaults(auto_split_sentences=True)
 
     train = subparsers.add_parser("train", help="Train or fine-tune a selected Coqui recipe.")
     train.add_argument("--model", required=True, choices=[key for key, _ in dropdown_choices()])
@@ -132,6 +134,8 @@ def _build_parser() -> argparse.ArgumentParser:
     workflow.add_argument("--diarize-threshold", type=float, default=0.3, help="Distance threshold for speaker clustering auto-detection (used if expected-speakers is 0)")
     workflow.add_argument("--sample-epoch-interval", type=int, default=0, help="Generate and save an audio sample every N epochs. Set to 0 to disable.")
     workflow.add_argument("--sample-text", default="", help="Text sentence to synthesize at each interval.")
+    workflow.add_argument("--no-auto-split-sentences", dest="auto_split_sentences", action="store_false", help="Disable automatic sentence splitting for forced alignment")
+    workflow.set_defaults(auto_split_sentences=True)
 
     batch_test = subparsers.add_parser("batch-test", help="Test all supported models sequentially on the same dataset.")
     batch_test.add_argument("--output-root", required=True)
@@ -152,6 +156,8 @@ def _build_parser() -> argparse.ArgumentParser:
     batch_test.add_argument("--diarize-threshold", type=float, default=0.3, help="Distance threshold for speaker clustering auto-detection (used if expected-speakers is 0)")
     batch_test.add_argument("--no-stream-logs", action="store_true", help="Disable streaming of training logs to the console")
     batch_test.add_argument("--extra-overrides-json")
+    batch_test.add_argument("--no-auto-split-sentences", dest="auto_split_sentences", action="store_false", help="Disable automatic sentence splitting for forced alignment")
+    batch_test.set_defaults(auto_split_sentences=True)
 
     latest = subparsers.add_parser("latest-artifacts", help="Resolve the newest trained model artifacts.")
     latest.add_argument("--output-root", required=True)
@@ -182,6 +188,7 @@ def main() -> None:
             diarize_speakers=args.diarize_speakers,
             expected_speakers=args.expected_speakers,
             diarize_threshold=args.diarize_threshold,
+            auto_split_sentences=args.auto_split_sentences,
         )
         _print_json(result)
         return
@@ -232,6 +239,7 @@ def main() -> None:
             diarize_speakers=args.diarize_speakers,
             expected_speakers=args.expected_speakers,
             diarize_threshold=args.diarize_threshold,
+            auto_split_sentences=args.auto_split_sentences,
         )
         training = train_model(
             model_key=args.model,
@@ -273,6 +281,7 @@ def main() -> None:
             diarize_speakers=args.diarize_speakers,
             expected_speakers=args.expected_speakers,
             diarize_threshold=args.diarize_threshold,
+            auto_split_sentences=args.auto_split_sentences,
         )
         
         import shutil

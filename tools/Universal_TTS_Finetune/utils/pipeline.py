@@ -425,14 +425,28 @@ def align_audio_and_text_to_vtt(
     language: str,
     output_vtt_path: Path,
     progress: ProgressCallback = None,
+    auto_split_sentences: bool = True,
 ) -> None:
     from uroman import Uroman
     from torchaudio.pipelines import MMS_FA as bundle
     import re
 
     _notify(progress, f"Reading transcript from {text_path.name}...")
-    lines = text_path.read_text(encoding="utf-8", errors="ignore").splitlines()
-    lines = [line.strip() for line in lines if line.strip()]
+    raw_text = text_path.read_text(encoding="utf-8", errors="ignore")
+    if auto_split_sentences:
+        _notify(progress, "Auto-splitting transcript into sentences...")
+        paragraphs = [p.strip() for p in raw_text.splitlines() if p.strip()]
+        lines = []
+        for para in paragraphs:
+            sentence_splits = re.split(r'(?<=[.!?])\s+|(?<=[.!?]["”\'’»」])\s+', para)
+            for s in sentence_splits:
+                s_clean = s.strip()
+                if s_clean:
+                    lines.append(s_clean)
+        _notify(progress, f"Split transcript into {len(lines)} sentences for alignment.")
+    else:
+        lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+
     if not lines:
         raise ValueError(f"The transcript file {text_path.name} is empty.")
 
@@ -558,6 +572,7 @@ def prepare_dataset(
     diarize_speakers: bool = False,
     expected_speakers: int = 0,
     diarize_threshold: float = 0.3,
+    auto_split_sentences: bool = True,
     dataset_name: str = "LJSpeech-1.1",
     progress: ProgressCallback = None,
 ) -> dict[str, Any]:
@@ -623,7 +638,8 @@ def prepare_dataset(
                     text_path=resolved_transcript_path,
                     language=language,
                     output_vtt_path=vtt_path,
-                    progress=progress
+                    progress=progress,
+                    auto_split_sentences=auto_split_sentences,
                 )
                 is_vtt = True
 
