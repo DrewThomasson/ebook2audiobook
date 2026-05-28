@@ -588,15 +588,15 @@ def prepare_dataset(
         shutil.rmtree(dataset_dir)
     wavs_dir.mkdir(parents=True, exist_ok=True)
 
-    # Check if transcript_file is a VTT file or needs forced alignment
-    is_vtt = False
-    vtt_path = None
+    # Check if transcript_file is a VTT file or needs forced alignment globally
+    global_is_vtt = False
+    global_vtt_path = None
     if transcript_file:
         resolved_transcript_path = _resolve_user_path(transcript_file, must_exist=True, expect_directory=False)
         suffix = resolved_transcript_path.suffix.lower()
         if suffix == ".vtt":
-            is_vtt = True
-            vtt_path = resolved_transcript_path
+            global_is_vtt = True
+            global_vtt_path = resolved_transcript_path
         elif suffix == ".txt":
             is_mapping = False
             try:
@@ -624,7 +624,7 @@ def prepare_dataset(
             if not is_mapping:
                 temp_vtt_dir = output_root_path / "temp"
                 temp_vtt_dir.mkdir(parents=True, exist_ok=True)
-                vtt_path = temp_vtt_dir / f"{resolved_transcript_path.stem}_aligned.vtt"
+                global_vtt_path = temp_vtt_dir / f"{resolved_transcript_path.stem}_aligned.vtt"
                 
                 if len(resolved_audio_files) != 1:
                     raise ValueError(
@@ -637,14 +637,25 @@ def prepare_dataset(
                     audio_path=Path(resolved_audio_files[0]),
                     text_path=resolved_transcript_path,
                     language=language,
-                    output_vtt_path=vtt_path,
+                    output_vtt_path=global_vtt_path,
                     progress=progress,
                     auto_split_sentences=auto_split_sentences,
                 )
-                is_vtt = True
+                global_is_vtt = True
 
-    transcript_map = {} if is_vtt else _load_transcript_map(transcript_file)
-    use_whisper = not transcript_map and not is_vtt
+    transcript_map = {} if (global_is_vtt or not transcript_file) else _load_transcript_map(transcript_file)
+    
+    # Check if Whisper is needed for any of the files in the batch
+    use_whisper = False
+    if not transcript_file:
+        for audio_file in resolved_audio_files:
+            audio_path = Path(audio_file).expanduser().resolve()
+            if not audio_path.with_suffix(".vtt").exists() and not audio_path.with_suffix(".txt").exists():
+                use_whisper = True
+                break
+    else:
+        use_whisper = not transcript_map and not global_is_vtt
+
     asr_model: WhisperModel | None = None
     if use_whisper:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -664,9 +675,41 @@ def prepare_dataset(
         total_seconds += total_duration
         base_name = _safe_name(audio_path.stem)
 
-        if is_vtt:
-            _notify(progress, f"Slicing audio with VTT transcript file: {vtt_path.name}...")
-            vtt_content = vtt_path.read_text(encoding="utf-8", errors="ignore")
+        local_is_vtt = False
+        local_vtt_path = None
+        
+        if transcript_file:
+            if global_is_vtt:
+                local_is_vtt = True
+                local_vtt_path = global_vtt_path
+        else:
+            # Check for local files in the same directory with matching base name
+            vtt_cand = audio_path.with_suffix(".vtt")
+            txt_cand = audio_path.with_suffix(".txt")
+            if vtt_cand.exists():
+                local_is_vtt = True
+                local_vtt_path = vtt_cand
+                _notify(progress, f"Found local VTT transcript: {vtt_cand.name}")
+            elif txt_cand.exists():
+                _notify(progress, f"Found local TXT transcript: {txt_cand.name}. Starting forced alignment...")
+                temp_vtt_dir = output_root_path / "temp"
+                temp_vtt_dir.mkdir(parents=True, exist_ok=True)
+                local_vtt_path = temp_vtt_dir / f"{audio_path.stem}_aligned.vtt"
+                align_audio_and_text_to_vtt(
+                    audio_path=audio_path,
+                    text_path=txt_cand,
+                    language=language,
+                    output_vtt_path=local_vtt_path,
+                    progress=progress,
+                    auto_split_sentences=auto_split_sentences,
+                )
+                local_is_vtt = True
+            else:
+                _notify(progress, f"⚠️ No matching VTT or TXT found for {audio_path.name}. Whisper will be used to transcribe.")
+
+        if local_is_vtt:
+            _notify(progress, f"Slicing audio with VTT transcript file: {local_vtt_path.name}...")
+            vtt_content = local_vtt_path.read_text(encoding="utf-8", errors="ignore")
             pattern = r"((?:\d{2}:)?\d{2}:\d{2}\.\d{3})\s+-->\s+((?:\d{2}:)?\d{2}:\d{2}\.\d{3})\n(.*?)(?=\n\n|\Z|\n\d|\n\[)"
             matches = re.findall(pattern, vtt_content, re.DOTALL)
             

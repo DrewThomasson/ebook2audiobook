@@ -173,6 +173,22 @@ python headless_cli.py prepare-dataset \
   --no-auto-split-sentences
 ```
 
+Prepare a dataset by automatically matching local transcript files in a folder:
+
+If you point the tool to a folder containing multiple audio files (using `--audio-dir`) and do **not** supply a global `--transcript-file`, the system will automatically scan the folder. For each audio file:
+* If a matching `.vtt` file exists (e.g., `chapter1.mp3` and `chapter1.vtt`), it slices using those timestamps.
+* If a matching `.txt` file exists (e.g., `chapter2.mp3` and `chapter2.txt`), it automatically runs Forced Alignment on it first and then slices it.
+* If no matching transcript is found (e.g., `chapter3.mp3`), it alerts the user and automatically falls back to transcribing using Whisper.
+
+All generated slices from all chapters are merged into the final dataset automatically.
+
+```bash
+python headless_cli.py prepare-dataset \
+  --output-root /absolute/path/to/output \
+  --audio-dir /absolute/path/to/mixed_audio_folder \
+  --language de
+```
+
 Dry-run a training workspace:
 
 ```bash
