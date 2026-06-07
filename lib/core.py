@@ -807,9 +807,11 @@ def sync_globals_to_blocks(session_id:str)->None:
     except Exception as e:
         exception_alert(session_id, f'sync_globals_to_blocks(): {e}')
 
-def normalize_epub_package_zip(session_id:str, file_input:str)->str|None:
+def normalize_epuib_zip(session_id:str, file_input:str)->str|None:
     try:
         session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return
         with zipfile.ZipFile(file_input, 'r') as zf:
             names = [name for name in zf.namelist() if name and not name.endswith('/')]
             candidates = []
@@ -824,14 +826,13 @@ def normalize_epub_package_zip(session_id:str, file_input:str)->str|None:
                         candidates.append(prefix)
             candidates = sorted(set(candidates))
             if len(candidates) != 1:
-                print(f'Unsupported ZIP ebook wrapper: expected one .epub package directory, found {len(candidates)}')
+                msg = f'Unsupported ZIP ebook wrapper: expected one .epub package directory, found {len(candidates)}'
+                print(msg)
                 return None
-
             prefix = candidates[0]
             target_name = f'{get_sanitized(Path(prefix).stem)}.epub'
             target_path = os.path.join(os.path.dirname(file_input), target_name)
             mimetype_name = f'{prefix}/mimetype'
-
             with zipfile.ZipFile(target_path, 'w') as out:
                 mimetype_info = zipfile.ZipInfo('mimetype')
                 mimetype_info.compress_type = zipfile.ZIP_STORED
@@ -845,16 +846,17 @@ def normalize_epub_package_zip(session_id:str, file_input:str)->str|None:
                     info = zipfile.ZipInfo(arcname)
                     info.compress_type = zipfile.ZIP_DEFLATED
                     out.writestr(info, zf.read(name))
-
         if session and session.get('id', False):
             session['ebook'] = target_path
             session['filename_noext'] = os.path.splitext(os.path.basename(target_path))[0]
         print(f'Normalized EPUB package ZIP: {Path(file_input).name} -> {Path(target_path).name}')
         return target_path
     except zipfile.BadZipFile:
-        print(f'Unsupported ZIP ebook wrapper: bad ZIP file {file_input}')
+        error = f'Unsupported ZIP ebook wrapper: bad ZIP file {file_input}'
+        print(error)
     except Exception as e:
-        exception_alert(session_id, f'normalize_epub_package_zip(): {e}')
+        error = f'normalize_epuib_zip(): {e}'
+        exception_alert(session_id, error)
     return None
 
 def convert2epub(session_id:str)->bool:
@@ -881,7 +883,7 @@ def convert2epub(session_id:str)->bool:
                 print(error)
                 return False
             if file_ext == '.zip':
-                file_input = normalize_epub_package_zip(session_id, file_input)
+                file_input = normalize_epuib_zip(session_id, file_input)
                 if file_input is None:
                     return False
                 file_ext = os.path.splitext(file_input)[1].lower()
