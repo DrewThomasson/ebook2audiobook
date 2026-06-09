@@ -158,3 +158,37 @@ if patch_enabled:
 
 else:
     warn('loaded but inactive (no patches applied)')
+
+# --- RTX 50xx / Blackwell BF16 numpy compatibility patch ---
+try:
+    import torch
+
+    if not getattr(torch.Tensor, "_e2a_bf16_numpy_patch", False):
+        _original_tensor_numpy = torch.Tensor.numpy
+        _original_tensor_array = torch.Tensor.__array__
+
+        def _safe_tensor_numpy(self, *args, **kwargs):
+            if self.dtype is torch.bfloat16:
+                t = self.detach().float()
+                if t.device.type != "cpu":
+                    t = t.cpu()
+                return _original_tensor_numpy(t, *args, **kwargs)
+            return _original_tensor_numpy(self, *args, **kwargs)
+
+        def _safe_tensor_array(self, dtype=None):
+            if self.dtype is torch.bfloat16:
+                arr = _safe_tensor_numpy(self)
+                if dtype is not None:
+                    return arr.astype(dtype, copy=False)
+                return arr
+            if dtype is not None:
+                return _original_tensor_array(self, dtype)
+            return _original_tensor_array(self)
+
+        torch.Tensor.numpy = _safe_tensor_numpy
+        torch.Tensor.__array__ = _safe_tensor_array
+        torch.Tensor._e2a_bf16_numpy_patch = True
+
+except Exception:
+    pass
+# --- end RTX 50xx / Blackwell BF16 numpy compatibility patch ---
