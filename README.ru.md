@@ -76,9 +76,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 ## Содержание
 - [ebook2audiobook](#-ebook2audiobook)
 - [Функции](#функции)
-- [Графический интерфейс](#gui-interface)
-- [Демо](#demos)
-- [Поддерживаемые языки](#supported-languages)
+- [Графический интерфейс](#графический-интерфейс)
+- [Демо](#демо)
+- [Поддерживаемые языки](#поддерживаемые-языки)
 - [Минимальные требования](#требования-к-оборудованию)
 - [Использование](#инструкция)
   - [Запуск локально](#инструкция)
@@ -91,14 +91,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Шаги для запуска](#docker)
     - [Распространённые проблемы с Docker](#распространённые-проблемы-с-docker)
   
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
-  - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
-  - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
-- [Supported eBook Formats](#supported-ebook-formats)
-- [Output Formats](#output-and-process-formats)
-- [Revert to older Version](#reverting-to-older-versions)
-- [Common Issues](#common-issues)
-- [Special Thanks](#special-thanks)
+- [Тщательно настроенные TTS-модели](#тщательно-настроенные-tts-модели)
+  - [Коллекция настроенных моделей TTS](#коллекция-точно-настроенных-tts)
+  - [Обучение XTTSv2](#тонкая-настройка-собственной-xttsv2-модели)
+- [Поддерживаемые форматы электронных книг](#поддерживаемые-форматы-электронных-книг)
+- [Форматы вывода и обработки](#форматы-вывода-и-обработки)
+- [Возврат к старым версиям](#возврат-к-старым-версиям)
+- [Распространённые проблемы](#распространённые-проблемы)
+- [Особые благодарности](#особые-благодарности)
 - [Содержание](#содержание)
 
 
@@ -428,15 +428,13 @@ Podman Compose (i.e. cuda 12.8:
 - My NVIDIA GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 
 ## Тщательно настроенные TTS-модели
-#### Тонкая настройка вашей собственной модели XTTSv2
+#### Тонкая настройка собственной XTTSv2-модели
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
 
 #### Удаление шума из обучающих данных
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
-
 
 ### Коллекция точно настроенных TTS
 
