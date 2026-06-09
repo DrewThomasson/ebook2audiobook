@@ -812,41 +812,50 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
-            return
+            return None
         with zipfile.ZipFile(file_input, 'r') as zf:
             names = [name for name in zf.namelist() if name and not name.endswith('/')]
-            candidates = []
-            for name in names:
-                parts = name.split('/', 1)
-                if len(parts) != 2:
-                    continue
-                prefix, relpath = parts
-                if prefix.lower().endswith('.epub') and relpath == 'mimetype':
-                    container = f'{prefix}/META-INF/container.xml'
-                    if container in names:
-                        candidates.append(prefix)
-            candidates = sorted(set(candidates))
-            if len(candidates) != 1:
-                msg = f'Unsupported ZIP ebook wrapper: expected one .epub package directory, found {len(candidates)}'
-                print(msg)
-                return None
-            prefix = candidates[0]
-            target_name = f'{get_sanitized(Path(prefix).stem)}.epub'
-            target_path = os.path.join(os.path.dirname(file_input), target_name)
-            mimetype_name = f'{prefix}/mimetype'
-            with zipfile.ZipFile(target_path, 'w') as out:
-                mimetype_info = zipfile.ZipInfo('mimetype')
-                mimetype_info.compress_type = zipfile.ZIP_STORED
-                out.writestr(mimetype_info, zf.read(mimetype_name))
-                for name in names:
-                    if not name.startswith(f'{prefix}/') or name == mimetype_name:
-                        continue
-                    arcname = name[len(prefix) + 1:]
-                    if not arcname:
-                        continue
-                    info = zipfile.ZipInfo(arcname)
-                    info.compress_type = zipfile.ZIP_DEFLATED
-                    out.writestr(info, zf.read(name))
+            nested_epub = next((n for n in names if n.lower().endswith('.epub')), None)
+            if nested_epub:
+                :: case 1 - a real .epub FILE sits inside the zip, just extract it verbatim
+                target_name = f'{get_sanitized(Path(nested_epub).stem)}.epub'
+                target_path = os.path.join(os.path.dirname(file_input), target_name)
+                with open(target_path, 'wb') as out:
+                    out.write(zf.read(nested_epub))
+            else:
+                :: case 2/3 - epub contents are at root or under a single top dir
+                root_mimetype = 'mimetype' in names
+                prefix = ''
+                if not root_mimetype:
+                    dirs = {n.split('/', 1)[0] for n in names if '/' in n}
+                    cands = [d for d in dirs if f'{d}/mimetype' in names and f'{d}/META-INF/container.xml' in names]
+                    if len(cands) != 1:
+                        msg = f'Unsupported ZIP ebook wrapper: expected one EPUB root, found {len(cands)}'
+                        print(msg)
+                        return None
+                    prefix = cands[0]
+                stem = Path(prefix).stem if prefix else Path(file_input).stem
+                target_name = f'{get_sanitized(stem)}.epub'
+                target_path = os.path.join(os.path.dirname(file_input), target_name)
+                strip = f'{prefix}/' if prefix else ''
+                members = [n for n in names if n.startswith(strip)]
+                mimetype_name = f'{strip}mimetype'
+                if mimetype_name not in members:
+                    msg = 'Unsupported ZIP ebook wrapper: no mimetype entry'
+                    print(msg)
+                    return None
+                with zipfile.ZipFile(target_path, 'w') as out:
+                    mt = zipfile.ZipInfo('mimetype')
+                    mt.compress_type = zipfile.ZIP_STORED
+                    out.writestr(mt, zf.read(mimetype_name))
+                    for name in members:
+                        if name == mimetype_name:
+                            continue
+                        arcname = name[len(strip):]
+                        if not arcname:
+                            continue
+                        out.writestr(arcname, zf.read(name), zipfile.ZIP_DEFLATED)
+        session = context.get_session(session_id)
         session['ebook'] = target_path
         session['filename_noext'] = os.path.splitext(os.path.basename(target_path))[0]
         session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
@@ -888,7 +897,6 @@ def convert2epub(session_id:str)->bool:
                 file_input = normalize_epub_zip(session_id, file_input)
                 if file_input is None:
                     return False
-                print(f"**************** {session['epub_path']}")
                 file_ext = 'epub'
             if file_ext == '.txt':
                 with open(file_input, 'r', encoding='utf-8') as f:
@@ -3510,7 +3518,6 @@ def convert_ebook(args:dict)->tuple:
                         if not checksum or not os.path.exists(session['epub_path']):
                             result_epub = convert2epub(session_id)
                             if result_epub:
-                                print(f"**************** {session['epub_path']}")
                                 if os.path.exists(session['epub_path']):
                                     for jf in (session['blocks_orig_json'], session['blocks_saved_json']):
                                         if os.path.exists(jf):
