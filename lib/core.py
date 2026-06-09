@@ -817,13 +817,13 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
             names = [name for name in zf.namelist() if name and not name.endswith('/')]
             nested_epub = next((n for n in names if n.lower().endswith('.epub')), None)
             if nested_epub:
-                :: case 1 - a real .epub FILE sits inside the zip, just extract it verbatim
+                # case 1 - a real .epub FILE sits inside the zip, just extract it verbatim
                 target_name = f'{get_sanitized(Path(nested_epub).stem)}.epub'
                 target_path = os.path.join(os.path.dirname(file_input), target_name)
                 with open(target_path, 'wb') as out:
                     out.write(zf.read(nested_epub))
             else:
-                :: case 2/3 - epub contents are at root or under a single top dir
+                # case 2/3 - epub contents are at root or under a single top dir
                 root_mimetype = 'mimetype' in names
                 prefix = ''
                 if not root_mimetype:
