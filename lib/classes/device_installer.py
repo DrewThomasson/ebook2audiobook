@@ -1162,6 +1162,7 @@ class DeviceInstaller():
                         return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
+            self.check_onnx_runtime()
             return self.check_dictionary()
         except Exception as e:
             error = f'install_python_packages() error: {e}'
@@ -1201,7 +1202,24 @@ class DeviceInstaller():
             error = f'Error while installing numpy package: {e}'
             print(error)
             return False
-          
+
+    def check_onnx_runtime(self)->None:
+            if self.system != systems['WINDOWS']:
+                return
+            name, _tag, _msg = self.check_hardware
+            if name == devices['CUDA']['proc']:
+                return
+            try:
+                import onnxruntime as ort
+                if 'DmlExecutionProvider' in ort.get_available_providers():
+                    return
+            except Exception:
+                pass
+            msg = 'Configuring ONNX Runtime for DirectML…'
+            print(msg)
+            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml']
+
     def check_dictionary(self)->bool:
         import unidic
         unidic_path = unidic.DICDIR
