@@ -888,6 +888,7 @@ def convert2epub(session_id:str)->bool:
                 file_input = normalize_epub_zip(session_id, file_input)
                 if file_input is None:
                     return False
+                session = context.get_session(session_id)
                 file_ext = 'epub'
             if file_ext == '.txt':
                 with open(file_input, 'r', encoding='utf-8') as f:
