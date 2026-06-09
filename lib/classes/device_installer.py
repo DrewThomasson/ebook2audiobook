@@ -1218,7 +1218,7 @@ class DeviceInstaller():
             msg = 'Configuring ONNX Runtime for DirectML…'
             print(msg)
             subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'])
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml']
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml'])
 
     def check_dictionary(self)->bool:
         import unidic
