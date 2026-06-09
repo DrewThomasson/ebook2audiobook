@@ -43,9 +43,10 @@ from pypinyin import pinyin, Style
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
-from lib.classes.tts_manager import TTSManager
+from lib.classes.non_text_filter import NonTextFilter
 #from lib.classes.redirect_console import RedirectConsole
 from lib.classes.argos_translator import ArgosTranslator
+from lib.classes.tts_manager import TTSManager
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
 from lib.classes.tts_engines.common.utils import build_vtt_file
 
@@ -1265,12 +1266,13 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     print(error)
                     return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
+            non_text_filter = NonTextFilter(sml_pattern=SML_TAG_PATTERN, lang=session['language'])
             try:
                 with zipfile.ZipFile(session['epub_path'], 'r') as zf:
                     zip_names = set(zf.namelist())
                     zip_basenames = {os.path.basename(n): n for n in zip_names}
                     for doc_idx, doc in enumerate(all_docs):
-                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
+                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames)
                         if text is None:
                             error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
                             show_alert(session_id, {"type": "warning", "msg": error})
@@ -1302,7 +1304,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -1533,6 +1535,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             break_between_alnum_re = re.compile(rf'(?<=[\w]){break_token}(?=[\w])', flags=re.UNICODE)
             text = strip_break_spaces_re.sub(sml_token('break'), text)
             text = break_between_alnum_re.sub(' ', text)
+            # strip non-prose content; preserves math signs for math2words
+            text = non_text_filter(text)
             # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
             if stanza_nlp:
@@ -2189,7 +2193,7 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
     # Replace unambiguous symbols everywhere
     if normal_replacements:
-        sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
+        sym_pat = r'(' + '|'.join(re.escape(k) for k in sorted(normal_replacements, key=len, reverse=True)) + r')'
         text = re.sub(sym_pat, lambda m: f' {normal_replacements[m.group(1)]} ', text)
     # Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
