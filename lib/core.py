@@ -808,7 +808,7 @@ def sync_globals_to_blocks(session_id:str)->None:
     except Exception as e:
         exception_alert(session_id, f'sync_globals_to_blocks(): {e}')
 
-def normalize_epuib_zip(session_id:str, file_input:str)->str|None:
+def normalize_epub_zip(session_id:str, file_input:str)->str|None:
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
@@ -847,16 +847,17 @@ def normalize_epuib_zip(session_id:str, file_input:str)->str|None:
                     info = zipfile.ZipInfo(arcname)
                     info.compress_type = zipfile.ZIP_DEFLATED
                     out.writestr(info, zf.read(name))
-        if session and session.get('id', False):
-            session['ebook'] = target_path
-            session['filename_noext'] = os.path.splitext(os.path.basename(target_path))[0]
-        print(f'Normalized EPUB package ZIP: {Path(file_input).name} -> {Path(target_path).name}')
+        session['ebook'] = target_path
+        session['filename_noext'] = os.path.splitext(os.path.basename(target_path))[0]
+        session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
+        msg = f'Normalized EPUB package ZIP: {Path(file_input).name} -> {Path(target_path).name}'
+        print(msg)
         return target_path
     except zipfile.BadZipFile:
         error = f'Unsupported ZIP ebook wrapper: bad ZIP file {file_input}'
         print(error)
     except Exception as e:
-        error = f'normalize_epuib_zip(): {e}'
+        error = f'normalize_epub_zip(): {e}'
         exception_alert(session_id, error)
     return None
 
@@ -884,10 +885,10 @@ def convert2epub(session_id:str)->bool:
                 print(error)
                 return False
             if file_ext == '.zip':
-                file_input = normalize_epuib_zip(session_id, file_input)
+                file_input = normalize_epub_zip(session_id, file_input)
                 if file_input is None:
                     return False
-                file_ext = os.path.splitext(file_input)[1].lower()
+                file_ext = 'epub'
             if file_ext == '.txt':
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
