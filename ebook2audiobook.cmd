@@ -507,6 +507,7 @@ if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	echo Installing Miniforge…
 	call "%PS_EXE%" %PS_ARGS% -Command "Invoke-WebRequest -Uri '%CONDA_URL%' -OutFile '%CONDA_INSTALLER%'"
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D="%SAFE_USERPROFILE%\Miniforge3"
+	set "PATH=%CONDA_PATH%;%CONDA_HOME%\Scripts;%PATH%"
 	where.exe /Q conda
 	if not errorlevel 1 (
 		echo %ESC%[32m=============== Miniforge3 OK ===============%ESC%[0m
@@ -759,7 +760,7 @@ exit /b 0
 :check_device_info
 set "ARG=%~1"
 for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; r=D().check_device_info(sys.argv[1]); print(r if r else '')" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
-if "%DEVICE_INFO_STR%"=="" (
+if not defined DEVICE_INFO_STR (
 	echo DEVICE_INFO_STR is empty
 	exit /b 1
 )
