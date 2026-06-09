@@ -1030,7 +1030,7 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
-        if self.system == systems['MACOS']:
+        if self.system == systems['MACOS'] or self.check_onnx_runtime():
             overrides['onnxruntime-gpu'] = None
         try:
             with open(requirements_file, 'r') as f:
@@ -1162,7 +1162,6 @@ class DeviceInstaller():
                         return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
-            self.check_onnx_runtime()
             return self.check_dictionary()
         except Exception as e:
             error = f'install_python_packages() error: {e}'
@@ -1203,22 +1202,23 @@ class DeviceInstaller():
             print(error)
             return False
 
-    def check_onnx_runtime(self)->None:
+    def check_onnx_runtime(self)->bool:
             if self.system != systems['WINDOWS']:
-                return
+                return False
             name, _tag, _msg = self.check_hardware
             if name == devices['CUDA']['proc']:
-                return
+                return False
             try:
                 import onnxruntime as ort
                 if 'DmlExecutionProvider' in ort.get_available_providers():
-                    return
+                    return True
             except Exception:
                 pass
             msg = 'Configuring ONNX Runtime for DirectML…'
             print(msg)
             subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'])
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'onnxruntime'])
+            return True
 
     def check_dictionary(self)->bool:
         import unidic
