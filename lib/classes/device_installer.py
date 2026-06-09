@@ -1,4 +1,5 @@
-import os, re, sys, platform, shutil, subprocess, importlib, json
+import os
+import sys, re, sys, platform, shutil, subprocess, importlib, json
 
 from functools import cached_property
 from typing import Union
@@ -1210,7 +1211,7 @@ class DeviceInstaller():
             try:
                 error = 'UniDic dictionary not found or incomplete. Downloading now…'
                 print(error)
-                subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
+                subprocess.run([sys.executable, '-c', "import ssl,sys,runpy; ssl._create_default_https_context=ssl._create_unverified_context; sys.argv=['unidic','download']; runpy.run_module('unidic', run_name='__main__')"], check=True)
             except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
                 error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting…'
                 raise SystemExit(error)
