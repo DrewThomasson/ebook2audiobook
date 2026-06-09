@@ -888,7 +888,7 @@ def convert2epub(session_id:str)->bool:
                 file_input = normalize_epub_zip(session_id, file_input)
                 if file_input is None:
                     return False
-                session = context.get_session(session_id)
+                print(f"**************** {session['epub_path']}")
                 file_ext = 'epub'
             if file_ext == '.txt':
                 with open(file_input, 'r', encoding='utf-8') as f:
@@ -3510,6 +3510,7 @@ def convert_ebook(args:dict)->tuple:
                         if not checksum or not os.path.exists(session['epub_path']):
                             result_epub = convert2epub(session_id)
                             if result_epub:
+                                print(f"**************** {session['epub_path']}")
                                 if os.path.exists(session['epub_path']):
                                     for jf in (session['blocks_orig_json'], session['blocks_saved_json']):
                                         if os.path.exists(jf):
