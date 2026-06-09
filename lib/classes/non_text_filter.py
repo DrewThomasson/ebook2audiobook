@@ -2,7 +2,7 @@ import regex as re
 import unicodedata
 
 from typing import Optional
-from conf_lang import punctuation_split_hard_set, punctuation_list_set, chars_remove, emojis_list, language_math_phonemes,
+from conf_lang import punctuation_split_hard_set, punctuation_list_set, chars_remove, emojis_list, language_math_phonemes
 
 class NonTextFilter:
 
