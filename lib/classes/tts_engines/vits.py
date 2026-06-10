@@ -72,12 +72,16 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         checkpoint_path = os.path.join(model_path, files[1])
                         custom_model_name = os.path.basename(os.path.normpath(model_path))
                         self.tts_key = f"{self.session['tts_engine']}-{custom_model_name}"
+                        # keep the cache whitelist in sync so cleanup_models_cache() doesn't evict this model every run
+                        self.session['model_cache'] = self.tts_key
                         engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
                     except Exception as e:
                         error = f'load_engine(): custom checkpoint loading failed: {e}'
                         raise RuntimeError(error) from e
                 else:
                     self.tts_key = self.model_path
+                    # keep the cache whitelist in sync so cleanup_models_cache() doesn't evict this model every run
+                    self.session['model_cache'] = self.tts_key
                     try:
                         engine = self._load_api(self.tts_key, self.model_path, self.device)
                     except Exception as e:
@@ -102,7 +106,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 #not_supported_punc_pattern = re.compile(r'[.:—]')
-                self.params['block_voice'] = kwargs.get('block_voice')
+                self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']
                 else:
@@ -171,25 +175,36 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 self.params['semitones'][self.params['current_voice']] = semitones
                             if semitones > 0:
                                 try:
+                                    sox_path = shutil.which('sox')
+                                    if sox_path is None:
+                                        error = 'sox not found on PATH. Please install sox.'
+                                        print(error)
+                                        return False, error
                                     cmd = [
-                                        shutil.which('sox'), tmp_in_wav,
+                                        sox_path, tmp_in_wav,
                                         '-r', str(self.params['samplerate']), tmp_out_wav,
                                         'pitch', str(semitones * 100)
                                     ]
-                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, check=True)
                                 except subprocess.CalledProcessError as e:
                                     error = f'Subprocess error: {e.stderr}'
-                                    DependencyError(error)
+                                    print(error)
                                     return False, error
                                 except FileNotFoundError as e:
                                     error = f'File not found: {e}'
-                                    DependencyError(error)
+                                    print(error)
                                     return False, error
                             else:
                                 tmp_out_wav = tmp_in_wav
                             samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
                             source_wav = self._resample_wav(tmp_out_wav, samplerate)
-                            target_wav = self._resample_wav(self.params['current_voice'], samplerate)
+                            # cache the target-voice resample: it is the same voice for every
+                            # sentence part, so resampling it each time leaked thousands of temp wavs
+                            _tgt_key = (self.params['current_voice'], samplerate)
+                            target_wav = self.resampled_wav_cache.get(_tgt_key)
+                            if target_wav is None or not os.path.exists(target_wav):
+                                target_wav = self._resample_wav(self.params['current_voice'], samplerate)
+                                self.resampled_wav_cache[_tgt_key] = target_wav
                             speaker_argument = {}
                             if (self.engine_zs.speakers is not None and self.speaker not in self.engine_zs.speakers) or self.engine_zs.speakers is None:
                                 speaker_argument['target_wav'] = target_wav
@@ -255,6 +270,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
             return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:
-        if self._build_vtt_file(all_sentences):
-            return True
-        return False
+        # delegate to the real module-level builder; self._build_vtt_file never existed
+        from lib.classes.tts_engines.common.utils import build_vtt_file
+        ok, _ = build_vtt_file(self.session)
+        return bool(ok)

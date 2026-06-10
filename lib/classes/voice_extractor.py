@@ -50,10 +50,13 @@ class VoiceExtractor:
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
             self.wav_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
+            ffmpeg_path = shutil.which('ffmpeg')
+            if ffmpeg_path is None:
+                raise FileNotFoundError("ffmpeg not found on PATH. Please install ffmpeg.")
             cmd = [
-                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
+                ffmpeg_path, '-hide_banner', '-nostats', '-progress', 'pipe:2', '-i', self.voice_file,
                 '-ac', '1', '-y', self.wav_file
-            ]   
+            ]
             proc_pipe = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(self.voice_file), msg='Demux')
             if not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
                 error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
@@ -264,7 +267,10 @@ class VoiceExtractor:
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(0, desc=msg)
-            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-progress', 'pipe:2', '-i', src_file]
+            ffmpeg_path = shutil.which('ffmpeg')
+            if ffmpeg_path is None:
+                raise FileNotFoundError("ffmpeg not found on PATH. Please install ffmpeg.")
+            cmd = [ffmpeg_path, '-hide_banner', '-nostats', '-progress', 'pipe:2', '-i', src_file]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
                 'afftdn=nf=-70,'

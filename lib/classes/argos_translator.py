@@ -66,7 +66,7 @@ class ArgosTranslator:
     def download_and_install_argos_package(self,source_lang:str,target_lang:str)->tuple[str|None,bool]:
         try:
             if self.is_package_installed(source_lang,target_lang):
-                print(f"Package for translation from {source_lang} to {target_lang} is already installed.")
+                msg = f"Package for translation from {source_lang} to {target_lang} is already installed."
                 print(msg)
                 return msg,True
             available_packages=self.get_all_target_packages(source_lang)

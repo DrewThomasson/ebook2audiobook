@@ -1,4 +1,4 @@
-import os, re, sys, platform, shutil, subprocess, importlib, json
+import os, re, sys, platform, shlex, shutil, subprocess, importlib, json
 
 from functools import cached_property
 from typing import Union
@@ -68,7 +68,11 @@ class DeviceInstaller():
                     except json.JSONDecodeError:
                         pass
             if device_info is not None:
-                devices[device_info['name'].upper()]['found'] = True
+                _name = str(device_info.get('name', '')).upper()
+                if _name not in devices:
+                    print(f'warning: unknown device name "{_name}" in device info; ignoring.', file=sys.stderr)
+                    return ''
+                devices[_name]['found'] = True
                 return json.dumps(device_info)
         elif mode == BUILD_DOCKER:
             name, tag, msg = self.check_hardware
@@ -112,10 +116,12 @@ class DeviceInstaller():
 
         def try_cmd(cmd:str)->str:
             try:
+                args = shlex.split(cmd, posix=(os.name != 'nt'))
                 out = subprocess.check_output(
-                    cmd,
-                    shell = True,
-                    stderr = subprocess.DEVNULL
+                    args,
+                    shell = False,
+                    stderr = subprocess.DEVNULL,
+                    timeout = 15  # a wedged driver tool (e.g. nvidia-smi) must not hang startup
                 )
                 return out.decode().lower()
             except Exception:
@@ -382,6 +388,8 @@ class DeviceInstaller():
         msg = ''
         arch = platform.machine().lower()
         forced_tag = os.environ.get('DEVICE_TAG')
+        if forced_tag and not re.match(r'^[a-zA-Z0-9.\-]+$', forced_tag):
+            forced_tag = None
 
         if forced_tag:
             tag_letters = re.match(r'[a-zA-Z]+', forced_tag)
@@ -638,24 +646,29 @@ class DeviceInstaller():
                                     msg = f'ROCm {".".join(str(p) for p in version)} on Windows; needs to be upgraded to {max_ver}.x.'
                                 else:
                                     compat_versions = []
-                                for t, entry in torch_matrix.items():
-                                    if self.system not in entry['os'] or not t.startswith('rocm'):
-                                        continue
-                                    ver_str = t[len('rocm-rel-'):] if t.startswith('rocm-rel-') else t[len('rocm'):]
-                                    tag_ver = _normalize_version(ver_str)
-                                    if not tag_ver:
-                                        continue
-                                    compat_versions.append(tag_ver)
-                                tag = None
-                                if compat_versions:
-                                    le_versions = [v for v in compat_versions if v <= version]
-                                    if le_versions:
-                                        matched = max(le_versions)
-                                        if self.system == systems['WINDOWS']:
-                                            tag = f'rocm-rel-{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm-rel-{matched[0]}.{matched[1]}'
-                                        else:
-                                            tag = f'rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm{matched[0]}.{matched[1]}'
-                            msg = ''
+                                    for t, entry in torch_matrix.items():
+                                        if self.system not in entry['os'] or not t.startswith('rocm'):
+                                            continue
+                                        ver_str = t[len('rocm-rel-'):] if t.startswith('rocm-rel-') else t[len('rocm'):]
+                                        tag_ver = _normalize_version(ver_str)
+                                        if not tag_ver:
+                                            continue
+                                        compat_versions.append(tag_ver)
+                                    tag = None
+                                    if compat_versions:
+                                        le_versions = [v for v in compat_versions if v <= version]
+                                        if le_versions:
+                                            matched = max(le_versions)
+                                            if self.system == systems['WINDOWS']:
+                                                tag = f'rocm-rel-{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm-rel-{matched[0]}.{matched[1]}'
+                                            else:
+                                                tag = f'rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm{matched[0]}.{matched[1]}'
+                                    # like the CUDA fallback: without name, check_device_info()
+                                    # returns '' and the app aborts despite a working ROCm torch
+                                    name = devices['ROCM']['proc']
+                                    msg = ''
+                            else:
+                                name = devices['ROCM']['proc']
                     except Exception:
                         pass
 
@@ -1190,11 +1203,10 @@ class DeviceInstaller():
             try:
                 error = 'UniDic dictionary not found or incomplete. Downloading now…'
                 print(error)
-                subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
+                subprocess.run([sys.executable, '-m', 'unidic', 'download'], check=True)
             except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
                 error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting…'
                 raise SystemExit(error)
-                return 1
         return 0
           
     def install_device_packages(self, device_info_str:str)->int:

@@ -65,6 +65,8 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             #    error = f"{self.session['tts_engine']} custom model not implemented yet!"
             #    raise NotImplementedError(error)
             self.tts_key = self.model_path
+            # keep the cache whitelist in sync so cleanup_models_cache() doesn't evict this model every run
+            self.session['model_cache'] = self.tts_key
             try:
                 engine = self._load_api(self.tts_key, self.model_path, self.device)
             except Exception as e:
@@ -115,7 +117,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         speaker_argument = {}
                         self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else Path(self.models[self.session['fine_tuned']]['voice']).stem
-                        if self.speaker not in self.engine.speakers:
+                        if self.engine.speakers is None or self.speaker not in self.engine.speakers:
                             speaker_wav = self.params['current_voice']
                             speaker_argument = {"speaker_wav": [speaker_wav], "speaker": self.speaker}
                         else:
@@ -171,6 +173,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:
-        if self._build_vtt_file(all_sentences):
-            return True
-        return False
+        # delegate to the real module-level builder; self._build_vtt_file never existed
+        from lib.classes.tts_engines.common.utils import build_vtt_file
+        ok, _ = build_vtt_file(self.session)
+        return bool(ok)

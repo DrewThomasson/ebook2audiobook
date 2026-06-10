@@ -65,8 +65,8 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             print(msg)
             return engine
         except Exception as e:
-            error = 'load_engine(): engine is None'
-            raise RuntimeError(error)
+            error = f'load_engine() error: {e}'
+            raise RuntimeError(error) from e
 
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
@@ -161,6 +161,7 @@ class YourTTS(TTSUtils, TTSRegistry, name='yourtts'):
             return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:
-        if self._build_vtt_file(all_sentences):
-            return True
-        return False
+        # delegate to the real module-level builder; self._build_vtt_file never existed
+        from lib.classes.tts_engines.common.utils import build_vtt_file
+        ok, _ = build_vtt_file(self.session)
+        return bool(ok)

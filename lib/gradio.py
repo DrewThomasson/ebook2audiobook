@@ -1,4 +1,5 @@
 from lib.core import *
+import html
 
 def build_interface(args:dict)->gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
@@ -29,15 +30,104 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
         js_hide_elements = 'document.querySelector("#ebook_textarea_toolbar")?.remove();'
         js_show_elements = 'window.gr_ebook_textarea_counter();'
+        # ─── "Polar Night" theme — a cool moonlit night with light-blue accents ───
+        # Deep blue-night backdrop lit by a soft sky-blue glow, ice-paper text,
+        # light-blue accents, a refined emerald "convert" action. Display serif
+        # (Fraunces) for labels/headings is loaded in header_css; Manrope carries the UI.
         theme = gr.themes.Origin(
             primary_hue='green',
-            secondary_hue='amber',
+            secondary_hue='sky',
             neutral_hue='gray',
             radius_size='lg',
+            font=[gr.themes.GoogleFont('Manrope'), 'ui-sans-serif', 'system-ui', 'sans-serif'],
             font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
+        ).set(
+            # deep blue-night backdrop & ice-paper text
+            body_background_fill='#0d1320', body_background_fill_dark='#0d1320',
+            body_text_color='#dde8f5', body_text_color_dark='#dde8f5',
+            body_text_color_subdued='#8fa3bd', body_text_color_subdued_dark='#8fa3bd',
+            # cool slate panels & blocks
+            background_fill_primary='#131b2a', background_fill_primary_dark='#131b2a',
+            background_fill_secondary='#101724', background_fill_secondary_dark='#101724',
+            block_background_fill='#16202f', block_background_fill_dark='#16202f',
+            block_border_color='rgba(125,184,230,0.16)', block_border_color_dark='rgba(125,184,230,0.16)',
+            block_label_background_fill='#16202f', block_label_background_fill_dark='#16202f',
+            block_label_text_color='#7db8e6', block_label_text_color_dark='#7db8e6',
+            block_title_text_color='#eaf2fb', block_title_text_color_dark='#eaf2fb',
+            border_color_primary='rgba(125,184,230,0.18)', border_color_primary_dark='rgba(125,184,230,0.18)',
+            border_color_accent='#7db8e6', border_color_accent_dark='#7db8e6',
+            # light-blue moonlight accents
+            color_accent='#7db8e6', color_accent_soft='rgba(125,184,230,0.12)', color_accent_soft_dark='rgba(125,184,230,0.12)',
+            panel_background_fill='#131b2a', panel_background_fill_dark='#131b2a',
+            input_background_fill='#111927', input_background_fill_dark='#111927',
+            input_border_color='rgba(125,184,230,0.18)', input_border_color_dark='rgba(125,184,230,0.18)',
+            # refined emerald "convert/go" primary action
+            button_primary_background_fill='#2f9e5f', button_primary_background_fill_dark='#2f9e5f',
+            button_primary_background_fill_hover='#37b56e', button_primary_background_fill_hover_dark='#37b56e',
+            button_primary_text_color='#0c1410', button_primary_text_color_dark='#0c1410',
+            # cool slate secondary buttons with light-blue type
+            button_secondary_background_fill='#1b2738', button_secondary_background_fill_dark='#1b2738',
+            button_secondary_background_fill_hover='#233247', button_secondary_background_fill_hover_dark='#233247',
+            button_secondary_text_color='#7db8e6', button_secondary_text_color_dark='#7db8e6',
+            # soft cool depth
+            shadow_drop='0 1px 2px rgba(0,0,0,0.4)', shadow_drop_lg='0 8px 28px rgba(0,0,0,0.5)',
+            slider_color='#7db8e6', slider_color_dark='#7db8e6',
+            # calm light-blue links (Gradio defaults to a harsh neon amber #f59e0b)
+            link_text_color='#79b4e0', link_text_color_dark='#79b4e0',
+            link_text_color_hover='#a3d0f0', link_text_color_hover_dark='#a3d0f0',
+            link_text_color_active='#5f9fd0', link_text_color_active_dark='#5f9fd0',
+            link_text_color_visited='#8ba8c8', link_text_color_visited_dark='#8ba8c8',
         )
         header_css = '''
             <style>
+                /* ─────────── "Polar Night" type & atmosphere ─────────── */
+                @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap');
+
+                :root {
+                    --noct-bg: #0d1320;
+                    --noct-gold: #7db8e6;
+                    --noct-gold-soft: rgba(125,184,230,0.16);
+                    --noct-cream: #dde8f5;
+                    --noct-display: 'Fraunces', ui-serif, Georgia, serif;
+                }
+                /* Cool moonlight glow washing down from the top, over a faint
+                   film grain — gives the page depth instead of a flat fill. */
+                gradio-app, gradio-app .gradio-container {
+                    background:
+                        radial-gradient(100% 55% at 50% -12%, rgba(125,184,230,0.10) 0%, rgba(125,184,230,0.03) 20%, rgba(13,19,32,0) 44%),
+                        radial-gradient(70% 45% at 90% 4%, rgba(100,150,210,0.05) 0%, rgba(13,19,32,0) 46%),
+                        linear-gradient(180deg, #10161f 0%, #0d1320 55%, #0a0f18 100%) !important;
+                    background-attachment: fixed !important;
+                }
+                gradio-app::before {
+                    content: '' !important;
+                    position: fixed !important;
+                    inset: 0 !important;
+                    pointer-events: none !important;
+                    z-index: 0 !important;
+                    opacity: 0.5 !important;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E") !important;
+                }
+                /* keep all interactive content above the grain layer */
+                gradio-app .gradio-container > * { position: relative !important; z-index: 1 !important; }
+                /* Literary serif for the little group "tab" labels & headings. */
+                .gr-markdown p, .gr-markdown-span, #gr_blocks_nav p, #gr_blocks_markdown p,
+                h1, h2, h3, .prose h1, .prose h2, .prose h3 {
+                    font-family: var(--noct-display) !important;
+                    letter-spacing: 0.2px !important;
+                }
+                .gr-markdown p, .gr-markdown-span {
+                    font-weight: 600 !important;
+                    font-size: 15px !important;
+                    color: var(--noct-gold) !important;
+                    box-shadow: inset 0 -1px 0 var(--noct-gold-soft) !important;
+                    letter-spacing: 0.3px !important;
+                }
+                /* Block labels in their own serif voice. */
+                .block-label, span[data-testid="block-label"], label[data-testid="block-label"] {
+                    font-family: var(--noct-display) !important;
+                    letter-spacing: 0.2px !important;
+                }
                 /* Global Scrollbar Customization */
                 /* The entire scrollbar */
                 ::-webkit-scrollbar {
@@ -52,17 +142,17 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 /* The scrollbar thumb (scroll handle) */
                 ::-webkit-scrollbar-thumb {
-                    background: #c09340 !important;
+                    background: #6fb3e0 !important;
                     border-radius: 6px !important;
                 }
                 /* The scrollbar thumb on hover */
                 ::-webkit-scrollbar-thumb:hover {
-                    background: #ff8c00 !important;
+                    background: #8ec9f0 !important;
                 }
                 /* Firefox scrollbar styling */
                 html {
                     scrollbar-width: thin !important;
-                    scrollbar-color: #c09340 none !important;
+                    scrollbar-color: #6fb3e0 none !important;
                 }
                 button:disabled {
                     pointer-events: none;
@@ -71,7 +161,7 @@ def build_interface(args:dict)->gr.Blocks:
                     display: none !important;
                 }
                 button div.wrap::after {
-                    content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231E90FF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>") !important;
+                    content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236fb3e0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>") !important;
                     width: 24px !important;
                     height: 24px !important;
                     display: inline-block !important;
@@ -85,7 +175,7 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 /////////////////////
                 .wrap-inner {
-                    border: 1px solid #666666;
+                    border: 1px solid #555;
                 }
                 .no-wrap {
                     flex-wrap: nowrap !important;
@@ -139,7 +229,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding: 0 !important;
                 }
                 .small-btn-red:hover {
-                    background-color: #ff5050 !important;
+                    background-color: #da3545 !important;
                     font-size: 28px !important;
                 }
                 .small-btn-lock{
@@ -151,7 +241,7 @@ def build_interface(args:dict)->gr.Blocks:
                     padding: 0 !important;
                 }
                 .small-btn-lock:hover {
-                    background-color: #752eb2 !important;
+                    background-color: #2f5f8a !important;
                     font-size: 20px !important;
                 }
                 .small-btn-lock:active {
@@ -167,14 +257,14 @@ def build_interface(args:dict)->gr.Blocks:
                 .micro-btn{
                     font-size: 16px !important;
                     background: var(--block-background-fill) !important;
-                    width: 26px !important;
-                    height: 26px !important;
+                    width: 36px !important;
+                    height: 36px !important;
                     margin: 0 !important;
                     padding: 0 !important;
                     border-radius: var(--radius-full) !important;
                 }
                 .micro-btn:hover {
-                    background-color: #ff5050 !important;
+                    background-color: #da3545 !important;
                 }
                 .micro-btn:active {
                     background: var(--body-text-color) !important;
@@ -274,29 +364,35 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--block-background-fill) !important;
                 }
                 .play-pause-button:hover svg {
-                    fill: #ffab00 !important;
-                    stroke: #ffab00 !important;
+                    fill: #8ec9f0 !important;
+                    stroke: #8ec9f0 !important;
                     transform: scale(1.2) !important;
                 }
                 .gr-convert-btn {
                     font-size: 30px !important;
+                    box-shadow: 0 0 0 1px rgba(125,184,230,0.35), 0 6px 22px rgba(47,158,95,0.28) !important;
+                    transition: box-shadow .25s ease, transform .15s ease, background-color .25s ease !important;
                 }
-                .gr-convert-btn:hover { background-color: #34d058 !important; }
+                .gr-convert-btn:hover {
+                    background-color: #37b56e !important;
+                    box-shadow: 0 0 0 1px rgba(125,184,230,0.55), 0 8px 30px rgba(47,158,95,0.42) !important;
+                    transform: translateY(-1px) !important;
+                }
                 .gr-convert-btn:active, .button-red:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
                 [id^="block_"]:has(input[type="checkbox"]:checked) {
-                    border-left: 3px solid #22c55e !important;
+                    border-left: 3px solid #2f9e5f !important;
                 }
                 [id^="block_"]:has(input[type="checkbox"]:checked) > div {
-                    background-color: rgba(34, 197, 94, 0.08) !important;
+                    background-color: rgba(47, 158, 95, 0.10) !important;
                 }
                 [id^="block_"]:has(input[type="checkbox"]:not(:checked)) {
-                    border-left: 3px solid #ef4444 !important;
+                    border-left: 3px solid #c52231 !important;
                 }
                 [id^="block_"]:has(input[type="checkbox"]:not(:checked)) > div {
-                    background-color: rgba(239, 68, 68, 0.08) !important;
+                    background-color: rgba(197, 34, 49, 0.08) !important;
                 }
                 ////////////////////
                 #gr_ebook_textarea {
@@ -324,6 +420,12 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 #gr_ebook_src button>div, #gr_ebook_textarea button>div, #gr_custom_model_file button>div, #gr_voice_file button>div {
                     font-size: 12px !important;
+                }
+                /* Calm the big upload-zone instructional text to muted cream (the
+                   gold upload icon, set via button div.wrap::after, stays vivid). */
+                #gr_ebook_src button, #gr_voice_file button, #gr_custom_model_file button,
+                #gr_ebook_src .wrap, #gr_voice_file .wrap, #gr_custom_model_file .wrap {
+                    color: #8fa3bd !important;
                 }
                 #gr_ebook_src .empty, #gr_ebook_textarea .empty, #gr_custom_model_file .empty, #gr_voice_file .empty,
                 #gr_ebook_src .wrap, #gr_ebook_textarea .wrap, #gr_custom_model_file .wrap, #gr_voice_file .wrap {
@@ -383,7 +485,7 @@ def build_interface(args:dict)->gr.Blocks:
                     border-radius: 0 !important;
                 }
                 #gr_progress .progress-bar {
-                    background: #ff7b00 !important;
+                    background: linear-gradient(90deg, #6fb3e0 0%, #8ec9f0 100%) !important;
                 }
                 #gr_audiobook_sentence textarea{
                     margin: auto !important;
@@ -534,15 +636,17 @@ def build_interface(args:dict)->gr.Blocks:
                     align-items: center !important;
                 }
                 .gr-modal-content {
-                    background-color: #333 !important;
-                    padding: 20px !important;
+                    background-color: #1e1e1e !important;
+                    padding: 24px !important;
                     border-radius: 9px !important;
                     text-align: center !important;
-                    max-width: 300px !important;
+                    max-width: 400px !important;
                     height: auto !important;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
-                    border: 2px solid #FFA500 !important;
-                    color: white !important;
+                    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(125,184,230,0.18) !important;
+                    border: 2px solid #6fb3e0 !important;
+                    color: #dde8f5 !important;
+                    font-size: 15px !important;
+                    line-height: 1.5 !important;
                     position: relative !important;
                 }
                 .gr-modal-content p {
@@ -556,11 +660,14 @@ def build_interface(args:dict)->gr.Blocks:
                     margin-top: 20px !important;
                 }
                 .confirm-buttons button {
-                    padding: 10px 20px !important;
+                    padding: 12px 24px !important;
                     border: none !important;
                     border-radius: 6px !important;
                     font-size: 16px !important;
+                    font-weight: 600 !important;
                     cursor: pointer !important;
+                    min-width: 44px !important;
+                    min-height: 44px !important;
                 }
                 .accordion-block-even > button, .accordion-block-odd > button {
                     padding: 10px 0 10px 0 !important;
@@ -573,7 +680,7 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .accordion-block-even:hover,
                 .accordion-block-odd:hover {
-                    background: rgba(255, 200, 50, 0.3) !important;
+                    background: rgba(111, 179, 224, 0.25) !important;
                 }
                 .accordion-block-voice-list {
                     margin: auto !important;
@@ -592,7 +699,7 @@ def build_interface(args:dict)->gr.Blocks:
                     font-size: 16px !important;
                     cursor: pointer !important;
                 }
-                .gr-blocks-buttons:hover { background-color: #34d058 !important; }
+                .gr-blocks-buttons:hover { background-color: #238636 !important; }
                 .gr-blocks-buttons:active, .button-red:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
@@ -605,22 +712,22 @@ def build_interface(args:dict)->gr.Blocks:
                     margin-right: 30px !important;
                     border-radius: 9px !important;
                 }
-                .button-green { background-color: #28a745 !important; color: white !important; }
-                .button-green:hover { background-color: #34d058 !important; }
+                .button-green { background-color: #1a7f37 !important; color: white !important; }
+                .button-green:hover { background-color: #238636 !important; }
                 .button-green:active, .button-red:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
-                .button-red  {background-color: #dc3545 !important; color: white !important; }
-                .button-red:hover  { background-color: #ff6f71 !important; }
+                .button-red  {background-color: #c52231 !important; color: white !important; }
+                .button-red:hover  { background-color: #da3545 !important; }
                 .button-green:active, .button-red:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
                 .spinner {
                     margin: 15px auto !important;
-                    border: 4px solid rgba(255, 255, 255, 0.2) !important;
-                    border-top: 4px solid #FFA500 !important;
+                    border: 4px solid rgba(125, 184, 230, 0.2) !important;
+                    border-top: 4px solid #7db8e6 !important;
                     border-radius: 50% !important;
                     width: 30px !important;
                     height: 30px !important;
@@ -630,6 +737,12 @@ def build_interface(args:dict)->gr.Blocks:
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
+                /* Accessibility: visible focus indicators */
+                button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+                    outline: 2px solid var(--secondary-500) !important;
+                    outline-offset: 2px !important;
+                }
+                /* Dark mode only — no light mode */
             </style>
         '''
         
@@ -911,7 +1024,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
                     <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
-                    <b>{title}</b>&nbsp;<b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
+                    <b>{title}</b>&nbsp;<b style="color:var(--secondary-500); text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
                 </div>
                 '''
             )
@@ -986,7 +1099,14 @@ def build_interface(args:dict)->gr.Blocks:
                 enabled_convert_btn = False
                 outputs = tuple([gr.update(interactive=True) for _ in range(9)])
                 if session and session.get('id', False):
-                    enabled_convert_btn = True if session['ebook'] is not None else enabled_convert_btn
+                    # 'ebook' is only set during conversion; derive the convert-enabled
+                    # state from the actual input selection like enable_components does
+                    if session['ebook_mode'] == ebook_modes['DIRECTORY']:
+                        enabled_convert_btn = bool(session.get('ebook_list'))
+                    elif session['ebook_mode'] == ebook_modes['SINGLE']:
+                        enabled_convert_btn = bool(session.get('ebook_src'))
+                    elif session['ebook_mode'] == ebook_modes['TEXT']:
+                        enabled_convert_btn = True
                     visible_buttons = True if session['voice'] is not None else visible_buttons
                 return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_buttons), gr.update(visible=visible_buttons))
 
@@ -1001,10 +1121,11 @@ def build_interface(args:dict)->gr.Blocks:
                 return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=True), gr.update(visible=visible_custom_model_del_btn))
 
             def show_gr_modal(type:str, msg:str)->str:
+                escaped_msg = html.escape(str(msg))
                 return f'''
                 <div id="custom-gr_modal" class="gr-modal">
                     <div class="gr-modal-content">
-                        <p style="color:#ffffff">{msg}</p>            
+                        <p style="color:#ffffff">{escaped_msg}</p>
                         {show_gr_modal_buttons(type)}
                     </div>
                 </div>
@@ -1024,17 +1145,19 @@ def build_interface(args:dict)->gr.Blocks:
                     return '<div class="spinner"></div>'
 
             def yellow_stars(n:int):
+                # bright gold for the dark-only theme (the app forces dark mode;
+                # a dark gold like #9a6700 is near-invisible on the night panels)
                 return "".join(
-                    "<span style='color:#f0bc00; font-size:12px'>★</span>" for _ in range(n)
+                    "<span style='color:#ecc452; font-size:14px'>★</span>" for _ in range(n)
                 )
 
             def color_box(value:int)->str:
                 if value <= 4:
-                    color = "#4CAF50"  # Green = low
+                    color = "#1a7f37"  # Green = low (contrast 4.6:1 on white)
                 elif value <= 8:
-                    color = "#FF9800"  # Orange = medium
+                    color = "#b45309"  # Amber = medium (contrast 4.7:1 on white)
                 else:
-                    color = "#F44336"  # Red = high
+                    color = "#c52231"  # Red = high (contrast 5.3:1 on white)
                 return f"<span style='background:{color};color:white; padding: 0 3px 0 3px; border-radius:3px; font-size:11px; white-space: nowrap'>{str(value)} GB</span>"
 
             def show_rating(tts_engine:str)->str:
@@ -1048,8 +1171,8 @@ def build_interface(args:dict)->gr.Blocks:
                             border:none;
                             margin:0;
                             padding:0;
-                            font-size:12px;
-                            line-height:1.2;   /* compact, but no clipping */
+                            font-size:13px;
+                            line-height:1.4;
                         ">
                           <tr style="border:none; vertical-align:bottom;">
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
@@ -1524,7 +1647,9 @@ def build_interface(args:dict)->gr.Blocks:
                             msg = f'Are you sure to delete {selected_name}?'
                             return gr.update(value=show_gr_modal(session['status'], msg), visible=True), gr.update(value='confirm_custom_model_del')
                 except Exception as e:
-                    error = f'Could not delete the custom model {selected_name}!'
+                    # use the argument, not selected_name (may be unbound if the
+                    # exception fired before it was assigned -> NameError masks the real error)
+                    error = f'Could not delete the custom model {selected}!'
                     exception_alert(session_id, error)
                 return gr.update(visible=False), gr.update()
 
@@ -1538,13 +1663,21 @@ def build_interface(args:dict)->gr.Blocks:
                             msg = f'Are you sure to delete {selected_name}?'
                             return gr.update(value=show_gr_modal(session['status'], msg), visible=True), gr.update(value='confirm_audiobook_del')
                 except Exception as e:
-                    error = f'Could not delete the audiobook {selected_name}!'
+                    error = f'Could not delete the audiobook {selected}!'
                     exception_alert(session_id, error)
                 return gr.update(visible=False), gr.update()
 
             def click_gr_deletion(session_id:str, voice_path:str, custom_model:str, audiobook:str, method:str|None=None)->tuple:
                 try:
                     nonlocal models, voice_options
+                    if method is None:
+                        # cancel button: clear the modal and release the DELETION status,
+                        # otherwise it persists, is saved to localStorage, and blocks the
+                        # conditional session restore on the next page load
+                        session = context.get_session(session_id)
+                        if session and session.get('id', False) and session.get('status') == status_tags['DELETION']:
+                            session['status'] = status_tags['READY']
+                        return gr.update(value='', visible=False), gr.update(), gr.update(), gr.update()
                     if method is not None:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
@@ -1552,6 +1685,17 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['status'] = status_tags['READY']
                                 models = load_engine_presets(session['tts_engine'])
                                 if method == 'confirm_voice_del':
+                                    # the dropdown offers paths and the validated path
+                                    # (checked in click_gr_voice_del_btn) may differ from
+                                    # the one we delete here — re-check containment
+                                    resolved = os.path.realpath(voice_path)
+                                    expected_base = os.path.realpath(session['voice_dir'])
+                                    try:
+                                        common = os.path.commonpath([resolved, expected_base])
+                                    except ValueError:
+                                        common = None
+                                    if common != expected_base:
+                                        return gr.update(value='', visible=False), gr.update(), gr.update(), gr.update()
                                     selected_name = Path(voice_path).stem
                                     pattern = re.sub(r'\.wav$', '*.wav', voice_path)
                                     files2remove = glob(pattern)
@@ -1581,6 +1725,14 @@ def build_interface(args:dict)->gr.Blocks:
                                     show_alert(session_id, {'type': 'info', 'msg': msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), update_gr_voice_list(session_id)
                                 elif method == 'confirm_custom_model_del':
+                                    resolved = os.path.realpath(custom_model)
+                                    expected_base = os.path.realpath(session['custom_model_dir'])
+                                    try:
+                                        common = os.path.commonpath([resolved, expected_base])
+                                    except ValueError:
+                                        common = None
+                                    if common != expected_base:
+                                        return gr.update(value='', visible=False), gr.update(), gr.update(), gr.update()
                                     selected_name = os.path.basename(custom_model)
                                     shutil.rmtree(custom_model, ignore_errors=True)                           
                                     msg = f'Custom model {selected_name} deleted!'
@@ -1591,6 +1743,14 @@ def build_interface(args:dict)->gr.Blocks:
                                     show_alert(session_id, {"type": "info", "msg": msg})
                                     return gr.update(value='', visible=False), update_gr_custom_model_list(session_id), gr.update(),  gr.update()
                                 elif method == 'confirm_audiobook_del':
+                                    resolved = os.path.realpath(audiobook)
+                                    expected_base = os.path.realpath(session['audiobooks_dir'])
+                                    try:
+                                        common = os.path.commonpath([resolved, expected_base])
+                                    except ValueError:
+                                        common = None
+                                    if common != expected_base:
+                                        return gr.update(value='', visible=False), gr.update(), gr.update(), gr.update()
                                     selected_name = Path(audiobook).stem
                                     base_selected_name = re.sub(r'_part\d+$', '', selected_name)
                                     count_files = sum(1 for f, _ in audiobook_options if re.sub(r'_part\d+$', '', Path(f).stem) == base_selected_name)
@@ -1943,6 +2103,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 show_alert(back_id, {"type": "warning", "msg": msg})
                                 return gr.update(), gr.update(), backup_session_id, gr.update(), None, None
                             new_session_id = new_id.strip()
+                            if not re.match(r'^[a-fA-F0-9\-]{1,64}$', new_session_id):
+                                return gr.update(), gr.update(), backup_session_id, gr.update(), None, None
                             session['status'] = status_tags['READY']
                             if new_session_id == back_id:
                                 return gr.update(), gr.update(interactive=False), back_id, gr.update(value='🔒︎'), None, back_id
@@ -2048,7 +2210,7 @@ def build_interface(args:dict)->gr.Blocks:
                             "output_channel": output_channel,
                             "xtts_temperature": float(xtts_temperature),
                             "xtts_length_penalty": float(xtts_length_penalty),
-                            "xtts_num_beams":int(session['xtts_num_beams']),
+                            "xtts_num_beams":int(xtts_num_beams),
                             "xtts_repetition_penalty": float(xtts_repetition_penalty),
                             "xtts_top_k":int(xtts_top_k),
                             "xtts_top_p": float(xtts_top_p),
@@ -2142,7 +2304,11 @@ def build_interface(args:dict)->gr.Blocks:
                             session['status'] = status_tags['END']
                         return gr.update(value=error)
                 except Exception as e:
-                    session['status'] = status_tags['END']
+                    # re-fetch the session: `session` may be unbound if the exception
+                    # fired before it was assigned, which would mask the real error
+                    _s = context.get_session(session_id)
+                    if _s and _s.get('id', False):
+                        _s['status'] = status_tags['END']
                     error = f'start_conversion(): {e}'
                     exception_alert(session_id, error)
                     return gr.update(value=error)
@@ -2312,6 +2478,10 @@ def build_interface(args:dict)->gr.Blocks:
                         end = min(start + page_size, len(blocks))
                         header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
                         return (*updates, header, expands)
+                # session expired or no longer in EDIT between the click and this .then:
+                # return the exact output arity (blocks + header + expands) to avoid
+                # Gradio's "not enough output values" error
+                return tuple(gr.update() for _ in range(len(blocks_components_flat) + 2))
 
             def navigate(session_id:str, page:int, blocks:list[dict], direction:int, *args)->tuple:
                 new_blocks = collect_page(page, blocks, *args)
@@ -2421,15 +2591,16 @@ def build_interface(args:dict)->gr.Blocks:
 
             def click_gr_blocks_cancel_btn(session_id:str, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    if session['status'] in [status_tags['EDIT']]:
-                        session['status'] = status_tags['READY']
-                        change_current_blocks(session_id, page, blocks, *args)
-                        if session['ebook_mode'] == ebook_modes['TEXT']:
-                            blocks_current = session['blocks_current']
-                            blocks = blocks_current['blocks']
-                            session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
-                return gr.update(interactive=True), gr.update(visible=True), update_gr_audiobook_list(session_id), gr.update(visible=False), session['blocks_current']['blocks'], gr.update(value=session['ebook_textarea'])
+                if session and session.get('id', False) and session.get('status') in [status_tags['EDIT']]:
+                    session['status'] = status_tags['READY']
+                    change_current_blocks(session_id, page, blocks, *args)
+                    if session['ebook_mode'] == ebook_modes['TEXT']:
+                        blocks_current = session['blocks_current']
+                        blocks = blocks_current['blocks']
+                        session['ebook_textarea'] = ' '.join(block['text'] for block in blocks)
+                    return gr.update(interactive=True), gr.update(visible=True), update_gr_audiobook_list(session_id), gr.update(visible=False), session['blocks_current']['blocks'], gr.update(value=session['ebook_textarea'])
+                # expired session or not in EDIT: leave the UI untouched rather than KeyError
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
             def click_gr_blocks_confirm_btn(session_id:str, event:int, page:int, blocks:list[dict], *args)->tuple:
                 session = context.get_session(session_id)
@@ -2473,7 +2644,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['ebook'] = session['ebook_src'] = None
                     if isinstance(session.get('voice'), str):
                         if not os.path.exists(session['voice']):
-                            session['voice'] = session['ebook_src'] = None
+                            session['voice'] = None
                     if isinstance(session.get('custom_model'), str):
                         custom_model_dir = session.get('custom_model_dir')
                         if isinstance(custom_model_dir, str) and not os.path.exists(custom_model_dir):
@@ -2569,7 +2740,10 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'update_gr_save_session(): {e}!'
                     exception_alert(session_id, error)
-                    yield gr.update(), gr.update(value=e), gr.update()
+                    # leave gr_session_update state untouched: writing the Exception
+                    # object into it makes every later tick crash on state.get('hash'),
+                    # permanently breaking autosave
+                    yield gr.update(), gr.update(), gr.update()
 
             ################## Events Section
 
@@ -2611,11 +2785,11 @@ def build_interface(args:dict)->gr.Blocks:
                     return event.then(
                         fn=lambda s: (
                             enable_components(s) + (1,)
-                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
-                            and context.get_session(s)['ebook_mode'] == ebook_modes['TEXT']
+                            if context.get_session(s).get('status') in [status_tags['END'], status_tags['READY']]
+                            and context.get_session(s).get('ebook_mode') == ebook_modes['TEXT']
                             else (
                                 enable_components(s) + (0,)
-                                if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
+                                if context.get_session(s).get('status') in [status_tags['END'], status_tags['READY']]
                                 else [gr.update()] * len(outputs_enable_components) + [0]
                             )
                         ),
@@ -3338,36 +3512,30 @@ def build_interface(args:dict)->gr.Blocks:
                                             init_elements_timeout = setTimeout(init_interface, 1000);
                                             return;
                                         }
-                                        // Function to apply theme borders
+                                        // Apply dark theme borders (light mode removed)
                                         function applyThemeBorders(){
-                                            const url = new URL(window.location);
-                                            const theme = url.searchParams.get("__theme");
-                                            let elColor = "#666666";
-                                            if(theme == "dark"){
-                                                elColor = "#fff";
-                                            }else if(!theme){
-                                                const osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                                if(osTheme){
-                                                    elColor = "#fff";
-                                                }
-                                            }
                                             gr_root.querySelectorAll("input[type='checkbox'], input[type='radio']")
-                                                .forEach(cb => cb.style.border = "1px solid " + elColor);
+                                                .forEach(cb => cb.style.border = "1px solid #fff");
                                         }
                                         // Run once on init
                                         applyThemeBorders();
-                                        // Re-run when DOM changes (tabs, redraws, etc.)
-                                        new MutationObserver(applyThemeBorders).observe(gr_root, {
-                                            childList: true,
-                                            subtree: true
-                                        });
-                                        // Keep your progress observer
-                                        new MutationObserver(tab_progress).observe(gr_progress, {
-                                            attributes: true,
-                                            childList: true,
-                                            subtree: true,
-                                            characterData: true
-                                        });
+                                        // init_interface() is called on every session-restore chain;
+                                        // guard the observers so they are not stacked on each re-init
+                                        if(!window._observers_initialized){
+                                            window._observers_initialized = true;
+                                            // Re-run when DOM changes (tabs, redraws, etc.)
+                                            new MutationObserver(applyThemeBorders).observe(gr_root, {
+                                                childList: true,
+                                                subtree: true
+                                            });
+                                            // Keep your progress observer
+                                            new MutationObserver(tab_progress).observe(gr_progress, {
+                                                attributes: true,
+                                                childList: true,
+                                                subtree: true,
+                                                characterData: true
+                                            });
+                                        }
                                         // new MutationObserver(tab_progress).observe(gr_progress.parentElement, { ... });
                                         // gr_progress.addEventListener("change", tab_progress);
                                         if(!window._tab_progress_interval){
@@ -3536,19 +3704,8 @@ def build_interface(args:dict)->gr.Blocks:
                                                         gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
                                                     }
                                                 });
-                                                const themURL = new URL(window.location);
-                                                const theme = themURL.searchParams.get("__theme");
-                                                let osTheme;
-                                                if(theme){
-                                                    if(theme == "dark"){
-                                                        audio_filter = "invert(1) hue-rotate(180deg)";
-                                                    }
-                                                }else{
-                                                    osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                                    if(osTheme){
-                                                        audio_filter = "invert(1) hue-rotate(180deg)";
-                                                    }
-                                                }
+                                                // Dark mode only: always invert audio player
+                                                audio_filter = "invert(1) hue-rotate(180deg)";
                                                 gr_audiobook_player.style.transition = "filter 1s ease";
                                                 gr_audiobook_player.style.filter = audio_filter;
                                                 gr_audiobook_player.volume = window.session_storage.playback_volume;
@@ -3846,6 +4003,12 @@ def build_interface(args:dict)->gr.Blocks:
                     }
                 '''.replace('__max_ebook_textarea_length__', str(max_ebook_textarea_length)),
                 outputs=[gr_restore_session],
+            )
+            # Force dark mode only (no light theme). Kept as a separate, side-effect-only
+            # app.load so it never interferes with the session-restore load chain above.
+            app.load(
+                fn=None,
+                js="()=>{ try{ document.body.classList.add('dark'); const url=new URL(window.location); if(!url.searchParams.has('__theme')){ url.searchParams.set('__theme','dark'); history.replaceState(null,'',url); } }catch(e){ console.warn('force-dark error:', e); } }"
             )
             app.unload(on_unload)
             all_ips = get_all_ip_addresses()

@@ -8,7 +8,14 @@ from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
 from lib import *
 
-os.environ['HF_TOKEN'] = Fernet(fernet_key.encode('utf-8')).decrypt(fernet_data).decode('utf-8')
+# Decrypt the bundled HuggingFace token only when both FERNET_KEY and FERNET_DATA
+# are provided (see lib/conf.py). Without them, fall back to anonymous HF access —
+# public models still download fine, gated/private ones need HF_TOKEN set manually.
+if fernet_key and fernet_data:
+    try:
+        os.environ['HF_TOKEN'] = Fernet(fernet_key.encode('utf-8')).decrypt(fernet_data).decode('utf-8')
+    except Exception as e:
+        warnings.warn(f'Could not decrypt HF_TOKEN from FERNET_KEY/FERNET_DATA ({e}); using anonymous HuggingFace access.')
 
 _lock = threading.Lock()
 
@@ -126,6 +133,13 @@ class TTSUtils:
             torch.xpu.empty_cache()
 
     def _model_size_bytes(self, model:Any)->int:
+        # TTS.api engines hold their weights in .synthesizer, which the TTS
+        # class does not register as a submodule (see _load_checkpoint below):
+        # measuring the wrapper returns ~0 and silently disables all VRAM
+        # admission/eviction accounting based on this size
+        syn = getattr(model, 'synthesizer', None)
+        if syn is not None:
+            model = syn
         total = 0
         try:
             for p in model.parameters():
@@ -143,7 +157,7 @@ class TTSUtils:
         total_bytes = 0
         for model in loaded_tts.values():
             try:
-                total_bytes += self.model_size_bytes(model)
+                total_bytes += self._model_size_bytes(model)
             except Exception:
                 pass
         gb = total_bytes / (1024 ** 3)
@@ -156,7 +170,11 @@ class TTSUtils:
             if len(xtts_builtin_speakers_list) > 0:
                 return xtts_builtin_speakers_list
             speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTSv2']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
-            loaded = torch.load(speakers_path, weights_only=False)
+            try:
+                loaded = torch.load(speakers_path, weights_only=True)
+            except Exception:
+                warnings.warn(f'weights_only=True failed for {speakers_path}, falling back to weights_only=False')
+                loaded = torch.load(speakers_path, weights_only=False)
             if not isinstance(loaded, dict):
                 error = f'Invalid XTTS speakers format: {type(loaded)}'
                 raise TypeError(error)
@@ -313,6 +331,7 @@ class TTSUtils:
         except Exception as e:
             error = f'_load_api() error: {e}'
             print(error)
+            self.cleanup_memory()
             raise
 
     def _load_checkpoint(self,**kwargs:Any)->Any:
@@ -409,6 +428,7 @@ class TTSUtils:
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
             print(error)
+            self.cleanup_memory()
             raise
 
     def _load_engine_zs(self, device:str)->Any:
@@ -454,7 +474,10 @@ class TTSUtils:
                         self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                         models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
                         if self.session['free_vram_gb'] <= models_loaded_size_gb:
-                            del loaded_tts[self.tts_key]
+                            # the engine may never have been admitted to the cache
+                            # (exactly the low-VRAM case that reaches this branch)
+                            loaded_tts.pop(self.tts_key, None)
+                            self.cleanup_memory()
                         hf_repo = default_engine_settings[xtts]['repo']
                         hf_sub = ''
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][0]}", cache_dir=self.cache_dir)
@@ -534,7 +557,7 @@ class TTSUtils:
                                     gc.collect()
                                     self.engine = loaded_tts.get(self.tts_key, False)
                                     if not self.engine:
-                                        self._load_engine()
+                                        self.engine = self.load_engine()
                                     return new_current_voice
                                 else:
                                     error = 'normalize_audio() error:'
@@ -684,6 +707,22 @@ class TTSUtils:
                 error = '_convert_sml() error: voice tag must specify a voice path value'
                 return False, error
             inline_voice = os.path.abspath(value)
+            allowed_dirs = [os.path.realpath(voices_dir)]
+            process_dir = self.session.get('process_dir')
+            if process_dir:
+                allowed_dirs.append(os.path.realpath(process_dir))
+            resolved = os.path.realpath(inline_voice)
+            inside = False
+            for d in allowed_dirs:
+                try:
+                    if os.path.commonpath([resolved, d]) == d:
+                        inside = True
+                        break
+                except ValueError:
+                    pass
+            if not inside:
+                error = f'_convert_sml() error: voice path {inline_voice} is outside allowed directories'
+                return False, error
             if not os.path.exists(inline_voice):
                 error = f'_convert_sml() error: voice {inline_voice} does not exist!'
                 return False, error

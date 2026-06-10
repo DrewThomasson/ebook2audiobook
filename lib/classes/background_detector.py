@@ -106,7 +106,10 @@ class BackgroundDetector:
             if DEVICE_SYSTEM == systems['WINDOWS']:
                 torch.backends.cudnn.enabled = False
         self.torch_device = torch.device(
-            devices['CUDA']['proc'] if (self.device == devices['CUDA']['proc'] and getattr(torch.version, 'hip', None) is None) or (getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM != systems['WINDOWS'])
+            # honor an explicit CPU selection: never silently place the VAD
+            # pipeline on a GPU the user chose not to use
+            devices['CPU']['proc'] if self.device == devices['CPU']['proc']
+            else devices['CUDA']['proc'] if (self.device == devices['CUDA']['proc'] and getattr(torch.version, 'hip', None) is None) or (getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM != systems['WINDOWS'])
             else devices['XPU']['proc'] if hasattr(torch, devices['XPU']['proc']) and torch.xpu.is_available()
             else devices['MPS']['proc'] if torch.backends.mps.is_available()
             else devices['CPU']['proc']
@@ -134,6 +137,7 @@ class BackgroundDetector:
                     pipeline.to(self.torch_device)
                     _pipeline_cache[key] = pipeline
         if pipeline:
+            pipeline.to(self.torch_device)
             y, sr = librosa.load(self.wav_file, sr=16000, mono=True)
             waveform = torch.from_numpy(y).float().unsqueeze(0)
             return pipeline, waveform, sr

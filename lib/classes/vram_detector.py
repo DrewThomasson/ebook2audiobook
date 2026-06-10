@@ -55,7 +55,12 @@ class VRAMDetector:
             if device == 'jetson':
                 if os.path.exists('/etc/nv_tegra_release'):
                     try:
-                        out = subprocess.check_output(['tegrastats','--interval','1000'],timeout=3).decode()
+                        try:
+                            out = subprocess.check_output(['tegrastats','--interval','1000'],timeout=3).decode()
+                        except subprocess.TimeoutExpired as e:
+                            # tegrastats streams forever: the timeout IS how we stop it,
+                            # so parse the partial output it produced before expiring
+                            out = (e.output or b'').decode(errors='replace')
                         m = re.search(r'RAM\s+(\d+)/(\d+)MB',out)
                         if m:
                             used = int(m.group(1)) * 1024 * 1024
@@ -110,14 +115,16 @@ class VRAMDetector:
                     return json.dumps(info, indent=2) if as_json else info
 
             # ─────────────────────────── ROCm (AMD)
-            elif hasattr(torch, 'hip') and torch.hip.is_available():
-                free, total = torch.hip.mem_get_info()
-                alloc = torch.hip.memory_allocated()
-                resv = torch.hip.memory_reserved()
+            # ROCm torch builds expose memory APIs through torch.cuda (with
+            # torch.version.hip set); a torch.hip namespace does not exist
+            elif device == 'rocm' and getattr(torch.version, 'hip', None) and torch.cuda.is_available():
+                free, total = torch.cuda.mem_get_info()
+                alloc = torch.cuda.memory_allocated()
+                resv = torch.cuda.memory_reserved()
                 info = {
                     "os": self.system,
                     "device_type": "rocm",
-                    "device_name": torch.hip.get_device_name(0),
+                    "device_name": torch.cuda.get_device_name(0),
                     "free_bytes": free,
                     "total_bytes": total,
                     "allocated_bytes": alloc,

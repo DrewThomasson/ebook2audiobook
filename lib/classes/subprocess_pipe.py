@@ -137,6 +137,24 @@ class SubprocessPipe:
         except Exception as e:
             self._on_error(e)
             return False
+        finally:
+            if self.process and self.process.poll() is None:
+                self.process.terminate()
+                try:
+                    self.process.wait(timeout=5)
+                except:
+                    self.process.kill()
+            if self.process:
+                if self.process.stdout:
+                    try:
+                        self.process.stdout.close()
+                    except:
+                        pass
+                if self.process.stderr:
+                    try:
+                        self.process.stderr.close()
+                    except:
+                        pass
 
     def stop(self)->bool:
         self._stop_requested=True

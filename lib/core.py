@@ -5,7 +5,7 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, csv, fnmatch, sqlite3, hashlib, io, json, math, os, pytesseract, gc
+import argparse, asyncio, csv, fnmatch, sqlite3, hashlib, html, io, json, math, os, pytesseract, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, psutil, requests, stanza, importlib, queue
@@ -502,14 +502,16 @@ def compare_dict_keys(d1, d2):
             "missing_in_d1": missing_in_d1,
         }
     for key in d1_keys.intersection(d2_keys):
-        nested_result = compare_keys(d1[key], d2[key])
+        nested_result = compare_dict_keys(d1[key], d2[key])
         if nested_result:
             return {key: nested_result}
     return None
 
 def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
     try:
-        debug = True
+        if not re.match(r'^[a-zA-Z0-9_\-]+$', lang):
+            return False, f'Invalid language code: {lang}'
+        debug = False
         try:
             data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
             # Handle silent OCR failures (empty or None result)
@@ -584,10 +586,10 @@ def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
             elif (i == 0 or (i > 0 and merged_lines[i-1] == '')) and len(p.split()) <= 10:
                 is_heading = True
             if is_heading:
-                xhtml_parts.append(f'<h2>{p}</h2>')
+                xhtml_parts.append(f'<h2>{html.escape(p)}</h2>')
                 debug_dump.append(f'[H2] {p}')
             else:
-                xhtml_parts.append(f'<p>{p}</p>')
+                xhtml_parts.append(f'<p>{html.escape(p)}</p>')
                 debug_dump.append(f'[P ] {p}')
         if debug:
             print('=== OCR DEBUG OUTPUT ===')
@@ -831,7 +833,9 @@ def convert2epub(session_id:str)-> bool:
                 print(error)
                 return False
             if file_ext == '.txt':
-                with open(file_input, 'r', encoding='utf-8') as f:
+                # not all text files are utf-8 (cp1252/latin-1 are common):
+                # degrade gracefully instead of failing the whole conversion
+                with open(file_input, 'r', encoding='utf-8', errors='replace') as f:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
                 text = re.sub(r'\n{2,}', f".{TTS_SML['pause']['static']}", text)
@@ -868,13 +872,16 @@ def convert2epub(session_id:str)-> bool:
                         xhtml_pages.append(xhtml_content)
                     else:
                         show_alert(session_id, {"type": "warning", "msg": error})
+                # release the PDF handle: on Windows an open handle keeps the file
+                # locked in process_dir and breaks later cleanup/re-conversion
+                doc.close()
                 if xhtml_pages:
                     xhtml_body = '\n'.join(xhtml_pages)
                     xhtml_text = (
                         '<?xml version="1.0" encoding="utf-8"?>\n'
                         '<html xmlns="http://www.w3.org/1999/xhtml">\n'
                         '<head>\n'
-                        f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                        f'<meta charset="utf-8"/>\n<title>{html.escape(title)}</title>\n'
                         '</head>\n'
                         '<body>\n'
                         f'{xhtml_body}\n'
@@ -938,7 +945,7 @@ def convert2epub(session_id:str)-> bool:
                         '<?xml version="1.0" encoding="utf-8"?>\n'
                         '<html xmlns="http://www.w3.org/1999/xhtml">\n'
                         '<head>\n'
-                        f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                        f'<meta charset="utf-8"/>\n<title>{html.escape(title)}</title>\n'
                         '</head>\n'
                         '<body>\n'
                         f'{xhtml_body}\n'
@@ -989,7 +996,7 @@ def convert2epub(session_id:str)-> bool:
                             '<?xml version="1.0" encoding="utf-8"?>\n'
                             '<html xmlns="http://www.w3.org/1999/xhtml">\n'
                             '<head>\n'
-                            f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
+                            f'<meta charset="utf-8"/>\n<title>{html.escape(title)}</title>\n'
                             '</head>\n'
                             '<body>\n'
                             f'{xhtml_body}\n'
@@ -1016,13 +1023,15 @@ def convert2epub(session_id:str)-> bool:
                         xhtml_pages.append(xhtml_content)
                     else:
                         show_alert(session_id, {"type": "warning", "msg": error})
+                # release the image handle (keeps the file locked on Windows)
+                img.close()
                 if xhtml_pages:
                     xhtml_body = '\n'.join(xhtml_pages)
                     xhtml_text = (
                         '<?xml version="1.0" encoding="utf-8"?>\n'
                         '<html xmlns="http://www.w3.org/1999/xhtml">\n'
                         '<head>\n'
-                        f'<meta charset="utf-8"/>\n<title>{filename_noext}</title>\n'
+                        f'<meta charset="utf-8"/>\n<title>{html.escape(filename_noext)}</title>\n'
                         '</head>\n'
                         '<body>\n'
                         f'{xhtml_body}\n'
@@ -1062,12 +1071,11 @@ def convert2epub(session_id:str)-> bool:
                 encoding='utf-8'
             )
             print(result.stdout)
+            if result.returncode != 0:
+                error = f'convert2epub failed (exit code {result.returncode}): {result.stderr}'
+                print(error)
+                return False
             return True
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
-            error = f'convert2epub subprocess.CalledProcessError: {e.stderr}'
-            print(error)
-            return False
         except FileNotFoundError as e:
             DependencyError(e)
             error = f'convert2epub FileNotFoundError: {e}'
@@ -1123,7 +1131,9 @@ def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
                     image = image.convert('RGB')
                 image.save(cover_path, format = 'JPEG')
                 return cover_path
-            return True
+            # no cover found: None (a bool here would slip past `is not None`
+            # checks and end up in open(cover_path, 'rb') as a file descriptor)
+            return None
     except Exception as e:
         DependencyError(e)
         return False
@@ -1313,7 +1323,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         if is_num2words_compat:
             return num2words(n, lang=(lang_iso1 or 'en'))
         else:
-            return math2words(m, lang, lang_iso1, tts_engine, is_num2words_compat)
+            return math2words(s, lang, lang_iso1, tts_engine, is_num2words_compat)
 
     try:
         msg = f'----------\nParsing doc {idx}'
@@ -1514,7 +1524,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             )
                         else:
                             text = re_ordinal.sub(
-                                lambda m: math2words(int(m.group(1)), lang, lang_iso1, tts_engine, is_num2words_compat),
+                                lambda m: math2words(m.group(), lang, lang_iso1, tts_engine, is_num2words_compat),
                                 text
                             )
                         text = re.sub(
@@ -1905,26 +1915,30 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
 
     return number_re.sub(clean_match, text)
 
-def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str|bool:
+def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str:
     try:
         year = int(year_str)
         first_two = int(year_str[:2])
         last_two = int(year_str[2:])
         lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
         lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
+        # phoneme table may not have this language: fall back to the default one
+        phoneme_map = language_math_phonemes.get(lang, language_math_phonemes.get(default_language_code, {}))
         if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
             else:
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
+                return ' '.join(phoneme_map.get(ch, ch) for ch in year_str)
         if is_num2words_compat:
-            return f'{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}' 
+            return f'{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}'
         else:
-            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in first_two) + ' ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in last_two)
+            return ' '.join(phoneme_map.get(ch, ch) for ch in str(first_two)) + ' ' + ' '.join(phoneme_map.get(ch, ch) for ch in str(last_two))
     except Exception as e:
         error = f'year2words() error: {e}'
         print(error)
-        return False
+        # callers use this inside re.sub lambdas: a non-str return would crash
+        # the whole substitution, so degrade to the original text instead
+        return year_str
 
 def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
 
@@ -1935,7 +1949,7 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
         if is_num2words_compat:
             word = num2words(n, lang=lang_iso1)
         else:
-            word = math2words(n, lang, lang_iso1, tts_engine, is_num2words_compat)
+            word = math2words(str(n), lang, lang_iso1, tts_engine, is_num2words_compat)
         if not isinstance(word, str):
             word = str(word)
         _n2w_cache[key] = word
@@ -2280,7 +2294,7 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
-    emoji_pattern.sub('', text)
+    text = emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
         mapping = abbreviations_mapping[lang]
         # Sort keys by descending length so longer ones match first
@@ -2734,7 +2748,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 error = f'{Path(final_file).name} is corrupted or does not exist'
                 print(error)
                 return False
-            if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4'] and session['cover'] is not None:
+            if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4'] and isinstance(session['cover'], str):
                 cover_path = session['cover']
                 msg = f'Adding cover {cover_path} into the final audiobook file…'
                 print(msg)
@@ -2856,7 +2870,10 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     return None
                 metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
                 part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
+                if not generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format):
+                    # a stale metadata file from a previous run could otherwise be muxed in silently
+                    print(f'generate_ffmpeg_metadata() failed for part {part_idx+1}.')
+                    return None
                 final_file = os.path.join(
                     session['audiobooks_dir'],
                     f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
@@ -2880,7 +2897,10 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 return None
             metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
             chapters_zip = list(zip(chapter_files, chapter_titles))
-            generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
+            if not generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format):
+                # a stale metadata file from a previous run could otherwise be muxed in silently
+                print('generate_ffmpeg_metadata() failed.')
+                return None
             final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
             if export_audio(merged_audio, metadata_file, final_file):
                 exported_files.append(final_file)
@@ -3019,7 +3039,7 @@ def delete_unused_tmp_dirs(session_id:str, output_dir:str, days:int)->None:
         for dir_path in dir_array:
             if os.path.exists(dir_path) and os.path.isdir(dir_path):
                 for dir in os.listdir(dir_path):
-                    if dir in current_user_dirs:        
+                    if dir not in current_user_dirs:
                         full_dir_path = os.path.join(dir_path, dir)
                         if os.path.isdir(full_dir_path):
                             try:
@@ -3187,7 +3207,7 @@ def convert_ebook(args:dict)->tuple:
                                     else:
                                         error = f"{model} could not be extracted or mandatory files are missing"
                                 else:
-                                    error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                                    error = f'{os.path.basename(session["custom_model"])} is not a valid model or some required files are missing'
                             except ModuleNotFoundError as e:
                                 error = f"No presets module for TTS engine '{session['tts_engine']}': {e}"
                     if session.get('voice'):
@@ -3205,10 +3225,10 @@ def convert_ebook(args:dict)->tuple:
                 if session['script_mode'] == NATIVE:
                     is_installed = check_programs('Calibre', 'ebook-convert', '--version')
                     if not is_installed:
-                        error = f'check_programs() Calibre failed: {e}'
+                        error = 'check_programs() Calibre failed: not found or not working'
                     is_installed = check_programs('FFmpeg', 'ffmpeg', '-version')
                     if not is_installed:
-                        error = f'check_programs() FFMPEG failed: {e}'
+                        error = 'check_programs() FFMPEG failed: not found or not working'
                 if error is None:
                     if prepare_dirs(session_id):
                         session['ebook'] = os.path.join(session['process_dir'], os.path.basename(session['ebook_src']))

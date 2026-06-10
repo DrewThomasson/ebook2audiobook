@@ -104,6 +104,10 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
                     if self.session['voice'] == self.params['block_voice']:
                         self.session['voice'] = self.params['current_voice']
                     self.params['block_voice'] = self.params['current_voice']
+                # update speaker from the resolved voice so the builtin-speaker latent
+                # shortcut below can fire (it was stuck on the __init__ default of None)
+                if self.params.get('current_voice') is not None:
+                    self.speaker = Path(self.params['current_voice']).stem
                 fine_tuned_params = {
                     key.removeprefix('xtts_'): cast_type(self.session[key])
                     for key, cast_type in {
@@ -200,6 +204,7 @@ class XTTSv2(TTSUtils, TTSRegistry, name='xtts'):
             return False, self.log_exception(f'{self.__class__.__name__}.convert()',e)
 
     def create_vtt(self, all_sentences:list)->bool:
-        if self._build_vtt_file(all_sentences):
-            return True
-        return False
+        # delegate to the real module-level builder; self._build_vtt_file never existed
+        from lib.classes.tts_engines.common.utils import build_vtt_file
+        ok, _ = build_vtt_file(self.session)
+        return bool(ok)

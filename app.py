@@ -18,7 +18,7 @@ def init_multiprocessing():
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
     search_python_env = str(os.path.basename(sys.prefix))
-    if search_python_env == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
+    if search_python_env == 'python_env' or script_mode == FULL_DOCKER or (current_version >= min_python_version and current_version <= max_python_version):
         return True
     error=f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
@@ -47,8 +47,10 @@ and run "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" f
         return True
 
 def is_port_in_use(port:int)->bool:
+    # connect to a real loopback address: connecting to 0.0.0.0 fails on
+    # Windows regardless of port state, silently disabling this guard
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
-        return s.connect_ex(('0.0.0.0',port))==0
+        return s.connect_ex(('127.0.0.1',port))==0
 
 def kill_previous_instances(script_name: str):
     current_pid = os.getpid()
@@ -221,7 +223,9 @@ SML tags available:
     headless_optional_group.add_argument(cli_options[27], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
     headless_optional_group.add_argument(cli_options[28], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
     headless_optional_group.add_argument(cli_options[29], action='store_true', help=argparse.SUPPRESS)
-    headless_optional_group.add_argument(cli_options[30], action='store_true', help=argparse.SUPPRESS)
+    # --workflow carries a session-id string (compared to workflow_id and used
+    # as args['id']); store_true would make the session id the literal True
+    headless_optional_group.add_argument(cli_options[30], type=str, default=None, help=argparse.SUPPRESS)
 
     for arg in sys.argv:
         if arg.startswith('--') and arg not in cli_options:

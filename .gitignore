@@ -4,7 +4,6 @@
 *.pyc
 *.wixobj
 .DS_Store
-*.wixobj
 __pycache__/
 python_env/
 audiobooks/cli/*
@@ -19,3 +18,8 @@ models/*
 !audiobooks/cli/.gitkeep
 !audiobooks/gui/gradio/.gitkeep
 !audiobooks/gui/host/.gitkeep
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

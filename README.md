@@ -69,6 +69,27 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 </details>
 
+## What's New — v26.5.11
+
+**"Polar Night" blue theme** — new darker, more readable UI with sky-blue accents and emerald Convert button.
+
+**~40 bug fixes** across core, Gradio UI, all 8 TTS engines, and the Windows launcher:
+- TTS model cache sync (no more full model reload on each book for VITS/Fairseq/GlowTTS/Tacotron/Tortoise)
+- Target-voice temp-file leak fixed (was creating thousands of `.wav` files per conversion)
+- XTTS speaker latents now cached correctly on first sentence
+- `create_vtt()` fixed on all engines (was calling non-existent `self._build_vtt_file`)
+- Windows UTF-8 stdout fix (`UnicodeEncodeError` on `→`/`…` characters)
+- espeak-ng path detection fixed for scoop installs (`eSpeak NG\espeak-ng-data` subfolder)
+- `VERSION.txt` resolved relative to `__file__` (no more `FileNotFoundError` in worktrees)
+- Port check: `0.0.0.0` → `127.0.0.1` in the app listener
+- Secure model checkpoint loading (`weights_only=True`)
+- Session `KeyError` fixes, autosave state corruption fix, path traversal guard in voice deletion
+- ROCm GPU detection and device_installer indentation fixes
+
+**French README** added — see [README_FR.md](README_FR.md)
+
+---
+
 ## README.md
 
 ## Table of Contents
@@ -527,7 +548,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Chinese (zho)
 - [x] English (eng)
 - [ ] Spanish (spa)
-- [ ] French (fra)
+- [x] French (fra)
 - [ ] German (deu)
 - [ ] Italian (ita)
 - [ ] Portuguese (por)

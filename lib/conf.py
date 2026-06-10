@@ -28,13 +28,16 @@ cli_options = [
 ]
 
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
-fernet_key = '0TkxI0iP0jmhT0vJ-AUpM2U4SAX3urVtrx1q8lwTynI='
-fernet_data = b'gAAAAABptJuHZS_rMQRTmqzy-i5UFTh6HqcbklSV6oZsRpZXa7uSEveAMv1daIFzzeeWZW0wDV-frFlzk_gJPc5tr_YVKW-Eg8evw9Wll1rWrvIAfT0YQywaUe188qP1dg-GOJDM7Ul1'
+fernet_key = os.environ.get('FERNET_KEY', '')
+fernet_data = os.environ.get('FERNET_DATA', '').encode() if os.environ.get('FERNET_DATA') else b''
 
 # ---------------------------------------------------------------------
 # Version and runtime config
 # ---------------------------------------------------------------------
-prog_version = (lambda: open('VERSION.txt').read().strip())()
+# resolve relative to the repo root (this file's parent dir), not the cwd,
+# and close the handle
+with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'VERSION.txt'), encoding='utf-8') as _vf:
+    prog_version = _vf.read().strip()
 
 NATIVE = 'native'
 FULL_DOCKER = 'full_docker'
@@ -131,7 +134,16 @@ tempfile.tempdir = run_dir
 os.environ['PYTHONUTF8'] = '1'
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['COQUI_TOS_AGREED'] = '1'
-os.environ['PYTHONIOENCODING'] = 'utf-8'
+# The PYTHON* env vars above only affect child processes; the current interpreter's
+# stdout/stderr keep whatever encoding they started with (cp1252 on a default Windows
+# console). Force them to UTF-8 so status messages containing characters like → or …
+# can't raise UnicodeEncodeError and abort a conversion mid-way. errors='replace' makes
+# any stray character degrade gracefully instead of ever crashing a print().
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
 os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
 os.environ['CALIBRE_TEMP_DIR'] = run_dir
 os.environ['CALIBRE_CACHE_DIRECTORY'] = run_dir
@@ -152,7 +164,6 @@ os.environ['MPLCONFIGDIR'] = f'{models_dir}/matplotlib'
 os.environ['TESSDATA_PREFIX'] = f'{models_dir}/tessdata'
 os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
-os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:True'
@@ -168,7 +179,14 @@ os.environ['MIOPEN_LOG_LEVEL'] = '2'
 os.environ['MIOPEN_DEBUG_CONV_IMPLICIT_GEMM'] = '0'
 os.environ['HSA_NO_SCRATCH_RECLAIM'] = '0'
 if DEVICE_SYSTEM == systems['WINDOWS']:
-    os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
+    # scoop's espeak-ng nests its data under an "eSpeak NG" subfolder; older/other
+    # layouts put it directly under the app dir. Pick whichever actually exists so
+    # espeak-ng doesn't fall back to its compiled-in /usr/share path (which fails on Windows).
+    _espeak_data_candidates = [
+        os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"),
+        os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data"),
+    ]
+    os.environ['ESPEAK_DATA_PATH'] = next((p for p in _espeak_data_candidates if os.path.isdir(p)), _espeak_data_candidates[0])
 
 # ---------------------------------------------------------------------
 # Global settings
@@ -180,7 +198,7 @@ max_ebook_textarea_length = 1024 # chars
 # ---------------------------------------------------------------------
 # Interface configuration
 # ---------------------------------------------------------------------
-interface_host = '0.0.0.0'
+interface_host = os.environ.get('INTERFACE_HOST', '127.0.0.1')
 interface_port = 7860
 interface_shared_tmp_expire = 3 # in days
 interface_concurrency_limit = 1 # or None for unlimited multiple parallele user conversion

@@ -1,6 +1,7 @@
 import time
 import logging
 
+from collections.abc import Generator
 from queue import Queue, Empty
 from typing import Any
 
