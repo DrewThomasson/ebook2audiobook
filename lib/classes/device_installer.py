@@ -1203,21 +1203,21 @@ class DeviceInstaller():
             return False
 
     def check_onnxruntime_directml(self)->bool:
-            if self.system != systems['WINDOWS']:
-                return False
-            if devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']:
-                return False
-            try:
-                import onnxruntime as ort
-                if 'DmlExecutionProvider' in ort.get_available_providers():
-                else:
-                    subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-gpu', 'onnxruntime-directml'])
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml'])
-                return True
-            except Exception:
-                error = 'check_onnxruntime_directml(): {e}'
-                print(error)
+        if self.system != systems['WINDOWS']:
             return False
+        if devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']:
+            return False
+        try:
+            import onnxruntime as ort
+            if 'DmlExecutionProvider' in ort.get_available_providers():
+                return True
+            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml'])
+            return True
+        except Exception as e:
+            error = f'check_onnxruntime_directml(): {e}'
+            print(error)
+        return False
 
     def check_dictionary(self)->bool:
         import unidic
