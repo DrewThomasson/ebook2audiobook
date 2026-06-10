@@ -1209,8 +1209,8 @@ class DeviceInstaller():
                 return False
             try:
                 import onnxruntime as ort
-                if 'DmlExecutionProvider' not in ort.get_available_providers():
-                    return False
+                if 'DmlExecutionProvider' in ort.get_available_providers():
+                    return True
             except Exception:
                 msg = 'Configuring ONNX Runtime for DirectML…'
                 print(msg)
