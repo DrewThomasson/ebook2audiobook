@@ -1,0 +1,49 @@
+# .github/workflows/readme-i18n.yml
+# Syncs the 25 README_<iso3>.md translations whenever the English README.md changes.
+# Loop-safe: triggers only on README.md paths; the bot commit touches readme/*
+# and tools/readme_i18n/* only, so it never re-triggers itself.
+
+name: Sync README translations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'README.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: readme-i18n
+  cancel-in-progress: false
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Update translations
+        run: python tools/readme_i18n/update_translations.py
+
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add readme tools/readme_i18n/baseline_README.md tools/readme_i18n/cache.json
+          if git diff --cached --quiet; then
+            echo 'No translation changes to commit'
+            exit 0
+          fi
+          git commit -m 'docs: sync README translations with English source [skip ci]'
+          git push
