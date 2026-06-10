@@ -1047,9 +1047,9 @@ class DeviceInstaller():
                     head = re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower()
                     if head in {'torch', 'torchaudio'}:
                         continue
-                    if head == 'onnxruntime-gpu' and self.system == systems['MACOS']:
-                        continue
                     if head in overrides:
+                        if overrides[head] is None:
+                            continue
                         pkg = overrides[head]
                     packages.append(pkg)
             missing_packages = []
