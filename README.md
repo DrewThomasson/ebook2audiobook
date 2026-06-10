@@ -1,4 +1,4 @@
-# 📚 ebook2audiobook (E2A)
+﻿# ðŸ“š ebook2audiobook (E2A)
 CPU/GPU Converter from E-Book to audiobook with chapters and metadata<br/>
 using advanced TTS engines and much more.<br/>
 Supports voice cloning and 1158 languages!
@@ -101,19 +101,19 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ## Features
-- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
-- 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`
-- 💻 **TextArea** to convert directly a short text in audio
-- 🔍 **OCR scanning** for files with text pages as images
-- 🔊 **High-quality text-to-speech** from near realtime to near real voice
-- 🗣️ **Optional voice cloning** using your own voice file
-- 🌐 **Supports 1158 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
-- 💻 **Low-resource friendly** — runs on **2 GB RAM / 1 GB VRAM (minimum)**
-- 🎵 **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
-- 🧠 **SML tags supported** — fine-grained control of breaks, pauses, voice switching and more ([see below](#sml-tags-available))
-- 🧩 **Optional custom model** using your own trained model (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)
-- 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
-     <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to the official preset list)</i>
+- ðŸ”§ **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
+- ðŸ“š **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`
+- ðŸ’» **TextArea** to convert directly a short text in audio
+- ðŸ” **OCR scanning** for files with text pages as images
+- ðŸ”Š **High-quality text-to-speech** from near realtime to near real voice
+- ðŸ—£ï¸ **Optional voice cloning** using your own voice file
+- ðŸŒ **Supports 1158 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- ðŸ’» **Low-resource friendly** â€” runs on **2 GB RAM / 1 GB VRAM (minimum)**
+- ðŸŽµ **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
+- ðŸ§  **SML tags supported** â€” fine-grained control of breaks, pauses, voice switching and more ([see below](#sml-tags-available))
+- ðŸ§© **Optional custom model** using your own trained model (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)
+- ðŸŽ›ï¸ **Fine-tuned preset models** trained by the E2A Team<br/>
+     <i>(Contact us if you need additional fine-tuned models, or if youâ€™d like to share yours to the official preset list)</i>
 
 
 ##  Hardware Requirements
@@ -149,10 +149,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - Process format can be changed in lib/conf.py
 
 ## SML tags available
-- `[break]` — silence (random range **0.3–0.6 sec.**)
-- `[pause]` — silence (random range **1.0–1.6 sec.**)
-- `[pause:N]` — fixed pause (**N sec.**)
-- `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
+- `[break]` â€” silence (random range **0.3â€“0.6 sec.**)
+- `[pause]` â€” silence (random range **1.0â€“1.6 sec.**)
+- `[pause:N]` â€” fixed pause (**N sec.**)
+- `[voice:/path/to/voice/file]...[/voice]` â€” switch voice from default or selected voice from GUI/CLI
 
 **Check our other repo dedicated to add SML automatically in your ebook -> [E2A-SML](./tools/E2A-SML)**
 
@@ -353,10 +353,10 @@ Linux/Mac:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 
 SML tags available:
-	[break] — silence (random range **0.3–0.6 sec.**)
-	[pause] — silence (random range **1.0–1.6 sec.**)
-	[pause:N] — fixed pause (**N sec.**)
-	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+	[break] â€” silence (random range **0.3â€“0.6 sec.**)
+	[pause] â€” silence (random range **1.0â€“1.6 sec.**)
+	[pause:N] â€” fixed pause (**N sec.**)
+	[voice:/path/to/voice/file]...[/voice] â€” switch voice from default or selected voice from GUI/CLI
 
 ```
 
@@ -464,11 +464,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode,
    add `--help` parameter at the end of the docker run command for more information.
 - "I'm getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
-   we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
+   we don't speak every language and need advise from users to fine tune the sentence splitting logic.ðŸ˜Š
 
 ## ***** ROADMAP *****
-- All Features open to public Contributions ⭐
-- Any help from people speaking any of the supported languages to help us improve the models ⭐
+- All Features open to public Contributions â­
+- Any help from people speaking any of the supported languages to help us improve the models â­
 - [x] Preview Blocks/Chapters before to start the conversion
 - [ ] Edit by sentence converted for surgical text change
 - [x] SML tags integration for voice, pause, break, and more changes 
@@ -528,7 +528,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Chinese (zho)
 - [x] English (eng)
 - [ ] Spanish (spa)
-- [ ] French (fra)
+- [x] French (fra)
 - [ ] German (deu)
 - [ ] Italian (ita)
 - [ ] Portuguese (por)
@@ -551,13 +551,13 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Slovak (slk)
 - [ ] Croatian (hrv)   
 
-#### 🐍 OS Compatibility
-- [x] 🍎 Mac Intel x86
-- [x] 🪟 Windows x86
-- [x] 🐧 Linux x86
-- [x] 🖥️🍏 Apple Silicon Mac
-- [x] 🪟💪 ARM Windows
-- [x] 🐧💪 ARM Linux
+#### ðŸ OS Compatibility
+- [x] ðŸŽ Mac Intel x86
+- [x] ðŸªŸ Windows x86
+- [x] ðŸ§ Linux x86
+- [x] ðŸ–¥ï¸ðŸ Apple Silicon Mac
+- [x] ðŸªŸðŸ’ª ARM Windows
+- [x] ðŸ§ðŸ’ª ARM Linux
 
 **********
 
@@ -617,7 +617,7 @@ We accept any kind of hardware to test our development like:
 - XPU intel cards
 - ROCm AMD cards supporting ROCm >=5.7
 
-@DrewThomasson if you want to help out at all! 😃
+@DrewThomasson if you want to help out at all! ðŸ˜ƒ
 <!--
 ## Do you need to rent a GPU to boost service from us?
 - A poll is open here https://github.com/DrewThomasson/ebook2audiobook/discussions/889
