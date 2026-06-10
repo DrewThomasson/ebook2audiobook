@@ -1209,8 +1209,9 @@ class DeviceInstaller():
             return False
         try:
             import onnxruntime as ort
-            if 'DmlExecutionProvider' in ort.get_available_providers():
-                return True
+            if ort:
+                if 'DmlExecutionProvider' in ort.get_available_providers():
+                    return True
             subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'])
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml'])
             return True
