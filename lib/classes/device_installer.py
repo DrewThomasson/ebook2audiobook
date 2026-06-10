@@ -1205,8 +1205,7 @@ class DeviceInstaller():
     def check_onnx_runtime(self)->bool:
             if self.system != systems['WINDOWS']:
                 return False
-            name, _tag, _msg = self.check_hardware
-            if name == devices['CUDA']['proc']:
+            if devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']:
                 return False
             try:
                 import onnxruntime as ort
