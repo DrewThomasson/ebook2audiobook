@@ -1030,9 +1030,7 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
-        if self.system == systems['MACOS']:
-            overrides['onnxruntime-gpu'] = None
-        elif self.check_onnxruntime_directml():
+        if self.system == systems['MACOS'] or self.check_onnxruntime_directml():
             overrides['onnxruntime-gpu'] = None
         try:
             with open(requirements_file, 'r') as f:
@@ -1212,10 +1210,13 @@ class DeviceInstaller():
             try:
                 import onnxruntime as ort
                 if 'DmlExecutionProvider' in ort.get_available_providers():
-                    return True
+                else:
+                    subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-gpu', 'onnxruntime-directml'])
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml'])
+                return True
             except Exception:
-                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'])
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'onnxruntime'])
+                error = 'check_onnxruntime_directml(): {e}'
+                print(error)
             return False
 
     def check_dictionary(self)->bool:
