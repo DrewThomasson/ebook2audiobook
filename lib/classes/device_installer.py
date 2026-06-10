@@ -1209,14 +1209,13 @@ class DeviceInstaller():
                 return False
             try:
                 import onnxruntime as ort
-                if 'DmlExecutionProvider' not in ort.get_available_providers():
-                    return False
+                if 'DmlExecutionProvider' in ort.get_available_providers():
+                    return True
             except Exception:
-                pass
-            msg = 'Configuring ONNX Runtime for DirectML…'
-            print(msg)
-            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'])
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'onnxruntime'])
+                msg = 'Configuring ONNX Runtime for DirectML…'
+                print(msg)
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'])
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'onnxruntime'])
             return True
 
     def check_dictionary(self)->bool:
