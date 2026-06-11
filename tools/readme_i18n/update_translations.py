@@ -184,13 +184,31 @@ def patch_block(old_block:list, new_block:list, tr_block:list, lang:str, cache:d
             out.append(translate_line(new_line, lang, cache))
     return out
 
+def harvest_block(eng_block:list, tr_block:list, lang:str, cache:dict)->None:
+    if is_frozen_block(eng_block) or len(eng_block) != len(tr_block):
+        return
+    for eng_line, tr_line in zip(eng_block, tr_block):
+        m = LINE_PREFIX.match(eng_line)
+        prefix:str = m.group(1) if m else ''
+        eng_body:str = eng_line[len(prefix):]
+        tr_body:str = tr_line[len(prefix):] if tr_line.startswith(prefix) else tr_line.lstrip()
+        if eng_body.strip() and tr_body.strip() and eng_body != tr_body:
+            cache[f'{lang}|{eng_body}'] = tr_body
+
 def verify(lang_text:str, eng_text:str)->list:
     problems:list = []
     if FENCE.findall(lang_text) != FENCE.findall(eng_text):
         problems.append('code fences differ from English source')
-    if lang_text.count('\n') != eng_text.count('\n'):
-        problems.append(f'line count {lang_text.count(chr(10))} != English {eng_text.count(chr(10))}')
+    if len(split_blocks(lang_text)) != len(split_blocks(eng_text)):
+        problems.append(f'block count {len(split_blocks(lang_text))} != English {len(split_blocks(eng_text))}')
     return problems
+
+def repair_fences(lang_text:str, eng_text:str)->Optional[str]:
+    eng_fences:list = FENCE.findall(eng_text)
+    if len(FENCE.findall(lang_text)) != len(eng_fences):
+        return None
+    it = iter(eng_fences)
+    return FENCE.sub(lambda m: next(it), lang_text)
 
 def rebuild(new_blocks:list, lang:str, cache:dict)->list:
     return [translate_block(b, lang, cache) for b in new_blocks]
@@ -223,6 +241,8 @@ def main()->int:
                 out_blocks = []
                 for tag, i1, i2, j1, j2 in opcodes:
                     if tag == 'equal':
+                        for k in range(i1, i2):
+                            harvest_block(old_blocks[k], tr_blocks[k], mm_code, cache)
                         out_blocks.extend(tr_blocks[i1:i2])
                     elif tag == 'replace' and (i2-i1) == (j2-j1):
                         for k in range(i2-i1):
@@ -232,11 +252,16 @@ def main()->int:
         out_text:str = join_blocks(out_blocks)
         problems:list = verify(out_text, new_src)
         if problems:
-            print(f'[{iso3}] integrity check failed ({"; ".join(problems)}), rebuilding from English')
-            out_text = join_blocks(rebuild(new_blocks, mm_code, cache))
-            problems = verify(out_text, new_src)
-            if problems:
-                raise RuntimeError(f'[{iso3}] still inconsistent after rebuild: {"; ".join(problems)}')
+            repaired:Optional[str] = repair_fences(out_text, new_src)
+            if repaired is not None and not verify(repaired, new_src):
+                print(f'[{iso3}] fences repaired in place, manual prose kept')
+                out_text = repaired
+            else:
+                print(f'[{iso3}] integrity check failed ({"; ".join(problems)}), rebuilding from English')
+                out_text = join_blocks(rebuild(new_blocks, mm_code, cache))
+                problems = verify(out_text, new_src)
+                if problems:
+                    raise RuntimeError(f'[{iso3}] still inconsistent after rebuild: {"; ".join(problems)}')
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(out_text, encoding='utf-8')
         save_cache(cache)
