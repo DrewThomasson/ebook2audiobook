@@ -3330,7 +3330,8 @@ def convert_ebook(args:dict)->tuple:
                 args['translate'] = None
                 args['translate_iso1'] = None
                 language = str(args['language'])
-            if args.get('ebook_mode') == ebook_modes['TEXT']:
+            session['ebook_mode'] = args['ebook_mode']
+            if session['ebook_mode'] == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
                     error = 'Ebook textarea is empty.'
                     return error, False
@@ -3456,10 +3457,7 @@ def convert_ebook(args:dict)->tuple:
             if error is None:
                 if prepare_dirs(session_id):
                     session['ebook'] = os.path.join(session['process_dir'], ebook_file)
-                    if session['ebook_mode'] == ebook_modes['TEXT']:
-                        shutil.copy(session['ebook_textarea_src'], session['ebook'])
-                    else:
-                        shutil.copy(session['ebook_src'], session['ebook'])
+                    shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
                     session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                     msg = ''
                     msg_extra = ''                      
