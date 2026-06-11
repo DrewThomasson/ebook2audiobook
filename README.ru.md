@@ -83,8 +83,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Использование](#инструкция)
   - [Запуск локально](#инструкция)
     - [Запуск веб-интерфейса Gradio](#инструкция)
-    - [Базовое использование Headless](#основное-использование)
-    - [Использование Headless пользовательской модели XTTS](#пример-загрузки-zip-файла-пользовательской-модели)
+    - [Базовое автономное использование](#основное-использование)
+    - [Использование автономной пользовательской модели XTTS](#пример-загрузки-zip-файла-пользовательской-модели)
     - [Вывод команды помощи](#help-command-output)
   - [Запуск удаленно](#запуск-удаленно)
   - [Docker](#docker)
@@ -120,7 +120,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## Требования к оборудованию
 - 2ГБ ОЗУ минимально, 8ГБ рекомендуется.
-- 1ГБ ГОЗУ минимум, 4GB рекомендуется.
+- 1ГБ ГОЗУ минимум, 4ГБ рекомендуется.
 - Виртуализация включена, если работает на Windows (только Docker).
 - CPU, XPU (intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
@@ -143,17 +143,17 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
-- **Best results**: `.epub` or `.mobi` for automatic chapter detection
+- **Лучшие результаты**: `.epub` или `.mobi` для автоматического определения глав
 
 ## Форматы вывода и обработки
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
-- Формат процесса можно изменить в lib/conf.py
+- Формат можно изменить в lib/conf.py
 
 ## Доступные теги SML
 - `[break]` — тишина (случайный диапазон **0.3–0.6 с.**)
 - `[pause]` — тишина (случайный диапазон **1.0–1.6 с.**)
 - `[pause:N]` — фиксированная пауза (**N с.**)
-- `[voice:/путь/к/голосовому/файлу]...[/voice]` — сменить голос с голоса по умолчанию или выбранного голоса через GUI/CLI
+- `[voice:/путь/к/голосовому/файлу]...[/voice]` — сменить голос с голоса по умолчанию или выбранного через GUI/CLI
 
 **Проверьте наш другой репозиторий, посвященный автоматическому добавлению SML в вашу электронную книгу -> [E2A-SML](./tools/E2A-SML)**
 
@@ -163,9 +163,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 >[!NOTE]
 **Формат EPUB не имеет какой-либо стандартной структуры, такой как глава, абзац, предисловие и т.д.<br>
-поэтому Вам сначала следует вручную переместить любой текст, который вы не хотите преобразовывать в аудио.**
+поэтому Вам сначала следует вручную удалить любой текст, который вы не хотите преобразовывать в аудио.**
 
 ### Инструкция
+
 1. **Клонировать репозиторий**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
@@ -219,9 +220,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     Язык по умолчанию — английский, и параметр --language необязателен для языка по умолчанию, установленного в ./lib/lang.py.<br>
     Поддерживаются также коды ISO-639-1 из 2 букв.
 
-
 ### Пример загрузки ZIP-файла пользовательской модели
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+  (должен быть файлом .zip, содержащим обязательные файлы модели. Пример для XTTSv2: config.json, model.pth, vocab.json и ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -230,13 +230,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>Примечание: ref.wav вашей пользовательской модели всегда является голосом, выбранным для конверсии</i>
      
-- **<custom_model_path>**: Path to `model_name.zip` file,
-      which must contain (according to the tts engine) all the mandatory files<br>
-      (see ./lib/models.py).
+- **<путь_к_пользовательской_модели>**: путь к файлу `model_name.zip`,
+      который должен содержать (согласно движку TTS) все обязательные файлы<br>
+      (смотри ./lib/models.py).
 
-### For Detailed Guide with list of all Parameters to use
+### Для подробного руководства с перечнем всех параметров для использования
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -245,7 +245,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **Для всех других ОС**
     ```python
      app.py --help
     ```
@@ -261,33 +261,35 @@ usage: app.py [-h] [--session SESSION] [--share] [--headless] [--ebook EBOOK] [-
               [--speed SPEED] [--enable_text_splitting] [--text_temp TEXT_TEMP] [--waveform_temp WAVEFORM_TEMP]
               [--output_dir OUTPUT_DIR] [--version]
 
-Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
+Конвертируйте электронные книги в аудиокниги с помощью модели синтеза речи. Вы можете либо запустить интерфейс Gradio,
+либо выполнить скрипт в автономном режиме для прямого конвертирования.
 
 options:
-  -h, --help            show this help message and exit
-  --session SESSION     Session to resume the conversion in case of interruption, crash,
-                            or reuse of custom models and custom cloning voices.
+  -h, --help            показать это сообщение справки и выйти
+  --session SESSION     сессия для возобновления конверсии в случае прерывания, сбоя или повторного использования
+                               пользовательских моделей и пользовательских клонированных голосов.
 
-**** The following option is for gradio/gui mode only:
-  --share               (Optional) Enable a public shareable Gradio link.
+**** Следующий вариант предназначен только для режима gradio/gui:
+  --share               (Необязательно) Включить общедоступную ссылку для совместного использования Gradio.
 
-**** The following options are for --headless mode only:
-  --headless            Run the script in headless mode
-  --ebook EBOOK         Path to the ebook file for conversion. Cannot be used when --ebooks_dir is present.
+**** Следующие параметры предназначены только для режима --headless:
+  --headless            Запуск скрипта в автономном режиме
+  --ebook EBOOK         путь к файлу электронной книги для конвертации. Нельзя использовать, если указан --ebooks_dir.
   --ebooks_dir EBOOKS_DIR
-                        Relative or absolute path of the directory containing the files to convert.
-                            Cannot be used when --ebook is present.
-  --text TEXT           Raw text for conversion. Cannot be used when --ebook or --ebooks_dir is present.
-  --language LANGUAGE   Language of the e-book. Default language is set
-                            in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py
+                        Относительный или абсолютный путь к директории с файлами для конвертации.
+                             Нельзя использовать, если присутствует опция --ebook.
+  --text TEXT           Исходный текст для конвертации. Нельзя использовать, если присутствуют --ebook или --ebooks_dir.
+  --language LANGUAGE   Язык электронной книги. Язык по умолчанию установлен
+                             в ./lib/lang.py и используется как стандартный, если не указан другой.
+                             Все совместимые коды языков находятся в ./lib/lang.py
 
-optional parameters:
-  --translate ISO3      (Optional) Translate ebook to a target language (ISO 639-3 code, e.g. eng, fra, deu) before TTS synthesis.
-                            Uses argostranslate. The target language becomes the effective TTS language for the run.
-                            A copy of the source ebook is made with the _<iso3> suffix so translated and non-translated
-                            outputs stay isolated (independent process folder, audio chunks, and final file).
-  --voice VOICE         (Optional) Path to the voice cloning file for TTS engine.
-                            Uses the default voice if not present.
+дополнительные параметры:
+  --translate ISO3      (Необязательно) Перевести электронную книгу на целевой язык (код ISO 639-3, например eng, fra, deu)
+                            перед синтезом речи. Используется argostranslate. Целевой язык становится фактическим языком для TTS
+                            на этой сессии. Создается копия исходной электронной книги с суффиксом _<iso3>, чтобы переведенные
+                            и непереведенные версии оставались изолированными (отдельная папка процесса, аудиофрагменты и итоговый файл).
+  --voice VOICE         (Необязательно) Путь к файлу клонирования голоса для движка TTS.
+                            Если файл отсутствует, используется голос по умолчанию.
   --voice_map VOICE_MAP
                         (Optional, --ebooks_dir only) Path to a JSON file mapping ebook path -> voice path.
                             Each entry overrides --voice for that specific ebook. Missing/null entries fall back to --voice.
@@ -337,26 +339,26 @@ optional parameters:
                         (bark only, optional) Waveform Temperature for the model.
                             Default to config.json model.
   --output_dir OUTPUT_DIR
-                        (Optional) Path to the output directory. Default is set in ./lib/conf.py
-  --version             Show the version of the script and exit
+                        (Необязательно) Путь к директории вывода. По умолчанию установлен в ./lib/conf.py
+  --version             Показать версию скрипта и выйти
 
 Пример использования:
 Windows:
     Gradio/GUI:
     ebook2audiobook.cmd
     Headless mode:
-    ebook2audiobook.cmd --headless --ebook '/path/to/file' --language eng
+    ebook2audiobook.cmd --headless --ebook '/path/to/file' --language rus
 Linux/Mac:
     Gradio/GUI:
     ./ebook2audiobook.command
     Headless mode:
-    ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+    ./ebook2audiobook.command --headless --ebook '/path/to/file' --language rus
 
-SML tags available:
-	[break] — silence (random range **0.3–0.6 sec.**)
-	[pause] — silence (random range **1.0–1.6 sec.**)
-	[pause:N] — fixed pause (**N sec.**)
-	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+Доступные SML-теги:
+	[break] — тишина (случайный диапазон **0.3–0.6 с.**)
+	[pause] — тишина (случайный диапазон **1.0–1.6 sec.**)
+	[pause:N] — фиксированная пауза (**N с.**)
+	[voice:/path/to/voice/file]...[/voice] — сменить голос с голоса по умолчанию или выбранного голоса через GUI/CLI
 
 ```
 
@@ -425,7 +427,7 @@ Podman Compose (i.e. cuda 12.8:
 - ПРИМЕЧАНИЕ: MPS не доступен в Docker, поэтому необходимо использовать ЦПУ
   
 ### Распространённые проблемы с Docker
-- My NVIDIA GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+- Мой графический процессор NVIDIA не обнаруживается?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 
 ## Тщательно настроенные TTS-модели
 #### Тонкая настройка собственной XTTSv2-модели
@@ -452,18 +454,18 @@ ebook2audiobook могли сохранить изменённый conf.py и в
 ## Возврат к старым версиям
 Релизы можно найти -> [здесь](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
-git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
+git checkout tags/VERSION_NUM # Locally/Compose -> Пример: git checkout tags/v25.7.7
 ```
 
 ## Распространённые проблемы:
-- My NVIDIA/ROCm/XPU/MPS GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
--  CPU is slow (better on server smp CPU) while GPU can have almost real time conversion.
-   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
-   (It doesn't have zero-shot voice cloning though, and is Siri quality voices, but it is much faster on cpu).
-- "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode,
-   add `--help` parameter at the end of the docker run command for more information.
-- "I'm getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
-   we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
+- Мой GPU NVIDIA/ROCm/XPU/MPS не определяется?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+-  ЦП медленный (лучше на серверном SMP ЦП), в то время как ГП может обеспечивать почти реальное время конверсии.
+   [Обсуждалось здесь](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   (Однако у него нет технологии голосового клонирования с нуля, и голоса качества Siri, но он работает гораздо быстрее на процессоре).
+- "У меня проблемы с зависимостями" - Просто используйте Docker, он полностью автономный и имеет автономный режим,
+добавьте параметр `--help` в конце команды запуска Docker для получения дополнительной информации.
+- "У меня обрезается аудио!" - ПОЖАЛУЙСТА, СОЗДАЙТЕ ТЕМУ ОБ ЭТОМ, мы не говорим на всех языках и нуждаемся в советах пользователей
+для доработки логики разделения предложений.😊
 
 ## ***** ROADMAP *****
 - Все функции открыты для общественных вкладов ⭐
@@ -533,7 +535,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Portuguese (por)
 - [ ] Polish (pol)
 - [ ] Turkish (tur)
-- [ ] [Russian (rus)](README.ru.md)
+- [x] [Russian (rus)](README.ru.md)
 - [ ] Dutch (nld)
 - [ ] Czech (ces)
 - [ ] Japanese (jpn)
@@ -561,8 +563,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Дополнительный Overkill для обучения моделей и прочего (Все поддерживаемые модели Coqui-tts и piper-tts в одной простой команде)
-- For info about this @DrewThomasson, he is currently working on the development of this, [work-in-progress-repo here](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Make a easy to use training gui for all coqui-tts models in the ljspeech format training recipes [here from coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Для информации об этом @DrewThomasson, он в настоящее время работает над разработкой этого, [репозиторий в разработке здесь](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [ ] Сделать простую в использовании тренировочную GUI для всех моделей coqui-tts в формате LJSpeech тренировочных рецептов [здесь от coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
 
 
 ## Информация по нормализации кода Python для участников:
@@ -624,6 +626,6 @@ if config['default_role'] in roles:
 
 ## Особые благодарности
 - **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+- **Calibre**: [Вебсайт Calibre](https://calibre-ebook.com)
+- **FFmpeg**: [Вебсайт FFmpeg](https://ffmpeg.org)
+- [@shakenbake15 для лучшего способа сохранения главы](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
