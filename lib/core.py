@@ -3456,7 +3456,10 @@ def convert_ebook(args:dict)->tuple:
             if error is None:
                 if prepare_dirs(session_id):
                     session['ebook'] = os.path.join(session['process_dir'], ebook_file)
-                    shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
+                    if session['ebook_mode'] == ebook_modes['TEXT']:
+                        shutil.copy(session['ebook_textarea_src'], session['ebook'])
+                    else:
+                        shutil.copy(session['ebook_src'], session['ebook'])
                     session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                     msg = ''
                     msg_extra = ''                      
