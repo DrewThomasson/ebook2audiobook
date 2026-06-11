@@ -35,6 +35,7 @@ PROTECT = re.compile(
     r'|&\w+;)'
 )
 LINE_PREFIX = re.compile(r'^(\s*(?:[-*+]\s+|\d+\.\s+|#{1,6}\s+|>\s+)?(?:\[[ x]\]\s+)?)')
+FENCE = re.compile(r'```[\s\S]*?```')
 
 def load_cache()->dict:
     if CACHE_FILE.exists():
@@ -134,6 +135,7 @@ def translate_text(text:str, lang:str, cache:dict)->str:
     translated:str = ' '.join(mymemory(chunk, lang) for chunk in chunk_text(protected))
     restored:Optional[str] = restore(translated, tokens)
     result:str = restored if restored is not None else text
+    result = result.replace('\n', ' ')
     cache[key] = result
     time.sleep(THROTTLE)
     return result
@@ -151,6 +153,66 @@ def translate_block(block:list, lang:str, cache:dict)->list:
         return block
     return [translate_line(line, lang, cache) for line in block]
 
+def patch_line(old_line:str, new_line:str, tr_line:str)->Optional[str]:
+    old_protected, old_tokens = protect(old_line)
+    new_protected, new_tokens = protect(new_line)
+    if old_protected != new_protected or len(old_tokens) != len(new_tokens):
+        return None
+    patched:str = tr_line
+    for old_tok, new_tok in zip(old_tokens, new_tokens):
+        if old_tok == new_tok:
+            continue
+        if old_tok not in patched:
+            return None
+        patched = patched.replace(old_tok, new_tok, 1)
+    return patched
+
+def patch_block(old_block:list, new_block:list, tr_block:list, lang:str, cache:dict)->list:
+    if is_frozen_block(new_block):
+        return new_block
+    if len(old_block) != len(new_block) or len(tr_block) != len(old_block):
+        return translate_block(new_block, lang, cache)
+    out:list = []
+    for old_line, new_line, tr_line in zip(old_block, new_block, tr_block):
+        if old_line == new_line:
+            out.append(tr_line)
+            continue
+        patched:Optional[str] = patch_line(old_line, new_line, tr_line)
+        if patched is not None:
+            out.append(patched)
+        else:
+            out.append(translate_line(new_line, lang, cache))
+    return out
+
+def harvest_block(eng_block:list, tr_block:list, lang:str, cache:dict)->None:
+    if is_frozen_block(eng_block) or len(eng_block) != len(tr_block):
+        return
+    for eng_line, tr_line in zip(eng_block, tr_block):
+        m = LINE_PREFIX.match(eng_line)
+        prefix:str = m.group(1) if m else ''
+        eng_body:str = eng_line[len(prefix):]
+        tr_body:str = tr_line[len(prefix):] if tr_line.startswith(prefix) else tr_line.lstrip()
+        if eng_body.strip() and tr_body.strip() and eng_body != tr_body:
+            cache[f'{lang}|{eng_body}'] = tr_body
+
+def verify(lang_text:str, eng_text:str)->list:
+    problems:list = []
+    if FENCE.findall(lang_text) != FENCE.findall(eng_text):
+        problems.append('code fences differ from English source')
+    if len(split_blocks(lang_text)) != len(split_blocks(eng_text)):
+        problems.append(f'block count {len(split_blocks(lang_text))} != English {len(split_blocks(eng_text))}')
+    return problems
+
+def repair_fences(lang_text:str, eng_text:str)->Optional[str]:
+    eng_fences:list = FENCE.findall(eng_text)
+    if len(FENCE.findall(lang_text)) != len(eng_fences):
+        return None
+    it = iter(eng_fences)
+    return FENCE.sub(lambda m: next(it), lang_text)
+
+def rebuild(new_blocks:list, lang:str, cache:dict)->list:
+    return [translate_block(b, lang, cache) for b in new_blocks]
+
 def main()->int:
     new_src:str = README.read_text(encoding='utf-8')
     if not BASELINE.exists():
@@ -158,9 +220,6 @@ def main()->int:
         print('baseline seeded from current README.md, translations assumed in sync')
         return 0
     old_src:str = BASELINE.read_text(encoding='utf-8')
-    if new_src == old_src:
-        print('README.md unchanged, nothing to do')
-        return 0
     cache:dict = load_cache()
     old_blocks:list = split_blocks(old_src)
     new_blocks:list = split_blocks(new_src)
@@ -172,21 +231,39 @@ def main()->int:
         target:Path = I18N_DIR / f'README_{iso3}.md'
         if not target.exists():
             print(f'[{iso3}] missing, retranslating whole file')
-            out_blocks:list = [translate_block(b, mm_code, cache) for b in new_blocks]
+            out_blocks:list = rebuild(new_blocks, mm_code, cache)
         else:
             tr_blocks:list = split_blocks(target.read_text(encoding='utf-8'))
             if len(tr_blocks) != len(old_blocks):
                 print(f'[{iso3}] structure drift ({len(tr_blocks)} vs {len(old_blocks)} blocks), retranslating whole file')
-                out_blocks = [translate_block(b, mm_code, cache) for b in new_blocks]
+                out_blocks = rebuild(new_blocks, mm_code, cache)
             else:
                 out_blocks = []
                 for tag, i1, i2, j1, j2 in opcodes:
                     if tag == 'equal':
+                        for k in range(i1, i2):
+                            harvest_block(old_blocks[k], tr_blocks[k], mm_code, cache)
                         out_blocks.extend(tr_blocks[i1:i2])
+                    elif tag == 'replace' and (i2-i1) == (j2-j1):
+                        for k in range(i2-i1):
+                            out_blocks.append(patch_block(old_blocks[i1+k], new_blocks[j1+k], tr_blocks[i1+k], mm_code, cache))
                     elif tag in ('replace', 'insert'):
                         out_blocks.extend(translate_block(b, mm_code, cache) for b in new_blocks[j1:j2])
+        out_text:str = join_blocks(out_blocks)
+        problems:list = verify(out_text, new_src)
+        if problems:
+            repaired:Optional[str] = repair_fences(out_text, new_src)
+            if repaired is not None and not verify(repaired, new_src):
+                print(f'[{iso3}] fences repaired in place, manual prose kept')
+                out_text = repaired
+            else:
+                print(f'[{iso3}] integrity check failed ({"; ".join(problems)}), rebuilding from English')
+                out_text = join_blocks(rebuild(new_blocks, mm_code, cache))
+                problems = verify(out_text, new_src)
+                if problems:
+                    raise RuntimeError(f'[{iso3}] still inconsistent after rebuild: {"; ".join(problems)}')
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(join_blocks(out_blocks), encoding='utf-8')
+        target.write_text(out_text, encoding='utf-8')
         save_cache(cache)
         print(f'[{iso3}] updated')
     BASELINE.write_text(new_src, encoding='utf-8')

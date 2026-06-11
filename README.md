@@ -506,23 +506,26 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] YourTTS
 - [x] Tortoise
 - [x] GlowTTS
-- [x] Piper-TTS
+- [x] Piper
+- [ ] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)
+- [ ] OpenVoice (https://github.com/myshell-ai/OpenVoice)
+- [ ] fish-speech (https://github.com/fishaudio/fish-speech)
+- [ ] ChatTTS (https://github.com/2noise/ChatTTS)
 - [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
-- [ ] Kokoro-TTS
-- [ ] Orpheus-TTS
-- [ ] Zonos
-- [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
-- [ ] Style-TTS2
-- [ ] GPT-SoVITS
 - [ ] F5-TTS (https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/38#issuecomment-2453224267)
+- [ ] chatterbox (https://github.com/resemble-ai/chatterbox)
+- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
+- [ ] Spark-TTS (https://github.com/sparkaudio/spark-tts)
+- [ ] index-tts (https://github.com/index-tts/index-tts)
+- [ ] MeloTTS (https://github.com/myshell-ai/MeloTTS)
+- [ ] Kokoro-TTS (https://github.com/hexgrad/kokoro)
+- [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
+- [ ] Zonos (https://github.com/Zyphra/Zonos)
+- [ ] Style-TTS2 (https://github.com/yl4579/StyleTTS2)
+- [ ] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
+- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
 - [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
-- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
-- [ ] Speedy-Speech
-- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
-- [ ] Align-TTS
-- [ ] Delightful-TTS
-- [ ] Spark-TTS
 
 #### Readme Translation
 - [x] Arabic (ara)
