@@ -1,18 +1,18 @@
 # 📚 ebook2audiobook (E2A)
-CPU/GPU Converter from E-Book to audiobook with chapters and metadata<br/>
-using advanced TTS engines and much more.<br/>
-Supports voice cloning and 1158 languages!
+전자책을 챕터 및 메타데이터가 포함된 오디오북으로 변환하는 CPU/GPU 변환기<br/>
+고급 TTS 엔진 등을 사용합니다.<br/>
+음성 복제와 1158개 언어를 지원합니다!
 > [!IMPORTANT]
-**This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
-The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
-Use this tool responsibly and in accordance with all applicable laws.
+**이 도구는 DRM이 없고 합법적으로 취득한 전자책에만 사용하도록 만들어졌습니다.** <br>
+저작자는 이 소프트웨어의 어떠한 오용이나 그로 인한 법적 결과에 대해 책임지지 않습니다. <br>
+이 도구를 책임감 있게, 그리고 적용 가능한 모든 법률을 준수하여 사용하십시오.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
-### Thanks to support ebook2audiobook developers!
+### ebook2audiobook 개발자를 지원해 주셔서 감사합니다!
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
-### Run locally
+### 로컬에서 실행
 
 [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
 
@@ -25,108 +25,108 @@ Use this tool responsibly and in accordance with all applicable laws.
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
-### Run Remotely
+### 원격으로 실행
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
-#### GUI Interface
+#### 그래픽 인터페이스(GUI)
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
-  <summary>Click to see images of Web GUI</summary>
+  <summary>웹 GUI 이미지를 보려면 클릭하세요</summary>
   <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
   <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
-## Demos
+## 데모
 
-**New Default Voice Demo**  
+**새로운 기본 음성 데모**  
 
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
 <details>
-  <summary>More Demos</summary>
+  <summary>추가 데모</summary>
 
-**ASMR Voice** 
+**ASMR 음성** 
 
 https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
-**Rainy Day Voice**  
+**비 오는 날 음성**  
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
-**Scarlett Voice**
+**스칼렛 음성**
 
 https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
-**David Attenborough Voice** 
+**데이비드 애튼버러 음성** 
 
 https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
-**Example**
+**예시**
 
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 </details>
 
 ## README.md
 
-## Table of Contents
+## 목차
 - [ebook2audiobook](#-ebook2audiobook)
-- [Features](#features)
-- [GUI Interface](#gui-interface)
-- [Demos](#demos)
-- [Supported Languages](#supported-languages)
-- [Minimum Requirements](#hardware-requirements)
-- [Usage](#instructions)
-  - [Run Locally](#instructions)
-    - [Launching Gradio Web Interface](#instructions)
-    - [Basic Headless Usage](#basic-usage)
-    - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
-    - [Help command output](#help-command-output)
-  - [Run Remotely](#run-remotely)
+- [기능](#features)
+- [그래픽 인터페이스](#gui-interface)
+- [데모](#demos)
+- [지원 언어](#supported-languages)
+- [최소 요구 사항](#hardware-requirements)
+- [사용법](#instructions)
+  - [로컬에서 실행](#instructions)
+    - [Gradio 웹 인터페이스 실행](#instructions)
+    - [기본 Headless 사용법](#basic-usage)
+    - [Headless 커스텀 XTTS 모델 사용법](#example-of-custom-model-zip-upload)
+    - [도움말 명령 출력](#help-command-output)
+  - [원격으로 실행](#run-remotely)
   - [Docker](#docker)
-    - [Steps to Run](#docker)
-    - [Common Docker Issues](#common-docker-issues)
+    - [실행 단계](#docker)
+    - [일반적인 Docker 문제](#common-docker-issues)
   
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
-  - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
-  - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
-- [Supported eBook Formats](#supported-ebook-formats)
-- [Output Formats](#output-and-process-formats)
-- [Revert to older Version](#reverting-to-older-versions)
-- [Common Issues](#common-issues)
-- [Special Thanks](#special-thanks)
-- [Table of Contents](#table-of-contents)
+- [미세 조정된 TTS 모델](#fine-tuned-tts-models)
+  - [미세 조정된 TTS 모델 모음](#fine-tuned-tts-collection)
+  - [XTTSv2 학습](#fine-tune-your-own-xttsv2-model)
+- [지원되는 전자책 형식](#supported-ebook-formats)
+- [출력 형식](#output-and-process-formats)
+- [이전 버전으로 되돌리기](#reverting-to-older-versions)
+- [일반적인 문제](#common-issues)
+- [특별히 감사드립니다](#special-thanks)
+- [목차](#table-of-contents)
 
 
-## Features
-- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
-- 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
-- 💻 **TextArea** to convert directly a short text in audio
-- 🔍 **OCR scanning** for files with text pages as images
-- 🔊 **High-quality text-to-speech** from near realtime to near real voice
-- 🗣️ **Optional voice cloning** using your own voice file
-- 🌐 **Supports 1158 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
-- 💻 **Low-resource friendly** — runs on **2 GB RAM / 1 GB VRAM (minimum)**
-- 🎵 **Audiobook output formats**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
-- 🧠 **SML tags supported** — fine-grained control of breaks, pauses, voice switching and more ([see below](#sml-tags-available))
-- 🧩 **Optional custom model** using your own trained model (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)
-- 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
-     <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to the official preset list)</i>
+## 기능
+- 🔧 **지원되는 TTS 엔진**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
+- 📚 **여러 파일 형식 변환**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
+- 💻 짧은 텍스트를 직접 오디오로 변환하는 **텍스트 영역**
+- 🔍 이미지로 된 텍스트 페이지가 있는 파일을 위한 **OCR 스캔**
+- 🔊 **고품질 텍스트 음성 변환**, 거의 실시간부터 거의 실제 음성까지
+- 🗣️ 자신의 음성 파일을 사용한 **선택적 음성 복제**
+- 🌐 **1158개 언어 지원** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 💻 **저사양 친화적** — **2 GB RAM / 1 GB VRAM(최소)**에서 실행
+- 🎵 **오디오북 출력 형식**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
+- 🧠 **SML 태그 지원** — 중단, 멈춤, 음성 전환 등의 세밀한 제어 ([see below](#sml-tags-available))
+- 🧩 자신이 학습한 모델을 사용한 **선택적 커스텀 모델** (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)
+- 🎛️ E2A 팀이 학습한 **미세 조정된 프리셋 모델**<br/>
+     <i>(추가 미세 조정된 모델이 필요하거나, 공식 프리셋 목록에 자신의 모델을 공유하고 싶으시면 저희에게 연락하세요)</i>
 
 
-##  Hardware Requirements
-- 2GB RAM min, 8GB recommended.
-- 1GB VRAM min, 4GB recommended.
-- Virtualization enabled if running on windows (Docker only).
-- CPU, XPU (intel, AMD, ARM)*.
+##  하드웨어 요구 사항
+- RAM 2GB 최소, 8GB 권장.
+- VRAM 1GB 최소, 4GB 권장.
+- Windows에서 실행하는 경우 가상화 활성화(Docker 전용).
+- CPU, XPU(intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
-- MPS (Apple Silicon CPU)
+- MPS(Apple Silicon CPU)
 
-*<i> Modern TTS engines are very slow on CPU, so use lower quality TTS like YourTTS, Tacotron2 etc..</i>
+*<i> 최신 TTS 엔진은 CPU에서 매우 느리므로 YourTTS, Tacotron2 등 더 낮은 품질의 TTS를 사용하세요.</i>
 
-## Supported Languages
+## 지원 언어
 | **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
 | **French (fr)**    | **German (de)**     | **Italian (it)**   | **Portuguese (pt)** |
@@ -135,75 +135,75 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 | **Hungarian (hu)** | **Korean (ko)**     | **Vietnamese (vi)**| **Swedish (sv)**   |
 | **Persian (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesian (id)**|
 | **Slovak (sk)**    | **Croatian (hr)**   | **Tamil (ta)**     | **Danish (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- [**+1130개 언어 및 방언은 여기에서**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
-## Supported eBook Formats
+## 지원되는 전자책 형식
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
-- **Best results**: `.epub` or `.mobi` for automatic chapter detection
+- **최상의 결과**: 자동 챕터 감지에는 `.epub` 또는 `.mobi`
 
-## Output and process Formats
+## 출력 및 처리 형식
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
-- Process format can be changed in lib/conf.py
+- 처리 형식은 lib/conf.py에서 변경할 수 있습니다
 
-## SML tags available
-- `[break]` — silence (random range **0.3–0.6 sec.**)
-- `[pause]` — silence (random range **1.0–1.6 sec.**)
-- `[pause:N]` — fixed pause (**N sec.**)
-- `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
+## 사용 가능한 SML 태그
+- `[break]` — 무음(무작위 범위 **0.3–0.6 sec.**)
+- `[pause]` — 무음(무작위 범위 **1.0–1.6 sec.**)
+- `[pause:N]` — 고정 멈춤(**N sec.**)
+- `[voice:/path/to/voice/file]...[/voice]` — 기본 음성 또는 GUI/CLI에서 선택한 음성에서 음성 전환
 
-**Check our other repo dedicated to add SML automatically in your ebook -> [E2A-SML](./tools/E2A-SML)**
+**전자책에 SML을 자동으로 추가하는 데 전념하는 다른 저장소를 확인하세요 -> [E2A-SML](./tools/E2A-SML)**
 
 > [!IMPORTANT]
-**Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
-to be sure your issue does not exist already.**
+**설치 또는 버그 문제를 게시하기 전에, 열린 문제와 닫힌 문제 탭을 주의 깊게 검색하여<br>
+귀하의 문제가 아직 존재하지 않는지 확인하십시오.**
 
 >[!NOTE]
-**EPUB format lacks any standard structure like what is a chapter, paragraph, preface etc.<br>
-So you should first remove manually any text you don't want to be converted in audio.**
+**EPUB 형식에는 챕터, 단락, 서문 등이 무엇인지 정의하는 어떠한 표준 구조도 없습니다.<br>
+따라서 먼저 오디오로 변환하고 싶지 않은 텍스트를 수동으로 제거해야 합니다.**
 
 
-### Instructions 
-1. **Clone repo**
+### 지침 
+1. **저장소 복제**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
 	```
 
-2. **Install / Run ebook2audiobook**:
+2. **ebook2audiobook 설치 / 실행**:
 
    - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>macOS 사용자 참고: 누락된 프로그램을 설치하기 위해 homebrew가 설치됩니다.</i>
      
-   - **Mac Launcher**  
-     Double click `Mac Ebook2Audiobook Launcher.command`
+   - **Mac 런처**  
+     `Mac Ebook2Audiobook Launcher.command`를 더블 클릭하세요
 
 
    - **Windows**  
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     또는
+     `ebook2audiobook.cmd`를 더블 클릭하세요
 
-     <i>Note for Windows users: scoop is installed to install missing programs without administrator privileges.</i>
+     <i>Windows 사용자 참고: 관리자 권한 없이 누락된 프로그램을 설치하기 위해 scoop이 설치됩니다.</i>
    
-1. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks. `http://localhost:7860/`
-2. **For Public Link**:
+1. **웹 앱 열기**: 터미널에 제공된 URL을 클릭하여 웹 앱에 접속하고 전자책을 변환하세요. `http://localhost:7860/`
+2. **공개 링크의 경우**:
    `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (all OS)
 
 > [!IMPORTANT]
-**If the script is stopped and run again, you need to refresh your gradio GUI interface<br>
-to let the web page reconnect to the new connection socket.**
+**스크립트를 중지하고 다시 실행하면 Gradio GUI 인터페이스를 새로 고쳐야 합니다<br>
+웹 페이지가 새로운 연결 소켓에 다시 연결될 수 있도록 하기 위해서입니다.**
 
-### Basic  Usage
+### 기본 사용법
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -213,15 +213,15 @@ to let the web page reconnect to the new connection socket.**
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
-  - **[--ebook]**: Path to your eBook file
-  - **[--voice]**: Voice cloning file path (optional)
-  - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german...).<br>
-    Default language is eng and --language is optional for default language set in ./lib/lang.py.<br>
-    The ISO-639-1 2 letters codes are also supported.
+  - **[--ebook]**: 전자책 파일의 경로
+  - **[--voice]**: 음성 복제 파일 경로(선택 사항)
+  - **[--language]**: ISO-639-3 형식의 언어 코드(예: 이탈리아어는 ita, 영어는 eng, 독일어는 deu...).<br>
+    기본 언어는 eng이며, ./lib/lang.py에 설정된 기본 언어의 경우 --language는 선택 사항입니다.<br>
+    2글자 ISO-639-1 코드도 지원됩니다.
 
 
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+###  커스텀 모델 Zip 업로드 예시
+  (필수 모델 파일이 포함된 .zip 파일이어야 합니다. XTTSv2 예시: config.json, model.pth, vocab.json 및 ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -230,13 +230,13 @@ to let the web page reconnect to the new connection socket.**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>참고: 커스텀 모델의 ref.wav는 항상 변환을 위해 선택된 음성입니다</i>
      
-- **<custom_model_path>**: Path to `model_name.zip` file,
-      which must contain (according to the tts engine) all the mandatory files<br>
-      (see ./lib/models.py).
+- **<custom_model_path>**: `model_name.zip` 파일의 경로,
+      이 파일은 (tts 엔진에 따라) 모든 필수 파일을 포함해야 합니다<br>
+      (./lib/models.py 참조).
 
-### For Detailed Guide with list of all Parameters to use
+### 사용할 모든 매개변수 목록이 포함된 자세한 가이드는
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -245,7 +245,7 @@ to let the web page reconnect to the new connection socket.**
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **또는 모든 OS의 경우**
     ```python
      app.py --help
     ```
@@ -360,16 +360,16 @@ SML tags available:
 
 ```
 
-NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
-TIP: if it needs some more pause, add '[pause:3]' for 3 sec. etc.
+참고: gradio/gui 모드에서 진행 중인 변환을 취소하려면 전자책 업로드 구성 요소의 [X]를 클릭하기만 하면 됩니다.
+팁: 좀 더 긴 멈춤이 필요하면 3초의 경우 '[pause:3]'을 추가하는 등.
 
 ### Docker
-1. **Clone the Repository**:
+1. **저장소 복제**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. **컨테이너 빌드**
 ```bash
     Windows:
         Docker:
@@ -386,7 +386,7 @@ TIP: if it needs some more pause, add '[pause:3]' for 3 sec. etc.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Run the Container:**
+4. **컨테이너 실행:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -422,82 +422,82 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
+- 참고: MPS는 Docker에서 노출되지 않으므로 CPU를 사용해야 합니다
   
-### Common Docker Issues
-- My NVIDIA GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+### 일반적인 Docker 문제
+- 내 NVIDIA GPU가 감지되지 않나요?? -> [GPU 문제 위키 페이지](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 
-## Fine Tuned TTS models
-#### Fine Tune your own XTTSv2 model
+## 미세 조정된(fine-tuned) TTS 모델
+#### 자신만의 XTTSv2 모델을 미세 조정하세요
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
-#### De-noise training data
+#### 학습 데이터의 노이즈 제거
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
-### Fine Tuned TTS Collection
+### 미세 조정된 TTS 모델 모음
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 
-For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
+커스텀 XTTSv2 모델의 경우 음성의 참조 오디오 클립이 필수입니다:
 
-## Your own Ebook2Audiobook customization
-You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
-a copy of the original conf.py so on each ebook2audiobook update you will backup your modified conf.py and put
-back the original one. You must plan the same process for models.py. If you wish to make your own custom model
-as an official ebook2audiobook fine tuned model so please contact us and we'll add it to the presets list.
+## 자신만의 Ebook2Audiobook 사용자 정의
+원하는 설정을 추가하거나 제거하기 위해 libs/conf.py를 자유롭게 수정할 수 있습니다. 이를 계획하고 있다면, 단순히
+원본 conf.py의 복사본을 만들어 두면 ebook2audiobook을 업데이트할 때마다 수정된 conf.py를 백업하고 원본을
+다시 되돌릴 수 있습니다. models.py에 대해서도 동일한 과정을 계획해야 합니다. 자신만의 커스텀 모델을
+공식 미세 조정된 ebook2audiobook 모델로 만들고 싶다면, 저희에게 연락해 주시면 프리셋 목록에 추가하겠습니다.
 
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## 이전 버전으로 되돌리기
+릴리스는 -> [여기](https://github.com/DrewThomasson/ebook2audiobook/releases)에서 찾을 수 있습니다
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
-## Common Issues:
-- My NVIDIA/ROCm/XPU/MPS GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
--  CPU is slow (better on server smp CPU) while GPU can have almost real time conversion.
+## 일반적인 문제:
+- 내 NVIDIA/ROCm/XPU/MPS GPU가 감지되지 않나요?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+-  CPU는 느립니다(서버 SMP CPU에서 더 좋음) 반면 GPU는 거의 실시간 변환이 가능합니다.
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
-   (It doesn't have zero-shot voice cloning though, and is Siri quality voices, but it is much faster on cpu).
-- "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode,
-   add `--help` parameter at the end of the docker run command for more information.
-- "I'm getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
-   we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
+   (하지만 zero-shot 음성 복제는 없으며 Siri 품질의 음성이지만 cpu에서 훨씬 빠릅니다).
+- "종속성 문제가 있습니다" - 그냥 docker를 사용하세요, 완전히 독립적이며 headless 모드가 있습니다,
+   자세한 정보는 docker run 명령 끝에 `--help` 매개변수를 추가하세요.
+- "오디오가 잘리는 문제가 있습니다!" - 이에 대해 ISSUE를 작성해 주세요,
+   저희는 모든 언어를 구사하지 못하며 문장 분할 로직을 미세 조정하기 위해 사용자의 조언이 필요합니다.😊
 
-## ***** ROADMAP *****
-- All Features open to public Contributions ⭐
-- Any help from people speaking any of the supported languages to help us improve the models ⭐
-- [x] Preview Blocks/Chapters before to start the conversion
-- [ ] Edit by sentence converted for surgical text change
-- [x] SML tags integration for voice, pause, break, and more changes 
-- [x] -h -help parameter info in different languages
-- [x] OCR scanning for PDF / JPG / BMP / PNG / TIFF
-- [x] Notebooks Folder [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
-- [x] Make Chinese text splitting not split words and improve pause timing [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
+## ***** 로드맵 *****
+- 모든 기능이 공개 기여에 열려 있습니다 ⭐
+- 모델 개선을 돕기 위해 지원 언어 중 하나를 구사하는 사람들의 모든 도움 ⭐
+- [x] 변환을 시작하기 전에 블록/챕터 미리 보기
+- [ ] 정밀한 텍스트 변경을 위해 변환된 문장 단위로 편집
+- [x] 음성, 멈춤, 중단 및 추가 변경을 위한 SML 태그 통합 
+- [x] 다양한 언어로 된 -h -help 매개변수 정보
+- [x] PDF / JPG / BMP / PNG / TIFF용 OCR 스캔
+- [x] 노트북 폴더 [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
+- [x] 중국어 텍스트 분할이 단어를 분리하지 않도록 하고 멈춤 타이밍 개선 [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
 - [x] Docker compose
 - [x] Podman compose   
-- [x] Kaggle Notebook
-- [x] Google Colab Notebook
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf integration
+- [x] Kaggle 노트북
+- [x] Google Colab 노트북
+- [ ] [iOS 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [android 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] Audiobookshelf 통합
 
-#### Extra Options
-- [x] Ebook Translation option
-- [x] Output format choices
-- [x] Batch ebook folder
-- [x] Multiprocessing conversion
-- [x] Batch ebook folder conversion
-- [x] GPU Device detection
-- [x] Denoise any reference audio for upload voice cloning,
-- [x] Custom model upload (XTTSv2 only for now. more on request)
-- [ ] Add European Portuguese language model for xttsv2, fairseq, vits, piper at least (help welcome)
-- [ ] Add Sindhi language model for xttsv2, fairseq, vits, piper at least (help welcome)
+#### 추가 옵션
+- [x] 전자책 번역 옵션
+- [x] 출력 형식 선택
+- [x] 일괄 전자책 폴더
+- [x] 멀티프로세싱 변환
+- [x] 일괄 전자책 폴더 변환
+- [x] GPU 장치 감지
+- [x] 업로드된 음성 복제를 위해 모든 참조 오디오의 노이즈 제거,
+- [x] 커스텀 모델 업로드(현재로서는 XTTSv2만. 요청 시 추가)
+- [ ] 최소한 xttsv2, fairseq, vits, piper용 유럽 포르투갈어 언어 모델 추가(도움 환영)
+- [ ] 최소한 xttsv2, fairseq, vits, piper용 신디어 언어 모델 추가(도움 환영)
 
-#### TTS engines
+#### TTS 엔진
 - [x] XTTSv2
 - [x] Bark
 - [x] Fairseq
@@ -524,35 +524,35 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Delightful-TTS
 - [ ] Spark-TTS
 
-#### Readme Translation
-- [x] Arabic (ara)
-- [x] Chinese (zho)
+#### Readme 번역
+- [ ] Arabic (ara)
+- [ ] Chinese (zho)
 - [x] English (eng)
-- [x] Spanish (spa)
-- [x] French (fra)
-- [x] German (deu)
-- [x] Italian (ita)
-- [x] Portuguese (por)
-- [x] Polish (pol)
-- [x] Turkish (tur)
-- [x] Russian (rus)
-- [x] Dutch (nld)
-- [x] Czech (ces)
-- [x] Japanese (jpn)
-- [x] Hindi (hin)
-- [x] Bengali (ben)
-- [x] Hungarian (hun)
-- [x] Korean (kor)
-- [x] Vietnamese (vie)
-- [x] Swedish (swe)
-- [x] Persian (fas)
-- [x] Yoruba (yor)
-- [x] Swahili (swa)
-- [x] Indonesian (ind)
-- [x] Slovak (slk)
-- [x] Croatian (hrv)   
+- [ ] Spanish (spa)
+- [ ] French (fra)
+- [ ] German (deu)
+- [ ] Italian (ita)
+- [ ] Portuguese (por)
+- [ ] Polish (pol)
+- [ ] Turkish (tur)
+- [ ] Russian (rus)
+- [ ] Dutch (nld)
+- [ ] Czech (ces)
+- [ ] Japanese (jpn)
+- [ ] Hindi (hin)
+- [ ] Bengali (ben)
+- [ ] Hungarian (hun)
+- [ ] Korean (kor)
+- [ ] Vietnamese (vie)
+- [ ] Swedish (swe)
+- [ ] Persian (fas)
+- [ ] Yoruba (yor)
+- [ ] Swahili (swa)
+- [ ] Indonesian (ind)
+- [ ] Slovak (slk)
+- [ ] Croatian (hrv)   
 
-#### 🐍 OS Compatibility
+#### 🐍 OS 호환성
 - [x] 🍎 Mac Intel x86
 - [x] 🪟 Windows x86
 - [x] 🐧 Linux x86
@@ -562,19 +562,19 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Extra Overkill for training models and such (All supported Coqui-tts models and piper-tts in one easy command) 
-- For info about this @DrewThomasson, he is currently working on the development of this, [work-in-progress-repo here](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Make a easy to use training gui for all coqui-tts models in the ljspeech format training recipes [here from coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+## 모델 학습 등을 위한 추가적인 오버킬(지원되는 모든 Coqui-tts 모델과 piper-tts를 하나의 쉬운 명령으로) 
+- 이에 관한 정보는 @DrewThomasson, 그가 현재 이것의 개발을 진행하고 있습니다, [작업 중인 저장소는 여기](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [ ] ljspeech 형식의 학습 레시피에서 모든 coqui-tts 모델을 위한 사용하기 쉬운 학습 gui 만들기 [coqui tts에서 여기](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
 
 
-## Python Code normalization information for contributors
-- no blank line between code, unless between functions and classes.
-- single quote used for all key unless for dict() and json. dict['key'] always called with single quote
-- 4 spaces indentation, not tab at all
-- strict typing for all functions and its arguments declaration and return values
-- no space between the argument and its typing, no space between the function, the "->" and the return value
+## 기여자를 위한 Python 코드 정규화 정보
+- 함수와 클래스 사이를 제외하고 코드 사이에 빈 줄 없음.
+- dict()와 json을 제외한 모든 키에 작은따옴표 사용. dict['key']는 항상 작은따옴표로 호출
+- 4칸 들여쓰기, 탭은 전혀 사용 안 함
+- 모든 함수와 그 인수 및 반환 값 선언에 대한 엄격한 타이핑
+- 인수와 그 타이핑 사이에 공백 없음, 함수, "->", 반환 값 사이에 공백 없음
 
-Example:
+예시:
 
 ```python
 import json
@@ -612,20 +612,20 @@ if config['default_role'] in roles:
     print(config['default_role'])
 ```
 
-## Hardware donation for beta tests wanted
-We accept any kind of hardware to test our development like:
+## 베타 테스트를 위한 하드웨어 기부를 찾습니다
+다음과 같이 개발 테스트를 위한 모든 종류의 하드웨어를 받습니다:
 - Nvidia supporting cuda >= 11.8
 - XPU intel cards
 - ROCm AMD cards supporting ROCm >=5.7
 
-@DrewThomasson if you want to help out at all! 😃
+@DrewThomasson 어떤 식으로든 돕고 싶으시다면! 😃
 <!--
-## Do you need to rent a GPU to boost service from us?
-- A poll is open here https://github.com/DrewThomasson/ebook2audiobook/discussions/889
+## 저희 서비스를 강화하기 위해 GPU를 대여해야 하나요?
+- 설문조사가 여기에서 열려 있습니다 https://github.com/DrewThomasson/ebook2audiobook/discussions/889
 -->
 
-## Special Thanks
+## 특별히 감사드립니다
 - **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+- [@shakenbake15 더 나은 챕터 저장 방법에 대해](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 

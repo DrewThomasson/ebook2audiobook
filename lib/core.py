@@ -43,9 +43,10 @@ from pypinyin import pinyin, Style
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
-from lib.classes.tts_manager import TTSManager
+from lib.classes.non_text_filter import NonTextFilter
 #from lib.classes.redirect_console import RedirectConsole
 from lib.classes.argos_translator import ArgosTranslator
+from lib.classes.tts_manager import TTSManager
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
 from lib.classes.tts_engines.common.utils import build_vtt_file
 
@@ -807,54 +808,70 @@ def sync_globals_to_blocks(session_id:str)->None:
     except Exception as e:
         exception_alert(session_id, f'sync_globals_to_blocks(): {e}')
 
-def normalize_epub_package_zip(session_id:str, file_input:str)->str|None:
+def normalize_epub_zip(session_id:str, file_input:str)->str|None:
     try:
         session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return None
         with zipfile.ZipFile(file_input, 'r') as zf:
-            names = [name for name in zf.namelist() if name and not name.endswith('/')]
-            candidates = []
-            for name in names:
-                parts = name.split('/', 1)
-                if len(parts) != 2:
-                    continue
-                prefix, relpath = parts
-                if prefix.lower().endswith('.epub') and relpath == 'mimetype':
-                    container = f'{prefix}/META-INF/container.xml'
-                    if container in names:
-                        candidates.append(prefix)
-            candidates = sorted(set(candidates))
-            if len(candidates) != 1:
-                print(f'Unsupported ZIP ebook wrapper: expected one .epub package directory, found {len(candidates)}')
+            epubs = [n for n in names if n.lower().endswith('.epub')]
+            if len(epubs) > 1:
+                msg = f'Unsupported ZIP ebook wrapper: expected one nested .epub file, found {len(epubs)}'
+                print(msg)
                 return None
-
-            prefix = candidates[0]
-            target_name = f'{get_sanitized(Path(prefix).stem)}.epub'
-            target_path = os.path.join(os.path.dirname(file_input), target_name)
-            mimetype_name = f'{prefix}/mimetype'
-
-            with zipfile.ZipFile(target_path, 'w') as out:
-                mimetype_info = zipfile.ZipInfo('mimetype')
-                mimetype_info.compress_type = zipfile.ZIP_STORED
-                out.writestr(mimetype_info, zf.read(mimetype_name))
-                for name in names:
-                    if not name.startswith(f'{prefix}/') or name == mimetype_name:
-                        continue
-                    arcname = name[len(prefix) + 1:]
-                    if not arcname:
-                        continue
-                    info = zipfile.ZipInfo(arcname)
-                    info.compress_type = zipfile.ZIP_DEFLATED
-                    out.writestr(info, zf.read(name))
-
-        if session and session.get('id', False):
-            session['ebook'] = target_path
-            session['filename_noext'] = os.path.splitext(os.path.basename(target_path))[0]
-        print(f'Normalized EPUB package ZIP: {Path(file_input).name} -> {Path(target_path).name}')
+            nested_epub = epubs[0] if epubs else None
+            if nested_epub:
+                # case 1 - a real .epub FILE sits inside the zip, just extract it verbatim
+                target_name = f'{get_sanitized(Path(nested_epub).stem)}.epub'
+                target_path = os.path.join(os.path.dirname(file_input), target_name)
+                with open(target_path, 'wb') as out:
+                    out.write(zf.read(nested_epub))
+            else:
+                # case 2/3 - epub contents are at root or under a single top dir
+                root_mimetype = 'mimetype' in names
+                prefix = ''
+                if not root_mimetype:
+                    dirs = {n.split('/', 1)[0] for n in names if '/' in n}
+                    cands = [d for d in dirs if f'{d}/mimetype' in names and f'{d}/META-INF/container.xml' in names]
+                    if len(cands) != 1:
+                        msg = f'Unsupported ZIP ebook wrapper: expected one EPUB root, found {len(cands)}'
+                        print(msg)
+                        return None
+                    prefix = cands[0]
+                stem = Path(prefix).stem if prefix else Path(file_input).stem
+                target_name = f'{get_sanitized(stem)}.epub'
+                target_path = os.path.join(os.path.dirname(file_input), target_name)
+                strip = f'{prefix}/' if prefix else ''
+                members = [n for n in names if n.startswith(strip)]
+                mimetype_name = f'{strip}mimetype'
+                if mimetype_name not in members:
+                    msg = 'Unsupported ZIP ebook wrapper: no mimetype entry'
+                    print(msg)
+                    return None
+                with zipfile.ZipFile(target_path, 'w') as out:
+                    mt = zipfile.ZipInfo('mimetype')
+                    mt.compress_type = zipfile.ZIP_STORED
+                    out.writestr(mt, zf.read(mimetype_name))
+                    for name in members:
+                        if name == mimetype_name:
+                            continue
+                        arcname = name[len(strip):]
+                        if not arcname:
+                            continue
+                        out.writestr(arcname, zf.read(name), zipfile.ZIP_DEFLATED)
+        session = context.get_session(session_id)
+        session['ebook'] = target_path
+        session['filename_noext'] = os.path.splitext(os.path.basename(target_path))[0]
+        session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
+        msg = f'Normalized EPUB package ZIP: {Path(file_input).name} -> {Path(target_path).name}'
+        print(msg)
         return target_path
     except zipfile.BadZipFile:
-        print(f'Unsupported ZIP ebook wrapper: bad ZIP file {file_input}')
+        error = f'Unsupported ZIP ebook wrapper: bad ZIP file {file_input}'
+        print(error)
     except Exception as e:
-        exception_alert(session_id, f'normalize_epub_package_zip(): {e}')
+        error = f'normalize_epub_zip(): {e}'
+        exception_alert(session_id, error)
     return None
 
 def convert2epub(session_id:str)->bool:
@@ -881,10 +898,10 @@ def convert2epub(session_id:str)->bool:
                 print(error)
                 return False
             if file_ext == '.zip':
-                file_input = normalize_epub_package_zip(session_id, file_input)
+                file_input = normalize_epub_zip(session_id, file_input)
                 if file_input is None:
                     return False
-                file_ext = os.path.splitext(file_input)[1].lower()
+                file_ext = '.epub'
             if file_ext == '.txt':
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
@@ -1263,12 +1280,13 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     print(error)
                     return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
+            non_text_filter = NonTextFilter(sml_pattern=SML_TAG_PATTERN, lang=session['language'])
             try:
                 with zipfile.ZipFile(session['epub_path'], 'r') as zf:
                     zip_names = set(zf.namelist())
                     zip_basenames = {os.path.basename(n): n for n in zip_names}
                     for doc_idx, doc in enumerate(all_docs):
-                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, zf, zip_names, zip_basenames)
+                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames)
                         if text is None:
                             error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
                             show_alert(session_id, {"type": "warning", "msg": error})
@@ -1300,7 +1318,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -1531,6 +1549,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             break_between_alnum_re = re.compile(rf'(?<=[\w]){break_token}(?=[\w])', flags=re.UNICODE)
             text = strip_break_spaces_re.sub(sml_token('break'), text)
             text = break_between_alnum_re.sub(' ', text)
+            # strip non-prose content; preserves math signs for math2words
+            text = non_text_filter(text)
             # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
             if stanza_nlp:
@@ -2187,7 +2207,7 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
     # Replace unambiguous symbols everywhere
     if normal_replacements:
-        sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
+        sym_pat = r'(' + '|'.join(re.escape(k) for k in sorted(normal_replacements, key=len, reverse=True)) + r')'
         text = re.sub(sym_pat, lambda m: f' {normal_replacements[m.group(1)]} ', text)
     # Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
@@ -3314,7 +3334,8 @@ def convert_ebook(args:dict)->tuple:
                 args['translate'] = None
                 args['translate_iso1'] = None
                 language = str(args['language'])
-            if args.get('ebook_mode') == ebook_modes['TEXT']:
+            session['ebook_mode'] = args['ebook_mode']
+            if session['ebook_mode'] == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
                     error = 'Ebook textarea is empty.'
                     return error, False
@@ -3677,7 +3698,7 @@ def convert_ebook(args:dict)->tuple:
             error = 'Conversion Cancelled'
         return error, False
     except Exception as e:
-        error = f'convert_ebook() Exception: {e}'
+        error = f'convert_ebook() Exception: {e}\n{traceback.format_exc()}'
         return error, False
 
 def finalize_audiobook(session_id:str)->tuple:
