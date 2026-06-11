@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from torch.nn import Module
     from torchaudio.transforms import Resample
 
-def _format_timestamp(seconds:float)->str:
+def format_timestamp(seconds:float)->str:
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
     return f'{int(h):02}:{int(m):02}:{s:06.3f}'
@@ -70,8 +70,8 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                 duration = durations.get(os.path.realpath(file), 0.0)
                 end_time = start_time + duration
                 sentences_total_time = end_time
-                start = _format_timestamp(start_time)
-                end = _format_timestamp(end_time)
+                start = format_timestamp(start_time)
+                end = format_timestamp(end_time)
                 text = re.sub(
                     r'\s+',
                     ' ',
@@ -124,6 +124,25 @@ class TTSUtils:
         if hasattr(torch, 'xpu') and torch.xpu.is_available():
             torch.xpu.synchronize()
             torch.xpu.empty_cache()
+
+    def _try_dml(self, engine:Any, checkpoint_path:str)->None:
+        try:
+            import onnxruntime as ort
+            if 'DmlExecutionProvider' not in ort.get_available_providers():
+                return
+            sess_options = ort.SessionOptions()
+            sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+            sess_options.intra_op_num_threads = 1
+            providers = [('DmlExecutionProvider', {"device_id": 0}), 'CPUExecutionProvider']
+            sess = ort.InferenceSession(str(checkpoint_path), sess_options=sess_options, providers=providers)
+            engine.session = sess
+            active = sess.get_providers()
+            on_gpu = 'DmlExecutionProvider' in active
+            msg = f'Piper: running on GPU via DirectML — {active}' if on_gpu else f'Piper: DirectML not engaged, providers={active}'
+            print(msg)
+        except Exception as e:
+            error = f'_piper_try_dml(): DirectML GPU path unavailable ({e!r}); ONNX will run on CPU.'
+            print(error)
 
     def _model_size_bytes(self, model:Any)->int:
         total = 0
@@ -327,8 +346,10 @@ class TTSUtils:
                         return engine
                     if self.session['custom_model'] is None:
                         download_voice(Path(self.model_path).stem, Path(self.model_path))
-                    use_cuda = self.device == devices['CUDA']['proc']
+                    use_cuda = device == devices['CUDA']['proc']
                     engine = PiperVoice.load(checkpoint_path, config_path=config_path, use_cuda=use_cuda)
+                    if device == devices['CPU']['proc']:
+                        self._try_dml(engine, checkpoint_path)
                 elif engine_name in tts_engines_from_coqui:
                     import torch
                     import torch.nn as nn

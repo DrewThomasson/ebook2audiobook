@@ -1030,7 +1030,7 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
-        if self.system == systems['MACOS']:
+        if self.system == systems['MACOS'] or self.check_onnxruntime_directml():
             overrides['onnxruntime-gpu'] = None
         try:
             with open(requirements_file, 'r') as f:
@@ -1047,9 +1047,9 @@ class DeviceInstaller():
                     head = re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower()
                     if head in {'torch', 'torchaudio'}:
                         continue
-                    if head == 'onnxruntime-gpu' and self.system == systems['MACOS']:
-                        continue
                     if head in overrides:
+                        if overrides[head] is None:
+                            continue
                         pkg = overrides[head]
                     packages.append(pkg)
             missing_packages = []
@@ -1201,7 +1201,28 @@ class DeviceInstaller():
             error = f'Error while installing numpy package: {e}'
             print(error)
             return False
-          
+
+    def check_onnxruntime_directml(self)->bool:
+        if self.system != systems['WINDOWS']:
+            return False
+        if devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']:
+            return False
+        reinstall = False
+        try:
+            import onnxruntime as ort
+            if 'DmlExecutionProvider' in ort.get_available_providers():
+                return True
+            reinstall = True
+        except Exception as e:
+            error = f'check_onnxruntime_directml(): {e}'
+            print(error)
+            reinstall = True
+        if reinstall:
+            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-gpu'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
+            return True
+        return False
+
     def check_dictionary(self)->bool:
         import unidic
         unidic_path = unidic.DICDIR
