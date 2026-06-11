@@ -814,8 +814,12 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
         if not (session and session.get('id', False)):
             return None
         with zipfile.ZipFile(file_input, 'r') as zf:
-            names = [name for name in zf.namelist() if name and not name.endswith('/')]
-            nested_epub = next((n for n in names if n.lower().endswith('.epub')), None)
+            epubs = [n for n in names if n.lower().endswith('.epub')]
+            if len(epubs) > 1:
+                msg = f'Unsupported ZIP ebook wrapper: expected one nested .epub file, found {len(epubs)}'
+                print(msg)
+                return None
+            nested_epub = epubs[0] if epubs else None
             if nested_epub:
                 # case 1 - a real .epub FILE sits inside the zip, just extract it verbatim
                 target_name = f'{get_sanitized(Path(nested_epub).stem)}.epub'
