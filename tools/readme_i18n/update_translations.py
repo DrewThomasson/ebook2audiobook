@@ -77,6 +77,9 @@ def is_frozen_block(block:list)->bool:
         return True
     return False
 
+def block_tokens(block:list)->list:
+    return sorted(tok for line in block for tok in PROTECT.findall(line))
+
 def protect(text:str)->tuple:
     tokens:list = []
     def repl(m)->str:
@@ -191,24 +194,38 @@ def harvest_block(eng_block:list, tr_block:list, lang:str, cache:dict)->None:
         m = LINE_PREFIX.match(eng_line)
         prefix:str = m.group(1) if m else ''
         eng_body:str = eng_line[len(prefix):]
-        tr_body:str = tr_line[len(prefix):] if tr_line.startswith(prefix) else tr_line.lstrip()
+        if not tr_line.startswith(prefix):
+            continue
+        tr_body:str = tr_line[len(prefix):]
         if eng_body.strip() and tr_body.strip() and eng_body != tr_body:
             cache[f'{lang}|{eng_body}'] = tr_body
+
+def audit_and_repair(out_blocks:list, new_blocks:list, lang:str, cache:dict)->tuple:
+    repaired:list = []
+    notes:list = []
+    for idx, (tr_block, eng_block) in enumerate(zip(out_blocks, new_blocks)):
+        if is_frozen_block(eng_block):
+            if block_key(tr_block) != block_key(eng_block):
+                notes.append(f'block {idx+1}: frozen content (code/table) restored from English')
+                repaired.append(eng_block)
+            else:
+                repaired.append(tr_block)
+        elif block_tokens(tr_block) != block_tokens(eng_block):
+            notes.append(f'block {idx+1}: inline code/links/tags differ from English, block retranslated')
+            repaired.append(translate_block(eng_block, lang, cache))
+        else:
+            repaired.append(tr_block)
+    return repaired, notes
 
 def verify(lang_text:str, eng_text:str)->list:
     problems:list = []
     if FENCE.findall(lang_text) != FENCE.findall(eng_text):
         problems.append('code fences differ from English source')
-    if len(split_blocks(lang_text)) != len(split_blocks(eng_text)):
-        problems.append(f'block count {len(split_blocks(lang_text))} != English {len(split_blocks(eng_text))}')
+    lang_count:int = len(split_blocks(lang_text))
+    eng_count:int = len(split_blocks(eng_text))
+    if lang_count != eng_count:
+        problems.append(f'block count {lang_count} != English {eng_count}')
     return problems
-
-def repair_fences(lang_text:str, eng_text:str)->Optional[str]:
-    eng_fences:list = FENCE.findall(eng_text)
-    if len(FENCE.findall(lang_text)) != len(eng_fences):
-        return None
-    it = iter(eng_fences)
-    return FENCE.sub(lambda m: next(it), lang_text)
 
 def rebuild(new_blocks:list, lang:str, cache:dict)->list:
     return [translate_block(b, lang, cache) for b in new_blocks]
@@ -249,19 +266,16 @@ def main()->int:
                             out_blocks.append(patch_block(old_blocks[i1+k], new_blocks[j1+k], tr_blocks[i1+k], mm_code, cache))
                     elif tag in ('replace', 'insert'):
                         out_blocks.extend(translate_block(b, mm_code, cache) for b in new_blocks[j1:j2])
+        if len(out_blocks) != len(new_blocks):
+            print(f'[{iso3}] block alignment lost, rebuilding from English')
+            out_blocks = rebuild(new_blocks, mm_code, cache)
+        out_blocks, notes = audit_and_repair(out_blocks, new_blocks, mm_code, cache)
+        for note in notes:
+            print(f'[{iso3}] {note}')
         out_text:str = join_blocks(out_blocks)
         problems:list = verify(out_text, new_src)
         if problems:
-            repaired:Optional[str] = repair_fences(out_text, new_src)
-            if repaired is not None and not verify(repaired, new_src):
-                print(f'[{iso3}] fences repaired in place, manual prose kept')
-                out_text = repaired
-            else:
-                print(f'[{iso3}] integrity check failed ({"; ".join(problems)}), rebuilding from English')
-                out_text = join_blocks(rebuild(new_blocks, mm_code, cache))
-                problems = verify(out_text, new_src)
-                if problems:
-                    raise RuntimeError(f'[{iso3}] still inconsistent after rebuild: {"; ".join(problems)}')
+            raise RuntimeError(f'[{iso3}] inconsistent after audit: {"; ".join(problems)}')
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(out_text, encoding='utf-8')
         save_cache(cache)
