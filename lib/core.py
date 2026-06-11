@@ -3345,7 +3345,6 @@ def convert_ebook(args:dict)->tuple:
                     f.write(text)
                 session['ebook_textarea'] = args['ebook_textarea']
                 session['ebook_textarea_src'] = text_filepath
-                print(f'************{text_filepath}**********')
                 ebook_file = text_filename
                 ebook_name = Path(text_filename).stem
             else:
@@ -3458,6 +3457,7 @@ def convert_ebook(args:dict)->tuple:
                 if prepare_dirs(session_id):
                     session['ebook'] = os.path.join(session['process_dir'], ebook_file)
                     shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
+                    print(f"shutil.copy(({session['ebook_textarea_src']} if {session['ebook_mode']} == {ebook_modes['TEXT']} else {session['ebook_src']}), {session['ebook']})")
                     session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                     msg = ''
                     msg_extra = ''                      
