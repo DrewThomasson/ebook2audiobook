@@ -1218,9 +1218,12 @@ class DeviceInstaller():
             print(error)
             reinstall = True
         if reinstall:
-            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-gpu'])
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
-            return True
+            try:
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-gpu'])
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
+                return True
+            except Exception as e:
+                return False
         return False
 
     def check_dictionary(self)->bool:
