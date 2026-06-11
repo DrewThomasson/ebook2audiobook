@@ -235,6 +235,8 @@ class NonTextFilter:
             if text_chars / len(non_space) < self.alpha_ratio:
                 continue
             if no_space:
+                if not any(c.isalnum() for c in s):
+                    continue
                 if sum(1 for c in s
                        if c.isalnum() or self._is_mark(c)) < self.min_words * 2:
                     continue
