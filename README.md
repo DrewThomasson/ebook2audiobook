@@ -508,7 +508,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GlowTTS
 - [x] Piper-TTS
 - [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
-- [ ] Kokoro-TTS
+- [ ] Kokoro-TTS (https://github.com/hexgrad/kokoro)
 - [ ] Orpheus-TTS
 - [ ] Zonos
 - [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
