@@ -194,6 +194,14 @@ class NonTextFilter:
                 out.append(ch)
         return ''.join(out)
 
+    @staticmethod
+    def _is_mark(ch:str)->bool:
+        # Mn/Mc/Me: combining vowel signs, viramas, nukta, anusvara, etc.
+        # In abugida scripts (Devanagari, Bengali, Telugu, Tamil, Gujarati,
+        # Kannada, …) these are integral letters of a syllable, not noise,
+        # so they must count as prose in the text-density ratio.
+        return unicodedata.category(ch)[0] == 'M'
+
     def _detect_no_space(self, s:str)->bool:
         ranges = self._NO_SPACE_RANGES
         sample = [c for c in s if not c.isspace() and not c.isascii()][:30]
@@ -222,11 +230,13 @@ class NonTextFilter:
             text_chars = sum(
                 1 for c in non_space
                 if c.isalpha() or c.isdigit() or c in punct
+                or self._is_mark(c)
             )
             if text_chars / len(non_space) < self.alpha_ratio:
                 continue
             if no_space:
-                if sum(1 for c in s if c.isalnum()) < self.min_words * 2:
+                if sum(1 for c in s
+                       if c.isalnum() or self._is_mark(c)) < self.min_words * 2:
                     continue
             else:
                 words = [w for w in re.split(r'\s+', s) if any(c.isalnum() for c in w)]
