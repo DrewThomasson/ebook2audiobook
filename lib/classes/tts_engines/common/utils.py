@@ -141,7 +141,7 @@ class TTSUtils:
             msg = f'Piper: running on GPU via DirectML — {active}' if on_gpu else f'Piper: DirectML not engaged, providers={active}'
             print(msg)
         except Exception as e:
-            error = f'_piper_try_dml(): DirectML GPU path unavailable ({e!r}); ONNX will run on CPU.'
+            error = f'_try_dml(): DirectML GPU path unavailable ({e!r}); ONNX will run on CPU.'
             print(error)
 
     def _model_size_bytes(self, model:Any)->int:
@@ -162,7 +162,7 @@ class TTSUtils:
         total_bytes = 0
         for model in loaded_tts.values():
             try:
-                total_bytes += self.model_size_bytes(model)
+                total_bytes += self._model_size_bytes(model)
             except Exception:
                 pass
         gb = total_bytes / (1024 ** 3)
