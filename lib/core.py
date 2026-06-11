@@ -814,6 +814,7 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
         if not (session and session.get('id', False)):
             return None
         with zipfile.ZipFile(file_input, 'r') as zf:
+            names = [n for n in zf.namelist() if n and not n.endswith('/')]
             epubs = [n for n in names if n.lower().endswith('.epub')]
             if len(epubs) > 1:
                 msg = f'Unsupported ZIP ebook wrapper: expected one nested .epub file, found {len(epubs)}'
