@@ -94,7 +94,7 @@ pip install -r requirements.txt # Install additional requirments for E2A SML
 Run the application directly with Python:
 
 ```bash
-python web_gui.py --port 5003 --out_path /absolute/path/to/output
+python web_gui.py --port 7862 --out_path /absolute/path/to/output
 ```
 
 ## Run with Docker
@@ -105,7 +105,7 @@ To run the application using Docker, simply use `docker-compose`. This handles i
 docker-compose up --build
 ```
 
-The application will be available at `http://localhost:5003`.
+The application will be available at `http://localhost:7862`.
 
 ## Headless CLI
 

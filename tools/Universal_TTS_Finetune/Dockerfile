@@ -23,7 +23,7 @@ COPY . .
 RUN mkdir -p /app/models
 
 # Expose the Gradio port
-EXPOSE 5003
+EXPOSE 7862
 
 # Run the Gradio demo by default
-CMD ["python", "web_gui.py", "--port", "5003", "--out_path", "/app/finetune_models"]
+CMD ["python", "web_gui.py", "--port", "7862", "--out_path", "/app/finetune_models"]

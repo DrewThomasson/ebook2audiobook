@@ -4,7 +4,7 @@ services:
   universal-tts:
     build: .
     ports:
-      - "5003:5003"
+      - "7862:7862"
     volumes:
       - ./models:/app/models
       - ./finetune_models:/app/finetune_models

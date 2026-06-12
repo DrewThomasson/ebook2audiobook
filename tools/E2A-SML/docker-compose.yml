@@ -2,7 +2,7 @@ services:
   sml-extractor:
     build: .
     ports:
-      - "7860:7860"
+      - "7861:7861"
     volumes:
       # Mount the parent ebook2audiobook folder for voice library access.
       # Automatically mounts the directory two levels up.

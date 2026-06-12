@@ -736,7 +736,7 @@ def preprocess_and_train(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Universal Coqui TTS fine-tuning web UI")
     parser.add_argument("--share", action="store_true", default=False)
-    parser.add_argument("--port", type=int, default=5003)
+    parser.add_argument("--port", type=int, default=7862)
     parser.add_argument("--out_path", type=str, default=str(Path.cwd() / "finetune_models"))
     parser.add_argument("--num_epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=8)
