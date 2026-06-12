@@ -103,8 +103,8 @@ Examples:
     parser.add_argument(
         "--port",
         type=int,
-        default=7860,
-        help="Port for web GUI (default: 7860)",
+        default=7861,
+        help="Port for web GUI (default: 7861)",
     )
     parser.add_argument(
         "--share",
