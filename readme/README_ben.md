@@ -165,8 +165,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 তাই আপনাকে প্রথমে ম্যানুয়ালি সেই সমস্ত টেক্সট সরিয়ে ফেলতে হবে যা আপনি অডিওতে রূপান্তর করতে চান না।**
 
 
-### নির্দেশাবলী 
-1. **রেপো ক্লোন করুন**
+### Instructions 
+1. **Clone repo**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -178,7 +178,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>MacOS ব্যবহারকারীদের জন্য নোট: অনুপস্থিত প্রোগ্রাম ইনস্টল করতে homebrew ইনস্টল করা হয়।</i>
+     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
      
    - **Mac লঞ্চার**  
      `Mac Ebook2Audiobook Launcher.command`-এ ডাবল ক্লিক করুন
@@ -188,8 +188,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd
      ```
-     অথবা
-     `ebook2audiobook.cmd`-এ ডাবল ক্লিক করুন
+     or
+     Double click `ebook2audiobook.cmd`
 
      <i>Windows ব্যবহারকারীদের জন্য নোট: প্রশাসক অনুমতি ছাড়াই অনুপস্থিত প্রোগ্রাম ইনস্টল করতে scoop ইনস্টল করা হয়।</i>
    
@@ -203,7 +203,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **যদি স্ক্রিপ্ট বন্ধ করে আবার চালানো হয়, তাহলে আপনাকে আপনার Gradio GUI ইন্টারফেস রিফ্রেশ করতে হবে<br>
 যাতে ওয়েব পৃষ্ঠাটি নতুন কানেকশন সকেটে পুনরায় সংযুক্ত হতে পারে।**
 
-### মৌলিক ব্যবহার
+### Basic  Usage
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -220,8 +220,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     ২ অক্ষরের ISO-639-1 কোডও সমর্থিত।
 
 
-###  কাস্টম মডেল জিপ আপলোডের উদাহরণ
-  (এটি একটি .zip ফাইল হতে হবে যাতে বাধ্যতামূলক মডেল ফাইল থাকে। XTTSv2-এর জন্য উদাহরণ: config.json, model.pth, vocab.json এবং ref.wav)
+###  Example of Custom Model Zip Upload
+  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -230,13 +230,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>নোট: আপনার কাস্টম মডেলের ref.wav সর্বদা রূপান্তরের জন্য নির্বাচিত ভয়েস</i>
+     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
      
 - **<custom_model_path>**: `model_name.zip` ফাইলের পথ,
       যাতে (tts ইঞ্জিন অনুযায়ী) সমস্ত বাধ্যতামূলক ফাইল থাকতে হবে<br>
       (দেখুন ./lib/models.py)।
 
-### ব্যবহার করার সমস্ত প্যারামিটারের তালিকা সহ বিস্তারিত গাইডের জন্য
+### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -245,7 +245,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **অথবা সমস্ত OS-এর জন্য**
+   - **Or for all OS**
     ```python
      app.py --help
     ```
@@ -364,12 +364,12 @@ SML tags available:
 টিপ: যদি একটু বেশি বিরতির প্রয়োজন হয়, তাহলে ৩ সেকেন্ডের জন্য '[pause:3]' যোগ করুন ইত্যাদি।
 
 ### Docker
-1. **রিপোজিটরি ক্লোন করুন**:
+1. **Clone the Repository**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **কন্টেইনার তৈরি করুন**
+2. **Build the container**
 ```bash
     Windows:
         Docker:
@@ -386,7 +386,7 @@ SML tags available:
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **কন্টেইনার চালান:**
+4. **Run the Container:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -422,7 +422,7 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- নোট: MPS docker-এ উন্মুক্ত নয় তাই CPU ব্যবহার করতে হবে
+- NOTE: MPS is not exposed in docker so CPU must be used
   
 ### সাধারণ Docker সমস্যা
 - আমার NVIDIA GPU শনাক্ত হচ্ছে না?? -> [GPU সমস্যা Wiki পৃষ্ঠা](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
@@ -450,8 +450,8 @@ Podman Compose (i.e. cuda 12.8:
 ফিরিয়ে রাখতে পারেন। আপনাকে models.py-এর জন্যও একই প্রক্রিয়া পরিকল্পনা করতে হবে। আপনি যদি আপনার নিজের কাস্টম মডেলকে
 একটি অফিসিয়াল ফাইন-টিউন করা ebook2audiobook মডেল বানাতে চান, তাহলে অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন এবং আমরা এটি প্রিসেট তালিকায় যোগ করব।
 
-## পুরনো সংস্করণে ফিরে যাওয়া
-রিলিজগুলি পাওয়া যাবে -> [এখানে](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Reverting to older Versions
+Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
@@ -499,30 +499,33 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### TTS ইঞ্জিন
 - [x] XTTSv2
-- [x] Bark
-- [x] Fairseq
+- [x] বাকল
+- [x] ফেয়ারসিক
 - [x] VITS
 - [x] Tacotron2
 - [x] YourTTS
-- [x] Tortoise
+- [x] কচ্ছপ
 - [x] GlowTTS
-- [x] Piper-TTS
+- [x] পাইপার
+- [ ] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)
+- [ ] OpenVoice (https://github.com/myshell-ai/OpenVoice)
+- [ ] ফিশ-স্পিচ (https://github.com/fishaudio/fish-speech)
+- [ ] ChatTTS (https://github.com/2noise/ChatTTS)
 - [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
-- [ ] Kokoro-TTS
-- [ ] Orpheus-TTS
-- [ ] Zonos
-- [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
-- [ ] Style-TTS2
-- [ ] GPT-SoVITS
-- [ ] F5-TTS (https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/38#issuecomment-2453224267)
+- [ ] F5-TTS (https://github.com/swivid/f5-tts)
+- [ ] চ্যাটারবক্স (https://github.com/resemble-ai/chatterbox)
+- [ ] সুপারটোনিক (https://github.com/supertone-inc/supertonic)
+- [ ] স্পার্ক-টিটিএস (https://github.com/sparkaudio/spark-tts)
+- [ ] index-tts (https://github.com/index-tts/index-tts)
+- [ ] MeloTTS (https://github.com/myshell-ai/MeloTTS)
+- [ ] কোকোরো-টিটিএস (https://github.com/hexgrad/kokoro)
+- [ ] ওমনিভয়েস (https://github.com/k2-fsa/OmniVoice)
+- [ ] জোনোস (https://github.com/Zyphra/Zonos)
+- [ ] Style-TTS2 (https://github.com/yl4579/StyleTTS2)
+- [ ] অর্ফিয়াস-টিটিএস (https://github.com/canopyai/Orpheus-TTS)
+- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
 - [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
-- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
-- [ ] Speedy-Speech
-- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
-- [ ] Align-TTS
-- [ ] Delightful-TTS
-- [ ] Spark-TTS
 
 #### Readme অনুবাদ
 - [ ] Arabic (ara)

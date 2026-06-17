@@ -165,8 +165,8 @@ para asegurarte de que tu problema no exista ya.**
 Por tanto, primero deberías eliminar manualmente cualquier texto que no quieras convertir en audio.**
 
 
-### Instrucciones 
-1. **Clonar el repositorio**
+### Instructions 
+1. **Clone repo**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -178,7 +178,7 @@ Por tanto, primero deberías eliminar manualmente cualquier texto que no quieras
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Nota para usuarios de macOS: se instala homebrew para instalar los programas que falten.</i>
+     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
      
    - **Lanzador de Mac**  
      Haz doble clic en `Mac Ebook2Audiobook Launcher.command`
@@ -188,8 +188,8 @@ Por tanto, primero deberías eliminar manualmente cualquier texto que no quieras
      ```bash
      ebook2audiobook.cmd
      ```
-     o
-     Haz doble clic en `ebook2audiobook.cmd`
+     or
+     Double click `ebook2audiobook.cmd`
 
      <i>Nota para usuarios de Windows: se instala scoop para instalar los programas que falten sin privilegios de administrador.</i>
    
@@ -203,7 +203,7 @@ Por tanto, primero deberías eliminar manualmente cualquier texto que no quieras
 **Si el script se detiene y se vuelve a ejecutar, debes actualizar tu interfaz gráfica de Gradio<br>
 para que la página web vuelva a conectarse al nuevo socket de conexión.**
 
-### Uso básico
+### Basic  Usage
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -220,8 +220,8 @@ para que la página web vuelva a conectarse al nuevo socket de conexión.**
     También se admiten los códigos ISO-639-1 de 2 letras.
 
 
-###  Ejemplo de subida de un modelo personalizado en zip
-  (debe ser un archivo .zip que contenga los archivos de modelo obligatorios. Ejemplo para XTTSv2: config.json, model.pth, vocab.json y ref.wav)
+###  Example of Custom Model Zip Upload
+  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -230,13 +230,13 @@ para que la página web vuelva a conectarse al nuevo socket de conexión.**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Nota: el ref.wav de tu modelo personalizado siempre es la voz seleccionada para la conversión</i>
+     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
      
 - **<custom_model_path>**: Ruta al archivo `model_name.zip`,
       que debe contener (según el motor TTS) todos los archivos obligatorios<br>
       (consulta ./lib/models.py).
 
-### Para una guía detallada con la lista de todos los parámetros a usar
+### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -245,7 +245,7 @@ para que la página web vuelva a conectarse al nuevo socket de conexión.**
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **O para todos los sistemas operativos**
+   - **Or for all OS**
     ```python
      app.py --help
     ```
@@ -364,12 +364,12 @@ NOTA: en modo gradio/gui, para cancelar una conversión en curso, simplemente ha
 CONSEJO: si necesita algo más de pausa, añade '[pause:3]' para 3 seg., etc.
 
 ### Docker
-1. **Clonar el repositorio**:
+1. **Clone the Repository**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Construir el contenedor**
+2. **Build the container**
 ```bash
     Windows:
         Docker:
@@ -386,7 +386,7 @@ CONSEJO: si necesita algo más de pausa, añade '[pause:3]' para 3 seg., etc.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Ejecutar el contenedor:**
+4. **Run the Container:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -422,7 +422,7 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTA: MPS no está expuesto en Docker, por lo que debe usarse la CPU
+- NOTE: MPS is not exposed in docker so CPU must be used
   
 ### Problemas habituales con Docker
 - ¿Mi GPU NVIDIA no se detecta?? -> [Página wiki de PROBLEMAS DE GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
@@ -450,8 +450,8 @@ una copia del conf.py original para que en cada actualización de ebook2audioboo
 el original. Debes planificar el mismo proceso para models.py. Si deseas convertir tu propio modelo personalizado
 en un modelo ajustado oficial de ebook2audiobook, contáctanos y lo añadiremos a la lista de preajustes.
 
-## Volver a versiones anteriores
-Las versiones se pueden encontrar -> [aquí](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Reverting to older Versions
+Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
@@ -499,30 +499,33 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Motores TTS
 - [x] XTTSv2
-- [x] Bark
+- [x] Corteza
 - [x] Fairseq
-- [x] VITS
+- [x] JAASKELAINEN
 - [x] Tacotron2
 - [x] YourTTS
-- [x] Tortoise
+- [x] Tortuga
 - [x] GlowTTS
-- [x] Piper-TTS
+- [x] Piper
+- [ ] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)
+- [ ] OpenVoice (https://github.com/myshell-ai/OpenVoice)
+- [ ] fish-speech (https://github.com/fishaudio/fish-speech)
+- [ ] ChatTTS (https://github.com/2noise/ChatTTS)
 - [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
-- [ ] Kokoro-TTS
-- [ ] Orpheus-TTS
-- [ ] Zonos
+- [ ] F5-TTS (https://github.com/swivid/f5-tts)
+- [ ] chatterbox (https://github.com/resemble-ai/chatterbox)
+- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
+- [ ] Spark-TTS (https://github.com/sparkaudio/spark-tts)
+- [ ] index-tts (https://github.com/index-tts/index-tts)
+- [ ] MeloTTS (https://github.com/myshell-ai/MeloTTS)
+- [ ] Kokoro-TTS (https://github.com/hexgrad/kokoro)
 - [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
-- [ ] Style-TTS2
-- [ ] GPT-SoVITS
-- [ ] F5-TTS (https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/38#issuecomment-2453224267)
+- [ ] Zonos (https://github.com/Zyphra/Zonos)
+- [ ] Estilo-TTS2 (https://github.com/yl4579/StyleTTS2)
+- [ ] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
+- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
 - [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
-- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
-- [ ] Speedy-Speech
-- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
-- [ ] Align-TTS
-- [ ] Delightful-TTS
-- [ ] Spark-TTS
 
 #### Traducción del Readme
 - [ ] Arabic (ara)
