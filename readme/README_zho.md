@@ -165,8 +165,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 因此，您应该首先手动删除任何不想转换为音频的文本。**
 
 
-### 说明 
-1. **克隆仓库**
+### Instructions 
+1. **Clone repo**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -178,7 +178,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>macOS 用户注意：将安装 homebrew 以安装缺失的程序。</i>
+     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
      
    - **Mac 启动器**  
      双击 `Mac Ebook2Audiobook Launcher.command`
@@ -188,8 +188,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd
      ```
-     或
-     双击 `ebook2audiobook.cmd`
+     or
+     Double click `ebook2audiobook.cmd`
 
      <i>Windows 用户注意：将安装 scoop 以在没有管理员权限的情况下安装缺失的程序。</i>
    
@@ -203,7 +203,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **如果脚本被停止并再次运行，您需要刷新您的 Gradio GUI 界面<br>
 以便网页能够重新连接到新的连接套接字。**
 
-### 基本用法
+### Basic  Usage
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -220,8 +220,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     也支持 2 个字母的 ISO-639-1 代码。
 
 
-###  自定义模型 Zip 上传示例
-  （必须是包含必需模型文件的 .zip 文件。XTTSv2 示例：config.json、model.pth、vocab.json 和 ref.wav）
+###  Example of Custom Model Zip Upload
+  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -230,13 +230,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>注意：您的自定义模型的 ref.wav 始终是为转换所选择的语音</i>
+     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
      
 - **<custom_model_path>**：`model_name.zip` 文件的路径，
       该文件必须（根据 tts 引擎）包含所有必需文件<br>
       （参见 ./lib/models.py）。
 
-### 有关包含所有可用参数列表的详细指南
+### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -245,7 +245,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **或适用于所有操作系统**
+   - **Or for all OS**
     ```python
      app.py --help
     ```
@@ -364,12 +364,12 @@ SML tags available:
 提示：如果需要稍长的停顿，请添加 '[pause:3]' 表示 3 秒等。
 
 ### Docker
-1. **克隆仓库**：
+1. **Clone the Repository**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **构建容器**
+2. **Build the container**
 ```bash
     Windows:
         Docker:
@@ -386,7 +386,7 @@ SML tags available:
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **运行容器：**
+4. **Run the Container:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -422,7 +422,7 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- 注意：MPS 未在 docker 中公开，因此必须使用 CPU
+- NOTE: MPS is not exposed in docker so CPU must be used
   
 ### 常见的 Docker 问题
 - 未检测到我的 NVIDIA GPU？？ -> [GPU 问题 Wiki 页面](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
@@ -450,8 +450,8 @@ Podman Compose (i.e. cuda 12.8:
 原始文件。您必须为 models.py 计划相同的流程。如果您想将自己的自定义模型
 变成官方微调的 ebook2audiobook 模型，请联系我们，我们会将其添加到预设列表中。
 
-## 还原到较旧版本
-可以在 -> [此处](https://github.com/DrewThomasson/ebook2audiobook/releases) 找到发行版
+## Reverting to older Versions
+Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
@@ -497,32 +497,35 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] 至少为 xttsv2、fairseq、vits、piper 添加欧洲葡萄牙语语言模型（欢迎帮助）
 - [ ] 至少为 xttsv2、fairseq、vits、piper 添加信德语语言模型（欢迎帮助）
 
-#### TTS 引擎
+#### TTS引擎
 - [x] XTTSv2
-- [x] Bark
-- [x] Fairseq
+- [x] 巴克
+- [x] 公平交易
 - [x] VITS
 - [x] Tacotron2
 - [x] YourTTS
-- [x] Tortoise
+- [x] 陸龜
 - [x] GlowTTS
-- [x] Piper-TTS
+- [x] 胡椒属
+- [ ] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)
+- [ ] OpenVoice (https://github.com/myshell-ai/OpenVoice)
+- [ ] fish-speech (https://github.com/fishaudio/fish-speech)
+- [ ] ChatTTS (https://github.com/2noise/ChatTTS)
 - [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
-- [ ] Kokoro-TTS
-- [ ] Orpheus-TTS
-- [ ] Zonos
+- [ ] F5-TTS (https://github.com/swivid/f5-tts)
+- [ ] chatterbox (https://github.com/resemble-ai/chatterbox)
+- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
+- [ ] Spark-TTS (https://github.com/sparkaudio/spark-tts)
+- [ ] index-tts (https://github.com/index-tts/index-tts)
+- [ ] MeloTTS (https://github.com/myshell-ai/MeloTTS)
+- [ ] Kokoro-TTS (https://github.com/hexgrad/kokoro)
 - [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
-- [ ] Style-TTS2
-- [ ] GPT-SoVITS
-- [ ] F5-TTS (https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/38#issuecomment-2453224267)
+- [ ] Zonos (https://github.com/Zyphra/Zonos)
+- [ ] 样式-TTS2 (https://github.com/yl4579/StyleTTS2)
+- [ ] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
+- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
 - [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
-- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
-- [ ] Speedy-Speech
-- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
-- [ ] Align-TTS
-- [ ] Delightful-TTS
-- [ ] Spark-TTS
 
 #### Readme 翻译
 - [ ] Arabic (ara)

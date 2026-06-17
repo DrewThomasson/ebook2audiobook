@@ -165,8 +165,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 따라서 먼저 오디오로 변환하고 싶지 않은 텍스트를 수동으로 제거해야 합니다.**
 
 
-### 지침 
-1. **저장소 복제**
+### Instructions 
+1. **Clone repo**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -178,7 +178,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>macOS 사용자 참고: 누락된 프로그램을 설치하기 위해 homebrew가 설치됩니다.</i>
+     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
      
    - **Mac 런처**  
      `Mac Ebook2Audiobook Launcher.command`를 더블 클릭하세요
@@ -188,8 +188,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd
      ```
-     또는
-     `ebook2audiobook.cmd`를 더블 클릭하세요
+     or
+     Double click `ebook2audiobook.cmd`
 
      <i>Windows 사용자 참고: 관리자 권한 없이 누락된 프로그램을 설치하기 위해 scoop이 설치됩니다.</i>
    
@@ -203,7 +203,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **스크립트를 중지하고 다시 실행하면 Gradio GUI 인터페이스를 새로 고쳐야 합니다<br>
 웹 페이지가 새로운 연결 소켓에 다시 연결될 수 있도록 하기 위해서입니다.**
 
-### 기본 사용법
+### Basic  Usage
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -220,8 +220,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     2글자 ISO-639-1 코드도 지원됩니다.
 
 
-###  커스텀 모델 Zip 업로드 예시
-  (필수 모델 파일이 포함된 .zip 파일이어야 합니다. XTTSv2 예시: config.json, model.pth, vocab.json 및 ref.wav)
+###  Example of Custom Model Zip Upload
+  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -230,13 +230,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>참고: 커스텀 모델의 ref.wav는 항상 변환을 위해 선택된 음성입니다</i>
+     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
      
 - **<custom_model_path>**: `model_name.zip` 파일의 경로,
       이 파일은 (tts 엔진에 따라) 모든 필수 파일을 포함해야 합니다<br>
       (./lib/models.py 참조).
 
-### 사용할 모든 매개변수 목록이 포함된 자세한 가이드는
+### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -245,7 +245,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **또는 모든 OS의 경우**
+   - **Or for all OS**
     ```python
      app.py --help
     ```
@@ -364,12 +364,12 @@ SML tags available:
 팁: 좀 더 긴 멈춤이 필요하면 3초의 경우 '[pause:3]'을 추가하는 등.
 
 ### Docker
-1. **저장소 복제**:
+1. **Clone the Repository**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **컨테이너 빌드**
+2. **Build the container**
 ```bash
     Windows:
         Docker:
@@ -386,7 +386,7 @@ SML tags available:
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **컨테이너 실행:**
+4. **Run the Container:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -422,7 +422,7 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- 참고: MPS는 Docker에서 노출되지 않으므로 CPU를 사용해야 합니다
+- NOTE: MPS is not exposed in docker so CPU must be used
   
 ### 일반적인 Docker 문제
 - 내 NVIDIA GPU가 감지되지 않나요?? -> [GPU 문제 위키 페이지](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
@@ -450,8 +450,8 @@ Podman Compose (i.e. cuda 12.8:
 다시 되돌릴 수 있습니다. models.py에 대해서도 동일한 과정을 계획해야 합니다. 자신만의 커스텀 모델을
 공식 미세 조정된 ebook2audiobook 모델로 만들고 싶다면, 저희에게 연락해 주시면 프리셋 목록에 추가하겠습니다.
 
-## 이전 버전으로 되돌리기
-릴리스는 -> [여기](https://github.com/DrewThomasson/ebook2audiobook/releases)에서 찾을 수 있습니다
+## Reverting to older Versions
+Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
@@ -499,30 +499,33 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### TTS 엔진
 - [x] XTTSv2
-- [x] Bark
-- [x] Fairseq
+- [x] 나무껍질
+- [x] 페어섹
 - [x] VITS
 - [x] Tacotron2
 - [x] YourTTS
-- [x] Tortoise
+- [x] 땅거북과
 - [x] GlowTTS
-- [x] Piper-TTS
+- [x] 바람등칡속
+- [ ] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)
+- [ ] OpenVoice (https://github.com/myshell-ai/OpenVoice)
+- [ ] fish-speech (https://github.com/fishaudio/fish-speech)
+- [ ] ChatTTS (https://github.com/2noise/ChatTTS)
 - [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
-- [ ] Kokoro-TTS
-- [ ] Orpheus-TTS
-- [ ] Zonos
+- [ ] F5-TTS (https://github.com/swivid/f5-tts)
+- [ ] chatterbox (https://github.com/resemble-ai/chatterbox)
+- [ ] 초음파 (https://github.com/supertone-inc/supertonic)
+- [ ] Spark-TTS (https://github.com/sparkaudio/spark-tts)
+- [ ] index-tts (https://github.com/index-tts/index-tts)
+- [ ] MeloTTS (https://github.com/myshell-ai/MeloTTS)
+- [ ] Kokoro-TTS (https://github.com/hexgrad/kokoro)
 - [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
-- [ ] Style-TTS2
-- [ ] GPT-SoVITS
-- [ ] F5-TTS (https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/38#issuecomment-2453224267)
+- [ ] Zonos (https://github.com/Zyphra/Zonos)
+- [ ] 스타일-TTS2 (https://github.com/yl4579/StyleTTS2)
+- [ ] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
+- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
 - [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
-- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
-- [ ] Speedy-Speech
-- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
-- [ ] Align-TTS
-- [ ] Delightful-TTS
-- [ ] Spark-TTS
 
 #### Readme 번역
 - [ ] Arabic (ara)

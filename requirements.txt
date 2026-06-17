@@ -56,3 +56,19 @@ transformers>=5.0.0; python_version >= '3.12'
 coqui-tts[languages]==0.27.5
 piper-tts==1.4.2
 ./ext/py/demucs
+
+# Universal TTS Finetune dependencies
+faster_whisper>=1.0.2
+spacy>=3.7.4
+cutlet
+fugashi[unidic-lite]
+Cython>=0.29.0
+piper-phonemize-fix
+librosa>=0.9.2
+pytorch-lightning>=1.7.0
+onnx>=1.11.0
+onnxruntime>=1.11.0; sys_platform == 'darwin'
+onnxruntime-gpu>=1.11.0; sys_platform != 'darwin' and python_version >= '3.12'
+onnxruntime>=1.11.0; sys_platform != 'darwin' and python_version < '3.12'
+onnx-simplifier>=0.4.10
+onnxscript>=0.7.0
