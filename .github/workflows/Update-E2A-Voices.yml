@@ -1,0 +1,66 @@
+name: Update E2A Voices Dataset
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch of ebook2audiobook to checkout'
+        required: true
+        default: 'main'
+        type: string
+      hf_repo_id:
+        description: 'Hugging Face Dataset Repo ID'
+        required: true
+        default: 'ebook2audiobook/E2A-Voices'
+        type: string
+      runner:
+        description: 'GitHub Runner OS to use'
+        required: true
+        default: 'ubuntu-latest'
+        type: choice
+        options:
+          - 'ubuntu-latest'
+          - 'macos-latest'
+          - 'self-hosted'
+
+jobs:
+  update-voices:
+    name: Overwrite voices folder and voices.zip on HF
+    runs-on: ${{ inputs.runner }}
+    
+    steps:
+      - name: Clean previous run artifacts
+        shell: bash
+        run: |
+          echo "Cleaning up any old temporary folder..."
+          rm -rf tmp-voices-updater
+
+      - name: Checkout E2A Repository
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.branch }}
+          path: tmp-voices-updater
+
+      - name: Setup Virtual Environment & Run Updater
+        shell: bash
+        env:
+          HF_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+          HF_REPO_ID: ${{ inputs.hf_repo_id }}
+        run: |
+          cd tmp-voices-updater
+          
+          echo "Setting up Python virtual environment..."
+          python3 -m venv venv
+          venv/bin/pip install --upgrade pip
+          venv/bin/pip install huggingface_hub
+          
+          echo "Executing update_voices.py..."
+          venv/bin/python3 .github/scripts/update_voices.py
+
+      - name: Cleanup Temporary Files
+        if: always()
+        shell: bash
+        run: |
+          echo "Cleaning up temporary folder..."
+          rm -rf tmp-voices-updater
