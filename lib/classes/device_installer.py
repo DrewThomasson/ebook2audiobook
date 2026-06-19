@@ -620,7 +620,7 @@ class DeviceInstaller():
                                 else:
                                     tag = f'rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm{matched[0]}.{matched[1]}'
                         if cmp == 1:
-                            msg = f'ROCm {version_str} but tested max {max_ver} so using torch for cu{tag}' if tag else f'ROCm {version_str} detected but torch with this version not ready for your OS'
+                            msg = f'ROCm {version_str} but tested max {max_ver} so using torch for {tag}' if tag else f'ROCm {version_str} detected but torch with this version not ready for your OS'
                         elif not tag:
                             msg = f'ROCm {version_str} detected but no compatible torch build for this OS.'
                 else:
@@ -939,7 +939,7 @@ class DeviceInstaller():
                         name = devices['XPU']['proc']
                         tag = devices['XPU']['proc']
                         if cmp == 1:
-                            msg = f'XPU oneAPI {version} but tested max {max_ver} so using torch default xpu'
+                            msg = f'XPU oneAPI {version} but tested max {max_ver} so using torch default xpu build'
                 elif xpu_device_count > 0:
                     msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
                 else:
