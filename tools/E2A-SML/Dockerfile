@@ -21,7 +21,7 @@ COPY . .
 RUN mkdir -p /ebook2audiobook
 
 # Expose Gradio default port
-EXPOSE 7860
+EXPOSE 7861
 
 # Default: launch the web GUI accessible from outside the container
 CMD ["python", "cli.py", "--gui", "--host", "0.0.0.0"]

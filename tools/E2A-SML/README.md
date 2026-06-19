@@ -24,7 +24,7 @@ The easiest way to run the tool — all dependencies (BookNLP, spaCy, Calibre, G
 docker compose up --build
 ```
 
-Open http://localhost:7860 in your browser. The ebook2audiobook path is pre-filled as `/ebook2audiobook`.
+Open http://localhost:7861 in your browser. The ebook2audiobook path is pre-filled as `/ebook2audiobook`.
 
 ### Docker CLI
 
@@ -33,7 +33,7 @@ Open http://localhost:7860 in your browser. The ebook2audiobook path is pre-fill
 docker build -t sml-extractor .
 
 # Run the web GUI (mount your ebook2audiobook folder)
-docker run -p 7860:7860 -v $(pwd)/../..:/ebook2audiobook sml-extractor
+docker run -p 7861:7861 -v $(pwd)/../..:/ebook2audiobook sml-extractor
 
 # Run headless mode
 docker run -v $(pwd)/../..:/ebook2audiobook -v ./output:/app/output \
@@ -188,7 +188,7 @@ Options:
   --book-id               Book ID for loading existing BookNLP output
   --gui                   Launch web GUI
   --host                  Web GUI host (default: 127.0.0.1)
-  --port                  Web GUI port (default: 7860)
+  --port                  Web GUI port (default: 7861)
   --share                 Create public Gradio share link
 ```
 

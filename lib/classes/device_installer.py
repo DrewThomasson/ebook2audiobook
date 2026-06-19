@@ -620,7 +620,7 @@ class DeviceInstaller():
                                 else:
                                     tag = f'rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm{matched[0]}.{matched[1]}'
                         if cmp == 1:
-                            msg = f'ROCm {version_str} > tested max {max_ver}; using {tag} torch build.' if tag else f'ROCm {version_str} detected but no compatible torch build for this OS.'
+                            msg = f'ROCm {version_str} but tested max {max_ver} so using torch for cu{tag}' if tag else f'ROCm {version_str} detected but torch with this version not ready for your OS'
                         elif not tag:
                             msg = f'ROCm {version_str} detected but no compatible torch build for this OS.'
                 else:
@@ -773,7 +773,7 @@ class DeviceInstaller():
                         name = devices['CUDA']['proc']
                         if cmp == 1:
                             tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                            msg = f'CUDA {version} > tested max {max_ver}; using cu{max_tuple[0]}{max_tuple[1]} torch build.'
+                            msg = f'CUDA {version} but tested max {max_ver} so using torch for cu{max_tuple[0]}{max_tuple[1]}'
                         else:
                             tag = f'cu{current[0]}{current[1]}'  # still index 0/1, ignore patch
                 else:
@@ -817,7 +817,7 @@ class DeviceInstaller():
                             name = devices['CUDA']['proc']
                             if cmp == 1:
                                 tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                                msg = f'CUDA {smi_version} (from nvidia-smi) > tested max {max_ver}; using cu{max_tuple[0]}{max_tuple[1]} torch build.'
+                                msg = f'CUDA {smi_version} but tested max {max_ver} so using torch for cu{max_tuple[0]}{max_tuple[1]}'
                             else:
                                 tag = f'cu{current[0]}{current[1]}'
                                 msg = f'CUDA {smi_version} detected via nvidia-smi (driver-only).'
@@ -939,7 +939,7 @@ class DeviceInstaller():
                         name = devices['XPU']['proc']
                         tag = devices['XPU']['proc']
                         if cmp == 1:
-                            msg = f'XPU oneAPI {version} > tested max {max_ver}; using default xpu torch build.'
+                            msg = f'XPU oneAPI {version} but tested max {max_ver} so using torch default xpu'
                 elif xpu_device_count > 0:
                     msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
                 else:

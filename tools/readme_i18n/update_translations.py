@@ -197,8 +197,11 @@ def harvest_block(eng_block:list, tr_block:list, lang:str, cache:dict)->None:
         if not tr_line.startswith(prefix):
             continue
         tr_body:str = tr_line[len(prefix):]
-        if eng_body.strip() and tr_body.strip() and eng_body != tr_body:
-            cache[f'{lang}|{eng_body}'] = tr_body
+        if not (eng_body.strip() and tr_body.strip() and eng_body != tr_body):
+            continue
+        if sorted(PROTECT.findall(eng_body)) != sorted(PROTECT.findall(tr_body)):
+            continue
+        cache[f'{lang}|{eng_body}'] = tr_body
 
 def audit_and_repair(out_blocks:list, new_blocks:list, lang:str, cache:dict)->tuple:
     repaired:list = []
@@ -212,6 +215,10 @@ def audit_and_repair(out_blocks:list, new_blocks:list, lang:str, cache:dict)->tu
                 repaired.append(tr_block)
         elif block_tokens(tr_block) != block_tokens(eng_block):
             notes.append(f'block {idx+1}: inline code/links/tags differ from English, block retranslated')
+            for line in eng_block:
+                m = LINE_PREFIX.match(line)
+                prefix:str = m.group(1) if m else ''
+                cache.pop(f'{lang}|{line[len(prefix):]}', None)
             repaired.append(translate_block(eng_block, lang, cache))
         else:
             repaired.append(tr_block)
@@ -275,7 +282,12 @@ def main()->int:
         out_text:str = join_blocks(out_blocks)
         problems:list = verify(out_text, new_src)
         if problems:
-            raise RuntimeError(f'[{iso3}] inconsistent after audit: {"; ".join(problems)}')
+            print(f'[{iso3}] integrity check failed ({"; ".join(problems)}), rebuilding from English')
+            out_blocks = rebuild(new_blocks, mm_code, cache)
+            out_text = join_blocks(out_blocks)
+            problems = verify(out_text, new_src)
+            if problems:
+                raise RuntimeError(f'[{iso3}] still inconsistent after rebuild: {"; ".join(problems)}')
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(out_text, encoding='utf-8')
         save_cache(cache)
