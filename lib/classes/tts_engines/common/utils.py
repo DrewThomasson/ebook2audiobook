@@ -464,9 +464,13 @@ class TTSUtils:
             import numpy as np
             from huggingface_hub import hf_hub_download
             voice_parts = Path(current_voice).parts
-            if (self.language in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.language == 'eng'):
-                if os.path.exists(current_voice):
-                    return current_voice
+            # Skip conversion if the voice already matches the target language
+            lang_iso1 = getattr(self, 'language_iso1', '')
+            if (self.language in voice_parts or
+                lang_iso1 in voice_parts or
+                speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or
+                self.language == 'eng'):
+                return current_voice
             xtts = TTS_ENGINES['XTTS']
             if self.language in default_engine_settings[xtts].get('languages', {}):
                 default_text_file = os.path.join(voices_dir, self.language, 'default.txt')
