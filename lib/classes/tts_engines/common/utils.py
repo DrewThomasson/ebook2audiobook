@@ -230,10 +230,11 @@ class TTSUtils:
             except Exception:
                 is_jetson = False
             # BF16 on Ampere+, FP16 on Turing/Volta — BF16 is safer for autoregressive decoders (XTTS GPT)
-            if cc_major >= 8:
-                amp_dtype = torch.bfloat16
-            else:
-                amp_dtype = torch.float16
+            #if cc_major >= 8:
+            #    amp_dtype = torch.bfloat16
+            #else:
+            #    amp_dtype = torch.float16
+            amp_dtype = torch.float16
             # cuDNN base config — benchmark=True is bad for TTS (variable-length inputs)
             if hasattr(torch.backends, 'cudnn'):
                 try:
