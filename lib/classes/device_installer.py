@@ -1231,14 +1231,12 @@ class DeviceInstaller():
         unidic_path = unidic.DICDIR
         dicrc = os.path.join(unidic_path, 'dicrc')
         if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
-            try:
-                error = 'UniDic dictionary not found or incomplete. Downloading now…'
-                print(error)
-                subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
-            except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
-                error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting…'
-                raise SystemExit(error)
-                return 1
+            msg = (
+                'WARNING: UniDic dictionary not found. '
+                'UniDic is only required for Japanese TTS. '
+                'If you need Japanese support, run: python3 -m unidic download'
+            )
+            print(msg)
         return 0
           
     def install_device_packages(self, device_info_str:str)->int:
