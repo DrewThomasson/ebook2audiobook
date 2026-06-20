@@ -1206,9 +1206,7 @@ class DeviceInstaller():
         if devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']:
             subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
             return 'onnxruntime-gpu'
-        elif self.python_version < (3, 12):
-            return 'onnxruntime'
-        elif self.system != systems['WINDOWS']:
+        elif self.python_version < (3, 12) or self.system != systems['WINDOWS']:
             return 'onnxruntime'
         try:
             import onnxruntime as ort
