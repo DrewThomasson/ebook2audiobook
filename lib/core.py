@@ -2513,6 +2513,91 @@ def block_hash(block: dict) -> str:
         )).encode('utf-8')
     ).hexdigest()
 
+# ---------------------------------------------------------------------
+# Content-addressed TTS cache
+# ---------------------------------------------------------------------
+# Per-sentence audio is expensive (TTS inference) but fully determined by the
+# sentence text + voice + engine + model + language + engine params. We store
+# each rendered sentence under tmp/tts_cache/<key>.<ext> keyed by that content,
+# independent of session id / block id / sentence position. So editing one
+# paragraph re-renders only its changed sentences; everything else (other
+# paragraphs, other chapters, reordered text, even a brand-new session with no
+# --session) is served from cache as a hardlink — no inference. Bump
+# tts_cache_version when a change to the audio pipeline should invalidate it.
+tts_cache_dir = os.path.join(tmp_dir, 'tts_cache')
+tts_cache_version = 1
+default_audio_cache_enabled = os.environ.get('EBOOK2AUDIO_TTS_CACHE', '1').strip().lower() not in ('0', 'false', 'no', 'off')
+
+def audio_cache_enabled(session:dict)->bool:
+    val = session.get('audio_cache')
+    if val is None:
+        return default_audio_cache_enabled
+    return bool(val)
+
+_voice_sig_cache = {}
+def voice_signature(voice:str)->str:
+    # Key the voice by CONTENT, not path: the engine copies the source voice to a
+    # per-session path (voices/__sessions/voice-<id>/...) that changes every run,
+    # but the processed bytes are deterministic from the source. Memoize per
+    # (path, size, mtime) so we hash each voice file at most once per run.
+    if not voice or not os.path.isfile(voice):
+        return voice or ''  # builtin speaker name / missing file: use the string
+    try:
+        st = os.stat(voice)
+        memo_key = (voice, st.st_size, int(st.st_mtime))
+        cached = _voice_sig_cache.get(memo_key)
+        if cached:
+            return cached
+        h = hashlib.sha1()
+        with open(voice, 'rb') as f:
+            for chunk in iter(lambda: f.read(1 << 20), b''):
+                h.update(chunk)
+        sig = h.hexdigest()
+        _voice_sig_cache[memo_key] = sig
+        return sig
+    except OSError:
+        return voice
+
+def sentence_cache_key(session:dict, sentence:str, block_voice:str|None)->str:
+    engine = session.get('tts_engine') or TTS_ENGINES['XTTS']
+    prefix = f'{engine.lower()}_'
+    # every engine param that can change the waveform (xtts_temperature, etc.)
+    params = {k: session[k] for k in sorted(session.keys())
+              if k.startswith(prefix) and session.get(k) is not None}
+    voice = block_voice or session.get('voice') or ''
+    voice_sig = voice_signature(voice)
+    lang = session.get('language') or ''
+    if session.get('translate_enabled') and session.get('translate'):
+        lang = session['translate']
+    payload = '|'.join((
+        f'v{tts_cache_version}',
+        engine,
+        session.get('fine_tuned') or 'internal',
+        lang,
+        session.get('language_iso1') or '',
+        voice_sig,
+        json.dumps(params, ensure_ascii=False, sort_keys=True),
+        (sentence or '').strip(),
+    ))
+    if os.environ.get('EBOOK2AUDIO_CACHE_DEBUG'):
+        print(f'[cachekey] engine={engine} ft={session.get("fine_tuned")} lang={lang} iso1={session.get("language_iso1")} '
+              f'voice_sig={voice_sig[:12]} params={json.dumps(params, sort_keys=True)} sent={ (sentence or "").strip()[:30]!r}')
+    return hashlib.sha1(payload.encode('utf-8')).hexdigest()
+
+def link_or_copy(src:str, dst:str)->bool:
+    # hardlink (instant, no extra disk; tmp/ is one filesystem) and fall back to copy
+    try:
+        if os.path.lexists(dst):
+            os.unlink(dst)
+        try:
+            os.link(src, dst)
+        except OSError:
+            shutil.copy2(src, dst)
+        return True
+    except Exception as e:
+        print(f'link_or_copy() error: {e}')
+        return False
+
 def convert_chapters2audio(session_id:str)->bool:
 
     def _reset_chapter_file(block_id:str)->None:
@@ -2545,6 +2630,9 @@ def convert_chapters2audio(session_id:str)->bool:
             return False
         print(f'*********** Session: {session_id} **************\n{session_info}')
         tts_manager = TTSManager(session)
+        use_audio_cache = audio_cache_enabled(session)
+        if use_audio_cache:
+            os.makedirs(tts_cache_dir, exist_ok=True)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
         block_resume = blocks_current['block_resume']
@@ -2669,10 +2757,20 @@ def convert_chapters2audio(session_id:str)->bool:
                             if j == start_sentence and start_sentence > 0:
                                 show_alert(session_id, {'type': 'info', 'msg': f'*** Resuming from sentence {global_sent} ***'})
                             sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                            run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block_voice)
-                            if not run:
-                                show_alert(session_id, {'type': 'warning', 'msg': error})
-                                return False
+                            cache_path = None
+                            cache_hit = False
+                            if use_audio_cache:
+                                cache_path = os.path.join(tts_cache_dir, f'{sentence_cache_key(session, sentence, block_voice)}.{default_audio_proc_format}')
+                                if os.path.exists(cache_path) and link_or_copy(cache_path, sentence_file):
+                                    cache_hit = True
+                                    print(f'Reused cached audio for sentence {global_sent}')
+                            if not cache_hit:
+                                run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block_voice)
+                                if not run:
+                                    show_alert(session_id, {'type': 'warning', 'msg': error})
+                                    return False
+                                if cache_path is not None and os.path.exists(sentence_file):
+                                    link_or_copy(sentence_file, cache_path)
                             converted = True
                             blocks_current['sentence_resume'] = j
                             now = time.monotonic()
@@ -2694,7 +2792,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         t.update(1)
                 sent_end = global_sent - 1
                 show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
-                if converted or block_changed or missing_sentences:
+                if converted or block_changed or missing_sentences or not os.path.exists(chapter_audio_file):
                     show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
                     session['blocks_current'] = blocks_current
                     save_db_stamp(session_id)
