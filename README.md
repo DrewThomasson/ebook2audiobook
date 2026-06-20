@@ -82,6 +82,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
     - [Basic Headless Usage](#basic-usage)
+    - [Incremental re-renders & progress tracking](#incremental-re-renders--progress-tracking)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
   - [Run Remotely](#run-remotely)
@@ -114,6 +115,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🧩 **Optional custom model** using your own trained model (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)
 - 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
      <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to the official preset list)</i>
+- ⚡ **Incremental re-renders** — a content-addressed cache reuses unchanged audio, so editing your book only re-renders the sentences that changed ([see below](#incremental-re-renders--progress-tracking))
+- 📈 **Machine-readable progress + ETA** — every run writes a `progress.json` with live status, percent, and an accurate ETA ([see below](#incremental-re-renders--progress-tracking))
 
 
 ##  Hardware Requirements
@@ -218,6 +221,65 @@ to let the web page reconnect to the new connection socket.**
   - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german...).<br>
     Default language is eng and --language is optional for default language set in ./lib/lang.py.<br>
     The ISO-639-1 2 letters codes are also supported.
+
+
+### Incremental re-renders & progress tracking
+
+When you proof a book and make small edits, you don't want to re-render the
+whole audiobook every time. ebook2audiobook caches each rendered sentence by its
+**content** and reuses it on the next run, and it writes a machine-readable
+progress file so you (or a script) can watch status and ETA.
+
+#### Faster re-renders (content cache)
+
+Every rendered sentence is stored under `tmp/tts_cache/<hash>.flac`, keyed by the
+sentence text + voice + engine + language + parameters. On the next run a cached
+sentence is reused instantly (no inference); only sentences that actually changed
+are re-rendered. This works **across separate runs** and even without `--session`,
+so editing one paragraph and re-running re-renders just that paragraph.
+
+```bash
+# default: cache on. Edit your ebook, run again — only changed sentences render.
+./ebook2audiobook.command --headless --ebook book.epub --language eng --voice voices/eng/.../Voice.wav
+
+EBOOK2AUDIO_TTS_CACHE=0   # set this to disable the cache
+EBOOK2AUDIO_CACHE_DEBUG=1 # set this to print each sentence's cache key
+rm -rf tmp/tts_cache      # clear the cache
+```
+
+The cache key includes the voice and TTS parameters, so changing the voice,
+engine, fine-tuned model, or a setting like temperature correctly invalidates it.
+
+#### Live progress + ETA (`progress.json`)
+
+Each run writes a JSON snapshot you can read at any time — independent of the
+console, so it works even when output is redirected or running in the background:
+
+- `tmp/progress/latest.json` — the most recent run
+- `tmp/progress/<session-id>.json` — one file per run (handy for parallel runs)
+
+The startup log also prints `PROGRESS_JSON: <path>`.
+
+```bash
+cat tmp/progress/latest.json
+```
+
+```jsonc
+{
+  "status": "running",                 // running | done | error | cancelled
+  "totals":   { "sentences": 412, "to_render": 7, "cached_at_start": 405 },
+  "progress": { "percent": 71.4, "done": 294, "rendered": 4, "reused": 290 },
+  "timing":   { "elapsed_human": "1m 12s", "avg_render_seconds": 6.2,
+                "eta_seconds": 19, "eta_human": "19s", "eta_finish_epoch": 1781995960 },
+  "current":  { "chapter": 9, "text": "the sentence being rendered right now" }
+}
+```
+
+The **ETA is accurate** because, thanks to the cache, the run knows up front how
+many sentences are cache misses (must be rendered) vs hits (reused, ~instant):
+it estimates `remaining_renders × recent average render time` instead of a naive
+sentence count. After a one-paragraph edit, `to_render` is `1` and the ETA is
+seconds even for a long book.
 
 
 ###  Example of Custom Model Zip Upload
