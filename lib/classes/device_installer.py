@@ -1203,7 +1203,7 @@ class DeviceInstaller():
             return False
 
     def check_onnxruntime_pkg(self)->str|None:
-        if devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']:
+        if self.python_version >= (3, 12) and (devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']):
             subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
             return 'onnxruntime-gpu'
         elif self.python_version < (3, 12) or self.system != systems['WINDOWS']:
