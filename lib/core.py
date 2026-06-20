@@ -2598,6 +2598,152 @@ def link_or_copy(src:str, dst:str)->bool:
         print(f'link_or_copy() error: {e}')
         return False
 
+# ---------------------------------------------------------------------
+# Machine-readable progress + ETA
+# ---------------------------------------------------------------------
+# The console only shows a tqdm bar (carriage-return updates, no ETA). This
+# writes a JSON snapshot to tmp/progress/<session>.json (and tmp/progress/
+# latest.json) on every update so a tool/agent can read live progress and an
+# accurate ETA at any time. ETA is accurate because, thanks to the content
+# cache, we know up front exactly how many sentences must actually be rendered
+# (cache misses) vs reused (hits) — so the estimate is remaining_renders *
+# average_render_time, not a naive count that ignores instant cache hits.
+progress_dir = os.path.join(tmp_dir, 'progress')
+
+def _fmt_duration(seconds:float|None)->str|None:
+    if seconds is None:
+        return None
+    seconds = int(max(0, seconds))
+    h, rem = divmod(seconds, 3600)
+    m, s = divmod(rem, 60)
+    if h:
+        return f'{h}h {m}m {s}s'
+    if m:
+        return f'{m}m {s}s'
+    return f'{s}s'
+
+class ProgressTracker:
+    def __init__(self, session:dict, blocks:list, total_sentences:int, use_audio_cache:bool):
+        self.session = session
+        self.session_id = session.get('id')
+        self.total = total_sentences
+        self.use_cache = use_audio_cache
+        self.done = 0
+        self.rendered = 0
+        self.reused = 0
+        self.recent = []          # rolling window of render durations (seconds)
+        self.render_samples = 0
+        self.current = {}
+        self.status = 'running'
+        self.start_time = time.time()
+        self._last_write = 0.0
+        # pre-scan: how many sentences truly need TTS (cache misses) -> accurate ETA
+        self.to_render = self._scan_to_render(blocks)
+        os.makedirs(progress_dir, exist_ok=True)
+        self.path = os.path.join(progress_dir, f'{self.session_id}.json')
+        self.latest_path = os.path.join(progress_dir, 'latest.json')
+        print(f'PROGRESS_JSON: {self.path}')
+        self._write(force=True)
+
+    def _scan_to_render(self, blocks:list)->int:
+        if not self.use_cache:
+            return self.total
+        n = 0
+        for b in blocks:
+            if not (b.get('keep') and (b.get('text') or '').strip()):
+                continue
+            bv = b.get('voice') or self.session.get('voice')
+            for s in (b.get('sentences') or []):
+                if any(c.isalnum() for c in s.strip()):
+                    key = sentence_cache_key(self.session, s.strip(), bv)
+                    if not os.path.exists(os.path.join(tts_cache_dir, f'{key}.{default_audio_proc_format}')):
+                        n += 1
+        return n
+
+    def _avg_render(self)->float|None:
+        if self.render_samples == 0:
+            return None
+        window = self.recent[-30:]   # recent window tracks current hardware/speed
+        return sum(window) / len(window)
+
+    def _eta_seconds(self)->float|None:
+        avg = self._avg_render()
+        if avg is None:
+            return None
+        remaining_renders = max(0, self.to_render - self.rendered)
+        remaining_reused = max(0, (self.total - self.done) - remaining_renders)
+        return remaining_renders * avg + remaining_reused * 0.01   # reuse is ~instant
+
+    def tick(self, rendered:bool, render_seconds:float|None, text:str, chapter:int, done:int)->None:
+        self.done = done
+        if rendered:
+            self.rendered += 1
+            if render_seconds is not None:
+                self.render_samples += 1
+                self.recent.append(render_seconds)
+        else:
+            self.reused += 1
+        self.current = {'chapter': chapter, 'sentence_index': done, 'text': (text or '')[:200]}
+        self._write()
+
+    def tick_bulk(self, count:int, done:int)->None:
+        self.done = done
+        self.reused += count
+        self._write()
+
+    def finish(self, status:str)->None:
+        self.status = status
+        self._write(force=True)
+
+    def _write(self, force:bool=False)->None:
+        now = time.monotonic()
+        if not force and (now - self._last_write) < 1.0:
+            return
+        self._last_write = now
+        elapsed = time.time() - self.start_time
+        eta = self._eta_seconds()
+        avg = self._avg_render()
+        data = {
+            'session_id': self.session_id,
+            'ebook': Path(self.session.get('ebook') or '').name,
+            'language': self.session.get('language'),
+            'tts_engine': self.session.get('tts_engine'),
+            'voice': self.session.get('voice'),
+            'status': self.status,
+            'cache_enabled': self.use_cache,
+            'totals': {
+                'sentences': self.total,
+                'to_render': self.to_render,
+                'cached_at_start': max(0, self.total - self.to_render),
+            },
+            'progress': {
+                'done': self.done,
+                'rendered': self.rendered,
+                'reused': self.reused,
+                'percent': round(100.0 * self.done / self.total, 1) if self.total else 0.0,
+                'render_remaining': max(0, self.to_render - self.rendered),
+            },
+            'timing': {
+                'started_at': round(self.start_time, 3),
+                'updated_at': round(time.time(), 3),
+                'elapsed_seconds': round(elapsed, 1),
+                'elapsed_human': _fmt_duration(elapsed),
+                'avg_render_seconds': round(avg, 2) if avg is not None else None,
+                'eta_seconds': round(eta, 1) if eta is not None else None,
+                'eta_human': _fmt_duration(eta) if eta is not None else None,
+                'eta_finish_epoch': round(time.time() + eta) if eta is not None else None,
+            },
+            'current': self.current,
+        }
+        try:
+            tmp = f'{self.path}.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, self.path)
+            shutil.copyfile(self.path, self.latest_path)
+        except Exception as e:
+            print(f'progress write error: {e}')
+
 def convert_chapters2audio(session_id:str)->bool:
 
     def _reset_chapter_file(block_id:str)->None:
@@ -2691,6 +2837,7 @@ def convert_chapters2audio(session_id:str)->bool:
         ch_num = 0
         last_save_time = time.monotonic()
         baseline_initialized = False
+        progress_tracker = ProgressTracker(session, blocks, total_sentences, use_audio_cache)
         msg = (f'---------<br/>'
                f"{session['filename_noext']}<br/>"
                f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
@@ -2729,6 +2876,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             cnt = len(valid_idx)
                             global_sent += cnt
                             t.update(cnt)
+                            progress_tracker.tick_bulk(cnt, global_sent)
                             continue
                         show_alert(session_id, {'type': 'warning', 'msg': f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…'})
                         _reset_chapter_file(block_id)
@@ -2750,9 +2898,12 @@ def convert_chapters2audio(session_id:str)->bool:
                 for j in range(block_len):
                     if session['cancellation_requested']:
                         msg = 'Conversion Cancelled'
+                        progress_tracker.finish('cancelled')
                         return False
                     sentence = sentences[j].strip()
                     if j in valid_idx:
+                        rendered_now = False
+                        render_seconds = None
                         if j >= start_sentence or j in missing_sentences:
                             if j == start_sentence and start_sentence > 0:
                                 show_alert(session_id, {'type': 'info', 'msg': f'*** Resuming from sentence {global_sent} ***'})
@@ -2765,10 +2916,14 @@ def convert_chapters2audio(session_id:str)->bool:
                                     cache_hit = True
                                     print(f'Reused cached audio for sentence {global_sent}')
                             if not cache_hit:
+                                _render_t0 = time.monotonic()
                                 run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block_voice)
                                 if not run:
                                     show_alert(session_id, {'type': 'warning', 'msg': error})
+                                    progress_tracker.finish('error')
                                     return False
+                                render_seconds = time.monotonic() - _render_t0
+                                rendered_now = True
                                 if cache_path is not None and os.path.exists(sentence_file):
                                     link_or_copy(sentence_file, cache_path)
                             converted = True
@@ -2790,6 +2945,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         t.set_description(f'{total_progress * 100:.2f}%')
                         print(f' : {sentence}')
                         t.update(1)
+                        progress_tracker.tick(rendered_now, render_seconds, sentence, ch_num, global_sent)
                 sent_end = global_sent - 1
                 show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
                 if converted or block_changed or missing_sentences or not os.path.exists(chapter_audio_file):
@@ -2806,8 +2962,13 @@ def convert_chapters2audio(session_id:str)->bool:
             save_db_stamp(session_id)
             session['blocks_saved'] = copy.deepcopy(blocks_current)
             save_json_blocks(session_id, 'blocks_saved')
+            progress_tracker.finish('done')
             return True
     except Exception as e:
+        try:
+            progress_tracker.finish('error')
+        except (NameError, AttributeError):
+            pass
         DependencyError(e)
         exception_alert(session_id, f'convert_chapters2audio() error: {e}')
         return False
