@@ -42,7 +42,7 @@ pytesseract
 numba
 torchvggish
 sentence-transformers
-onnxruntime-gpu; python_version >= '3.12'
+onnxruntime
 stanza==1.10.1
 argostranslate==1.11.0
 pandas>=1.0,<3.0

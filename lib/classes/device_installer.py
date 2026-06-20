@@ -1030,8 +1030,8 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
-        if self.system == systems['MACOS'] or self.check_onnxruntime_directml():
-            overrides['onnxruntime-gpu'] = None
+        if self.system != systems['MACOS']:
+            overrides['onnxruntime'] = self.check_onnxruntime_pkg()
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
@@ -1202,29 +1202,27 @@ class DeviceInstaller():
             print(error)
             return False
 
-    def check_onnxruntime_directml(self)->bool:
-        if self.system != systems['WINDOWS']:
-            return False
+    def check_onnxruntime_pkg(self)->str|None:
         if devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']:
-            return False
-        reinstall = False
+            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
+            return 'onnxruntime-gpu'
+        elif self.python_version < (3, 12):
+            return 'onnxruntime'
+        elif self.system != systems['WINDOWS']:
+            return 'onnxruntime'
         try:
             import onnxruntime as ort
             if 'DmlExecutionProvider' in ort.get_available_providers():
-                return True
-            reinstall = True
+                return 'onnxruntime-directml'
         except Exception as e:
-            error = f'check_onnxruntime_directml(): {e}'
+            error = f'check_onnxruntime_pkg(): {e}'
             print(error)
-            reinstall = True
-        if reinstall:
-            try:
-                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-gpu'])
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
-                return True
-            except Exception as e:
-                return False
-        return False
+        try:
+            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
+            return None
+        except Exception as e:
+            return 'onnxruntime'
 
     def check_dictionary(self)->bool:
         import unidic
