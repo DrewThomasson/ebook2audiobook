@@ -3,7 +3,7 @@ import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warning
 from pathlib import Path
 
 from lib.conf import *
-from lib.conf_lang import default_language_code, language_mapping
+from lib.conf_lang import default_language_code, language_mapping, install_info
 from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 
 warnings.filterwarnings('ignore', category=SyntaxWarning)
