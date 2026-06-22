@@ -1024,6 +1024,33 @@ class DeviceInstaller():
         if op == '<': return left < right
         return False
 
+    def target_device_is_cpu(self)->bool:
+        # Determine whether the build targets a CPU-only device. Reads the device
+        # info written during the docker build (.device_info.json), falling back to
+        # the DOCKER_DEVICE_STR / DEVICE_TAG environment variables. Returns False
+        # when the target is unknown so GPU behaviour is preserved by default.
+        name = tag = ''
+        try:
+            if os.path.isfile(device_info_json):
+                with open(device_info_json, 'r', encoding='utf-8') as f:
+                    info = json.load(f)
+                name = str(info.get('name', '')).lower()
+                tag = str(info.get('tag', '')).lower()
+        except (OSError, json.JSONDecodeError):
+            pass
+        if not name:
+            env_str = os.environ.get('DOCKER_DEVICE_STR', '')
+            if env_str:
+                try:
+                    info = json.loads(env_str)
+                    name = str(info.get('name', '')).lower()
+                    tag = str(info.get('tag', '')).lower()
+                except json.JSONDecodeError:
+                    pass
+        if not tag:
+            tag = os.environ.get('DEVICE_TAG', '').lower()
+        return devices['CPU']['proc'] in (name, tag)
+
     def install_python_packages(self)->int:
         if not os.path.exists(requirements_file):
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
@@ -1032,6 +1059,10 @@ class DeviceInstaller():
         overrides = {}
         if self.system == systems['MACOS'] or self.check_onnxruntime_directml():
             overrides['onnxruntime-gpu'] = None
+        elif self.target_device_is_cpu():
+            # CPU-only target: onnxruntime-gpu pulls in the CUDA runtime
+            # (libcudart.so) which isn't present, so install the CPU build instead.
+            overrides['onnxruntime-gpu'] = 'onnxruntime>=1.11.0'
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')

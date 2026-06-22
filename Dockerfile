@@ -79,6 +79,10 @@ RUN find /app -type f \( -name "*.sh" -o -name "*.command" \) -exec sed -i 's/\r
 # Build dependencies via project script
 RUN ./ebook2audiobook.command --script_mode build_docker --docker_device "$DOCKER_DEVICE_STR"
 
+# Mark this as the prebuilt runtime image so the entrypoint defaults to
+# full_docker mode even when custom `docker run` args override the default CMD.
+ENV E2A_DOCKER_RUNTIME=1
+
 # Cleanup build-only packages and Rust toolchain to shrink the image
 RUN set -eux; \
     rustup self uninstall -y 2>/dev/null || true; \

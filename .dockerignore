@@ -12,6 +12,7 @@ audiobooks/cli/*
 audiobooks/gui/gradio/*
 audiobooks/gui/host/*
 models/*
-tools
+tools/*
+!tools/detect_gpus.py
 tmp/*
 run/*

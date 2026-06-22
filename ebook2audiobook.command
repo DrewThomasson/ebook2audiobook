@@ -116,6 +116,12 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
         echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
         exit 1
     fi
+elif [[ "${E2A_DOCKER_RUNTIME:-0}" == "1" ]]; then
+    # Inside the prebuilt runtime image the build-only deps (cmake, rust, wget…)
+    # have been purged, so default to full_docker. This makes custom `docker run`
+    # args work without the user having to re-specify --script_mode full_docker
+    # (passing args to `docker run` overrides the image's default CMD).
+    SCRIPT_MODE="$FULL_DOCKER"
 fi
 
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
@@ -179,18 +185,19 @@ if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exist
 	else
 		APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR")
 	fi
+	CURRENT_USER="${USER:-$(id -un)}"
 	user_in_group() {
-		id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
+		id -nG "$CURRENT_USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
 	}
 	if ! user_in_group "$APP_GROUP"; then
-		echo "Adding $USER to group $APP_GROUP (requires sudo)..."
+		echo "Adding $CURRENT_USER to group $APP_GROUP (requires sudo)..."
 		if [[ "$OSTYPE" == "darwin"* ]]; then
-			sudo dseditgroup -o edit -a "$USER" -t user "$APP_GROUP"
+			sudo dseditgroup -o edit -a "$CURRENT_USER" -t user "$APP_GROUP"
 			echo "Group added. Please restart your terminal and re-run:"
 			echo "  $0 $*"
 			exit 0
 		else
-			sudo usermod -aG "$APP_GROUP" "$USER"
+			sudo usermod -aG "$APP_GROUP" "$CURRENT_USER"
 			exec sg "$APP_GROUP" -c "\"$0\" $*"
 		fi
 	fi
@@ -807,6 +814,13 @@ function install_python_packages {
 	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
 	total=$(grep -vE '^\s*($|#)' "$SCRIPT_DIR/requirements.txt" | wc -l | tr -d ' ')
 	i=0
+	# Determine the target device tag. On CPU targets the GPU onnxruntime wheel
+	# (onnxruntime-gpu) must not be installed: it pulls in the CUDA runtime
+	# (libcudart.so) which isn't present, so swap it for the CPU build.
+	local TARGET_TAG="${DEVICE_TAG:-}"
+	if [[ -z "$TARGET_TAG" && -f "$SCRIPT_DIR/.device_info.json" ]]; then
+		TARGET_TAG=$(python3 -c "import json;print(json.load(open('$SCRIPT_DIR/.device_info.json')).get('tag',''))" 2>/dev/null || true)
+	fi
 	progress_bar() {
 		local cur=$1 max=$2 width=30
 		local filled=$(( cur * width / max ))
@@ -814,6 +828,9 @@ function install_python_packages {
 	}
 	while IFS= read -r pkg || [[ -n "$pkg" ]]; do
 		[[ -z "$pkg" || "$pkg" == \#* ]] && continue
+		if [[ "$TARGET_TAG" == "cpu" && "$pkg" == onnxruntime-gpu* ]]; then
+			pkg="${pkg/onnxruntime-gpu/onnxruntime}"
+		fi
 		((i++))
 		progress_bar "$i" "$total"
 		echo " Installing $pkg"
