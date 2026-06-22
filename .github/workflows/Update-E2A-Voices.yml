@@ -36,83 +36,83 @@ jobs:
           venv/bin/pip install huggingface_hub
           
           echo "Executing Zip and Upload script..."
-          venv/bin/python3 -c "
-          import os
-          import shutil
-          import sys
-          from huggingface_hub import HfApi, snapshot_download
+          venv/bin/python3 - <<'PY'
+import os
+import shutil
+import sys
+from huggingface_hub import HfApi, snapshot_download
 
-          repo_id = os.environ.get('HF_REPO_ID')
-          token = os.environ.get('HF_TOKEN')
+repo_id = os.environ.get('HF_REPO_ID')
+token = os.environ.get('HF_TOKEN')
 
-          if not token:
-              print('Error: HF_TOKEN environment variable is missing. Please set the HUGGINGFACE_TOKEN secret in your repository.')
-              sys.exit(1)
+if not token:
+    print('Error: HF_TOKEN environment variable is missing. Please set the HUGGINGFACE_TOKEN secret in your repository.')
+    sys.exit(1)
 
-          local_dir = 'hf_repo_download'
-          repo_type = 'dataset'
-          print(f'Downloading voices/ directory from Hugging Face: {repo_id}')
-          
-          # Auto-detect repository type by trying dataset first, then space
-          try:
-              print('Attempting download as dataset...')
-              snapshot_download(
-                  repo_id=repo_id,
-                  repo_type='dataset',
-                  allow_patterns='voices/**',
-                  local_dir=local_dir,
-                  token=token
-              )
-              repo_type = 'dataset'
-          except Exception as dataset_error:
-              print(f'Failed to download as dataset: {dataset_error}')
-              print('Attempting download as space...')
-              try:
-                  snapshot_download(
-                      repo_id=repo_id,
-                      repo_type='space',
-                      allow_patterns='voices/**',
-                      local_dir=local_dir,
-                      token=token
-                  )
-                  repo_type = 'space'
-              except Exception as space_error:
-                  print(f'Failed to download as space: {space_error}')
-                  sys.exit(1)
+local_dir = 'hf_repo_download'
+repo_type = 'dataset'
+print(f'Downloading voices/ directory from Hugging Face: {repo_id}')
 
-          voices_path = os.path.join(local_dir, 'voices')
-          if not os.path.exists(voices_path):
-              print(f'Error: voices/ directory not found in the downloaded files from {repo_id}.')
-              print('Listing downloaded files:')
-              for root, dirs, files in os.walk(local_dir):
-                  for file in files:
-                      print(os.path.join(root, file))
-              sys.exit(1)
+# Auto-detect repository type by trying dataset first, then space
+try:
+    print('Attempting download as dataset...')
+    snapshot_download(
+        repo_id=repo_id,
+        repo_type='dataset',
+        allow_patterns='voices/**',
+        local_dir=local_dir,
+        token=token
+    )
+    repo_type = 'dataset'
+except Exception as dataset_error:
+    print(f'Failed to download as dataset: {dataset_error}')
+    print('Attempting download as space...')
+    try:
+        snapshot_download(
+            repo_id=repo_id,
+            repo_type='space',
+            allow_patterns='voices/**',
+            local_dir=local_dir,
+            token=token
+        )
+        repo_type = 'space'
+    except Exception as space_error:
+        print(f'Failed to download as space: {space_error}')
+        sys.exit(1)
 
-          print('Zipping voices/ directory into voices.zip...')
-          try:
-              if os.path.exists('voices.zip'):
-                  os.remove('voices.zip')
-              shutil.make_archive('voices', 'zip', root_dir=local_dir, base_dir='voices')
-              print(f'Successfully zipped. Archive size: {os.path.getsize(\"voices.zip\")} bytes')
-          except Exception as e:
-              print(f'Error during zipping: {e}')
-              sys.exit(1)
+voices_path = os.path.join(local_dir, 'voices')
+if not os.path.exists(voices_path):
+    print(f'Error: voices/ directory not found in the downloaded files from {repo_id}.')
+    print('Listing downloaded files:')
+    for root, dirs, files in os.walk(local_dir):
+        for file in files:
+            print(os.path.join(root, file))
+    sys.exit(1)
 
-          print(f'Uploading voices.zip to {repo_id} ({repo_type})...')
-          try:
-              api = HfApi(token=token)
-              api.upload_file(
-                  path_or_fileobj='voices.zip',
-                  path_in_repo='voices.zip',
-                  repo_id=repo_id,
-                  repo_type=repo_type,
-                  token=token
-              )
-              print('Successfully uploaded voices.zip to Hugging Face!')
-          except Exception as e:
-              print(f'Error during upload: {e}')
-              sys.exit(1)
-          "
+print('Zipping voices/ directory into voices.zip...')
+try:
+    if os.path.exists('voices.zip'):
+        os.remove('voices.zip')
+    shutil.make_archive('voices', 'zip', root_dir=local_dir, base_dir='voices')
+    print(f'Successfully zipped. Archive size: {os.path.getsize("voices.zip")} bytes')
+except Exception as e:
+    print(f'Error during zipping: {e}')
+    sys.exit(1)
+
+print(f'Uploading voices.zip to {repo_id} ({repo_type})...')
+try:
+    api = HfApi(token=token)
+    api.upload_file(
+        path_or_fileobj='voices.zip',
+        path_in_repo='voices.zip',
+        repo_id=repo_id,
+        repo_type=repo_type,
+        token=token
+    )
+    print('Successfully uploaded voices.zip to Hugging Face!')
+except Exception as e:
+    print(f'Error during upload: {e}')
+    sys.exit(1)
+PY
 
 
