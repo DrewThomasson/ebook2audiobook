@@ -2,6 +2,7 @@ import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warning
 
 from pathlib import Path
 from lib.conf import *
+from lib.conf_models import *
 
 warnings.filterwarnings('ignore', category=SyntaxWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='jieba._compat')
