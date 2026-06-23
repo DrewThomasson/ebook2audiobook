@@ -1427,10 +1427,10 @@ class DeviceInstaller():
                             os.environ['ZE_AFFINITY_MASK'] = idx
                     return 0
                 else:
-                    error = 'install_device_packages() error: device_info_str is empty'
+                    error = f'install_device_packages() error: json.loads() could not decode device_info_str={device_info_str}'
                     print(error)
             else:
-                error = f'install_device_packages() error: json.loads() could not decode device_info_str={device_info_str}'
+                error = 'install_device_packages() error: device_info_str is empty'
                 print(error)
             return 1
         except Exception as e:
