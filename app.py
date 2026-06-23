@@ -256,9 +256,9 @@ SML tags available:
             error = f'{FULL_DOCKER} is only an internal option for the docker itself. Use {BUILD_DOCKER} if you need to build a docker image.'
             print(error)
             sys.exit(1)
-        elif(not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
+        elif (not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
             sys.exit(1)
-        elif not args['headless'] and 'args contains other values other than share'
+        elif not args['headless'] and any(key != 'share' for key in args.keys() if key != 'headless'):
             error = 'In non headless mode only --share option is allowed.'
             print(error)
             sys.exit(1)
