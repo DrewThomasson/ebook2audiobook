@@ -484,6 +484,9 @@ function check_python {
 function check_required_programs {
 	local programs=("$@")
 	programs_missing=()
+	if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
+        return 0
+    fi
 	for program in "${programs[@]}"; do
 		local pkg="$program"
 		local bin="$program"
