@@ -48,6 +48,15 @@ and run "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" f
     else:
         return True
 
+def is_running_in_docker()->bool:
+    if os.environ.get("IN_DOCKER") == "1" or os.path.exists("/.dockerenv"):
+        return True
+    try:
+        with open("/proc/1/cgroup", "rt") as f:
+            return any(token in f.read() for token in ("docker", "containerd", "kubepods"))
+    except (FileNotFoundError, PermissionError):
+        return False
+
 def is_port_in_use(port:int)->bool:
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
         return s.connect_ex(('0.0.0.0',port))==0
@@ -238,9 +247,11 @@ SML tags available:
     args = vars(parser.parse_args())
 
     if not 'help' in args:
-        if not check_virtual_env(args['script_mode']):
+        if args['script_mode'] == "FULL_DOCKER" and not is_running_in_docker():
+            error = f'{FULL_DOCKER} is only an internal option for the docker itself. Use {BUILD_DOCKER} if you need to build a docker image.'
+            print(error)
             sys.exit(1)
-        if not check_python_version(args['script_mode']):
+        elif(not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode']):
             sys.exit(1)
         # Check if the port is already in use to prevent multiple launches
         if not args['headless'] and is_port_in_use(interface_port):
