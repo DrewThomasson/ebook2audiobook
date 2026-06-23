@@ -89,6 +89,7 @@ RUN set -eux; \
 VOLUME \
 	/app/ebooks \
 	/app/audiobooks \
+	/app/components \
 	/app/models \
 	/app/voices \
 	/app/run \
