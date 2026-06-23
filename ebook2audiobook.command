@@ -158,6 +158,30 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 				fi
 			done
 		fi
+	else
+		if [[ -n "${arguments[headless]+exists}" ]] && [[ "${arguments[headless]}" == "false" ]]; then
+			if [[ -n "${ZSH_VERSION:-}" ]]; then
+				for key in ${(k)arguments}; do
+					if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
+						echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
+						exit 1
+					fi
+				done
+			else
+				for key in "${!arguments[@]}"; do
+					if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
+						echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
+						exit 1
+					fi
+				done
+			fi
+		fi
+		if [[ -n "${arguments[share]+exists}" ]]; then
+			if [[ -n "${arguments[headless]+exists}" ]] && [[ "${arguments[headless]}" == "true" ]]; then
+				echo "Error: --share option is only allowed in non-headless mode"
+				exit 1
+			fi
+		fi
 	fi
 fi
 
