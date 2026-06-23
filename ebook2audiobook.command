@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+if [[ -f /.dockerenv ]] || [[ -n "${DOCKER_CONTAINER:-}" ]] || [[ "$(cat /proc/1/cgroup 2>/dev/null | grep -c docker)" -gt 0 ]]; then
+    export USER="${USER:-root}"
+    export HOME="${HOME:-/root}"
+    export SUDO=""
+    # Skip GUI checks in Docker
+    export DOCKER_MODE="container"
+fi
+
 set -euo pipefail
 
 : "${HOME:=$PWD}"
@@ -203,9 +211,13 @@ if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exist
 		APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR")
 	fi
 	user_in_group() {
-		id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
+		if [[ -n "${USER:-}" ]]; then
+			id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
+		else
+			return 1
+		fi
 	}
-	if ! user_in_group "$APP_GROUP"; then
+	if [[ -n "${USER:-}" ]] && ! user_in_group "$APP_GROUP"; then
 		echo "Adding $USER to group $APP_GROUP (requires sudo)..."
 		if [[ "$OSTYPE" == "darwin"* ]]; then
 			sudo dseditgroup -o edit -a "$USER" -t user "$APP_GROUP"
@@ -513,6 +525,9 @@ function check_required_programs {
 }
 
 function install_programs {
+	if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
+        return 0
+    fi
 	if [[ "${OSTYPE-}" == darwin* ]]; then
 		echo -e "\e[33mInstalling required programs…\e[0m"
 		PACK_MGR="brew install --force"
