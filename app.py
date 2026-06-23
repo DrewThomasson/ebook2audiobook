@@ -262,6 +262,10 @@ SML tags available:
             error = 'In non headless mode only --share option is allowed.'
             print(error)
             sys.exit(1)
+        elif args['headless'] and args.get('share', False):
+            error = '--share option is only allowed in non-headless mode.'
+            print(error)
+            sys.exit(1)
         elif not args['headless'] and is_port_in_use(interface_port):
             # Check if the port is already in use to prevent multiple launches
             error = f'Error: Port {interface_port} is already in use. The web interface may already be running.'
