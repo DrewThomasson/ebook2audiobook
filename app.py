@@ -32,7 +32,9 @@ to install it all automatically.
     print(error)
     return False
 
-def check_python_version()->bool:
+def check_python_version(script_mode:str)->bool:
+    if script_mode == FULL_DOCKER:
+        return True
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
         error = f'''***********
@@ -238,7 +240,7 @@ SML tags available:
     if not 'help' in args:
         if not check_virtual_env(args['script_mode']):
             sys.exit(1)
-        if not check_python_version():
+        if not check_python_version(args['script_mode']):
             sys.exit(1)
         # Check if the port is already in use to prevent multiple launches
         if not args['headless'] and is_port_in_use(interface_port):
