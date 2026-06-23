@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 
-if [[ -f /.dockerenv ]] || [[ -n "${DOCKER_CONTAINER:-}" ]] || [[ "$(cat /proc/1/cgroup 2>/dev/null | grep -c docker)" -gt 0 ]]; then
-    export USER="${USER:-root}"
-    export HOME="${HOME:-/root}"
-    export SUDO=""
-    # Skip GUI checks in Docker
-    export DOCKER_MODE="container"
-fi
-
 set -euo pipefail
 
 : "${HOME:=$PWD}"
@@ -195,6 +187,12 @@ fi
 
 [[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
 [[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
+
+if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
+    export USER="${USER:-root}"
+    export HOME="${HOME:-/root}"
+    export SUDO=""
+fi
 
 cd "$SCRIPT_DIR"
 
