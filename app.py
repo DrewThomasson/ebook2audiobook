@@ -247,7 +247,7 @@ SML tags available:
     args = vars(parser.parse_args())
 
     if not 'help' in args:
-        if args['script_mode'] == "FULL_DOCKER" and not is_running_in_docker():
+        if args['script_mode'] == FULL_DOCKER and not is_running_in_docker():
             error = f'{FULL_DOCKER} is only an internal option for the docker itself. Use {BUILD_DOCKER} if you need to build a docker image.'
             print(error)
             sys.exit(1)
