@@ -175,12 +175,6 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 		else
 			echo "Error: --headless accepts no value"
 		fi
-		if [[ -n "${arguments[share]+exists}" ]]; then
-			if [[ -n "${arguments[headless]+exists}" ]] && [[ "${arguments[headless]}" == "true" ]]; then
-				echo "Error: --share option is only allowed in non-headless mode"
-				exit 1
-			fi
-		fi
 	fi
 fi
 
