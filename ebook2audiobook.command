@@ -110,7 +110,7 @@ while (( $# > 0 )); do
 done
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
-    if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" || "${arguments[script_mode]}" == "$FULL_DOCKER" ]]; then
+    if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" || "${arguments[script_mode]}" == "$FULL_DOCKER" || "${arguments[script_mode]}" == "$NATIVE" ]]; then
         SCRIPT_MODE="${arguments[script_mode]}"
     else
         echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
@@ -120,7 +120,7 @@ fi
 
 if [[ -n "${arguments[docker_device]+exists}" ]]; then
 	DOCKER_DEVICE_STR="${arguments[docker_device]}"
-	if [[ "$DOCKER_DEVICE_STR" == "true" ]]; then
+	if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
 		echo "Error: --docker_device has no value!"
 		exit 1
 	fi
@@ -129,7 +129,7 @@ fi
 if [[ -n "${arguments[docker_mode]+exists}" ]]; then
 	DOCKER_MODE="${arguments[docker_mode]}"
 	if [[ "$DOCKER_MODE" != "podman" && "$DOCKER_MODE" != "compose" ]]; then
-		if [[ "$DOCKER_MODE" == "true" ]]; then
+		if [[ "$DOCKER_MODE" == "" ]]; then
 			echo "Error: --docker_mode has no value!"
 		else
 			echo "Error: --docker_mode accepts only podman or compose as value"
@@ -139,10 +139,7 @@ if [[ -n "${arguments[docker_mode]+exists}" ]]; then
 fi
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
-	if [[ "${arguments[script_mode]}" == "true" || -z "${arguments[script_mode]}" ]]; then
-		echo "Error: --script_mode requires a value"
-		exit 1
-	elif [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
+	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 		if [[ -n "${ZSH_VERSION:-}" ]]; then
 			for key in ${(k)arguments}; do
 				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
@@ -159,7 +156,7 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 			done
 		fi
 	else
-		if [[ -n "${arguments[headless]+exists}" ]] && [[ "${arguments[headless]}" == "false" ]]; then
+		if [[ -n "${arguments[headless]+exists}" ]] && [[ "${arguments[headless]}" == "" ]]; then
 			if [[ -n "${ZSH_VERSION:-}" ]]; then
 				for key in ${(k)arguments}; do
 					if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
@@ -175,6 +172,8 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
 					fi
 				done
 			fi
+		else
+			echo "Error: --headless accepts no value"
 		fi
 		if [[ -n "${arguments[share]+exists}" ]]; then
 			if [[ -n "${arguments[headless]+exists}" ]] && [[ "${arguments[headless]}" == "true" ]]; then

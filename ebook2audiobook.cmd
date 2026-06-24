@@ -177,6 +177,7 @@ if defined arguments.script_mode (
     set "script_mode_valid=0"
     if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" set "script_mode_valid=1"
     if /i "%arguments.script_mode%"=="%FULL_DOCKER%" set "script_mode_valid=1"
+    if /i "%arguments.script_mode%"=="%NATIVE%" set "script_mode_valid=1"
 )
 
 if defined arguments.script_mode if "%script_mode_valid%"=="1" (
