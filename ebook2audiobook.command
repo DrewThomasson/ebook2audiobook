@@ -38,6 +38,7 @@ export DOCKER_DESKTOP="0"
 export DOCKER_DEVICE_STR=""
 export DEVICE_INFO_STR=""
 export HOMEBREW_NO_ENV_HINTS="1"
+export SUDO="sudo"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
@@ -70,7 +71,6 @@ PACK_MGR=""
 PACK_MGR_OPTIONS=""
 BUILD_NAME=""
 ISO3_LANG="eng"
-SUDO="sudo"
 
 # Validate command arguments against conf.py
 if [ $# -gt 0 ]; then
