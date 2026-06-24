@@ -296,7 +296,7 @@ SML tags available:
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         error = ''
-        if args['headless']:
+        if args.get('headless', False):
             args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
             if args['id'] == workflow_id or not args['session']:
                 session = c.context.set_session(args['id'])
