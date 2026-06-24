@@ -259,7 +259,7 @@ SML tags available:
         elif (not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
             sys.exit(1)
         elif not args.get('headless', False) and any(key != 'share' for key in args.keys() if key != 'headless'):
-            error = 'In non headless mode only --share option is allowed.'
+            error = 'In non headless mode only --share option is allowed. 1'
             print(error)
             sys.exit(1)
         elif args.get('headless', False) and args.get('share', False):
@@ -328,7 +328,6 @@ SML tags available:
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
-            # --- translate (ISO 639-3): normalize, validate, derive effective state ---
             args['translate_enabled'] = False
             _user_translate_raw = args.get('translate')
             args['translate'] = None
