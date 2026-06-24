@@ -258,15 +258,15 @@ SML tags available:
             sys.exit(1)
         elif (not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
             sys.exit(1)
-        elif not args['headless'] and any(key != 'share' for key in args.keys() if key != 'headless'):
+        elif not args.get('headless', False) and any(key != 'share' for key in args.keys() if key != 'headless'):
             error = 'In non headless mode only --share option is allowed.'
             print(error)
             sys.exit(1)
-        elif args['headless'] and args.get('share', False):
+        elif args.get('headless', False) and args.get('share', False):
             error = '--share option is only allowed in non-headless mode.'
             print(error)
             sys.exit(1)
-        elif not args['headless'] and is_port_in_use(interface_port):
+        elif not args.get('headless', False) and is_port_in_use(interface_port):
             # Check if the port is already in use to prevent multiple launches
             error = f'Error: Port {interface_port} is already in use. The web interface may already be running.'
             print(error)
