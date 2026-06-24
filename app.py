@@ -259,7 +259,8 @@ SML tags available:
         elif (not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
             sys.exit(1)
         elif not args.get('headless', False) and any(key != 'share' for key in args.keys() if key != 'headless'):
-            error = 'In non headless mode only --share option is allowed. 1'
+            print(args)
+            error = 'In non headless mode only --share option is allowed.'
             print(error)
             sys.exit(1)
         elif args.get('headless', False) and args.get('share', False):
