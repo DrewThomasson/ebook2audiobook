@@ -182,9 +182,9 @@ fi
 [[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
 if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
-    export USER="${USER:-root}"
-    export HOME="${HOME:-/root}"
-    export SUDO=""
+    USER="${USER:-root}"
+    HOME="${HOME:-/root}"
+    SUDO=""
 fi
 
 cd "$SCRIPT_DIR"
