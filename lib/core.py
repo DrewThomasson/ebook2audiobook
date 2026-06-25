@@ -2707,6 +2707,8 @@ def convert_chapters2audio(session_id:str)->bool:
                         t.set_description(f'{total_progress * 100:.2f}%')
                         print(f' : {sentence}')
                         t.update(1)
+                # ponytail: flush batched TTS engine (Qwen3-TTS etc.)
+                tts_manager.flush()
                 sent_end = global_sent - 1
                 show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
                 if converted or block_changed or missing_sentences:

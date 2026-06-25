@@ -13,7 +13,8 @@ TTS_ENGINES = {
     "FAIRSEQ": "fairseq",
     "GLOWTTS": "glowtts",
     "TACOTRON": "tacotron",
-    "YOURTTS": "yourtts"
+    "YOURTTS": "yourtts",
+    "QWEN3TTS": "qwen3tts"
 }
 
 TTS_VOICE_CONVERSION = {
@@ -285,5 +286,32 @@ default_engine_settings = {
         "voice": None,
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
+    },
+    TTS_ENGINES['QWEN3TTS']: {
+        "repo": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+        "languages": {"deu": "German", "eng": "English", "fra": "French", "ita": "Italian", "jpn": "Japanese", "kor": "Korean", "por": "Portuguese", "rus": "Russian", "spa": "Spanish", "zho": "Chinese"},
+        "samplerate": 24000,
+        "temperature": 0.75,
+        "length_penalty": 1.0,
+        "num_beams": 1,
+        "repetition_penalty": 2.0,
+        "top_k": 40,
+        "top_p": 0.95,
+        "speed": 1.0,
+        "enable_text_splitting": False,
+        "files": [],
+        "voice": None,
+        "voices": {
+            "Vivian": "Vivian (bright young female, CN)",
+            "Serena": "Serena (warm gentle female, CN)",
+            "Uncle_Fu": "Uncle Fu (mellow male, CN)",
+            "Dylan": "Dylan (Beijing male, CN)",
+            "Eric": "Eric (Chengdu male, CN)",
+            "Ryan": "Ryan (dynamic male, EN)",
+            "Aiden": "Aiden (sunny American male, EN)",
+            "Ono_Anna": "Ono Anna (playful Japanese female, JP)",
+            "Sohee": "Sohee (warm Korean female, KR)",
+        },
+        "rating": {"VRAM": 6, "CPU": 2, "RAM": 6, "Realism": 5}
     }
 }

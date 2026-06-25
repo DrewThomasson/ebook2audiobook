@@ -1725,6 +1725,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     display_name = f'Speaker {voices_map.get(file_stem, file_stem)}'
                                     wav_path = str(f.with_suffix('.wav'))
                                     piper_options.append((display_name, wav_path))
+
                         voice_options = builtin_options + eng_options + bark_options + piper_options
                         session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
                         os.makedirs(session['voice_dir'], exist_ok=True)

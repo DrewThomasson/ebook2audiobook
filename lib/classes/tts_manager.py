@@ -22,3 +22,7 @@ class TTSManager:
 
     def convert_sentence2audio(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         return self.engine.convert(sentence_file, sentence, **kwargs)
+
+    def flush(self)->None:
+        if hasattr(self.engine, 'flush'):
+            self.engine.flush()
