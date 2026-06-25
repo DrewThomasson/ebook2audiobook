@@ -154,25 +154,28 @@ if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 	fi
 else
 	echo "$arguments"
-	if [[ -n "${arguments[headless]+exists}" && "${arguments[headless]}" == "" ]]; then
-		if [[ -n "${ZSH_VERSION:-}" ]]; then
-			for key in ${(k)arguments}; do
-				if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
-					echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
-					exit 1
-				fi
-			done
+	if [[ -n "${arguments[headless]+exists}" ]]; then
+		if [[ "${arguments[headless]}" == "" ]]; then
+			if [[ -n "${ZSH_VERSION:-}" ]]; then
+				for key in ${(k)arguments}; do
+					if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
+						echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
+						exit 1
+					fi
+				done
+			else
+				for key in "${!arguments[@]}"; do
+					if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
+						echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
+						exit 1
+					fi
+				done
+			fi
 		else
-			for key in "${!arguments[@]}"; do
-				if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
-					echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
-					exit 1
-				fi
-			done
+			echo "Error: --headless accepts no value"
 		fi
-	else
-		echo "Error: --headless accepts no value"
 	fi
+fi
 
 [[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
 [[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
