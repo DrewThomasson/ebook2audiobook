@@ -155,24 +155,20 @@ if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 else
 	echo "$arguments"
 	if [[ -n "${arguments[headless]+exists}" ]]; then
-		if [[ "${arguments[headless]}" == "" ]]; then
-			if [[ -n "${ZSH_VERSION:-}" ]]; then
-				for key in ${(k)arguments}; do
-					if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
-						echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
-						exit 1
-					fi
-				done
-			else
-				for key in "${!arguments[@]}"; do
-					if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
-						echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
-						exit 1
-					fi
-				done
-			fi
+		if [[ -n "${ZSH_VERSION:-}" ]]; then
+			for key in ${(k)arguments}; do
+				if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
+					echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
+					exit 1
+				fi
+			done
 		else
-			echo "Error: --headless accepts no value"
+			for key in "${!arguments[@]}"; do
+				if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
+					echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
+					exit 1
+				fi
+			done
 		fi
 	fi
 fi
