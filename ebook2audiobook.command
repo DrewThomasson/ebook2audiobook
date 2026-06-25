@@ -475,9 +475,6 @@ function check_python {
 function check_required_programs {
 	local programs=("$@")
 	programs_missing=()
-	if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
-        return 0
-    fi
 	for program in "${programs[@]}"; do
 		local pkg="$program"
 		local bin="$program"
@@ -519,9 +516,6 @@ function check_required_programs {
 }
 
 function install_programs {
-	if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
-        return 0
-    fi
 	if [[ "${OSTYPE-}" == darwin* ]]; then
 		echo -e "\e[33mInstalling required programs…\e[0m"
 		PACK_MGR="brew install --force"
