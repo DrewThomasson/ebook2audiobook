@@ -181,13 +181,13 @@ fi
 [[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
 [[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
+cd "$SCRIPT_DIR"
+
 if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
     USER="${USER:-root}"
     HOME="${HOME:-/root}"
     SUDO=""
 fi
-
-cd "$SCRIPT_DIR"
 
 if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
 	touch "$INSTALLED_LOG"
