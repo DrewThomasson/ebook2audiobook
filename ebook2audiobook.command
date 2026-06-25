@@ -118,65 +118,61 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
     fi
 fi
 
-if [[ -n "${arguments[docker_device]+exists}" ]]; then
-	DOCKER_DEVICE_STR="${arguments[docker_device]}"
-	if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
-		echo "Error: --docker_device has no value!"
-		exit 1
+if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
+	if [[ -n "${ZSH_VERSION:-}" ]]; then
+		for key in ${(k)arguments}; do
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+				echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+				exit 1
+			fi
+		done
+	else
+		for key in "${!arguments[@]}"; do
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+				echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+				exit 1
+			fi
+		done
 	fi
-fi
-
-if [[ -n "${arguments[docker_mode]+exists}" ]]; then
-	DOCKER_MODE="${arguments[docker_mode]}"
-	if [[ "$DOCKER_MODE" != "podman" && "$DOCKER_MODE" != "compose" ]]; then
-		if [[ "$DOCKER_MODE" == "" ]]; then
-			echo "Error: --docker_mode has no value!"
-		else
-			echo "Error: --docker_mode accepts only podman or compose as value"
+	if [[ -n "${arguments[docker_mode]+exists}" ]]; then
+		DOCKER_MODE="${arguments[docker_mode]}"
+		if [[ "$DOCKER_MODE" != "podman" && "$DOCKER_MODE" != "compose" ]]; then
+			if [[ "$DOCKER_MODE" == "" ]]; then
+				echo "Error: --docker_mode has no value!"
+			else
+				echo "Error: --docker_mode accepts only podman or compose as value"
+			fi
+			exit 1
 		fi
-		exit 1
 	fi
-fi
-
-if [[ -n "${arguments[script_mode]+exists}" ]]; then
-	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
+	if [[ -n "${arguments[docker_device]+exists}" ]]; then
+		DOCKER_DEVICE_STR="${arguments[docker_device]}"
+		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
+			echo "Error: --docker_device has no value!"
+			exit 1
+		fi
+	fi
+else
+	echo "$arguments"
+	if [[ -n "${arguments[headless]+exists}" && "${arguments[headless]}" == "" ]]; then
 		if [[ -n "${ZSH_VERSION:-}" ]]; then
 			for key in ${(k)arguments}; do
-				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-					echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+				if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
+					echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
 					exit 1
 				fi
 			done
 		else
 			for key in "${!arguments[@]}"; do
-				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-					echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+				if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
+					echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
 					exit 1
 				fi
 			done
 		fi
 	else
-		if [[ -n "${arguments[headless]+exists}" ]] && [[ "${arguments[headless]}" == "" ]]; then
-			if [[ -n "${ZSH_VERSION:-}" ]]; then
-				for key in ${(k)arguments}; do
-					if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
-						echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
-						exit 1
-					fi
-				done
-			else
-				for key in "${!arguments[@]}"; do
-					if [[ "$key" != "headless" && "$key" != "script_mode" && "$key" != "share" ]]; then
-						echo "Error: In non-headless mode only --share option is allowed. Invalid: --$key"
-						exit 1
-					fi
-				done
-			fi
-		else
-			echo "Error: --headless accepts no value"
-		fi
+		echo "Error: --headless accepts no value"
 	fi
-fi
 
 [[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
 [[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
