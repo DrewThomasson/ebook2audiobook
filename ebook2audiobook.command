@@ -153,7 +153,6 @@ if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
 		fi
 	fi
 else
-	echo "$arguments"
 	if [[ -n "${arguments[headless]+exists}" ]]; then
 		if [[ -n "${ZSH_VERSION:-}" ]]; then
 			for key in ${(k)arguments}; do
