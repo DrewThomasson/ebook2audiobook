@@ -33,7 +33,7 @@ class DeviceInstaller():
             return True
         cpuinfo_version = self.get_package_version('py-cpuinfo')
         if not cpuinfo_version:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', 'py-cpuinfo'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'py-cpuinfo'])
         from cpuinfo import get_cpu_info
         flags = set(get_cpu_info().get('flags', []))
         return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
@@ -1153,7 +1153,7 @@ class DeviceInstaller():
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
                 for raw_pkg in missing_packages:
                     try:
-                        cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir']
+                        cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir']
                         cmd.append(raw_pkg)
                         subprocess.check_call(cmd)
                     except subprocess.CalledProcessError as e:
@@ -1191,7 +1191,7 @@ class DeviceInstaller():
                 elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
                     numpy_pkg = 'numpy<2.4.0'
             if numpy_pkg is not None:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', numpy_pkg])
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', numpy_pkg])
             return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
@@ -1336,8 +1336,8 @@ class DeviceInstaller():
                                 url = default_jetson_url
                                 torch_pkg = f"{url}/torch-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
                                 torchaudio_pkg = f"{url}/torchaudio-v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', torch_pkg])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', torchaudio_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', torch_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', torchaudio_pkg])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scikit-learn'])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scipy'])
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
@@ -1362,7 +1362,7 @@ class DeviceInstaller():
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--index-url', f'{url}/{tag_dir}'])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--index-url', f'{url}/{tag_dir}'])
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
                                 is_cpu_aarch64_linux = (
                                     tag == devices['CPU']['proc']
