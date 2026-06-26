@@ -913,9 +913,7 @@ function build_docker_image {
 		export PODMAN_BUILD_ARGS=$(printf ' %q' \
 			--format docker \
 			--no-cache \
-			--network=private \
-			--dns=8.8.8.8 \
-			--dns=1.1.1.1 \
+			--network=host \
 			--build-arg PYTHON_VERSION="$py_vers" \
 			--build-arg APP_VERSION="$APP_VERSION" \
 			--build-arg DEVICE_TAG="$DEVICE_TAG" \
