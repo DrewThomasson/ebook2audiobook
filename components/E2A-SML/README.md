@@ -50,8 +50,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 cd ebook2audiobook
 ./ebook2audiobook.command #Mac/Linux or ebook2audiobook.cmd #Window | locally install ebook2audiobook first
 conda activate ./python_env  # Activate the created python env for E2A
-cd ebook2audiobook/tools/E2A-SML # Go into E2A dir
-pip install -r requirements.txt # Install additional requirments for E2A SML
+cd ebook2audiobook/components/E2A-SML # Go into E2A dir
 python -m spacy download en_core_web_sm # Download en_core_web_sm
 ```
 
