@@ -5,7 +5,7 @@ ARG PYTHON_VERSION=3.12
 # ============================================================
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-ARG APP_VERSION=26.6.25
+ARG APP_VERSION=26.6.26
 ARG DEVICE_TAG=cu130
 ARG DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu130", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
@@ -26,7 +26,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	PIP_NO_CACHE_DIR=1 \
 	DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR} \
 	PIP_BREAK_SYSTEM_PACKAGES=1 \
-	PATH="/root/.cargo/bin:${PATH}"
+	PATH="/root/.cargo/bin:${PATH}" \
+	IN_DOCKER=1
 
 WORKDIR /app
 

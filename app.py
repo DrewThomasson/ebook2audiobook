@@ -48,14 +48,8 @@ and run "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" f
     else:
         return True
 
-def is_running_in_docker()->bool:
-    if os.environ.get("IN_DOCKER") == "1" or os.path.exists("/.dockerenv"):
-        return True
-    try:
-        with open("/proc/1/cgroup", "rt") as f:
-            return any(token in f.read() for token in ("docker", "containerd", "kubepods"))
-    except (FileNotFoundError, PermissionError):
-        return False
+def is_running_in_container()->bool:
+    return os.environ.get("IN_DOCKER") == "1"
 
 def is_port_in_use(port:int)->bool:
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
@@ -252,7 +246,7 @@ SML tags available:
         args['ebook_mode'] = 'single'
         args['ebook_list'] = None
 
-        if args['script_mode'] == FULL_DOCKER and not is_running_in_docker():
+        if args['script_mode'] == FULL_DOCKER and not is_running_in_container():
             error = f'{FULL_DOCKER} is only an internal option for the docker itself. Use {BUILD_DOCKER} if you need to build a docker image.'
             print(error)
             sys.exit(1)
