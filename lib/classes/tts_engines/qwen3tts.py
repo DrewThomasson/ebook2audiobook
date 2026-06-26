@@ -1,9 +1,16 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
-# ponytail: batch size for GPU-parallel inference. 8 works well on 24GB+ VRAM.
-# Tune down to 4 if you hit OOM.
-BATCH_SIZE = 8
+# ponytail: batch size for GPU-parallel inference. 32 is fine on 32 GB VRAM for a 1.7B model.
+# Tune down to 8-16 if you hit OOM.
+BATCH_SIZE = 32
+
+# ponytail: directory where cached voice-clone prompts (*.pt) are stored.
+# Delete a cached prompt to force re-computation from the reference audio.
+QWEN3_CACHE_DIR = os.path.join(tts_dir, 'qwen3_voice_cache')
+
+# ponytail: module-level in-memory cache so prompt data survives engine instances
+_prompt_memory_cache: dict[str, list | None] = {}
 
 
 class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
@@ -45,7 +52,6 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
                 devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']
             ] else self.session['device']
             self.engine = self.load_engine()
-            self.engine_zs = self._load_engine_zs(self.device)
 
             # ponytail: cross-sentence batch buffer
             self._batch_buffer: list[dict] = []
@@ -58,7 +64,7 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
             import torch
             from qwen_tts import Qwen3TTSModel
 
-            msg = f'Loading Qwen3-TTS model, please be patient…'
+            msg = f'Loading Qwen3-TTS model, please be patient\u2026'
             print(msg)
             self.cleanup_memory()
             engine = loaded_tts.get(self.tts_key)
@@ -67,12 +73,37 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
                 self.tts_key = f'{self.tts_engine}-{model_name}'
                 engine = loaded_tts.get(self.tts_key)
                 if not engine:
+                    # ponytail: try flash-attn, fall back to sdpa (built-in torch), then eager
+                    attn_kwargs = dict(attn_implementation='flash_attention_2')
+                    try:
+                        import flash_attn  # noqa: F401
+                    except ImportError:
+                        try:
+                            # PyTorch >=2.0 has flash attention built-in via SDPA
+                            torch.backends.cuda.flash_sdp_enabled()
+                            attn_kwargs['attn_implementation'] = 'sdpa'
+                        except Exception:
+                            attn_kwargs['attn_implementation'] = 'eager'
                     engine = Qwen3TTSModel.from_pretrained(
                         model_name,
+                        torch_dtype=torch.bfloat16,
                         device_map=self.device,
-                        dtype=torch.bfloat16,
-                        attn_implementation='flash_attention_2',
+                        **attn_kwargs,
                     )
+                    # ponytail: device diagnostic (best-effort, don't crash)
+                    try:
+                        for attr in ('device', 'model.device'):
+                            d = engine
+                            for a in attr.split('.'):
+                                d = getattr(d, a)
+                            param_device = d
+                            break
+                    except Exception:
+                        param_device = 'unknown'
+                    print(f'  Model device: {param_device} (expected: {self.device})')
+                    # ponytail: silence the "Setting pad_token_id" warning
+                    if hasattr(engine, 'generation_config') and engine.generation_config is not None:
+                        engine.generation_config.pad_token_id = engine.generation_config.eos_token_id
                     loaded_tts[self.tts_key] = engine
             if engine:
                 msg = f'Qwen3-TTS {self.tts_key} Loaded!'
@@ -84,11 +115,79 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
-    def _get_speakers(self) -> list:
+    # ---- voice-clone prompt caching ----
+    # ponytail: module-level _prompt_memory_cache survives engine instances
+
+    def _prompt_cache_path(self, audio_path: str) -> str:
+        """Unique file name for a cached prompt based on the reference audio."""
+        import hashlib
+        key = hashlib.sha256(audio_path.encode()).hexdigest()[:16]
+        name = Path(audio_path).stem
+        return os.path.join(QWEN3_CACHE_DIR, f'{name}_{key}.pt')
+
+    def _load_or_create_prompt(self, audio_path: str) -> list | None:
+        """Load cached voice-clone prompt, or compute and cache it.
+
+        Uses x_vector_only_mode=True so only the speaker embedding is kept
+        (no reference text / ICL required).
+
+        Keeps a hot in-memory cache so a multi-block book only hits disk once per voice.
+        """
+        global _prompt_memory_cache
+        cached = _prompt_memory_cache.get(audio_path)
+        if cached is not None:
+            return cached
+
+        cache_file = self._prompt_cache_path(audio_path)
+        os.makedirs(QWEN3_CACHE_DIR, exist_ok=True)
+        # check cache first
+        if os.path.exists(cache_file):
+            try:
+                import torch
+                data = torch.load(cache_file, map_location=self.device, weights_only=True)
+                print(f'  Loaded cached voice-clone prompt for {Path(audio_path).name}')
+                _prompt_memory_cache[audio_path] = data
+                return data
+            except Exception as e:
+                print(f'  Cache read failed ({e}), recomputing\u2026')
+        # compute — x_vector_only_mode=True means only speaker embedding, no ref text needed
         try:
-            return self.engine.get_supported_speakers() if hasattr(self.engine, 'get_supported_speakers') else []
-        except Exception:
-            return []
+            prompt = self.engine.create_voice_clone_prompt(
+                ref_audio=audio_path,
+                ref_text=None,
+                x_vector_only_mode=True,
+            )
+            # prompt is List[VoiceClonePromptItem]; save as list of dicts
+            data = [
+                {
+                    'ref_code': p.ref_code,
+                    'ref_spk_embedding': p.ref_spk_embedding,
+                    'x_vector_only_mode': p.x_vector_only_mode,
+                    'icl_mode': p.icl_mode,
+                    'ref_text': p.ref_text,
+                }
+                for p in prompt
+            ]
+            import torch
+            torch.save(data, cache_file)
+            print(f'  Cached voice-clone prompt to {cache_file}')
+            _prompt_memory_cache[audio_path] = data
+            return data
+        except Exception as e:
+            print(f'  create_voice_clone_prompt failed for {audio_path}: {e}')
+            _prompt_memory_cache[audio_path] = None
+            return None
+
+    # ---- inference ----
+
+    def _prompt_items_to_dict(self, items: list) -> dict:
+        """Convert list[VoiceClonePromptItem dicts] to the dict format generate_voice_clone expects."""
+        return {
+            'ref_code': [it['ref_code'] for it in items],
+            'ref_spk_embedding': [it['ref_spk_embedding'] for it in items],
+            'x_vector_only_mode': [it['x_vector_only_mode'] for it in items],
+            'icl_mode': [it['icl_mode'] for it in items],
+        }
 
     def _flush_batch(self) -> None:
         """Flush buffered sentences through batched inference."""
@@ -101,15 +200,23 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
             import torch
             from lib.classes.tts_engines.common.audio import is_audio_data_valid
 
-            speaker_names = [b['speaker'] for b in buf]
-            lang_name = buf[0]['lang']  # same for all in block
             texts = [b['text'] for b in buf]
+            lang_name = buf[0]['lang']  # same for all in block
+            voice_prompt = buf[0].get('voice_prompt')
+            languages = [lang_name] * len(texts)
 
-            wavs, sr = self.engine.generate_custom_voice(
-                text=texts,
-                language=[lang_name] * len(texts),
-                speaker=[s if s in self._get_speakers() else None for s in speaker_names],
-            )
+            if voice_prompt:
+                prompt_dict = self._prompt_items_to_dict(voice_prompt)
+                # replicate single prompt to batch size
+                prompt_dict = {k: v * len(texts) for k, v in prompt_dict.items()}
+                wavs, sr = self.engine.generate_voice_clone(
+                    text=texts,
+                    language=languages,
+                    voice_clone_prompt=prompt_dict,
+                )
+            else:
+                # no prompt — skip (shouldn't happen with Base model)
+                return
 
             for i, audio_part in enumerate(wavs):
                 if torch.is_tensor(audio_part):
@@ -131,25 +238,33 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
                 if tensors:
                     seg = torch.cat(tensors, dim=-1)
                     self.audio_save(sentence_file, seg, self.params['samplerate'])
+            # ponytail: release cached CUDA allocations after each batch
+            import gc
+            gc.collect()
+            torch.cuda.empty_cache()
         except Exception as e:
             error = f'batch flush error: {e}'
             print(error)
             # fallback: process individually
             for b in buf:
                 try:
-                    self._convert_one(b['file'], b['text'], b['speaker'], b['lang'])
+                    self._convert_one(b['file'], b['text'], b.get('voice_prompt'))
                 except Exception:
                     pass
 
-    def _convert_one(self, sentence_file: str, sentence: str, speaker: str | None, lang: str) -> tuple:
+    def _convert_one(self, sentence_file: str, sentence: str, voice_prompt=None) -> tuple:
         """Single-sentence fallback."""
         import torch
         from lib.classes.tts_engines.common.audio import is_audio_data_valid
 
-        wavs, sr = self.engine.generate_custom_voice(
+        if not voice_prompt:
+            return False, 'no voice prompt'
+
+        prompt_dict = self._prompt_items_to_dict(voice_prompt)
+        wavs, sr = self.engine.generate_voice_clone(
             text=sentence,
-            language=lang,
-            speaker=speaker if speaker in self._get_speakers() else None,
+            language=self.engine_langs.get(self.language, 'Auto'),
+            voice_clone_prompt=prompt_dict,
         )
         audio_part = wavs[0] if isinstance(wavs, list) else wavs
         if audio_part is None or len(audio_part) == 0:
@@ -181,13 +296,18 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
 
             # Split SML, collect text parts for batching
             sentence_parts = self._split_sentence_on_sml(sentence)
-            # ponytail: Qwen3-TTS has model-internal speakers; voice path is just a stub
-            speaker_name = None
-            if self.params.get('current_voice'):
-                stem = Path(self.params['current_voice']).stem
-                if stem in default_engine_settings.get(self.tts_engine, {}).get('voices', {}):
-                    speaker_name = stem
             lang_name = self.engine_langs.get(self.language, 'Auto')
+
+            # ---- resolve voice-clone prompt from reference audio ----
+            voice_prompt_data = None
+            raw_voice = self.params.get('current_voice') or ''
+            if raw_voice and os.path.isfile(raw_voice):
+                voice_prompt_data = self._load_or_create_prompt(raw_voice)
+                if not voice_prompt_data:
+                    return False, f'Failed to load/create voice-clone prompt for {raw_voice}'
+
+            if not voice_prompt_data:
+                return False, 'No voice selected — Qwen3 Base model requires a reference audio voice'
 
             for part in sentence_parts:
                 part = part.strip()
@@ -204,8 +324,8 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
                 self._batch_buffer.append({
                     'file': sentence_file,
                     'text': part,
-                    'speaker': speaker_name,
                     'lang': lang_name,
+                    'voice_prompt': voice_prompt_data,
                 })
 
             if len(self._batch_buffer) >= BATCH_SIZE:

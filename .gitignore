@@ -19,3 +19,8 @@ models/*
 !audiobooks/cli/.gitkeep
 !audiobooks/gui/gradio/.gitkeep
 !audiobooks/gui/host/.gitkeep
+.device_info.json
+.installed
+Hardware
+/1.*
+/4.*

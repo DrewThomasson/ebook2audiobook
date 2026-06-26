@@ -288,7 +288,7 @@ default_engine_settings = {
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
     },
     TTS_ENGINES['QWEN3TTS']: {
-        "repo": "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+        "repo": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
         "languages": {"deu": "German", "eng": "English", "fra": "French", "ita": "Italian", "jpn": "Japanese", "kor": "Korean", "por": "Portuguese", "rus": "Russian", "spa": "Spanish", "zho": "Chinese"},
         "samplerate": 24000,
         "temperature": 0.75,
@@ -301,17 +301,7 @@ default_engine_settings = {
         "enable_text_splitting": False,
         "files": [],
         "voice": None,
-        "voices": {
-            "Vivian": "Vivian (bright young female, CN)",
-            "Serena": "Serena (warm gentle female, CN)",
-            "Uncle_Fu": "Uncle Fu (mellow male, CN)",
-            "Dylan": "Dylan (Beijing male, CN)",
-            "Eric": "Eric (Chengdu male, CN)",
-            "Ryan": "Ryan (dynamic male, EN)",
-            "Aiden": "Aiden (sunny American male, EN)",
-            "Ono_Anna": "Ono Anna (playful Japanese female, JP)",
-            "Sohee": "Sohee (warm Korean female, KR)",
-        },
+        "voices": {},  # Base model uses voice cloning from reference audio, not named speakers
         "rating": {"VRAM": 6, "CPU": 2, "RAM": 6, "Realism": 5}
     }
 }

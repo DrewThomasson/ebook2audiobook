@@ -1725,6 +1725,16 @@ def build_interface(args:dict)->gr.Blocks:
                                     display_name = f'Speaker {voices_map.get(file_stem, file_stem)}'
                                     wav_path = str(f.with_suffix('.wav'))
                                     piper_options.append((display_name, wav_path))
+                        elif session['tts_engine'] == TTS_ENGINES['QWEN3TTS']:
+                            # ponytail: voice cloning uses any reference audio — scan eng/ too
+                            eng_dir = Path(os.path.join(voices_dir, "eng"))
+                            qwen3_eng_options = [
+                                (base, str(f))
+                                for f in eng_dir.rglob(file_pattern)
+                                for base in [os.path.splitext(f.name)[0]]
+                                if base not in builtin_names
+                            ]
+                            eng_options = qwen3_eng_options
 
                         voice_options = builtin_options + eng_options + bark_options + piper_options
                         session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
@@ -1763,15 +1773,23 @@ def build_interface(args:dict)->gr.Blocks:
                                                 new_voice_path = str(Path(*parts))
                                                 if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
                                                     session['voice'] = new_voice_path
-                                                else:
+                                                elif voice_options:
                                                     session['voice'] = voice_options[0][1]
+                                                else:
+                                                    session['voice'] = None
+                                    elif voice_options:
+                                        session['voice'] = voice_options[0][1]
+                                    else:
+                                        session['voice'] = None
                         else:
                             if voice_options and voice_options[0][1] is not None:
-                                new_voice_path = models[session['fine_tuned']]['voice']
-                                if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
+                                new_voice_path = models[session['fine_tuned']].get('voice')
+                                if new_voice_path and os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
                                     session['voice'] = new_voice_path
                                 else:
                                     session['voice'] = voice_options[0][1]
+                            elif not voice_options:
+                                session['voice'] = None
                         return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'_update_gr_voice_list(): {e}!'
