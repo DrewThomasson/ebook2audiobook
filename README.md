@@ -101,7 +101,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ## Features
-- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
+- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`, `Qwen3-TTS`
 - 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** to convert directly a short text in audio
 - 🔍 **OCR scanning** for files with text pages as images
@@ -525,7 +525,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
 - [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
 - [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
-- [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
+- [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readme Translation
 - [x] Arabic (ara)
