@@ -26,7 +26,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	PIP_NO_CACHE_DIR=1 \
 	DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR} \
 	PIP_BREAK_SYSTEM_PACKAGES=1 \
-	PATH="/root/.cargo/bin:${PATH}"
+	PATH="/root/.cargo/bin:${PATH}" \
+	IN_DOCKER=1
 
 WORKDIR /app
 
