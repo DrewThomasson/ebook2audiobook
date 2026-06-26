@@ -118,7 +118,7 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
     fi
 fi
 
-if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
+if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 	if [[ -n "${ZSH_VERSION:-}" ]]; then
 		for key in ${(k)arguments}; do
 			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
