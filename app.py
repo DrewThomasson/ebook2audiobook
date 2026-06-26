@@ -3,7 +3,7 @@ import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warning
 from pathlib import Path
 
 from lib.conf import *
-from lib.conf_lang import default_language_code, language_mapping
+from lib.conf_lang import default_language_code, language_mapping, install_info
 from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 
 warnings.filterwarnings('ignore', category=SyntaxWarning)
@@ -32,7 +32,9 @@ to install it all automatically.
     print(error)
     return False
 
-def check_python_version()->bool:
+def check_python_version(script_mode:str)->bool:
+    if script_mode == BUILD_DOCKER:
+        return True
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
         error = f'''***********
@@ -45,6 +47,15 @@ and run "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" f
         return False
     else:
         return True
+
+def is_running_in_docker()->bool:
+    if os.environ.get("IN_DOCKER") == "1" or os.path.exists("/.dockerenv"):
+        return True
+    try:
+        with open("/proc/1/cgroup", "rt") as f:
+            return any(token in f.read() for token in ("docker", "containerd", "kubepods"))
+    except (FileNotFoundError, PermissionError):
+        return False
 
 def is_port_in_use(port:int)->bool:
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
@@ -236,32 +247,40 @@ SML tags available:
     args = vars(parser.parse_args())
 
     if not 'help' in args:
-        if not check_virtual_env(args['script_mode']):
-            sys.exit(1)
-        if not check_python_version():
-            sys.exit(1)
-        # Check if the port is already in use to prevent multiple launches
-        if not args['headless'] and is_port_in_use(interface_port):
-            error = f'Error: Port {interface_port} is already in use. The web interface may already be running.'
-            print(error)
-            sys.exit(1)
         args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
         args['share'] =  args['share'] if args['share'] else False
         args['ebook_mode'] = 'single'
         args['ebook_list'] = None
+
+        if args['script_mode'] == FULL_DOCKER and not is_running_in_docker():
+            error = f'{FULL_DOCKER} is only an internal option for the docker itself. Use {BUILD_DOCKER} if you need to build a docker image.'
+            print(error)
+            sys.exit(1)
+        elif (not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
+            sys.exit(1)
+        elif args.get('headless', False) and args.get('share', False):
+            error = '--share option is only allowed in non-headless mode.'
+            print(error)
+            sys.exit(1)
+        elif not args.get('headless', False) and is_port_in_use(interface_port):
+            # Check if the port is already in use to prevent multiple launches
+            error = f'Error: Port {interface_port} is already in use. The web interface may already be running.'
+            print(error)
+            sys.exit(1)
 
         print(f"v{prog_version} {args['script_mode']} mode")
         
         from lib.classes.device_installer import DeviceInstaller
         manager = DeviceInstaller()
         device_info_str = manager.check_device_info(args['script_mode'])
-        if manager.install_device_packages(device_info_str) == 1:
-            error = f'Error: Could not installed device packages!'
-            print(error)
-            sys.exit(1)
-        result = manager.install_python_packages()
-        if result == 1:
-            sys.exit(1)
+        if args['script_mode'] == NATIVE:
+            if manager.install_device_packages(device_info_str) == 1:
+                error = f'Error: Could not installed device packages!'
+                print(error)
+                sys.exit(1)
+            result = manager.install_python_packages()
+            if result == 1:
+                sys.exit(1)
         if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
             error = 'WARNING: shared DLLs not found. aborting…'
             print(error)
@@ -273,7 +292,7 @@ SML tags available:
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         error = ''
-        if args['headless']:
+        if args.get('headless', False):
             args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
             if args['id'] == workflow_id or not args['session']:
                 session = c.context.set_session(args['id'])
@@ -305,7 +324,6 @@ SML tags available:
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
-            # --- translate (ISO 639-3): normalize, validate, derive effective state ---
             args['translate_enabled'] = False
             _user_translate_raw = args.get('translate')
             args['translate'] = None

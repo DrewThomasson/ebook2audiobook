@@ -177,6 +177,7 @@ if defined arguments.script_mode (
     set "script_mode_valid=0"
     if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" set "script_mode_valid=1"
     if /i "%arguments.script_mode%"=="%FULL_DOCKER%" set "script_mode_valid=1"
+    if /i "%arguments.script_mode%"=="%NATIVE%" set "script_mode_valid=1"
 )
 
 if defined arguments.script_mode if "%script_mode_valid%"=="1" (
@@ -228,6 +229,34 @@ if defined arguments.script_mode (
             )
         )
         endlocal
+    )
+)
+if defined arguments.headless (
+    if /i "%arguments.headless%"=="false" (
+        setlocal enabledelayedexpansion
+        for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do (
+            set "argname=%%A"
+            set "argname=!argname:arguments.=!"
+            if not "!argname!"=="" (
+                if /i not "!argname!"=="headless" (
+                    if /i not "!argname!"=="script_mode" (
+                        if /i not "!argname!"=="share" (
+                            echo Error: In non-headless mode only --share option is allowed. Invalid: --!argname!
+                            goto :failed
+                        )
+                    )
+                )
+            )
+        )
+        endlocal
+    )
+)
+if defined arguments.share (
+    if defined arguments.headless (
+        if /i "%arguments.headless%"=="true" (
+            echo Error: --share option is only allowed in non-headless mode
+            goto :failed
+        )
     )
 )
 if defined arguments.version (
