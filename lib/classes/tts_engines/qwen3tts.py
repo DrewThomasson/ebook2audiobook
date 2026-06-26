@@ -15,7 +15,7 @@ _prompt_memory_cache: dict[str, list | None] = {}
 
 class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
 
-    def __init__(self, session: DictProxy):
+    def __init__(self, session:DictProxy):
         try:
             self.session = session
             self.cache_dir = tts_dir
@@ -59,7 +59,7 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
             error = f'__init__() error: {e}'
             raise ValueError(error)
 
-    def load_engine(self) -> Any:
+    def load_engine(self)->Any:
         try:
             import torch
             from qwen_tts import Qwen3TTSModel
@@ -118,14 +118,14 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
     # ---- voice-clone prompt caching ----
     # ponytail: module-level _prompt_memory_cache survives engine instances
 
-    def _prompt_cache_path(self, audio_path: str) -> str:
+    def _prompt_cache_path(self, audio_path:str)->str:
         """Unique file name for a cached prompt based on the reference audio."""
         import hashlib
         key = hashlib.sha256(audio_path.encode()).hexdigest()[:16]
         name = Path(audio_path).stem
         return os.path.join(QWEN3_CACHE_DIR, f'{name}_{key}.pt')
 
-    def _load_or_create_prompt(self, audio_path: str) -> list | None:
+    def _load_or_create_prompt(self, audio_path:str)->list|None:
         """Load cached voice-clone prompt, or compute and cache it.
 
         Uses x_vector_only_mode=True so only the speaker embedding is kept
@@ -180,7 +180,7 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
 
     # ---- inference ----
 
-    def _prompt_items_to_dict(self, items: list) -> dict:
+    def _prompt_items_to_dict(self, items:list)->dict:
         """Convert list[VoiceClonePromptItem dicts] to the dict format generate_voice_clone expects."""
         return {
             'ref_code': [it['ref_code'] for it in items],
@@ -189,7 +189,7 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
             'icl_mode': [it['icl_mode'] for it in items],
         }
 
-    def _flush_batch(self) -> None:
+    def _flush_batch(self)->None:
         """Flush buffered sentences through batched inference."""
         if not self._batch_buffer:
             return
@@ -252,7 +252,7 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
                 except Exception:
                     pass
 
-    def _convert_one(self, sentence_file: str, sentence: str, voice_prompt=None) -> tuple:
+    def _convert_one(self, sentence_file:str, sentence:str, voice_prompt:list|None=None)->tuple:
         """Single-sentence fallback."""
         import torch
         from lib.classes.tts_engines.common.audio import is_audio_data_valid
@@ -280,7 +280,7 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
             return False, 'save failed'
         return True, None
 
-    def convert(self, sentence_file: str, sentence: str, **kwargs) -> tuple:
+    def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             if not self.engine:
                 error = f'TTS engine {self.tts_engine} failed to load!'
@@ -344,11 +344,11 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
             self.audio_segments = []
             return False, self.log_exception(f'{self.__class__.__name__}.convert()', e)
 
-    def flush(self) -> None:
+    def flush(self)->None:
         """Call this after all sentences in a block are processed."""
         self._flush_batch()
 
-    def create_vtt(self, all_sentences: list) -> bool:
+    def create_vtt(self, all_sentences:list)->bool:
         if self._build_vtt_file(all_sentences):
             return True
         return False
