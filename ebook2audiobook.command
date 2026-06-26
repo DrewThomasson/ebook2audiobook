@@ -1009,6 +1009,7 @@ else
 			fi
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		else
+			echo "$DOCKER_DEVICE_STR"
 			if ! python3 - "$DOCKER_DEVICE_STR" <<'EOF'
 import json
 import sys
