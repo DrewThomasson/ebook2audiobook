@@ -1191,7 +1191,7 @@ class DeviceInstaller():
                 elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
                     numpy_pkg = 'numpy<2.4.0'
             if numpy_pkg is not None:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', '--force-reinstall', numpy_pkg])
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', numpy_pkg])
             return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
@@ -1362,7 +1362,7 @@ class DeviceInstaller():
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--force-reinstall', '--index-url', f'{url}/{tag_dir}'])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--upgrade-strategy', 'only-if-needed', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--index-url', f'{url}/{tag_dir}'])
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
                                 is_cpu_aarch64_linux = (
                                     tag == devices['CPU']['proc']
