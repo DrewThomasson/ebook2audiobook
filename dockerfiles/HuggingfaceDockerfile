@@ -5,7 +5,7 @@ ARG PYTHON_VERSION=3.12
 # ============================================================
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-ARG APP_VERSION=26.6.17
+ARG APP_VERSION=26.6.25
 ARG DEVICE_TAG=cpu
 ARG DOCKER_DEVICE_STR='{"name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "HF Spaces CPU"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
@@ -123,5 +123,4 @@ USER 1000
 
 EXPOSE 7860
 
-ENTRYPOINT ["bash", "ebook2audiobook.command"]
-CMD ["--script_mode", "full_docker"]
+ENTRYPOINT ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]

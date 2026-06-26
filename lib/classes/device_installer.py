@@ -620,7 +620,7 @@ class DeviceInstaller():
                                 else:
                                     tag = f'rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm{matched[0]}.{matched[1]}'
                         if cmp == 1:
-                            msg = f'ROCm {version_str} but tested max {max_ver} so using torch for cu{tag}' if tag else f'ROCm {version_str} detected but torch with this version not ready for your OS'
+                            msg = f'ROCm {version_str} but tested max {max_ver} so using torch for {tag}' if tag else f'ROCm {version_str} detected but torch with this version not ready for your OS'
                         elif not tag:
                             msg = f'ROCm {version_str} detected but no compatible torch build for this OS.'
                 else:
@@ -939,7 +939,7 @@ class DeviceInstaller():
                         name = devices['XPU']['proc']
                         tag = devices['XPU']['proc']
                         if cmp == 1:
-                            msg = f'XPU oneAPI {version} but tested max {max_ver} so using torch default xpu'
+                            msg = f'XPU oneAPI {version} but tested max {max_ver} so using torch default xpu build'
                 elif xpu_device_count > 0:
                     msg = 'Intel GPU detected but oneAPI toolkit version file not found.'
                 else:
@@ -1030,8 +1030,8 @@ class DeviceInstaller():
             print(error)
             return 1
         overrides = {}
-        if self.system == systems['MACOS'] or self.check_onnxruntime_directml():
-            overrides['onnxruntime-gpu'] = None
+        if self.system != systems['MACOS']:
+            overrides['onnxruntime'] = self.check_onnxruntime_pkg()
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
@@ -1202,29 +1202,25 @@ class DeviceInstaller():
             print(error)
             return False
 
-    def check_onnxruntime_directml(self)->bool:
-        if self.system != systems['WINDOWS']:
-            return False
-        if devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']:
-            return False
-        reinstall = False
+    def check_onnxruntime_pkg(self)->str|None:
+        if self.python_version >= (3, 12) and (devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']):
+            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
+            return 'onnxruntime-gpu'
+        elif self.python_version < (3, 12) or self.system != systems['WINDOWS']:
+            return 'onnxruntime'
         try:
             import onnxruntime as ort
             if 'DmlExecutionProvider' in ort.get_available_providers():
-                return True
-            reinstall = True
+                return 'onnxruntime-directml'
         except Exception as e:
-            error = f'check_onnxruntime_directml(): {e}'
+            error = f'check_onnxruntime_pkg(): {e}'
             print(error)
-            reinstall = True
-        if reinstall:
-            try:
-                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-gpu'])
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
-                return True
-            except Exception as e:
-                return False
-        return False
+        try:
+            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
+            return None
+        except Exception as e:
+            return 'onnxruntime'
 
     def check_dictionary(self)->bool:
         import unidic
@@ -1285,7 +1281,7 @@ class DeviceInstaller():
             return False
 
         def _probe_gpus()->dict:
-            script = os.path.abspath('./tools/detect_gpus.py')
+            script = os.path.abspath('./detect_gpus.py')
             try:
                 proc = subprocess.run(
                     [sys.executable, script],
@@ -1431,10 +1427,10 @@ class DeviceInstaller():
                             os.environ['ZE_AFFINITY_MASK'] = idx
                     return 0
                 else:
-                    error = 'install_device_packages() error: device_info_str is empty'
+                    error = f'install_device_packages() error: json.loads() could not decode device_info_str={device_info_str}'
                     print(error)
             else:
-                error = f'install_device_packages() error: json.loads() could not decode device_info_str={device_info_str}'
+                error = 'install_device_packages() error: device_info_str is empty'
                 print(error)
             return 1
         except Exception as e:

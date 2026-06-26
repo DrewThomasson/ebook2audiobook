@@ -2640,7 +2640,7 @@ def build_interface(args:dict)->gr.Blocks:
                     os.makedirs(session['custom_model_dir'], exist_ok=True)
                     os.makedirs(session['voice_dir'], exist_ok=True)     
                     if is_gui_shared:
-                        msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
+                        msg = f' Note: access limit time: {interface_shared_tmp_expire} days. '
                         session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
                         delete_unused_tmp_dirs(session['id'], audiobooks_gradio_dir, interface_shared_tmp_expire)
                     else:

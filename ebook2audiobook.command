@@ -38,6 +38,7 @@ export DOCKER_DESKTOP="0"
 export DOCKER_DEVICE_STR=""
 export DEVICE_INFO_STR=""
 export HOMEBREW_NO_ENV_HINTS="1"
+export SUDO="sudo"
 
 NATIVE="native"
 BUILD_DOCKER="build_docker"
@@ -70,7 +71,6 @@ PACK_MGR=""
 PACK_MGR_OPTIONS=""
 BUILD_NAME=""
 ISO3_LANG="eng"
-SUDO="sudo"
 
 # Validate command arguments against conf.py
 if [ $# -gt 0 ]; then
@@ -110,7 +110,7 @@ while (( $# > 0 )); do
 done
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
-    if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" || "${arguments[script_mode]}" == "$FULL_DOCKER" ]]; then
+    if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" || "${arguments[script_mode]}" == "$FULL_DOCKER" || "${arguments[script_mode]}" == "$NATIVE" ]]; then
         SCRIPT_MODE="${arguments[script_mode]}"
     else
         echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
@@ -118,46 +118,38 @@ if [[ -n "${arguments[script_mode]+exists}" ]]; then
     fi
 fi
 
-if [[ -n "${arguments[docker_device]+exists}" ]]; then
-	DOCKER_DEVICE_STR="${arguments[docker_device]}"
-	if [[ "$DOCKER_DEVICE_STR" == "true" ]]; then
-		echo "Error: --docker_device has no value!"
-		exit 1
+if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" ]]; then
+	if [[ -n "${ZSH_VERSION:-}" ]]; then
+		for key in ${(k)arguments}; do
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+				echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+				exit 1
+			fi
+		done
+	else
+		for key in "${!arguments[@]}"; do
+			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
+				echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
+				exit 1
+			fi
+		done
 	fi
-fi
-
-if [[ -n "${arguments[docker_mode]+exists}" ]]; then
-	DOCKER_MODE="${arguments[docker_mode]}"
-	if [[ "$DOCKER_MODE" != "podman" && "$DOCKER_MODE" != "compose" ]]; then
-		if [[ "$DOCKER_MODE" == "true" ]]; then
-			echo "Error: --docker_mode has no value!"
-		else
-			echo "Error: --docker_mode accepts only podman or compose as value"
+	if [[ -n "${arguments[docker_mode]+exists}" ]]; then
+		DOCKER_MODE="${arguments[docker_mode]}"
+		if [[ "$DOCKER_MODE" != "podman" && "$DOCKER_MODE" != "compose" ]]; then
+			if [[ "$DOCKER_MODE" == "" ]]; then
+				echo "Error: --docker_mode has no value!"
+			else
+				echo "Error: --docker_mode accepts only podman or compose as value"
+			fi
+			exit 1
 		fi
-		exit 1
 	fi
-fi
-
-if [[ -n "${arguments[script_mode]+exists}" ]]; then
-	if [[ "${arguments[script_mode]}" == "true" || -z "${arguments[script_mode]}" ]]; then
-		echo "Error: --script_mode requires a value"
-		exit 1
-	fi
-	if [[ "$(echo "${arguments[script_mode]}" | tr '[:lower:]' '[:upper:]')" != "FULL_DOCKER" ]]; then
-		if [[ -n "${ZSH_VERSION:-}" ]]; then
-			for key in ${(k)arguments}; do
-				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-					echo "Error: when --script_mode is not FULL_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
-					exit 1
-				fi
-			done
-		else
-			for key in "${!arguments[@]}"; do
-				if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-					echo "Error: when --script_mode is not FULL_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
-					exit 1
-				fi
-			done
+	if [[ -n "${arguments[docker_device]+exists}" ]]; then
+		DOCKER_DEVICE_STR="${arguments[docker_device]}"
+		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
+			echo "Error: --docker_device has no value!"
+			exit 1
 		fi
 	fi
 fi
@@ -166,6 +158,12 @@ fi
 [[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 
 cd "$SCRIPT_DIR"
+
+if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
+    USER="${USER:-root}"
+    HOME="${HOME:-/root}"
+    SUDO=""
+fi
 
 if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
 	touch "$INSTALLED_LOG"
@@ -180,9 +178,13 @@ if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exist
 		APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR")
 	fi
 	user_in_group() {
-		id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
+		if [[ -n "${USER:-}" ]]; then
+			id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
+		else
+			return 1
+		fi
 	}
-	if ! user_in_group "$APP_GROUP"; then
+	if [[ -n "${USER:-}" ]] && ! user_in_group "$APP_GROUP"; then
 		echo "Adding $USER to group $APP_GROUP (requires sudo)..."
 		if [[ "$OSTYPE" == "darwin"* ]]; then
 			sudo dseditgroup -o edit -a "$USER" -t user "$APP_GROUP"
