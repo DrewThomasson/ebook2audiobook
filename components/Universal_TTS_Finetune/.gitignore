@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.so
+/venv/
+/finetune_models/
+/models/
+/test_out/
+test_transcript.json
+.DS_Store
+**/ .DS_Store
+.venv/
