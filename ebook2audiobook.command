@@ -875,10 +875,15 @@ function build_docker_image {
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${DEVICE_TAG}"
 	case "$DEVICE_TAG" in
-		cpu|mps)   COMPOSE_PROFILES=cpu ;;
-		*)         COMPOSE_PROFILES=gpu ;;
+		cpu|mps)	COMPOSE_PROFILES=cpu ;;
+		cu*)		COMPOSE_PROFILES=cuda ;;
+		rocm*)		COMPOSE_PROFILES=rocm ;;
+		jetson*)	COMPOSE_PROFILES=jetson ;;
+		xpu)		COMPOSE_PROFILES=xpu ;;
+		*)		COMPOSE_PROFILES=cpu ;;
 	esac
 	export COMPOSE_PROFILES
+	SERVICE="ebook2audiobook-${COMPOSE_PROFILES}"
 	if [[ "$DOCKER_MODE" == "podman" ]]; then
 		if ! command -v podman-compose &>/dev/null || ! podman-compose -f podman-compose.yml config &>/dev/null; then
 			echo "ERROR: podman-compose is not installed or podman-compose.yml is not valid"
@@ -910,7 +915,7 @@ function build_docker_image {
 		echo "	GUI mode:"
 		echo "	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES up"
 		echo "	Headless mode:"
-		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" $SERVICE --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	elif [[ "$DOCKER_MODE" == "compose" ]]; then
 		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
@@ -931,7 +936,7 @@ function build_docker_image {
 		echo "	GUI mode:"
 		echo "	DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
 		echo "	Headless mode:"
-		echo "  DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+		echo "  DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" $SERVICE --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	else
 		# echo "--> Using docker buildx"
 		# docker buildx use default

@@ -888,9 +888,18 @@ if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=cpu"
 ) else if /i "%DEVICE_TAG%"=="mps" (
     set "COMPOSE_PROFILES=cpu"
+) else if /i "%DEVICE_TAG:~0,2%"=="cu" (
+    set "COMPOSE_PROFILES=cuda"
+) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
+    set "COMPOSE_PROFILES=jetson"
+) else if /i "%DEVICE_TAG:~0,4%"=="rocm" (
+    set "COMPOSE_PROFILES=rocm"
+) else if /i "%DEVICE_TAG%"=="xpu" (
+    set "COMPOSE_PROFILES=xpu"
 ) else (
-    set "COMPOSE_PROFILES=gpu"
+    set "COMPOSE_PROFILES=cpu"
 )
+set "SERVICE=ebook2audiobook-%COMPOSE_PROFILES%"
 if "%DOCKER_DESKTOP%"=="1" (
 	set "wsl_cmd="
     set "WSL_DIR=%SAFE_SCRIPT_DIR%"
@@ -922,7 +931,7 @@ if "%DOCKER_MODE%"=="podman" (
 	echo 	GUI mode:
 	echo 		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% up
 	echo 	Headless mode:
-	echo   		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
     if "%DOCKER_DESKTOP%"=="1" (
 		echo Using docker compose
@@ -944,9 +953,9 @@ if "%DOCKER_MODE%"=="podman" (
 	echo Docker image ready. To run your docker:
 	echo Docker Compose:
 	echo 	GUI mode:
-	echo 		%env_prefix% docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
+	echo 		!env_prefix! docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
 	echo 	Headless mode:
-	echo   		%env_prefix% docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		!env_prefix! docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else (
 	if "%DOCKER_DESKTOP%"=="1" (
 		:: echo Using docker buildx
