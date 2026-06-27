@@ -803,27 +803,9 @@ function check_docker {
 }
 
 function install_python_packages {
-	echo "[ebook2audiobook] Installing dependencies…"
-	python3 -m pip cache purge > /dev/null 2>&1
-	python3 -m pip install --upgrade pip setuptools wheel >nul 2>&1
-	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
-	total=$(grep -vE '^\s*($|#)' "$SCRIPT_DIR/requirements.txt" | wc -l | tr -d ' ')
-	i=0
-	progress_bar() {
-		local cur=$1 max=$2 width=30
-		local filled=$(( cur * width / max ))
-		printf "\r[%-${width}s] %d/%d" "$(printf '#%.0s' $(printf '%*s' "$filled" ''))" "$cur" "$max"
-	}
-	while IFS= read -r pkg || [[ -n "$pkg" ]]; do
-		[[ -z "$pkg" || "$pkg" == \#* ]] && continue
-		((i++))
-		progress_bar "$i" "$total"
-		echo " Installing $pkg"
-		python3 -m pip install --upgrade --no-cache-dir "$pkg"
-	done < "$SCRIPT_DIR/requirements.txt"
-	python3 -m unidic download || exit 1
-	echo "[ebook2audiobook] Installation completed."
-	return 0
+	echo "Installing python dependencies…"
+	PYTHONPATH="$SCRIPT_DIR" python3 -c "import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())"
+	return $?
 }
 
 function check_device_info {
