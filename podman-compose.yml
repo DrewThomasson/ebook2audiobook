@@ -26,13 +26,30 @@ services:
     restart: unless-stopped
 
   ebook2audiobook-gpu:
-    extends:
-      service: ebook2audiobook
     image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cu130}
     profiles: [gpu]
     build:
+      context: .
+      dockerfile: Dockerfile
       args:
+        APP_VERSION: ${APP_VERSION:-26.6.26}
         DEVICE_TAG: ${DEVICE_TAG:-cu130}
+        BUILDAH_FORMAT: docker
+    working_dir: /app
+    entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
+    tty: true
+    stdin_open: true
+    ports:
+      - "7860:7860"
+    security_opt:
+      - label=disable
+    volumes:
+      - ./ebooks:/app/ebooks:rw
+      - ./audiobooks:/app/audiobooks:rw
+      - ./models:/app/models:rw
+      - ./voices:/app/voices:rw
+      - ./tmp:/app/tmp:rw
+    restart: unless-stopped
     devices:
       - nvidia.com/gpu=all
       - /dev/dri:/dev/dri
