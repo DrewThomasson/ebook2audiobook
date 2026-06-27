@@ -355,6 +355,21 @@ def check_programs(prog_name:str, command:str, options:str)->bool:
         DependencyError(e)
     return False
 
+def check_dictionary()->bool:
+    import unidic
+    unidic_path = unidic.DICDIR
+    dicrc = os.path.join(unidic_path, 'dicrc')
+    if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
+        try:
+            error = 'UniDic dictionary not found or incomplete. Downloading now…'
+            print(error)
+            subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
+        except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
+            error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting…'
+            raise SystemExit(error)
+            return 1
+    return 0
+
 def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     try:
         if not os.path.exists(zip_path):
@@ -3399,6 +3414,10 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
             cleanup_models_cache()
+            if session['language'] == 'jpn':
+                if check_dictionary() == 1:
+                    error = 'Unidic dictionnary could not be downloaded.'
+                    return error, False
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format']
                 session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
