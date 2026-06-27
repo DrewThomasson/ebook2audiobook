@@ -1251,10 +1251,10 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=visible_voice_buttons),
                             gr.update(label=f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
                             gr.update(visible=visible_custom_model_del_btn),
-                            gr.update(value=session.get('qwen3_batch_size', 24)),
-                            gr.update(value=session.get('qwen3_temperature', 0.75)),
-                            gr.update(value=session.get('qwen3_top_p', 0.95)),
-                            gr.update(value=session.get('qwen3_repetition_penalty', 2.0))
+                            gr.update(value=session.get('qwen3_batch_size') or 24),
+                            gr.update(value=session.get('qwen3_temperature') or 0.75),
+                            gr.update(value=session.get('qwen3_top_p') or 0.95),
+                            gr.update(value=session.get('qwen3_repetition_penalty') or 2.0)
                         )
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
@@ -3396,10 +3396,10 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_progress]
             ).then(
                 fn=lambda s: (
-                    gr.update(value=context.get_session(s).get('qwen3_batch_size', 24)),
-                    gr.update(value=context.get_session(s).get('qwen3_temperature', 0.75)),
-                    gr.update(value=context.get_session(s).get('qwen3_top_p', 0.95)),
-                    gr.update(value=context.get_session(s).get('qwen3_repetition_penalty', 2.0)),
+                    gr.update(value=context.get_session(s).get('qwen3_batch_size') or 24),
+                    gr.update(value=context.get_session(s).get('qwen3_temperature') or 0.75),
+                    gr.update(value=context.get_session(s).get('qwen3_top_p') or 0.95),
+                    gr.update(value=context.get_session(s).get('qwen3_repetition_penalty') or 2.0),
                 ),
                 inputs=[gr_session],
                 outputs=[gr_qwen3_batch_size, gr_qwen3_temperature, gr_qwen3_top_p, gr_qwen3_repetition_penalty],
