@@ -1,59 +1,89 @@
-services:
-  ebook2audiobook:
-    image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cpu}
-    profiles: [cpu]
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        APP_VERSION: ${APP_VERSION:-26.6.26}
-        DEVICE_TAG: ${DEVICE_TAG:-cpu}
-        BUILDAH_FORMAT: docker
-    working_dir: /app
-    entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
-    tty: true
-    stdin_open: true
-    ports:
-      - "7860:7860"
-    security_opt:
-      - label=disable
-    volumes:
-      - ./ebooks:/app/ebooks:rw
-      - ./audiobooks:/app/audiobooks:rw
-      - ./models:/app/models:rw
-      - ./voices:/app/voices:rw
-      - ./tmp:/app/tmp:rw
-    restart: unless-stopped
+# podman-compose.yml — universal across cpu / cuda / rocm / xpu (+ jetson),
+# on both amd64 and arm64. Pick the accelerator with --profile.
+#
+#   podman-compose                       --profile cpu    up
+#   DEVICE_TAG=cu130    podman-compose   --profile cuda   up
+#   DEVICE_TAG=jetson51 podman-compose   --profile jetson up
+#   DEVICE_TAG=rocm     podman-compose   --profile rocm   up
+#   DEVICE_TAG=xpu      podman-compose   --profile xpu    up
+#
+# Architecture (amd64 vs arm64) is NOT a profile. It is decided by the host you
+# run on plus the matching DEVICE_TAG image — the device entries below are
+# arch-agnostic at the compose layer.
+#
+# Always confirm a profile expands correctly before running it:
+#   DEVICE_TAG=rocm podman-compose --profile rocm config
 
-  ebook2audiobook-gpu:
-    image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cu130}
-    profiles: [gpu]
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        APP_VERSION: ${APP_VERSION:-26.6.26}
-        DEVICE_TAG: ${DEVICE_TAG:-cu130}
-        BUILDAH_FORMAT: docker
-    working_dir: /app
-    entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
-    tty: true
-    stdin_open: true
-    ports:
-      - "7860:7860"
-    security_opt:
-      - label=disable
-    volumes:
-      - ./ebooks:/app/ebooks:rw
-      - ./audiobooks:/app/audiobooks:rw
-      - ./models:/app/models:rw
-      - ./voices:/app/voices:rw
-      - ./tmp:/app/tmp:rw
-    restart: unless-stopped
+x-common: &common
+  image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cpu}
+  build:
+    context: .
+    dockerfile: Dockerfile
+    args:
+      APP_VERSION: ${APP_VERSION:-26.6.26}
+      DEVICE_TAG: ${DEVICE_TAG:-cpu}
+      BUILDAH_FORMAT: docker
+  working_dir: /app
+  entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
+  tty: true
+  stdin_open: true
+  ports:
+    - "7860:7860"
+  security_opt:
+    - label=disable
+  volumes:
+    - ./ebooks:/app/ebooks:rw
+    - ./audiobooks:/app/audiobooks:rw
+    - ./models:/app/models:rw
+    - ./voices:/app/voices:rw
+    - ./tmp:/app/tmp:rw
+  restart: unless-stopped
+
+services:
+  # --- CPU: no device wiring at all -----------------------------------------
+  ebook2audiobook-cpu:
+    <<: *common
+    profiles: [cpu]
+
+  # --- NVIDIA discrete (amd64 dGPU, or arm64 SBSA) via CDI -------------------
+  # Requires a generated CDI spec on the host:
+  #   sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+  ebook2audiobook-cuda:
+    <<: *common
+    profiles: [cuda]
     devices:
       - nvidia.com/gpu=all
-      - /dev/dri:/dev/dri
-      - /dev/kfd:/dev/kfd
+
+  # --- NVIDIA Jetson / Tegra (arm64 L4T) via CSV runtime --------------------
+  # Requires mode = "csv" in /etc/nvidia-container-runtime/config.toml and the
+  # nvidia runtime registered. On recent JetPack with a generated CDI spec you
+  # can use --profile cuda instead of this profile.
+  ebook2audiobook-jetson:
+    <<: *common
+    profiles: [jetson]
+    runtime: nvidia
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
     group_add:
       - video
+
+  # --- AMD ROCm -------------------------------------------------------------
+  ebook2audiobook-rocm:
+    <<: *common
+    profiles: [rocm]
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - video
+      - render
+
+  # --- Intel XPU (oneAPI / IPEX) --------------------------------------------
+  ebook2audiobook-xpu:
+    <<: *common
+    profiles: [xpu]
+    devices:
+      - /dev/dri
+    group_add:
       - render
