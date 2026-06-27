@@ -76,7 +76,7 @@ class DeviceInstaller():
             os_env = 'manylinux_2_28'
             pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
             arch = archs['AARCH64'] if name in [devices['JETSON']['proc']] else self.arch
-            if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
+            if name in [devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
             try:
