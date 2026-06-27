@@ -1007,7 +1007,7 @@ else
 					exit 1
 				fi
 			fi
-			echo "$DOCKER_DEVICE_STR"
+			echo "$DEVICE_INFO_STR"
 			exit 1
 			build_docker_image "$DEVICE_INFO_STR" || exit 1
 		else
