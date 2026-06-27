@@ -212,6 +212,9 @@ class SessionContext:
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
             ####### Qwen3 settings
             "qwen3_batch_size": 24,
+            "qwen3_temperature": 0.75,
+            "qwen3_top_p": 0.95,
+            "qwen3_repetition_penalty": 2.0,
             ####### Audiobook editor
             "audiobook": None,
             "audiobooks_dir": None,

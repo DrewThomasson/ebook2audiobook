@@ -59,6 +59,13 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
             msg = f'  Qwen3 batch_size: {self.batch_size} (VRAM: {free_gb}GB, suggested: {suggested})'
             print(msg)
 
+            # ponytail: generation params from session config
+            self.gen_params: dict[str, Any] = {}
+            for key, cast in [('temperature', float), ('top_p', float), ('repetition_penalty', float)]:
+                val = self.session.get(f'qwen3_{key}')
+                if val is not None:
+                    self.gen_params[key] = cast(val)
+
             # ponytail: cross-sentence batch buffer
             self._batch_buffer: list[dict] = []
         except Exception as e:
@@ -219,6 +226,8 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
                     text=texts,
                     language=languages,
                     voice_clone_prompt=prompt_dict,
+                    do_sample=True,
+                    **self.gen_params,
                 )
             else:
                 # no prompt — skip (shouldn't happen with Base model)
@@ -271,6 +280,8 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
             text=sentence,
             language=self.engine_langs.get(self.language, 'Auto'),
             voice_clone_prompt=prompt_dict,
+            do_sample=True,
+            **self.gen_params,
         )
         audio_part = wavs[0] if isinstance(wavs, list) else wavs
         if audio_part is None or len(audio_part) == 0:

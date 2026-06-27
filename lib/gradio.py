@@ -851,6 +851,33 @@ def build_interface(args:dict)->gr.Blocks:
                                 elem_id='gr_qwen3_batch_size',
                                 info='Number of sentences processed in parallel. Higher = faster, more VRAM. Auto-calculated from free VRAM.'
                             )
+                            gr_qwen3_temperature = gr.Slider(
+                                label='Temperature',
+                                minimum=0.1,
+                                maximum=2.0,
+                                step=0.05,
+                                value=0.75,
+                                elem_id='gr_qwen3_temperature',
+                                info='Higher = more varied intonation/prosody. Lower = more monotone but stable.'
+                            )
+                            gr_qwen3_top_p = gr.Slider(
+                                label='Top-p (nucleus sampling)',
+                                minimum=0.1,
+                                maximum=1.0,
+                                step=0.05,
+                                value=0.95,
+                                elem_id='gr_qwen3_top_p',
+                                info='Higher = considers more possible tokens. Lower = more conservative.'
+                            )
+                            gr_qwen3_repetition_penalty = gr.Slider(
+                                label='Repetition Penalty',
+                                minimum=1.0,
+                                maximum=3.0,
+                                step=0.1,
+                                value=2.0,
+                                elem_id='gr_qwen3_repetition_penalty',
+                                info='Higher = less repetition/stuttering. Lower = more natural flow but may repeat.'
+                            )
                 
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                     gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
@@ -1150,7 +1177,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(27)])
+                            outputs = tuple([gr.update() for _ in range(30)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1224,12 +1251,15 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=visible_voice_buttons),
                             gr.update(label=f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
                             gr.update(visible=visible_custom_model_del_btn),
-                            gr.update(value=session.get('qwen3_batch_size', 24))
+                            gr.update(value=session.get('qwen3_batch_size', 24)),
+                            gr.update(value=session.get('qwen3_temperature', 0.75)),
+                            gr.update(value=session.get('qwen3_top_p', 0.95)),
+                            gr.update(value=session.get('qwen3_repetition_penalty', 2.0))
                         )
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(27)])
+                outputs = tuple([gr.update() for _ in range(30)])
                 return outputs
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -2856,7 +2886,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn,
-                gr_qwen3_batch_size
+                gr_qwen3_batch_size, gr_qwen3_temperature, gr_qwen3_top_p, gr_qwen3_repetition_penalty
             ]
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_qwen3_params, gr_convert_btn,
@@ -3286,6 +3316,21 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_qwen3_batch_size],
                 outputs=None
             )
+            gr_qwen3_temperature.change(
+                fn=lambda session_id, val: _change_param('qwen3_temperature', session_id, float(val)),
+                inputs=[gr_session, gr_qwen3_temperature],
+                outputs=None
+            )
+            gr_qwen3_top_p.change(
+                fn=lambda session_id, val: _change_param('qwen3_top_p', session_id, float(val)),
+                inputs=[gr_session, gr_qwen3_top_p],
+                outputs=None
+            )
+            gr_qwen3_repetition_penalty.change(
+                fn=lambda session_id, val: _change_param('qwen3_repetition_penalty', session_id, float(val)),
+                inputs=[gr_session, gr_qwen3_repetition_penalty],
+                outputs=None
+            )
 
             ############ Timer to save session to localStorage
 
@@ -3350,9 +3395,14 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_voice_list],
                 show_progress_on=[gr_progress]
             ).then(
-                fn=lambda s: gr.update(value=context.get_session(s).get('qwen3_batch_size', 24)),
+                fn=lambda s: (
+                    gr.update(value=context.get_session(s).get('qwen3_batch_size', 24)),
+                    gr.update(value=context.get_session(s).get('qwen3_temperature', 0.75)),
+                    gr.update(value=context.get_session(s).get('qwen3_top_p', 0.95)),
+                    gr.update(value=context.get_session(s).get('qwen3_repetition_penalty', 2.0)),
+                ),
                 inputs=[gr_session],
-                outputs=[gr_qwen3_batch_size],
+                outputs=[gr_qwen3_batch_size, gr_qwen3_temperature, gr_qwen3_top_p, gr_qwen3_repetition_penalty],
                 show_progress_on=[gr_progress]
             )
                     )
