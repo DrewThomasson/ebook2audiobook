@@ -1177,7 +1177,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(30)])
+                            outputs = tuple([gr.update() for _ in range(31)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1208,6 +1208,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_ebook_src = True
                         visible_row_split_hours = True if session['output_split'] else False
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
+                        visible_qwen3 = visible_gr_tab_qwen3_params if session['tts_engine'] == TTS_ENGINES['QWEN3TTS'] else False
                         visible_voice_buttons = True if session.get('voice') is not None else False
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                         voice_file = session.get('voice')
@@ -1251,6 +1252,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=visible_voice_buttons),
                             gr.update(label=f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
                             gr.update(visible=visible_custom_model_del_btn),
+                            gr.update(visible=visible_qwen3),
                             gr.update(value=session.get('qwen3_batch_size') or 24),
                             gr.update(value=session.get('qwen3_temperature') or 0.75),
                             gr.update(value=session.get('qwen3_top_p') or 0.95),
@@ -1259,7 +1261,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(30)])
+                outputs = tuple([gr.update() for _ in range(31)])
                 return outputs
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -2886,6 +2888,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn,
+                gr_tab_qwen3_params,
                 gr_qwen3_batch_size, gr_qwen3_temperature, gr_qwen3_top_p, gr_qwen3_repetition_penalty
             ]
             outputs_refresh_interface = [
