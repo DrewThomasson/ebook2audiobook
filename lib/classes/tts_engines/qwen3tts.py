@@ -1,10 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
-# ponytail: batch size for GPU-parallel inference. 32 is fine on 32 GB VRAM for a 1.7B model.
-# Tune down to 8-16 if you hit OOM.
-BATCH_SIZE = 32
-
 # ponytail: directory where cached voice-clone prompts (*.pt) are stored.
 # Delete a cached prompt to force re-computation from the reference audio.
 QWEN3_CACHE_DIR = os.path.join(tts_dir, 'qwen3_voice_cache')
@@ -52,6 +48,16 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
                 devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']
             ] else self.session['device']
             self.engine = self.load_engine()
+
+            # ponytail: batch_size from session (auto-calc or user-set)
+            free_gb = self.session.get('free_vram_gb', 0)
+            suggested = max(4, min(28, int(free_gb * 0.85)))
+            current = self.session.get('qwen3_batch_size', suggested)
+            if current < 1:
+                current = suggested
+            self.batch_size = current
+            msg = f'  Qwen3 batch_size: {self.batch_size} (VRAM: {free_gb}GB, suggested: {suggested})'
+            print(msg)
 
             # ponytail: cross-sentence batch buffer
             self._batch_buffer: list[dict] = []
@@ -328,7 +334,7 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
                     'voice_prompt': voice_prompt_data,
                 })
 
-            if len(self._batch_buffer) >= BATCH_SIZE:
+            if len(self._batch_buffer) >= self.batch_size:
                 self._flush_batch()
 
             # Verify file was created (either by batch flush or empty sentence)

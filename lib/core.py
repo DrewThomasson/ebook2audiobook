@@ -210,6 +210,8 @@ class SessionContext:
             ####### Bark settings
             "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
+            ####### Qwen3 settings
+            "qwen3_batch_size": 24,
             ####### Audiobook editor
             "audiobook": None,
             "audiobooks_dir": None,
