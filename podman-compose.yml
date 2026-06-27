@@ -20,7 +20,7 @@ x-common: &common
     context: .
     dockerfile: Dockerfile
     args:
-      APP_VERSION: ${APP_VERSION:-26.6.26}
+      APP_VERSION: ${APP_VERSION:-26.6.27}
       DEVICE_TAG: ${DEVICE_TAG:-cpu}
       BUILDAH_FORMAT: docker
   working_dir: /app
