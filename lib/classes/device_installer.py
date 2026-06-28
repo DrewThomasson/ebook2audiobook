@@ -76,7 +76,7 @@ class DeviceInstaller():
             os_env = 'manylinux_2_28'
             pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
             arch = archs['AARCH64'] if name in [devices['JETSON']['proc']] else self.arch
-            if name in [devices['MPS']['proc']]:
+            if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
             try:
@@ -1162,7 +1162,7 @@ class DeviceInstaller():
                         return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
-            return 0
+            return self.check_dictionary()
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)
@@ -1221,6 +1221,21 @@ class DeviceInstaller():
             return None
         except Exception as e:
             return 'onnxruntime'
+
+    def check_dictionary(self)->bool:
+        import unidic
+        unidic_path = unidic.DICDIR
+        dicrc = os.path.join(unidic_path, 'dicrc')
+        if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
+            try:
+                error = 'UniDic dictionary not found or incomplete. Downloading now…'
+                print(error)
+                subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
+            except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
+                error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting…'
+                raise SystemExit(error)
+                return 1
+        return 0
           
     def install_device_packages(self, device_info_str:str)->int:
 
@@ -1316,13 +1331,13 @@ class DeviceInstaller():
                             tag_dir = tag
                             py_major, py_minor = device_info['pyvenv']
                             tag_py = f'cp{py_major}{py_minor}'
-                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'filelock', 'jinja2', 'fsspec', 'networkx', 'sympy'])
+                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'filelock', 'typing-extensions', 'jinja2', 'fsspec', 'networkx', 'sympy'])
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
                                 torch_pkg = f"{url}/torch-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
                                 torchaudio_pkg = f"{url}/torchaudio-v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torchaudio_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torch_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torchaudio_pkg])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'scikit-learn'])
                                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'scipy'])
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
@@ -1347,7 +1362,7 @@ class DeviceInstaller():
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--index-url', f'{url}/{tag_dir}'])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', f'torch=={torch_version_matrix}', f'torchaudio=={torch_version_matrix}', '--index-url', f'{url}/{tag_dir}'])
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
                                 is_cpu_aarch64_linux = (
                                     tag == devices['CPU']['proc']
