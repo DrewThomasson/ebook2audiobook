@@ -1172,7 +1172,7 @@ class DeviceInstaller():
                             return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
-            return self.check_dictionary()
+            return true
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)
@@ -1231,21 +1231,6 @@ class DeviceInstaller():
             return None
         except Exception as e:
             return 'onnxruntime'
-
-    def check_dictionary(self)->bool:
-        import unidic
-        unidic_path = unidic.DICDIR
-        dicrc = os.path.join(unidic_path, 'dicrc')
-        if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
-            try:
-                error = 'UniDic dictionary not found or incomplete. Downloading now…'
-                print(error)
-                subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
-            except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
-                error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting…'
-                raise SystemExit(error)
-                return 1
-        return 0
           
     def install_device_packages(self, device_info_str:str)->int:
 
