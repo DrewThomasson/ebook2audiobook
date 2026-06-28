@@ -870,13 +870,11 @@ if "%DOCKER_MODE%"=="podman" (
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
 set "py_vers=%PYTHON_VERSION%"
-rem py_vers must follow the prebuilt-wheel ABI, so derive it from the profile pyvenv [major, minor]
-set "ARG_NQ=%ARG:"=%"
-for /f "tokens=2 delims=[]" %%a in ("!ARG_NQ!") do for /f "tokens=1,2 delims=, " %%b in ("%%a") do set "py_vers=%%b.%%c"
 if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--gpus all"
 ) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
     set "cmd_options=--runtime nvidia --gpus all"
+    set "py_vers=%MIN_PYTHON_VERSION%"
 ) else if /i "%DEVICE_TAG:~0,8%"=="rocm" (
     set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
