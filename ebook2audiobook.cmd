@@ -116,10 +116,6 @@ if "%ARCH%"=="X86" (
     goto :failed
 )
 
-if not exist "%INSTALLED_LOG%" if /i not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-    type nul > "%INSTALLED_LOG%"
-)
-
 cd /d "%SAFE_SCRIPT_DIR%"
 
 :: Clear previous associative values
@@ -147,32 +143,29 @@ if not "%~1"=="" (
 )
 
 :parse_args
-setlocal EnableDelayedExpansion
+rem No setlocal here: arguments.* are set in the current scope so they reach :main
+rem without an endlocal tunnel. Indirect names are set via call set "...%%key%%...".
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
-if "!arg:~0,2!"=="--" (
-    set "key=!arg:~2!"
+if "%arg:~0,2%"=="--" (
+    set "key=%arg:~2%"
     if not "%~2"=="" (
         echo %~2 | findstr "^--" >nul
         if errorlevel 1 (
-            set "arguments.!key!=%~2"
+            call set "arguments.%%key%%=%~2"
             shift
             shift
             goto parse_args
         )
     )
-    set "arguments.!key!=true"
+    call set "arguments.%%key%%=true"
     shift
     goto parse_args
 )
 shift
 goto parse_args
 
-
 :parse_args_done
-endlocal & (
-    for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
-)
 if defined arguments.script_mode (
     set "script_mode_valid=0"
     if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" set "script_mode_valid=1"
@@ -230,6 +223,10 @@ if defined arguments.script_mode (
         )
         endlocal
     )
+)
+rem .installed must not be created in build_docker mode; check after SCRIPT_MODE is resolved
+if not exist "%INSTALLED_LOG%" if /i not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+    type nul > "%INSTALLED_LOG%"
 )
 if defined arguments.headless (
     if /i "%arguments.headless%"=="false" (
@@ -870,11 +867,13 @@ if "%DOCKER_MODE%"=="podman" (
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
 set "py_vers=%PYTHON_VERSION%"
+rem py_vers must follow the prebuilt-wheel ABI, so derive it from the profile pyvenv [major, minor]
+set "ARG_NQ=%ARG:"=%"
+for /f "tokens=2 delims=[]" %%a in ("!ARG_NQ!") do for /f "tokens=1,2 delims=, " %%b in ("%%a") do set "py_vers=%%b.%%c"
 if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--gpus all"
 ) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
     set "cmd_options=--runtime nvidia --gpus all"
-    set "py_vers=%MIN_PYTHON_VERSION%"
 ) else if /i "%DEVICE_TAG:~0,8%"=="rocm" (
     set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
