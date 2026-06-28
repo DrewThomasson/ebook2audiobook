@@ -864,12 +864,15 @@ function build_docker_image {
 		return 1
 	fi
 	local cmd_options=""
-	local py_vers="$PYTHON_VERSION"
+	local py_vers
+	# py_vers must follow the prebuilt-wheel ABI, so derive it from the profile pyvenv
+	py_vers="$(printf '%s' "$ARG" | python3 -c 'import json,sys; v=json.load(sys.stdin).get("pyvenv"); print(f"{v[0]}.{v[1]}" if v else "")' 2>/dev/null)"
+	[[ -z "$py_vers" ]] && py_vers="$PYTHON_VERSION"
 	case "$DEVICE_TAG" in
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
-		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="$MIN_PYTHON_VERSION" ;;
+		jetson*)	cmd_options="--runtime nvidia --gpus all" ;;
 		xpu)		cmd_options="--device=/dev/dri" ;;
 	esac
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
