@@ -33,7 +33,7 @@ class DeviceInstaller():
             return True
         cpuinfo_version = self.get_package_version('py-cpuinfo')
         if not cpuinfo_version:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'py-cpuinfo'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'py-cpuinfo'])
         from cpuinfo import get_cpu_info
         flags = set(get_cpu_info().get('flags', []))
         return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
@@ -1153,7 +1153,7 @@ class DeviceInstaller():
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
                 for raw_pkg in missing_packages:
                     try:
-                        cmd = [sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir']
+                        cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir']
                         cmd.append(raw_pkg)
                         subprocess.check_call(cmd)
                     except subprocess.CalledProcessError as e:
@@ -1191,7 +1191,7 @@ class DeviceInstaller():
                 elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
                     numpy_pkg = 'numpy<2.4.0'
             if numpy_pkg is not None:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', numpy_pkg])
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', numpy_pkg])
             return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
@@ -1217,7 +1217,7 @@ class DeviceInstaller():
             print(error)
         try:
             subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
             return None
         except Exception as e:
             return 'onnxruntime'
@@ -1321,10 +1321,10 @@ class DeviceInstaller():
                                 url = default_jetson_url
                                 torch_pkg = f"{url}/torch-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
                                 torchaudio_pkg = f"{url}/torchaudio-v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', torch_pkg])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', torchaudio_pkg])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scikit-learn'])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', 'scipy'])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torch_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', torchaudio_pkg])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'scikit-learn'])
+                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'scipy'])
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
                                 url = default_pytorch_amd_url
                                 norm_tag = tag.replace('-rel-', '')
