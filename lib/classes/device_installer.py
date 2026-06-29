@@ -1172,7 +1172,7 @@ class DeviceInstaller():
                             return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
-            return true
+            return 0
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)
