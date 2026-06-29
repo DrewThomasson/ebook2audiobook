@@ -172,7 +172,7 @@ if defined arguments.script_mode (
     if /i "%arguments.script_mode%"=="%FULL_DOCKER%" set "script_mode_valid=1"
     if /i "%arguments.script_mode%"=="%NATIVE%" set "script_mode_valid=1"
 )
-
+echo ================ arguments
 if defined arguments.script_mode if "%script_mode_valid%"=="1" (
     set "SCRIPT_MODE=%arguments.script_mode%"
 )
