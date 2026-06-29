@@ -38,6 +38,7 @@ for /f "delims=" %%e in ('
 
 :: Capture all arguments into ARGS
 set "ARGS=%*"
+echo [DEBUG] startup: raw ARGS=[%*]
 set "NATIVE=native"
 set "BUILD_DOCKER=build_docker"
 set "FULL_DOCKER=full_docker"
@@ -126,6 +127,7 @@ for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 if not "%~1"=="" (
     setlocal EnableDelayedExpansion
     for /f "delims=" %%V in ('python -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
+echo [DEBUG] validator: VALID_ARGS=[!VALID_ARGS!]
     for %%A in (%*) do (
         set "ARG=%%~A"
         if "!ARG:~0,2!"=="--" (
@@ -147,6 +149,7 @@ rem No setlocal here: arguments.* are set in the current scope so they reach :ma
 rem without an endlocal tunnel. Indirect names are set via call set "...%%key%%...".
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
+echo [DEBUG] parse-iter 1=[%~1] 2=[%~2] arg=[%arg%]
 if "%arg:~0,2%"=="--" (
     set "key=%arg:~2%"
     if not "%~2"=="" (
@@ -166,16 +169,22 @@ shift
 goto parse_args
 
 :parse_args_done
+echo(
+echo [DEBUG] ===== dump after parse_args =====
+set arguments.
+echo [DEBUG] SCRIPT_MODE=[%SCRIPT_MODE%] BUILD_DOCKER=[%BUILD_DOCKER%]
+echo [DEBUG] =================================
 if defined arguments.script_mode (
     set "script_mode_valid=0"
     if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" set "script_mode_valid=1"
     if /i "%arguments.script_mode%"=="%FULL_DOCKER%" set "script_mode_valid=1"
     if /i "%arguments.script_mode%"=="%NATIVE%" set "script_mode_valid=1"
 )
-echo ================ %arguments%
+
 if defined arguments.script_mode if "%script_mode_valid%"=="1" (
     set "SCRIPT_MODE=%arguments.script_mode%"
 )
+echo [DEBUG] resolved SCRIPT_MODE=[%SCRIPT_MODE%] script_mode_valid=[%script_mode_valid%]
 if defined arguments.script_mode if "%script_mode_valid%"=="0" (
     echo Error: Invalid script mode argument: %arguments.script_mode%
     goto :failed
