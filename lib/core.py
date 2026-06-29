@@ -3414,7 +3414,7 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
             cleanup_models_cache()
-            if session['language'] == 'jpn':
+            if session['language'] == 'jpn' or (session['translate_enabled'] and session['translate'] == 'jpn'):
                 if check_dictionary() == 1:
                     error = 'Unidic dictionnary could not be downloaded.'
                     return error, False
