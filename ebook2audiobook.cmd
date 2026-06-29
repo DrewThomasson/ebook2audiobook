@@ -38,7 +38,6 @@ for /f "delims=" %%e in ('
 
 :: Capture all arguments into ARGS
 set "ARGS=%*"
-echo [DEBUG] startup: raw ARGS=[%*]
 set "NATIVE=native"
 set "BUILD_DOCKER=build_docker"
 set "FULL_DOCKER=full_docker"
@@ -117,6 +116,10 @@ if "%ARCH%"=="X86" (
     goto :failed
 )
 
+if not exist "%INSTALLED_LOG%" if /i not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
+    type nul > "%INSTALLED_LOG%"
+)
+
 cd /d "%SAFE_SCRIPT_DIR%"
 
 :: Clear previous associative values
@@ -127,7 +130,6 @@ for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 if not "%~1"=="" (
     setlocal EnableDelayedExpansion
     for /f "delims=" %%V in ('python -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
-echo [DEBUG] validator: VALID_ARGS=[!VALID_ARGS!]
     for %%A in (%*) do (
         set "ARG=%%~A"
         if "!ARG:~0,2!"=="--" (
@@ -145,35 +147,32 @@ echo [DEBUG] validator: VALID_ARGS=[!VALID_ARGS!]
 )
 
 :parse_args
-rem No setlocal here: arguments.* are set in the current scope so they reach :main
-rem without an endlocal tunnel. Indirect names are set via call set "...%%key%%...".
+setlocal EnableDelayedExpansion
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
-echo [DEBUG] parse-iter 1=[%~1] 2=[%~2] arg=[%arg%]
-if "%arg:~0,2%"=="--" (
-    set "key=%arg:~2%"
+if "!arg:~0,2!"=="--" (
+    set "key=!arg:~2!"
     if not "%~2"=="" (
         echo %~2 | findstr "^--" >nul
         if errorlevel 1 (
-            call set "arguments.%%key%%=%~2"
+            set "arguments.!key!=%~2"
             shift
             shift
             goto parse_args
         )
     )
-    call set "arguments.%%key%%=true"
+    set "arguments.!key!=true"
     shift
     goto parse_args
 )
 shift
 goto parse_args
 
+
 :parse_args_done
-echo(
-echo [DEBUG] ===== dump after parse_args =====
-set arguments.
-echo [DEBUG] SCRIPT_MODE=[%SCRIPT_MODE%] BUILD_DOCKER=[%BUILD_DOCKER%]
-echo [DEBUG] =================================
+endlocal & (
+    for /f "tokens=1,2 delims==" %%A in ('set arguments. 2^>nul') do set "%%A=%%B"
+)
 if defined arguments.script_mode (
     set "script_mode_valid=0"
     if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" set "script_mode_valid=1"
@@ -184,7 +183,6 @@ if defined arguments.script_mode (
 if defined arguments.script_mode if "%script_mode_valid%"=="1" (
     set "SCRIPT_MODE=%arguments.script_mode%"
 )
-echo [DEBUG] resolved SCRIPT_MODE=[%SCRIPT_MODE%] script_mode_valid=[%script_mode_valid%]
 if defined arguments.script_mode if "%script_mode_valid%"=="0" (
     echo Error: Invalid script mode argument: %arguments.script_mode%
     goto :failed
@@ -232,10 +230,6 @@ if defined arguments.script_mode (
         )
         endlocal
     )
-)
-rem .installed must not be created in build_docker mode; check after SCRIPT_MODE is resolved
-if not exist "%INSTALLED_LOG%" if /i not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-    type nul > "%INSTALLED_LOG%"
 )
 if defined arguments.headless (
     if /i "%arguments.headless%"=="false" (
@@ -876,13 +870,11 @@ if "%DOCKER_MODE%"=="podman" (
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
 set "py_vers=%PYTHON_VERSION%"
-rem py_vers must follow the prebuilt-wheel ABI, so derive it from the profile pyvenv [major, minor]
-set "ARG_NQ=%ARG:"=%"
-for /f "tokens=2 delims=[]" %%a in ("!ARG_NQ!") do for /f "tokens=1,2 delims=, " %%b in ("%%a") do set "py_vers=%%b.%%c"
 if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--gpus all"
 ) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
     set "cmd_options=--runtime nvidia --gpus all"
+    set "py_vers=%MIN_PYTHON_VERSION%"
 ) else if /i "%DEVICE_TAG:~0,8%"=="rocm" (
     set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
@@ -896,18 +888,9 @@ if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=cpu"
 ) else if /i "%DEVICE_TAG%"=="mps" (
     set "COMPOSE_PROFILES=cpu"
-) else if /i "%DEVICE_TAG:~0,2%"=="cu" (
-    set "COMPOSE_PROFILES=cuda"
-) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
-    set "COMPOSE_PROFILES=jetson"
-) else if /i "%DEVICE_TAG:~0,4%"=="rocm" (
-    set "COMPOSE_PROFILES=rocm"
-) else if /i "%DEVICE_TAG%"=="xpu" (
-    set "COMPOSE_PROFILES=xpu"
 ) else (
-    set "COMPOSE_PROFILES=cpu"
+    set "COMPOSE_PROFILES=gpu"
 )
-set "SERVICE=ebook2audiobook-%COMPOSE_PROFILES%"
 if "%DOCKER_DESKTOP%"=="1" (
 	set "wsl_cmd="
     set "WSL_DIR=%SAFE_SCRIPT_DIR%"
@@ -939,7 +922,7 @@ if "%DOCKER_MODE%"=="podman" (
 	echo 	GUI mode:
 	echo 		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% up
 	echo 	Headless mode:
-	echo   		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
     if "%DOCKER_DESKTOP%"=="1" (
 		echo Using docker compose
@@ -961,9 +944,9 @@ if "%DOCKER_MODE%"=="podman" (
 	echo Docker image ready. To run your docker:
 	echo Docker Compose:
 	echo 	GUI mode:
-	echo 		!env_prefix! docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
+	echo 		%env_prefix% docker compose --profile %COMPOSE_PROFILES% up --no-log-prefix
 	echo 	Headless mode:
-	echo   		!env_prefix! docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		%env_prefix% docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" ebook2audiobook --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else (
 	if "%DOCKER_DESKTOP%"=="1" (
 		:: echo Using docker buildx
