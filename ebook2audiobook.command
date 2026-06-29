@@ -865,9 +865,13 @@ function build_docker_image {
 	fi
 	local cmd_options=""
 	local py_vers
-	# py_vers must follow the prebuilt-wheel ABI, so derive it from the profile pyvenv
+	# Base-image Python MUST match the wheel ABI in the device profile: derive it from
+	# pyvenv in $ARG (the single source of truth), not from $DEVICE_TAG.
 	py_vers="$(printf '%s' "$ARG" | python3 -c 'import json,sys; v=json.load(sys.stdin).get("pyvenv"); print(f"{v[0]}.{v[1]}" if v else "")' 2>/dev/null)"
 	[[ -z "$py_vers" ]] && py_vers="$PYTHON_VERSION"
+	# Export so compose/podman-compose builds (which resolve ${PYTHON_VERSION} from the
+	# environment) get the same value as the --build-arg, not the compose default.
+	export PYTHON_VERSION="$py_vers"
 	case "$DEVICE_TAG" in
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
