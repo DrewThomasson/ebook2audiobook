@@ -869,9 +869,14 @@ function build_docker_image {
 	# pyvenv in $ARG (the single source of truth), not from $DEVICE_TAG.
 	py_vers="$(printf '%s' "$ARG" | python3 -c 'import json,sys; v=json.load(sys.stdin).get("pyvenv"); print(f"{v[0]}.{v[1]}" if v else "")' 2>/dev/null)"
 	[[ -z "$py_vers" ]] && py_vers="$PYTHON_VERSION"
-	# Export so compose/podman-compose builds (which resolve ${PYTHON_VERSION} from the
-	# environment) get the same value as the --build-arg, not the compose default.
+	# Compose reads build args ONLY from the compose file build.args, resolved from the
+	# environment -- it ignores PODMAN_BUILD_ARGS and loose --build-arg flags. Export every
+	# value the Dockerfile ARGs consume so the device profile + matching Python reach the
+	# image instead of the Dockerfile defaults (a generic cu130 / python3.12).
 	export PYTHON_VERSION="$py_vers"
+	export DOCKER_DEVICE_STR="$ARG"
+	export DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}"
+	export CALIBRE_INSTALLER_URL ISO3_LANG
 	case "$DEVICE_TAG" in
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
