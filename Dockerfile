@@ -5,7 +5,7 @@ ARG PYTHON_VERSION=3.12
 # ============================================================
 FROM python:${PYTHON_VERSION}-slim-bookworm
 
-ARG APP_VERSION=26.6.26
+ARG APP_VERSION=26.6.30
 ARG DEVICE_TAG=cu130
 ARG DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu130", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
@@ -42,12 +42,7 @@ RUN set -eux; \
 		${DOCKER_PROGRAMS_STR} tesseract-ocr-${ISO3_LANG}; \
 	rm -rf /var/lib/apt/lists/*
 	
-RUN find /usr/local/lib/python3.12/site-packages/pip* -type f -delete 2>/dev/null; \
-    find /usr/local/lib/python3.12/site-packages/pip* -type l -delete 2>/dev/null; \
-    curl -sS https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py && \
-    python3 /tmp/get-pip.py --ignore-installed && \
-    rm -f /tmp/get-pip.py && \
-    pip install --no-cache-dir setuptools wheel
+RUN python3 -m pip install --no-cache-dir --upgrade --ignore-installed pip setuptools wheel
 
 # Rust toolchain
 RUN bash -o pipefail -c '\
