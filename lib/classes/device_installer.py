@@ -1440,6 +1440,8 @@ class DeviceInstaller():
             return 1
 
     def check_voices(self)->int:
+        import urllib.request, zipfile
+        from tqdm import tqdm
         voices_dir = './voices'
         def has_wav()->bool:
             return any(
