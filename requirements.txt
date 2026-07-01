@@ -2,7 +2,6 @@
 faster_whisper>=1.0.2
 spacy>=3.7.4
 cutlet
-fugashi[unidic-lite]
 Cython>=0.29.0
 onnx
 onnxruntime
@@ -39,6 +38,8 @@ iso639-lang
 soynlp
 jieba
 uroman
+fugashi
+unidic-lite
 pycantonese
 pypinyin
 pythainlp
