@@ -803,27 +803,9 @@ function check_docker {
 }
 
 function install_python_packages {
-	echo "[ebook2audiobook] Installing dependencies…"
-	python3 -m pip cache purge > /dev/null 2>&1
-	python3 -m pip install --upgrade pip setuptools wheel >nul 2>&1
-	python3 -m pip install --upgrade llvmlite numba --only-binary=:all:
-	total=$(grep -vE '^\s*($|#)' "$SCRIPT_DIR/requirements.txt" | wc -l | tr -d ' ')
-	i=0
-	progress_bar() {
-		local cur=$1 max=$2 width=30
-		local filled=$(( cur * width / max ))
-		printf "\r[%-${width}s] %d/%d" "$(printf '#%.0s' $(printf '%*s' "$filled" ''))" "$cur" "$max"
-	}
-	while IFS= read -r pkg || [[ -n "$pkg" ]]; do
-		[[ -z "$pkg" || "$pkg" == \#* ]] && continue
-		((i++))
-		progress_bar "$i" "$total"
-		echo " Installing $pkg"
-		python3 -m pip install --upgrade --no-cache-dir "$pkg"
-	done < "$SCRIPT_DIR/requirements.txt"
-	python3 -m unidic download || exit 1
-	echo "[ebook2audiobook] Installation completed."
-	return 0
+	echo "Installing python dependencies…"
+	PYTHONPATH="$SCRIPT_DIR" python3 -c "import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())"
+	return $?
 }
 
 function check_device_info {
@@ -882,21 +864,38 @@ function build_docker_image {
 		return 1
 	fi
 	local cmd_options=""
-	local py_vers="$PYTHON_VERSION"
+	local py_vers
+	# Base-image Python MUST match the wheel ABI in the device profile: derive it from
+	# pyvenv in $ARG (the single source of truth), not from $DEVICE_TAG.
+	py_vers="$(printf '%s' "$ARG" | python3 -c 'import json,sys; v=json.load(sys.stdin).get("pyvenv"); print(f"{v[0]}.{v[1]}" if v else "")' 2>/dev/null)"
+	[[ -z "$py_vers" ]] && py_vers="$PYTHON_VERSION"
+	# Compose reads build args ONLY from the compose file build.args, resolved from the
+	# environment -- it ignores PODMAN_BUILD_ARGS and loose --build-arg flags. Export every
+	# value the Dockerfile ARGs consume so the device profile + matching Python reach the
+	# image instead of the Dockerfile defaults (a generic cu130 / python3.12).
+	export PYTHON_VERSION="$py_vers"
+	export DOCKER_DEVICE_STR="$ARG"
+	export DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}"
+	export CALIBRE_INSTALLER_URL ISO3_LANG
 	case "$DEVICE_TAG" in
 		cpu)		cmd_options="";;
 		cu*)		cmd_options="--gpus all" ;;
 		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
-		jetson*)	cmd_options="--runtime nvidia --gpus all"; py_vers="$MIN_PYTHON_VERSION" ;;
+		jetson*)	cmd_options="--runtime nvidia --gpus all" ;;
 		xpu)		cmd_options="--device=/dev/dri" ;;
 	esac
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${DEVICE_TAG}"
 	case "$DEVICE_TAG" in
-		cpu|mps)   COMPOSE_PROFILES=cpu ;;
-		*)         COMPOSE_PROFILES=gpu ;;
+		cpu|mps)	COMPOSE_PROFILES=cpu ;;
+		cu*)		COMPOSE_PROFILES=cuda ;;
+		rocm*)		COMPOSE_PROFILES=rocm ;;
+		jetson*)	COMPOSE_PROFILES=jetson ;;
+		xpu)		COMPOSE_PROFILES=xpu ;;
+		*)		COMPOSE_PROFILES=cpu ;;
 	esac
 	export COMPOSE_PROFILES
+	SERVICE="ebook2audiobook-${COMPOSE_PROFILES}"
 	if [[ "$DOCKER_MODE" == "podman" ]]; then
 		if ! command -v podman-compose &>/dev/null || ! podman-compose -f podman-compose.yml config &>/dev/null; then
 			echo "ERROR: podman-compose is not installed or podman-compose.yml is not valid"
@@ -928,7 +927,7 @@ function build_docker_image {
 		echo "	GUI mode:"
 		echo "	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES up"
 		echo "	Headless mode:"
-		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" $SERVICE --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	elif [[ "$DOCKER_MODE" == "compose" ]]; then
 		echo "--> Using docker compose"
 		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
@@ -949,7 +948,7 @@ function build_docker_image {
 		echo "	GUI mode:"
 		echo "	DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
 		echo "	Headless mode:"
-		echo "  DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" ebook2audiobook --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+		echo "  DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" $SERVICE --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	else
 		# echo "--> Using docker buildx"
 		# docker buildx use default

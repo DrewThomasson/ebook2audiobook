@@ -1,11 +1,30 @@
+# docker-compose.yml — universal across cpu / cuda / rocm / xpu (+ jetson),
+# on both amd64 and arm64. Pick the accelerator with --profile.
+#
+#   docker compose                       --profile cpu    up
+#   DEVICE_TAG=cu130    docker compose   --profile cuda   up
+#   DEVICE_TAG=jetson51 docker compose   --profile jetson up
+#   DEVICE_TAG=rocm     docker compose   --profile rocm   up
+#   DEVICE_TAG=xpu      docker compose   --profile xpu    up
+#
+# Requires Compose V2 (the `docker compose` plugin), NOT the legacy
+# `docker-compose` v1 — only V2 honors deploy.resources.devices outside Swarm.
+#
+# Architecture (amd64 vs arm64) is NOT a profile: it is the host you run on plus
+# the matching DEVICE_TAG image. The device wiring below is arch-agnostic.
+#
+# Confirm a profile expands (and that extends merged) before running it:
+#   DEVICE_TAG=rocm docker compose --profile rocm config
+
 services:
-  ebook2audiobook:
+  # --- shared base: exists only for extends, never runs (dummy _base profile)
+  ebook2audiobook-base:
     image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cpu}
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.6.26}
+        APP_VERSION: ${APP_VERSION:-26.6.30}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
     working_dir: /app
     entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
@@ -20,30 +39,20 @@ services:
       - ./voices:/app/voices:rw
       - ./tmp:/app/tmp:rw
     restart: unless-stopped
+    profiles: [_base]
+
+  # --- CPU: no device wiring at all -----------------------------------------
+  ebook2audiobook-cpu:
+    extends:
+      service: ebook2audiobook-base
     profiles: [cpu]
 
-  ebook2audiobook-gpu:
-    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cu130}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        APP_VERSION: ${APP_VERSION:-26.6.26}
-        DEVICE_TAG: ${DEVICE_TAG:-cu130}
-    working_dir: /app
-    entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
-    tty: true
-    stdin_open: true
-    ports:
-      - "7860:7860"
-    volumes:
-      - ./ebooks:/app/ebooks:rw
-      - ./audiobooks:/app/audiobooks:rw
-      - ./models:/app/models:rw
-      - ./voices:/app/voices:rw
-      - ./tmp:/app/tmp:rw
-    restart: unless-stopped
-    profiles: [gpu]
+  # --- NVIDIA discrete (amd64 dGPU, or arm64 SBSA) --------------------------
+  # Needs the nvidia-container-toolkit installed on the host.
+  ebook2audiobook-cuda:
+    extends:
+      service: ebook2audiobook-base
+    profiles: [cuda]
     deploy:
       resources:
         reservations:
@@ -51,3 +60,40 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+
+  # --- NVIDIA Jetson / Tegra (arm64 L4T) ------------------------------------
+  # Uses the nvidia runtime (set "default-runtime": "nvidia" in
+  # /etc/docker/daemon.json, or rely on this runtime: line). The deploy.devices
+  # path above does NOT work on Tegra — Jetson goes through the runtime.
+  ebook2audiobook-jetson:
+    extends:
+      service: ebook2audiobook-base
+    profiles: [jetson]
+    runtime: nvidia
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+    group_add:
+      - video
+
+  # --- AMD ROCm -------------------------------------------------------------
+  ebook2audiobook-rocm:
+    extends:
+      service: ebook2audiobook-base
+    profiles: [rocm]
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - video
+      - render
+
+  # --- Intel XPU (oneAPI / IPEX) --------------------------------------------
+  ebook2audiobook-xpu:
+    extends:
+      service: ebook2audiobook-base
+    profiles: [xpu]
+    devices:
+      - /dev/dri
+    group_add:
+      - render
