@@ -55,7 +55,6 @@ langdetect
 phonemizer
 indic-nlp-library
 pytesseract
-numba
 torchvggish
 sentence-transformers
 onnxruntime
