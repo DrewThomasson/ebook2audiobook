@@ -1,4 +1,4 @@
-import os, re, sys, platform, shutil, subprocess, importlib, json
+import os, re, sys, platform, shutil, subprocess, importlib, json, urllib.request, zipfile
 
 from functools import cached_property
 from typing import Union
@@ -1438,3 +1438,21 @@ class DeviceInstaller():
             error = f'install_device_packages() error: {e}'
             print(error)
             return 1
+
+    def check_voices(self)->bool:
+        voices_dir = './voices'
+        try:
+            os.makedirs(voices_dir, exist_ok=True)
+            if any(f.endswith('.wav') for f in os.listdir(voices_dir)):
+                return True
+            zip_path = './voices.zip'
+            with urllib.request.urlopen(voices_url) as response, open(zip_path, 'wb') as out:
+                shutil.copyfileobj(response, out)
+            with zipfile.ZipFile(zip_path, 'r') as zf:
+                zf.extractall('./')
+            os.remove(zip_path)
+            return any(f.endswith('.wav') for f in os.listdir(voices_dir))
+        except Exception as e:
+            error = f'check_voices() error: {e}'
+            print(error)
+        return False

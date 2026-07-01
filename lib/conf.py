@@ -126,6 +126,7 @@ gradio_cache_dir = os.path.normpath(os.path.join(run_dir, 'gradio'))
 models_dir = os.path.abspath('models')
 ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
+voices_url = 'https://huggingface.co/datasets/ebook2audiobook/E2A-Voices/resolve/main/voices.zip?download=true'
 tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
 tempfile.tempdir = run_dir
