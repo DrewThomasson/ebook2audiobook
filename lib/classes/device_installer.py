@@ -1,4 +1,4 @@
-import os, re, sys, platform, shutil, subprocess, importlib, json, urllib.request, zipfile
+import os, re, sys, platform, shutil, subprocess, importlib, json
 
 from functools import cached_property
 from typing import Union
@@ -1440,18 +1440,31 @@ class DeviceInstaller():
             return 1
 
     def check_voices(self)->int:
+        import urllib.request, zipfile
+        from tqdm import tqdm
         voices_dir = './voices'
         try:
             os.makedirs(voices_dir, exist_ok=True)
             if any(f.endswith('.wav') for f in os.listdir(voices_dir)):
                 return 0
             zip_path = './voices.zip'
-            with urllib.request.urlopen(voices_url) as response, open(zip_path, 'wb') as out:
-                shutil.copyfileobj(response, out)
+            with urllib.request.urlopen(voices_url) as response:
+                total = int(response.headers.get('Content-Length', 0))
+                with open(zip_path, 'wb') as out, tqdm(
+                    total=total, unit='B', unit_scale=True, unit_divisor=1024, desc='Downloading voices'
+                ) as bar:
+                    while True:
+                        chunk = response.read(8192)
+                        if not chunk:
+                            break
+                        out.write(chunk)
+                        bar.update(len(chunk))
             with zipfile.ZipFile(zip_path, 'r') as zf:
-                zf.extractall('./')
+                members = zf.infolist()
+                for member in tqdm(members, desc='Extracting voices', unit='file'):
+                    zf.extract(member, './')
             os.remove(zip_path)
-            return 0
+            return 0 if any(f.endswith('.wav') for f in os.listdir(voices_dir)) else 1
         except Exception as e:
             error = f'check_voices() error: {e}'
             print(error)
