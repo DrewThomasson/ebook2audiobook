@@ -1032,6 +1032,9 @@ class DeviceInstaller():
         overrides = {}
         if self.system != systems['MACOS']:
             overrides['onnxruntime'] = self.check_onnxruntime_pkg()
+        if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
+            overrides['llvmlite'] = 'llvmlite==0.44.0'
+            overrides['numba'] = 'numba==0.61.0'
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
