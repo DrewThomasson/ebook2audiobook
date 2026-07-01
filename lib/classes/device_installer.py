@@ -1172,7 +1172,7 @@ class DeviceInstaller():
                             return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
-            return 0
+            return check_voices()
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)
@@ -1439,20 +1439,20 @@ class DeviceInstaller():
             print(error)
             return 1
 
-    def check_voices(self)->bool:
+    def check_voices(self)->int:
         voices_dir = './voices'
         try:
             os.makedirs(voices_dir, exist_ok=True)
             if any(f.endswith('.wav') for f in os.listdir(voices_dir)):
-                return True
+                return 0
             zip_path = './voices.zip'
             with urllib.request.urlopen(voices_url) as response, open(zip_path, 'wb') as out:
                 shutil.copyfileobj(response, out)
             with zipfile.ZipFile(zip_path, 'r') as zf:
                 zf.extractall('./')
             os.remove(zip_path)
-            return any(f.endswith('.wav') for f in os.listdir(voices_dir))
+            return 0
         except Exception as e:
             error = f'check_voices() error: {e}'
             print(error)
-        return False
+        return 1
