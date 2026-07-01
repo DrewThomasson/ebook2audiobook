@@ -1467,7 +1467,8 @@ class DeviceInstaller():
                         bar.update(len(chunk))
             with zipfile.ZipFile(zip_path, 'r') as zf:
                 members = zf.infolist()
-                for member in tqdm(members, desc='Extracting voices', unit='file'):
+                desc = 'Extracting voices'
+                for member in tqdm(members, desc=desc, unit='file'):
                     zf.extract(member, './')
             os.remove(zip_path)
             return 0 if has_wav() else 1
