@@ -1440,12 +1440,16 @@ class DeviceInstaller():
             return 1
 
     def check_voices(self)->int:
-        import urllib.request, zipfile
-        from tqdm import tqdm
         voices_dir = './voices'
+        def has_wav()->bool:
+            return any(
+                f.endswith('.wav')
+                for _, _, files in os.walk(voices_dir)
+                for f in files
+            )
         try:
             os.makedirs(voices_dir, exist_ok=True)
-            if any(f.endswith('.wav') for f in os.listdir(voices_dir)):
+            if has_wav():
                 return 0
             zip_path = './voices.zip'
             with urllib.request.urlopen(voices_url) as response:
@@ -1464,7 +1468,7 @@ class DeviceInstaller():
                 for member in tqdm(members, desc='Extracting voices', unit='file'):
                     zf.extract(member, './')
             os.remove(zip_path)
-            return 0 if any(f.endswith('.wav') for f in os.listdir(voices_dir)) else 1
+            return 0 if has_wav() else 1
         except Exception as e:
             error = f'check_voices() error: {e}'
             print(error)
