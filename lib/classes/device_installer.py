@@ -1158,21 +1158,28 @@ class DeviceInstaller():
                 except subprocess.CalledProcessError as e:
                     msg = f'pip self-upgrade skipped (continuing with current pip): {e}'
                     print(msg)
-                for raw_pkg in missing_packages:
-                    base_cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir']
-                    try:
-                        subprocess.check_call(base_cmd + [raw_pkg])
-                    except subprocess.CalledProcessError:
-                        # This base image ships some packages with no RECORD (and dirty
-                        # dist-info under overlayfs), so the implicit uninstall during an
-                        # upgrade can fail with uninstall-no-record-file / Errno 39. Retry
-                        # without touching the existing install so pip just overwrites it.
+                base_cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir']
+                try:
+                    # batch install: joint resolution sees all pins at once, avoiding
+                    # install/downgrade churn.
+                    # per-call resolver warnings
+                    subprocess.check_call(base_cmd + missing_packages)
+                except subprocess.CalledProcessError:
+                    # fallback: per-package to isolate failures. This base image ships
+                    # some packages with no RECORD (and dirty dist-info under
+                    # overlayfs), so the implicit uninstall during an upgrade can fail
+                    # with uninstall-no-record-file / Errno 39. Retry without touching
+                    # the existing install so pip just overwrites it.
+                    for raw_pkg in missing_packages:
                         try:
-                            subprocess.check_call(base_cmd + ['--ignore-installed', raw_pkg])
-                        except subprocess.CalledProcessError as e:
-                            msg = f'Failed to install {raw_pkg}: {e}'
-                            print(msg)
-                            return 1
+                            subprocess.check_call(base_cmd + [raw_pkg])
+                        except subprocess.CalledProcessError:
+                            try:
+                                subprocess.check_call(base_cmd + ['--ignore-installed', raw_pkg])
+                            except subprocess.CalledProcessError as e:
+                                msg = f'Failed to install {raw_pkg}: {e}'
+                                print(msg)
+                                return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
             self.register_package()
