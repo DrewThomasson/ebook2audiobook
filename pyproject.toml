@@ -11,7 +11,9 @@ version = {file = "VERSION.txt"}
 version = {file = "VERSION.txt"}
 
 [project]
+[project]
 name = "ebook2audiobook"
+dynamic = ["version"]
 description = "Convert eBooks to audiobooks with chapters and metadata"
 authors = [
     { name = "Drew Thomasson" }
