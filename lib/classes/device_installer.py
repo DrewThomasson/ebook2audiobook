@@ -1155,25 +1155,34 @@ class DeviceInstaller():
                 print(msg)
                 subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
                 try:
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--ignore-installed', '--no-deps', 'pip'])
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--ignore-installed', '--no-deps', '--root-user-action=ignore', 'pip'])
                 except subprocess.CalledProcessError as e:
                     msg = f'pip self-upgrade skipped (continuing with current pip): {e}'
                     print(msg)
-                for raw_pkg in missing_packages:
-                    base_cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir']
-                    try:
-                        subprocess.check_call(base_cmd + [raw_pkg])
-                    except subprocess.CalledProcessError:
-                        # This base image ships some packages with no RECORD (and dirty
-                        # dist-info under overlayfs), so the implicit uninstall during an
-                        # upgrade can fail with uninstall-no-record-file / Errno 39. Retry
-                        # without touching the existing install so pip just overwrites it.
+                base_cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--root-user-action=ignore']
+                try:
+                    # batch install: one resolution over all pins at once instead of
+                    # one pip subprocess per package. Avoids install/downgrade churn
+                    # (an unpinned package pulling a newer transformers, later undone
+                    # by the pinned version) and collapses the resolver's post-install
+                    # conflict summary from N near-identical dumps down to one.
+                    subprocess.check_call(base_cmd + missing_packages)
+                except subprocess.CalledProcessError:
+                    # fallback: per-package to isolate failures. This base image ships
+                    # some packages with no RECORD (and dirty dist-info under
+                    # overlayfs), so the implicit uninstall during an upgrade can fail
+                    # with uninstall-no-record-file / Errno 39. Retry without touching
+                    # the existing install so pip just overwrites it.
+                    for raw_pkg in missing_packages:
                         try:
-                            subprocess.check_call(base_cmd + ['--ignore-installed', raw_pkg])
-                        except subprocess.CalledProcessError as e:
-                            msg = f'Failed to install {raw_pkg}: {e}'
-                            print(msg)
-                            return 1
+                            subprocess.check_call(base_cmd + [raw_pkg])
+                        except subprocess.CalledProcessError:
+                            try:
+                                subprocess.check_call(base_cmd + ['--ignore-installed', raw_pkg])
+                            except subprocess.CalledProcessError as e:
+                                msg = f'Failed to install {raw_pkg}: {e}'
+                                print(msg)
+                                return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
             self.register_package()
@@ -1199,7 +1208,7 @@ class DeviceInstaller():
                 msg = f'Removing obsolete package {pkg_name}…'
                 print(msg)
                 try:
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', pkg_name])
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', '--root-user-action=ignore', pkg_name])
                 except subprocess.CalledProcessError as e:
                     msg = f'Failed to remove obsolete package {pkg_name} (non-fatal): {e}'
                     print(msg)
@@ -1225,7 +1234,7 @@ class DeviceInstaller():
                 pass
             msg = f'\nRegistering ebook2audiobook {app_version} package metadata…'
             print(msg)
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', script_dir, '--no-deps'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', script_dir, '--no-deps', '--root-user-action=ignore'])
             return 0
         except subprocess.CalledProcessError as e:
             msg = f'Package registration failed (non-fatal): {e}'
