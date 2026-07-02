@@ -1029,6 +1029,7 @@ class DeviceInstaller():
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
             return 1
+        self.remove_obsolete_packages()
         overrides = {}
         if self.system != systems['MACOS']:
             overrides['onnxruntime'] = self.check_onnxruntime_pkg()
@@ -1158,28 +1159,21 @@ class DeviceInstaller():
                 except subprocess.CalledProcessError as e:
                     msg = f'pip self-upgrade skipped (continuing with current pip): {e}'
                     print(msg)
-                base_cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir']
-                try:
-                    # batch install: joint resolution sees all pins at once, avoiding
-                    # install/downgrade churn.
-                    # per-call resolver warnings
-                    subprocess.check_call(base_cmd + missing_packages)
-                except subprocess.CalledProcessError:
-                    # fallback: per-package to isolate failures. This base image ships
-                    # some packages with no RECORD (and dirty dist-info under
-                    # overlayfs), so the implicit uninstall during an upgrade can fail
-                    # with uninstall-no-record-file / Errno 39. Retry without touching
-                    # the existing install so pip just overwrites it.
-                    for raw_pkg in missing_packages:
+                for raw_pkg in missing_packages:
+                    base_cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir']
+                    try:
+                        subprocess.check_call(base_cmd + [raw_pkg])
+                    except subprocess.CalledProcessError:
+                        # This base image ships some packages with no RECORD (and dirty
+                        # dist-info under overlayfs), so the implicit uninstall during an
+                        # upgrade can fail with uninstall-no-record-file / Errno 39. Retry
+                        # without touching the existing install so pip just overwrites it.
                         try:
-                            subprocess.check_call(base_cmd + [raw_pkg])
-                        except subprocess.CalledProcessError:
-                            try:
-                                subprocess.check_call(base_cmd + ['--ignore-installed', raw_pkg])
-                            except subprocess.CalledProcessError as e:
-                                msg = f'Failed to install {raw_pkg}: {e}'
-                                print(msg)
-                                return 1
+                            subprocess.check_call(base_cmd + ['--ignore-installed', raw_pkg])
+                        except subprocess.CalledProcessError as e:
+                            msg = f'Failed to install {raw_pkg}: {e}'
+                            print(msg)
+                            return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
             self.register_package()
@@ -1188,6 +1182,32 @@ class DeviceInstaller():
             error = f'install_python_packages() error: {e}'
             print(error)
             return 1
+
+    def remove_obsolete_packages(self)->int:
+        # packages removed from requirements.txt that must also be uninstalled
+        # from existing envs when users update.
+        # unidic: replaced by unidic-lite. fugashi prefers full unidic when
+        # importable, but its dicdir is empty without 'python -m unidic download',
+        # so a leftover install breaks Japanese TTS (mecabrc not found).
+        obsolete_packages = ['unidic']
+        try:
+            for pkg_name in obsolete_packages:
+                try:
+                    version(pkg_name)
+                except PackageNotFoundError:
+                    continue
+                msg = f'Removing obsolete package {pkg_name}…'
+                print(msg)
+                try:
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', pkg_name])
+                except subprocess.CalledProcessError as e:
+                    msg = f'Failed to remove obsolete package {pkg_name} (non-fatal): {e}'
+                    print(msg)
+            return 0
+        except Exception as e:
+            error = f'remove_obsolete_packages() error: {e}'
+            print(error)
+            return 0
 
     def register_package(self)->int:
         try:
