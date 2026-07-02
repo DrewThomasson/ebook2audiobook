@@ -1,0 +1,33 @@
+name: Validate Package Metadata
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'requirements.txt'
+      - 'VERSION.txt'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'requirements.txt'
+      - 'VERSION.txt'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Validate metadata builds cleanly
+        run: python3 -m pip install -e . --no-deps
