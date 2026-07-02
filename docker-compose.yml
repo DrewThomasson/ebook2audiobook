@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.7.2}
+        APP_VERSION: ${APP_VERSION:-26.7.3}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
     working_dir: /app
     entrypoint: ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
