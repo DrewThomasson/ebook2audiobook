@@ -34,7 +34,6 @@ beautifulsoup4
 nagisa
 pymupdf
 pymupdf-layout
-unidic
 hangul-romanize
 iso639-lang
 soynlp
