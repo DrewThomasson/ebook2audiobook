@@ -1,12 +1,13 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: ebook2audiobook
-Version: 26.6.30
+Version: 26.7.3
 Summary: Convert eBooks to audiobooks with chapters and metadata
-Home-page: https://github.com/DrewThomasson/ebook2audiobook
 Author: Drew Thomasson
+Project-URL: Homepage, https://github.com/DrewThomasson/ebook2audiobook
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
+Requires-Python: <3.13,>3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: faster_whisper>=1.0.2
@@ -42,7 +43,6 @@ Requires-Dist: beautifulsoup4
 Requires-Dist: nagisa
 Requires-Dist: pymupdf
 Requires-Dist: pymupdf-layout
-Requires-Dist: unidic
 Requires-Dist: hangul-romanize
 Requires-Dist: iso639-lang
 Requires-Dist: soynlp
@@ -68,18 +68,20 @@ Requires-Dist: pytesseract
 Requires-Dist: torchvggish
 Requires-Dist: sentence-transformers
 Requires-Dist: onnxruntime
-Requires-Dist: stanza==1.10.1
+Requires-Dist: stanza==1.12.2
 Requires-Dist: argostranslate==1.11.0
-Requires-Dist: pandas>=1.0,<3.0
+Requires-Dist: pandas<3.0,>=1.0
 Requires-Dist: gradio==5.49.1
-Requires-Dist: pyannote-audio==3.4.0 ; python_version < "3.12"
-Requires-Dist: pyannote-audio>=4.0.0 ; python_version >= "3.12"
-Requires-Dist: huggingface_hub>=0.36.2,<1.0 ; python_version < "3.12"
-Requires-Dist: huggingface_hub>=1.0 ; python_version >= "3.12"
-Requires-Dist: transformers==4.57.6 ; python_version < "3.12"
-Requires-Dist: transformers>=5.0.0 ; python_version >= "3.12"
+Requires-Dist: pyannote-audio==3.4.0; python_version < "3.12"
+Requires-Dist: pyannote-audio>=4.0.0; python_version >= "3.12"
+Requires-Dist: huggingface_hub<1.0,>=0.36.2; python_version < "3.12"
+Requires-Dist: huggingface_hub>=1.0; python_version >= "3.12"
+Requires-Dist: transformers==4.57.6; python_version < "3.12"
+Requires-Dist: transformers>=5.0.0; python_version >= "3.12"
 Requires-Dist: coqui-tts[languages]==0.27.5
 Requires-Dist: piper-tts==1.4.2
+Dynamic: license-file
+Dynamic: requires-dist
 
 # 📚 ebook2audiobook (E2A)
 CPU/GPU Converter from E-Book to audiobook with chapters and metadata<br/>
