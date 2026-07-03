@@ -59,7 +59,7 @@ pytesseract
 torchvggish
 sentence-transformers
 onnxruntime
-stanza==1.10.1
+stanza==1.12.2
 argostranslate==1.11.0
 pandas>=1.0,<3.0
 gradio==5.49.1
