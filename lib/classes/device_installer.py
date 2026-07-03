@@ -1185,7 +1185,6 @@ class DeviceInstaller():
                                 return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
-            self.register_package()
             return self.check_voices()
         except Exception as e:
             error = f'install_python_packages() error: {e}'
@@ -1215,33 +1214,6 @@ class DeviceInstaller():
             return 0
         except Exception as e:
             error = f'remove_obsolete_packages() error: {e}'
-            print(error)
-            return 0
-
-    def register_package(self)->int:
-        try:
-            script_dir = os.path.dirname(os.path.abspath(requirements_file))
-            version_file = os.path.join(script_dir, 'VERSION.txt')
-            if not os.path.exists(os.path.join(script_dir, 'setup.py')) or not os.path.exists(version_file):
-                return 0
-            with open(version_file, 'r') as f:
-                app_version = f.read().strip()
-            try:
-                installed_version = version('ebook2audiobook')
-                if installed_version == app_version:
-                    return 0
-            except PackageNotFoundError:
-                pass
-            msg = f'\nRegistering ebook2audiobook {app_version} package metadata…'
-            print(msg)
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', script_dir, '--no-deps', '--root-user-action=ignore'])
-            return 0
-        except subprocess.CalledProcessError as e:
-            msg = f'Package registration failed (non-fatal): {e}'
-            print(msg)
-            return 0
-        except Exception as e:
-            error = f'register_package() error: {e}'
             print(error)
             return 0
 
