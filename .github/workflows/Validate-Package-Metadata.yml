@@ -2,7 +2,7 @@ name: Validate Package Metadata
 
 on:
   push:
-    branches: [main]
+    branches: [main, v26]
     paths:
       - 'pyproject.toml'
       - 'setup.py'
