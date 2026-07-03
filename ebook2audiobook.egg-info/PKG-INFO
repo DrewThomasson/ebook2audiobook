@@ -15,7 +15,6 @@ Requires-Dist: spacy>=3.7.4
 Requires-Dist: cutlet
 Requires-Dist: Cython>=0.29.0
 Requires-Dist: onnx
-Requires-Dist: onnxruntime
 Requires-Dist: piper-phonemize-fix
 Requires-Dist: llvmlite
 Requires-Dist: numba
@@ -67,7 +66,6 @@ Requires-Dist: indic-nlp-library
 Requires-Dist: pytesseract
 Requires-Dist: torchvggish
 Requires-Dist: sentence-transformers
-Requires-Dist: onnxruntime
 Requires-Dist: stanza==1.10.1
 Requires-Dist: argostranslate==1.11.0
 Requires-Dist: pandas<3.0,>=1.0
