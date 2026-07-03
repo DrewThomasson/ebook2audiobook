@@ -1031,6 +1031,8 @@ class DeviceInstaller():
             return 1
         self.remove_obsolete_packages()
         overrides = {}
+        packages = []
+        packages.append('onnxruntime')
         if self.system != systems['MACOS']:
             overrides['onnxruntime'] = self.check_onnxruntime_pkg()
         if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
@@ -1039,7 +1041,6 @@ class DeviceInstaller():
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
-                packages = []
                 for line in contents.splitlines():
                     pkg = line.strip()
                     if not pkg or not re.search(r'[a-zA-Z0-9]', pkg):

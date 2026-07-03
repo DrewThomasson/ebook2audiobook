@@ -3,7 +3,6 @@ spacy>=3.7.4
 cutlet
 Cython>=0.29.0
 onnx
-onnxruntime
 piper-phonemize-fix
 llvmlite
 numba
@@ -55,7 +54,6 @@ indic-nlp-library
 pytesseract
 torchvggish
 sentence-transformers
-onnxruntime
 stanza==1.10.1
 argostranslate==1.11.0
 pandas<3.0,>=1.0
