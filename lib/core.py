@@ -3014,7 +3014,22 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             return None
         exported_files = []
         concat_dir = session['process_dir']
-        if session.get('output_split'):
+        if session.get('output_chapter_mode'):
+            pad_width = len(str(len(chapter_files)))
+            stem = Path(session['final_name']).stem
+            for idx, (fname, title) in enumerate(zip(chapter_files, chapter_titles)):
+                if session['cancellation_requested']:
+                    return None
+                chapter_file = os.path.join(session['audiobooks_dir'], f"{stem}_Ch{idx+1:0{pad_width}d}.{session['output_format']}")
+                if os.path.exists(chapter_file) and os.path.getsize(chapter_file) > 0:
+                    exported_files.append(chapter_file)
+                    continue
+                metadata_file = os.path.join(session['process_dir'], f'metadata_ch{idx+1:0{pad_width}d}.txt')
+                _generate_ffmpeg_metadata([(fname, title)], metadata_file, default_audio_proc_format)
+                chapter_audio = os.path.join(session['chapters_dir'], fname)
+                if _export_audio(chapter_audio, metadata_file, chapter_file, block_indices={chapter_positions[idx]}):
+                    exported_files.append(chapter_file)
+        elif session.get('output_split'):
             part_files = []
             part_chapter_indices = []
             cur_part = []

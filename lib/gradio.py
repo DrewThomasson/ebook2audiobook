@@ -721,6 +721,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_output_channel_list = gr.Dropdown(label='Channel', elem_id='gr_output_channel_list', choices=['mono', 'stereo'], type='value', value=default_output_channel, interactive=True, scale=1)
                                         with gr.Group(elem_id='gr_group_output_split'):
                                             gr_output_split = gr.Checkbox(label='Split File', elem_id='gr_output_split', value=default_output_split, interactive=True)
+                                            gr_output_chapter_mode = gr.Checkbox(label='Per Chapter', elem_id='gr_output_chapter_mode', value=default_output_chapter_mode, interactive=True)
                                             gr_row_output_split_hours = gr.Row(elem_id='gr_row_output_split_hours', visible=False)
                                             with gr_row_output_split_hours:
                                                 gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown',elem_classes=['gr-markdown-output-split-hours'], value='Hours<br/>/ Part')
@@ -1177,7 +1178,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(31)])
+                            outputs = tuple([gr.update() for _ in range(32)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1243,6 +1244,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=session['output_channel']),
                             gr.update(value=bool(session['output_split'])),
                             gr.update(value=session['output_split_hours']),
+                            gr.update(value=bool(session.get('output_chapter_mode', False))),
                             gr.update(visible=visible_row_split_hours),
                             _update_gr_audiobook_list(session_id),
                             gr.update(visible=visible_group_custom_model),
@@ -1261,7 +1263,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(31)])
+                outputs = tuple([gr.update() for _ in range(32)])
                 return outputs
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -2135,6 +2137,12 @@ def build_interface(args:dict)->gr.Blocks:
                     session['output_split'] = val
                 return gr.update(visible=val)
 
+            def _change_gr_output_chapter_mode(session_id, val):
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    session['output_chapter_mode'] = val
+                return gr.update()
+
             def _click_gr_session_switch_btn(session_id:str, backup_session_id:str|None)->tuple:
                 try:
                     if backup_session_id is not None:
@@ -2235,6 +2243,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str,
+                    output_chapter_mode:bool,
                     translate_enabled:bool, translate_target:str|None
                 )->tuple:
                 error = None
@@ -2272,6 +2281,7 @@ def build_interface(args:dict)->gr.Blocks:
                             "bark_waveform_temp": float(bark_waveform_temp),
                             "output_split":bool(output_split),
                             "output_split_hours": output_split_hours,
+                            "output_chapter_mode": bool(output_chapter_mode),
                             "translate_enabled": bool(translate_enabled),
                             "translate": translate_target if translate_enabled else None,
                             "translate_iso1": (Lang(translate_target).pt1 if (translate_enabled and translate_target) else None)
@@ -2858,20 +2868,20 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours,
+                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours, gr_output_chapter_mode,
                 gr_translate_enabled, gr_translate
             ]
             outputs_disable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours, gr_output_chapter_mode,
                 gr_translate_enabled, gr_translate,
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn
             ]
             outputs_enable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
-                gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours, gr_output_chapter_mode,
                 gr_translate_enabled, gr_translate,
                 gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn
             ]
@@ -2886,7 +2896,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
                 gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
-                gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
+                gr_output_split, gr_output_split_hours, gr_output_chapter_mode, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn,
                 gr_tab_qwen3_params,
                 gr_qwen3_batch_size, gr_qwen3_temperature, gr_qwen3_top_p, gr_qwen3_repetition_penalty
@@ -3090,6 +3100,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_output_split_hours.change(
                 fn=lambda session_id, val: _change_param('output_split_hours', session_id, str(val)),
                 inputs=[gr_session, gr_output_split_hours],
+                outputs=None
+            )
+            gr_output_chapter_mode.select(
+                fn=_change_gr_output_chapter_mode,
+                inputs=[gr_session, gr_output_chapter_mode],
                 outputs=None
             )
             gr_session_switch_btn.click(
