@@ -3079,24 +3079,69 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 if _export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
                     exported_files.append(final_file)
         else:
-            concat_list = os.path.join(concat_dir, 'concat_list_chapters_1.txt')
-            merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
-            with open(concat_list, 'w') as f:
-                for file in chapter_files:
-                    if session['cancellation_requested']:
-                        return None
-                    path = Path(session['chapters_dir']) / file
-                    f.write(f"file '{path.as_posix()}'\n")
-            result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
-            if not result:
-                print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
-                return None
-            metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-            chapters_zip = list(zip(chapter_files, chapter_titles))
-            _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
             final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-            if _export_audio(merged_audio, metadata_file, final_file):
-                exported_files.append(final_file)
+            existing_count = 0
+            existing_duration = 0.0
+            if os.path.exists(final_file) and os.path.getsize(final_file) > 0:
+                try:
+                    cmd = [shutil.which('ffprobe'), '-v', 'error', '-of', 'json', '-show_chapters', '-show_format', final_file]
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    if result.returncode == 0:
+                        import json
+                        data = json.loads(result.stdout)
+                        chapters = data.get('chapters', [])
+                        existing_count = len(chapters)
+                        existing_duration = float(data.get('format', {}).get('duration', 0))
+                except:
+                    pass
+            if existing_count > 0 and existing_count < len(chapter_files):
+                old_count = existing_count
+                concat_new = os.path.join(concat_dir, 'concat_list_new.txt')
+                with open(concat_new, 'w') as f:
+                    for file in chapter_files[old_count:]:
+                        if session['cancellation_requested']:
+                            return None
+                        path = Path(session['chapters_dir']) / file
+                        f.write(f"file '{path.as_posix()}'\n")
+                new_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_new.{default_audio_proc_format}"
+                if not assemble_audio_chunks(concat_new, new_audio, is_gui_process):
+                    print('Failed to assemble new chapters')
+                    return None
+                merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
+                concat_cmd = [
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats',
+                    '-i', final_file, '-i', str(new_audio),
+                    '-filter_complex', '[0:a][1:a]concat=n=2:v=0:a=1',
+                    '-c:a', default_audio_proc_format,
+                    '-map_metadata', '-1', '-y', str(merged_audio)
+                ]
+                concat_proc = subprocess.run(concat_cmd, capture_output=True, text=True)
+                if concat_proc.returncode != 0:
+                    print(f'Concat failed: {concat_proc.stderr}')
+                    return None
+                metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
+                chapters_zip = list(zip(chapter_files, chapter_titles))
+                _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
+                if _export_audio(str(merged_audio), metadata_file, final_file):
+                    exported_files.append(final_file)
+            else:
+                concat_list = os.path.join(concat_dir, 'concat_list_chapters_1.txt')
+                merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
+                with open(concat_list, 'w') as f:
+                    for file in chapter_files:
+                        if session['cancellation_requested']:
+                            return None
+                        path = Path(session['chapters_dir']) / file
+                        f.write(f"file '{path.as_posix()}'\n")
+                result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
+                if not result:
+                    print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
+                    return None
+                metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
+                chapters_zip = list(zip(chapter_files, chapter_titles))
+                _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
+                if _export_audio(str(merged_audio), metadata_file, final_file):
+                    exported_files.append(final_file)
         return exported_files if exported_files else None
     except Exception as e:
         DependencyError(e)
