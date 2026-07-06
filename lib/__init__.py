@@ -8,7 +8,7 @@ from .conf import (
     max_python_version, min_python_version, models_dir, os,
     output_formats, prog_version, python_env_dir,
     requirements_file, components_dir, root_dir, tmp_dir, run_dir, gradio_cache_dir, tmp_expire, max_ebook_textarea_length,
-    tts_dir, voice_formats, voices_dir, default_output_split, default_output_split_hours, default_output_chapter_mode
+    tts_dir, voice_formats, voices_dir, default_output_split, default_output_split_hours, default_output_chapter_mode, default_output_overwrite
 )
 
 from .conf_lang import (
@@ -39,7 +39,7 @@ __all__ = [
     "max_python_version", "min_python_version", "models_dir", "os",
     "output_formats", "prog_version", "python_env_dir",
     "requirements_file", "components_dir", "root_dir", "tmp_dir", "run_dir", "gradio_cache_dir", "tmp_expire", "max_ebook_textarea_length", 
-    "tts_dir", "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours", "default_output_chapter_mode",
+    "tts_dir", "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours", "default_output_chapter_mode", "default_output_overwrite",
 
     # from conf_lang
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code",

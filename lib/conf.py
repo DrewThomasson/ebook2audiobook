@@ -436,3 +436,4 @@ default_output_channel = "mono"  # mono or stereo
 default_output_split = False
 default_output_split_hours = "6"  # if the final ouput esceed outpout_split_hours * 2 hours the final file will be splitted by outpout_split_hours + the end if any.
 default_output_chapter_mode = False  # one m4b per chapter instead of one big file
+default_output_overwrite = False  # force rebuild even if output exists

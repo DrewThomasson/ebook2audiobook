@@ -3021,7 +3021,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 if session['cancellation_requested']:
                     return None
                 chapter_file = os.path.join(session['audiobooks_dir'], f"{stem}_Ch{idx+1:0{pad_width}d}.{session['output_format']}")
-                if os.path.exists(chapter_file) and os.path.getsize(chapter_file) > 0:
+                if os.path.exists(chapter_file) and os.path.getsize(chapter_file) > 0 and not session.get('output_overwrite'):
                     exported_files.append(chapter_file)
                     continue
                 metadata_file = os.path.join(session['process_dir'], f'metadata_ch{idx+1:0{pad_width}d}.txt')
@@ -3094,7 +3094,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         existing_duration = float(data.get('format', {}).get('duration', 0))
                 except:
                     pass
-            if existing_count > 0 and existing_count < len(chapter_files):
+            if existing_count > 0 and existing_count < len(chapter_files) and not session.get('output_overwrite'):
                 old_count = existing_count
                 concat_new = os.path.join(concat_dir, 'concat_list_new.txt')
                 with open(concat_new, 'w') as f:
