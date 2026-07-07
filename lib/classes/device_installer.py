@@ -1036,8 +1036,8 @@ class DeviceInstaller():
         packages.append(onnx_pkg)
         if self.system != systems['MACOS']:
             onnx_pkg = self.check_onnxruntime_pkg()
-            if onnx_pkg is not None:
-                packages.append(onnx_pkg)
+        if onnx_pkg is not None:
+            packages.append(onnx_pkg)
         if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
             overrides['llvmlite'] = 'llvmlite==0.44.0'
             overrides['numba'] = 'numba==0.61.0'
