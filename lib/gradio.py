@@ -3480,7 +3480,7 @@ def build_interface(args: dict) -> gr.Blocks:
                             "output_channel": output_channel,
                             "xtts_temperature": float(xtts_temperature),
                             "xtts_length_penalty": float(xtts_length_penalty),
-                            "xtts_num_beams": int(session["xtts_num_beams"]),
+                            "xtts_num_beams": int(xtts_num_beams),
                             "xtts_repetition_penalty": float(xtts_repetition_penalty),
                             "xtts_top_k": int(xtts_top_k),
                             "xtts_top_p": float(xtts_top_p),
