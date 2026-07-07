@@ -1,4 +1,8 @@
-# 📚 ebook2audiobook (E2A)
+# 📚 ebook2audiobook (E2A) — Qwen3-TTS fork
+
+> [!NOTE]
+> **This is a fork** of [DrewThomasson/ebook2audiobook](https://github.com/DrewThomasson/ebook2audiobook) with added **Qwen3-TTS engine**, **per-chapter m4b output**, **incremental append**, and more. See [Features](#features) for details.
+
 CPU/GPU Converter from E-Book to audiobook with chapters and metadata<br/>
 using advanced TTS engines and much more.<br/>
 Supports voice cloning and 1158 languages!
@@ -101,7 +105,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ## Features
-- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
+- 🔧 **TTS Engines supported**: `Qwen3-TTS`, `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
+- 📖 **Per-chapter m4b output**: split audiobook into one file per chapter (`Title_Ch001.m4b`, `Title_Ch002.m4b`, ...)
+- ⏩ **Incremental append** (single-file mode): appends new chapters to existing m4b without re-encoding the whole file
+- 🔄 **Overwrite checkbox**: force full rebuild when voice or settings change
 - 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** to convert directly a short text in audio
 - 🔍 **OCR scanning** for files with text pages as images
@@ -525,7 +532,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
 - [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
 - [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
-- [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
+- [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readme Translation
 - [x] Arabic (ara)
