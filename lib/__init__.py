@@ -105,7 +105,7 @@ from .conf_models import (
     voices_dir,
 )
 
-from .classes.audiobookshelf import upload_to_abs
+from .classes.audiobookshelf import upload_to_abs, fetch_libraries
 
 __all__ = [
     # from conf
@@ -159,6 +159,7 @@ __all__ = [
     "voice_formats",
     "voices_dir",
     "upload_to_abs",
+    "fetch_libraries",
     "default_output_split",
     "default_output_split_hours",
     "default_output_chapter_mode",

@@ -5,6 +5,31 @@ import requests
 from pathlib import Path
 
 
+def fetch_libraries(server_url: str, api_token: str) -> list[tuple[str, str]]:
+    """Fetch available libraries from Audiobookshelf.
+
+    Returns list of (name, id) tuples, or empty list on failure.
+    """
+    try:
+        resp = requests.get(
+            server_url.rstrip("/") + "/api/libraries",
+            headers={"Authorization": f"Bearer {api_token}"},
+            timeout=10,
+        )
+        if resp.ok:
+            return [
+                (lib["name"], lib["id"])
+                for lib in resp.json().get("libraries", [])
+                if lib.get("id")
+            ]
+        else:
+            print(f"  ABS library fetch failed ({resp.status_code}): {resp.text[:200]}")
+            return []
+    except Exception as e:
+        print(f"  ABS library fetch error: {e}")
+        return []
+
+
 def upload_to_abs(
     file_path: str,
     title: str,

@@ -1050,12 +1050,18 @@ def build_interface(args: dict) -> gr.Blocks:
                                         value=default_abs_api_token,
                                         interactive=True,
                                     )
-                                    gr_abs_library_id = gr.Textbox(
-                                        label="Library ID",
+                                    gr_abs_library_id = gr.Dropdown(
+                                        label="Library",
                                         elem_id="gr_abs_library_id",
-                                        placeholder="lib_abc123",
-                                        value=default_abs_library_id,
+                                        choices=[
+                                            (
+                                                "Enter URL + API Token to load libraries",
+                                                "",
+                                            )
+                                        ],
+                                        value=None,
                                         interactive=True,
+                                        allow_custom_value=True,
                                     )
                                 with gr.Group(
                                     elem_id="gr_group_session",
@@ -1912,7 +1918,7 @@ def build_interface(args: dict) -> gr.Blocks:
                             gr.update(value=bool(session.get("abs_enabled", False))),
                             gr.update(value=session.get("abs_server_url") or ""),
                             gr.update(value=session.get("abs_api_token") or ""),
-                            gr.update(value=session.get("abs_library_id") or ""),
+                            gr.update(value=session.get("abs_library_id") or None),
                         )
                 except Exception as e:
                     error = f"_restore_interface(): {e}"
@@ -3271,6 +3277,29 @@ def build_interface(args: dict) -> gr.Blocks:
                 if session and session.get("id", False):
                     session["abs_library_id"] = val
                 return gr.update()
+
+            def _refresh_abs_libraries(session_id, server_url, api_token):
+                session = context.get_session(session_id)
+                if not server_url or not api_token:
+                    return gr.update(
+                        choices=[("Enter URL + API Token to load libraries", "")],
+                        value=None,
+                    )
+                libs = fetch_libraries(server_url, api_token)
+                if libs:
+                    choices = libs
+                    current = session.get("abs_library_id", "")
+                    # keep current selection if valid, otherwise auto-select first
+                    value = (
+                        current
+                        if any(v == current for _, v in choices)
+                        else choices[0][1]
+                    )
+                    return gr.update(choices=choices, value=value)
+                return gr.update(
+                    choices=[("No libraries found — check URL/token", "")],
+                    value=None,
+                )
 
             def _click_gr_session_switch_btn(
                 session_id: str, backup_session_id: str | None
@@ -4758,11 +4787,19 @@ def build_interface(args: dict) -> gr.Blocks:
                 fn=_change_gr_abs_server_url,
                 inputs=[gr_session, gr_abs_server_url],
                 outputs=None,
+            ).then(
+                fn=_refresh_abs_libraries,
+                inputs=[gr_session, gr_abs_server_url, gr_abs_api_token],
+                outputs=gr_abs_library_id,
             )
             gr_abs_api_token.change(
                 fn=_change_gr_abs_api_token,
                 inputs=[gr_session, gr_abs_api_token],
                 outputs=None,
+            ).then(
+                fn=_refresh_abs_libraries,
+                inputs=[gr_session, gr_abs_server_url, gr_abs_api_token],
+                outputs=gr_abs_library_id,
             )
             gr_abs_library_id.change(
                 fn=_change_gr_abs_library_id,
