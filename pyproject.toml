@@ -1,95 +1,13 @@
 [build-system]
-name = "ebook2audiobook"
 requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
 
-[tool.poetry]
-name = "ebook2audiobook"
-version = {file = "VERSION.txt"}
-
-[tool.setuptools.dynamic]
-version = {file = "VERSION.txt"}
-
 [project]
 name = "ebook2audiobook"
+dynamic = ["version", "dependencies"]
 description = "Convert eBooks to audiobooks with chapters and metadata"
 authors = [
     { name = "Drew Thomasson" }
-]
-dependencies = [
-	# Universal TTS Finetune dependencies
-	"faster_whisper>=1.0.2",
-	"spacy>=3.7.4",
-	"cutlet",
-	"fugashi[unidic-lite]",
-	"Cython>=0.29.0",
-	"onnx",
-	"onnxruntime",
-	"piper-phonemize-fix",
-	"librosa>=0.9.2",
-	"pytorch-lightning>=1.7.0",
-	"onnx-simplifier>=0.4.10",
-	"onnxscript>=0.7.0",
-
-	# E3A
-    "cryptography",
-    "py-cpuinfo",
-    "tqdm",
-    "regex",
-    "docker",
-    "ebooklib",
-    "python-pptx",
-    "python-docx",
-    "lameenc",
-    "museval",
-    "openunmix",
-    "submitit",
-    "treetable",
-    "dora-search",
-    "fastapi",
-    "hf_xet",
-    "beautifulsoup4",
-    "nagisa",
-    "pymupdf",
-    "pymupdf-layout",
-    "unidic",
-    "hangul-romanize",
-    "iso639-lang",
-    "soynlp",
-    "jieba",
-    "uroman",
-    "pycantonese",
-    "pypinyin",
-    "pythainlp",
-    "pykakasi",
-    "mutagen",
-    "PyOpenGL",
-    "phonemizer-fork",
-    "num2words2",
-    "pydub",
-    "soundfile",
-    "unidecode",
-    "langdetect",
-    "phonemizer",
-    "indic-nlp-library",
-    "numba",
-    "pytesseract",
-    "torchvggish",
-    "sentence-transformers",
-	"onnxruntime-gpu; python_version >= '3.12'",
-    "stanza==1.10.1",
-    "argostranslate==1.11.0",
-    "pandas>=1.0,<3.0",
-    "gradio==5.49.1",
-    "pyannote-audio==3.4.0; python_version < '3.12'",
-    "pyannote-audio>=4.0.0; python_version >= '3.12'",
-    "huggingface_hub>=0.36.2,<1.0; python_version < '3.12'",
-    "huggingface_hub>=1.0; python_version >= '3.12'",
-    "transformers==4.57.6; python_version < '3.12'",
-    "transformers>=5.0.0; python_version >= '3.12'",
-    "coqui-tts[languages]==0.27.5",
-    "piper-tts==1.4.2",
-    "demucs"
 ]
 readme = "README.md"
 requires-python = ">3.9,<3.13"
@@ -102,3 +20,6 @@ scripts = { "ebook2audiobook" = "app:main" }
 
 [project.urls]
 "Homepage" = "https://github.com/DrewThomasson/ebook2audiobook"
+
+[tool.setuptools.dynamic]
+version = {file = "VERSION.txt"}
