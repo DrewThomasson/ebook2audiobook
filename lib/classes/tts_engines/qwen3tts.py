@@ -99,7 +99,7 @@ class Qwen3TTS(TTSUtils, TTSRegistry, name='qwen3tts'):
                             attn_kwargs['attn_implementation'] = 'eager'
                     engine = Qwen3TTSModel.from_pretrained(
                         model_name,
-                        torch_dtype=torch.bfloat16,
+                        dtype=torch.bfloat16,
                         device_map=self.device,
                         **attn_kwargs,
                     )
