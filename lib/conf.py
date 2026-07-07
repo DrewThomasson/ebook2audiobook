@@ -438,3 +438,7 @@ default_output_split = False
 default_output_split_hours = "6"  # if the final ouput esceed outpout_split_hours * 2 hours the final file will be splitted by outpout_split_hours + the end if any.
 default_output_chapter_mode = False  # one m4b per chapter instead of one big file
 default_output_overwrite = False  # force rebuild even if output exists
+default_abs_enabled = False  # upload finished audiobook to Audiobookshelf
+default_abs_server_url = ""  # e.g. http://localhost:13378
+default_abs_api_token = ""  # API token from ABS user settings
+default_abs_library_id = ""  # library ID from ABS (e.g. lib_abc123)
