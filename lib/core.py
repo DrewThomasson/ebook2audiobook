@@ -2149,7 +2149,7 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
         elif mnt == 15:
             phrase = lc['quarter_past'].format(hour=_n2w(h))
         elif mnt == 30:
-            if lang == 'deu':
+            if lang == 'deu' or 'pol':
                 phrase = lc['half_past'].format(next_hour=_n2w(next_hour))
             else:
                 phrase = lc['half_past'].format(hour=_n2w(h))
