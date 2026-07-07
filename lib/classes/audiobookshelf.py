@@ -1,5 +1,6 @@
 # ponytail: Audiobookshelf upload — POST finished m4b to a self-hosted ABS server
 
+import json
 import os
 import requests
 from pathlib import Path
@@ -70,19 +71,19 @@ def upload_to_abs(
         except Exception as e:
             print(f"  ABS folder auto-detect failed: {e}")
 
-    data = {"title": title or Path(file_path).stem, "library": library_id}
+    metadata = {"title": title or Path(file_path).stem, "libraryId": library_id}
     if author:
-        data["author"] = author
+        metadata["author"] = author
     if folder_id:
-        data["folder"] = folder_id
+        metadata["folderId"] = folder_id
 
     try:
         with open(file_path, "rb") as f:
             resp = requests.post(
                 url,
                 headers=headers,
-                files={"0": (filename, f, "audio/mp4")},
-                data=data,
+                files={"file": (filename, f, "audio/mp4")},
+                data={"metadata": json.dumps(metadata)},
                 timeout=120,
             )
         if resp.ok:
