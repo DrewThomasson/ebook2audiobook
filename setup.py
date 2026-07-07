@@ -16,4 +16,5 @@ def read_requirements()->list:
 setup(
     install_requires=read_requirements(),
     packages=find_packages(exclude=['tests', 'tests.*']),
+    py_modules=['app']
 )
