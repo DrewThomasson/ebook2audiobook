@@ -1,53 +1,20 @@
-import subprocess
-import sys
-from setuptools import setup, find_packages
-from setuptools.command.develop import develop
-from setuptools.command.install import install
 import os
+from setuptools import setup, find_packages
 
-cwd = os.path.dirname(os.path.abspath(__file__))
+here = os.path.abspath(os.path.dirname(__file__))
 
-def get_version():
-    with open("VERSION.txt", "r") as f:
-        return f.read().strip()
-
-with open("README.md", "r", encoding='utf-8') as fh:
-    long_description = fh.read()
-
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
-
-class PostInstallCommand(install):
-    def run(self):
-        install.run(self)
-        try:
-            subprocess.run([sys.executable, 'python -m', 'unidic', 'download'], check=True)
-        except Exception:
-            print("unidic download failed during installation, but it will be re-attempted a diffrent way when the app itself runs.")
+def read_requirements()->list:
+    requirements = []
+    with open(os.path.join(here, 'requirements.txt'), encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or line.startswith('./') or line.startswith('../'):
+                continue
+            requirements.append(line)
+    return requirements
 
 setup(
-    name='ebook2audiobook',
-    version=get_version(),
-    python_requires=">3.9,<3.13",
-    author="Drew Thomasson",
-    description="Convert eBooks to audiobooks with chapters and metadata",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/DrewThomasson/ebook2audiobook",
-    packages=find_packages(),
-    install_requires=requirements,
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
-    include_package_data=True,
-    entry_points={
-        "console_scripts": [
-            "ebook2audiobook = app:main",
-        ],
-    },
-    cmdclass={
-        'install': PostInstallCommand,
-    }
+    install_requires=read_requirements(),
+    packages=find_packages(exclude=['tests', 'tests.*']),
+    py_modules=['app']
 )

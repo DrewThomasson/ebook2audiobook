@@ -1029,13 +1029,21 @@ class DeviceInstaller():
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
             return 1
+        self.remove_obsolete_packages()
         overrides = {}
+        packages = []
+        onnx_pkg = 'onnxruntime'
+        packages.append(onnx_pkg)
         if self.system != systems['MACOS']:
-            overrides['onnxruntime'] = self.check_onnxruntime_pkg()
+            onnx_pkg = self.check_onnxruntime_pkg()
+            if onnx_pkg is not None:
+                packages.append(onnx_pkg)
+        if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
+            overrides['llvmlite'] = 'llvmlite==0.44.0'
+            overrides['numba'] = 'numba==0.61.0'
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
-                packages = []
                 for line in contents.splitlines():
                     pkg = line.strip()
                     if not pkg or not re.search(r'[a-zA-Z0-9]', pkg):
@@ -1151,25 +1159,34 @@ class DeviceInstaller():
                 print(msg)
                 subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
                 try:
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--ignore-installed', '--no-deps', 'pip'])
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--ignore-installed', '--no-deps', '--root-user-action=ignore', 'pip'])
                 except subprocess.CalledProcessError as e:
                     msg = f'pip self-upgrade skipped (continuing with current pip): {e}'
                     print(msg)
-                for raw_pkg in missing_packages:
-                    base_cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir']
-                    try:
-                        subprocess.check_call(base_cmd + [raw_pkg])
-                    except subprocess.CalledProcessError:
-                        # This base image ships some packages with no RECORD (and dirty
-                        # dist-info under overlayfs), so the implicit uninstall during an
-                        # upgrade can fail with uninstall-no-record-file / Errno 39. Retry
-                        # without touching the existing install so pip just overwrites it.
+                base_cmd = [sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--root-user-action=ignore']
+                try:
+                    # batch install: one resolution over all pins at once instead of
+                    # one pip subprocess per package. Avoids install/downgrade churn
+                    # (an unpinned package pulling a newer transformers, later undone
+                    # by the pinned version) and collapses the resolver's post-install
+                    # conflict summary from N near-identical dumps down to one.
+                    subprocess.check_call(base_cmd + missing_packages)
+                except subprocess.CalledProcessError:
+                    # fallback: per-package to isolate failures. This base image ships
+                    # some packages with no RECORD (and dirty dist-info under
+                    # overlayfs), so the implicit uninstall during an upgrade can fail
+                    # with uninstall-no-record-file / Errno 39. Retry without touching
+                    # the existing install so pip just overwrites it.
+                    for raw_pkg in missing_packages:
                         try:
-                            subprocess.check_call(base_cmd + ['--ignore-installed', raw_pkg])
-                        except subprocess.CalledProcessError as e:
-                            msg = f'Failed to install {raw_pkg}: {e}'
-                            print(msg)
-                            return 1
+                            subprocess.check_call(base_cmd + [raw_pkg])
+                        except subprocess.CalledProcessError:
+                            try:
+                                subprocess.check_call(base_cmd + ['--ignore-installed', raw_pkg])
+                            except subprocess.CalledProcessError as e:
+                                msg = f'Failed to install {raw_pkg}: {e}'
+                                print(msg)
+                                return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
             return self.check_voices()
@@ -1177,6 +1194,32 @@ class DeviceInstaller():
             error = f'install_python_packages() error: {e}'
             print(error)
             return 1
+
+    def remove_obsolete_packages(self)->int:
+        # packages removed from requirements.txt that must also be uninstalled
+        # from existing envs when users update.
+        # unidic: replaced by unidic-lite. fugashi prefers full unidic when
+        # importable, but its dicdir is empty without 'python -m unidic download',
+        # so a leftover install breaks Japanese TTS (mecabrc not found).
+        obsolete_packages = ['unidic']
+        try:
+            for pkg_name in obsolete_packages:
+                try:
+                    version(pkg_name)
+                except PackageNotFoundError:
+                    continue
+                msg = f'Removing obsolete package {pkg_name}…'
+                print(msg)
+                try:
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', '--root-user-action=ignore', pkg_name])
+                except subprocess.CalledProcessError as e:
+                    msg = f'Failed to remove obsolete package {pkg_name} (non-fatal): {e}'
+                    print(msg)
+            return 0
+        except Exception as e:
+            error = f'remove_obsolete_packages() error: {e}'
+            print(error)
+            return 0
 
     def check_numpy(self)->bool:
         try:
