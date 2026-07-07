@@ -1033,7 +1033,6 @@ class DeviceInstaller():
         overrides = {}
         packages = []
         onnx_pkg = 'onnxruntime'
-        packages.append(onnx_pkg)
         if self.system != systems['MACOS']:
             onnx_pkg = self.check_onnxruntime_pkg()
         if onnx_pkg is not None:
