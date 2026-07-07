@@ -1,5 +1,18 @@
 from lib.core import *
 
+# ponytail: monkey-patch gr.HTML to drop 'interactive' kwarg
+# Gradio 5.49.1's HTML.__init__ doesn't accept 'interactive', but its
+# internal state reconstruction passes it anyway.  Silently strip it.
+_orig_html_init = gr.HTML.__init__
+
+
+def _patched_html_init(self, **kwargs):
+    kwargs.pop("interactive", None)
+    _orig_html_init(self, **kwargs)
+
+
+gr.HTML.__init__ = _patched_html_init
+
 
 def build_interface(args: dict) -> gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
@@ -3258,25 +3271,21 @@ def build_interface(args: dict) -> gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["abs_enabled"] = val
-                return gr.update()
 
             def _change_gr_abs_server_url(session_id, val):
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["abs_server_url"] = val
-                return gr.update()
 
             def _change_gr_abs_api_token(session_id, val):
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["abs_api_token"] = val
-                return gr.update()
 
             def _change_gr_abs_library_id(session_id, val):
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["abs_library_id"] = val
-                return gr.update()
 
             def _refresh_abs_libraries(session_id, server_url, api_token):
                 session = context.get_session(session_id)
