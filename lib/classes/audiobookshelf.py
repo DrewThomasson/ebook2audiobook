@@ -42,10 +42,10 @@ def upload_to_abs(
                         if folders:
                             folder_id = folders[0]["id"]
                         break
-        except Exception:
-            pass  # fall back to library-only request
+        except Exception as e:
+            print(f"  ABS folder auto-detect failed: {e}")
 
-    data = {"title": title or filename, "library": library_id}
+    data = {"title": title or Path(file_path).stem, "library": library_id}
     if author:
         data["author"] = author
     if folder_id:
