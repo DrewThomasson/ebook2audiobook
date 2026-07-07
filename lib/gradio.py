@@ -1072,7 +1072,7 @@ def build_interface(args: dict) -> gr.Blocks:
                                                 "",
                                             )
                                         ],
-                                        value=None,
+                                        value=default_abs_library_id or None,
                                         interactive=True,
                                         allow_custom_value=True,
                                     )
