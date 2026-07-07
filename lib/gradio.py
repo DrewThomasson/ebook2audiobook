@@ -1050,6 +1050,7 @@ def build_interface(args: dict) -> gr.Blocks:
                                     )
                                     gr_abs_server_url = gr.Textbox(
                                         label="Server URL",
+                                        type="text",
                                         elem_id="gr_abs_server_url",
                                         placeholder="http://localhost:13378",
                                         value=default_abs_server_url,
@@ -1611,7 +1612,7 @@ def build_interface(args: dict) -> gr.Blocks:
             def _disable_components(
                 session_id: str, exceptions: list | None = None
             ) -> tuple:
-                n = 28  # ponytail: match outputs_disable_components length
+                n = 24  # ponytail: match outputs_disable_components length (removed all ABS components)
                 if session_id is None:
                     outputs = tuple(gr.update() for _ in range(n))
                 else:
@@ -1636,7 +1637,7 @@ def build_interface(args: dict) -> gr.Blocks:
                             session["status"] = status_tags["READY"]
                             session["cancellation_requested"] = False
                             outputs = list(
-                                gr.update(interactive=True) for _ in range(28)
+                                gr.update(interactive=True) for _ in range(24)
                             )
                             visible_custom_model_del_btn = (
                                 True if session["custom_model"] is not None else False
@@ -1661,7 +1662,7 @@ def build_interface(args: dict) -> gr.Blocks:
                 except Exception as e:
                     error = f"_enable_components(): {e}"
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(31))
+                outputs = tuple(gr.update() for _ in range(27))
                 return outputs
 
             def _disable_on_voice_upload() -> tuple:
@@ -1928,15 +1929,11 @@ def build_interface(args: dict) -> gr.Blocks:
                             gr.update(
                                 value=session.get("qwen3_repetition_penalty") or 2.0
                             ),
-                            gr.update(value=bool(session.get("abs_enabled", False))),
-                            gr.update(value=session.get("abs_server_url") or ""),
-                            gr.update(value=session.get("abs_api_token") or ""),
-                            gr.update(value=session.get("abs_library_id") or None),
                         )
                 except Exception as e:
                     error = f"_restore_interface(): {e}"
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(37)])
+                outputs = tuple([gr.update() for _ in range(33)])
                 return outputs
 
             def _restore_audiobook_player(
@@ -4406,10 +4403,6 @@ def build_interface(args: dict) -> gr.Blocks:
                 gr_voice_del_btn,
                 gr_custom_model_del_btn,
                 gr_session_switch_btn,
-                gr_abs_enabled,
-                gr_abs_server_url,
-                gr_abs_api_token,
-                gr_abs_library_id,
             ]
             outputs_enable_components = [
                 gr_ebook_textarea,
@@ -4439,10 +4432,6 @@ def build_interface(args: dict) -> gr.Blocks:
                 gr_custom_model_del_btn,
                 gr_modal,
                 gr_convert_btn,
-                gr_abs_enabled,
-                gr_abs_server_url,
-                gr_abs_api_token,
-                gr_abs_library_id,
             ]
             outputs_edit_blocks = [
                 gr_blocks_markdown,
@@ -4492,10 +4481,6 @@ def build_interface(args: dict) -> gr.Blocks:
                 gr_qwen3_temperature,
                 gr_qwen3_top_p,
                 gr_qwen3_repetition_penalty,
-                gr_abs_enabled,
-                gr_abs_server_url,
-                gr_abs_api_token,
-                gr_abs_library_id,
             ]
             outputs_refresh_interface = [
                 gr_modal,
