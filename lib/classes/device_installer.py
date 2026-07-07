@@ -1496,7 +1496,7 @@ class DeviceInstaller():
             url_path:Path = Path(voices_url.split('?')[0])
             parts:tuple = url_path.parts
             filename:str = url_path.name
-            repo_id:str = f"{parts[-4]}/{parts[-3]}"
+            repo_id:str = f"{parts[-5]}/{parts[-4]}"
             repo_type:str = 'dataset' if 'datasets' in parts else 'model'
             zip_path:Path = Path(hf_hub_download(repo_id=repo_id, filename=filename, repo_type=repo_type, local_dir='.'))
             with zipfile.ZipFile(zip_path, 'r') as zf:
