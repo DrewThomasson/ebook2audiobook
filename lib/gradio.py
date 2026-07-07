@@ -3268,21 +3268,26 @@ def build_interface(args: dict) -> gr.Blocks:
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["abs_enabled"] = val
+                save_env_key("ABS_ENABLED", "true" if val else "false")
 
             def _change_gr_abs_server_url(session_id, val):
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["abs_server_url"] = val
+                save_env_key("ABS_SERVER_URL", val)
 
             def _change_gr_abs_api_token(session_id, val):
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["abs_api_token"] = val
+                save_env_key("ABS_API_TOKEN", val)
 
             def _change_gr_abs_library_id(session_id, val):
                 session = context.get_session(session_id)
                 if session and session.get("id", False):
                     session["abs_library_id"] = val
+                if val:
+                    save_env_key("ABS_LIBRARY_ID", val)
 
             def _refresh_abs_libraries(session_id, server_url, api_token):
                 session = context.get_session(session_id)
@@ -3301,6 +3306,9 @@ def build_interface(args: dict) -> gr.Blocks:
                         if any(v == current for _, v in choices)
                         else choices[0][1]
                     )
+                    if value != current:
+                        session["abs_library_id"] = value
+                        save_env_key("ABS_LIBRARY_ID", value)
                     return gr.update(choices=choices, value=value)
                 return gr.update(
                     choices=[("No libraries found — check URL/token", "")],

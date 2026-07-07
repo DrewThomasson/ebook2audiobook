@@ -442,3 +442,50 @@ default_abs_enabled = False  # upload finished audiobook to Audiobookshelf
 default_abs_server_url = ""  # e.g. http://localhost:13378
 default_abs_api_token = ""  # API token from ABS user settings
 default_abs_library_id = ""  # library ID from ABS (e.g. lib_abc123)
+
+# --- .env loader ---
+_env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+if os.path.isfile(_env_path):
+    try:
+        with open(_env_path, encoding="utf-8") as _f:
+            for _line in _f:
+                _line = _line.strip()
+                if not _line or _line.startswith("#") or "=" not in _line:
+                    continue
+                _key, _val = _line.split("=", 1)
+                _key, _val = _key.strip(), _val.strip().strip("\"'")
+                if _key == "ABS_SERVER_URL" and _val:
+                    default_abs_server_url = _val
+                elif _key == "ABS_API_TOKEN" and _val:
+                    default_abs_api_token = _val
+                elif _key == "ABS_LIBRARY_ID" and _val:
+                    default_abs_library_id = _val
+                elif _key == "ABS_ENABLED" and _val:
+                    default_abs_enabled = _val.lower() in ("1", "true", "yes")
+    except Exception:
+        pass  # ignore .env errors gracefully
+
+
+def save_env_key(key: str, value: str) -> None:
+    """Update or add a single key in .env, preserving other keys and comments."""
+    path = _env_path
+    lines = []
+    found = False
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as f:
+            lines = f.readlines()
+    with open(path, "w", encoding="utf-8") as f:
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith(f"{key}="):
+                f.write(f"{key}={value}\n")
+                found = True
+            else:
+                f.write(line)
+        if not found:
+            if lines and not lines[-1].endswith("\n"):
+                f.write("\n")
+            f.write(f"{key}={value}\n")
+
+
+# --- end .env loader ---

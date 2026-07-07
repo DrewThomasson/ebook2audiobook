@@ -457,6 +457,19 @@ a copy of the original conf.py so on each ebook2audiobook update you will backup
 back the original one. You must plan the same process for models.py. If you wish to make your own custom model
 as an official ebook2audiobook fine tuned model so please contact us and we'll add it to the presets list.
 
+### Persist ABS credentials via `.env`
+
+Create a `.env` file in the project root to pre-fill and persist Audiobookshelf settings:
+
+```ini
+ABS_SERVER_URL=http://192.168.1.100:13378
+ABS_API_TOKEN=your-api-token
+ABS_LIBRARY_ID=lib_abc123
+ABS_ENABLED=true
+```
+
+Changes made in the web UI are automatically saved back to `.env`, so they survive restarts.
+
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
