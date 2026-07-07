@@ -6,9 +6,9 @@ from lib.core import *
 _orig_html_init = gr.HTML.__init__
 
 
-def _patched_html_init(self, **kwargs):
+def _patched_html_init(self, *args, **kwargs):
     kwargs.pop("interactive", None)
-    _orig_html_init(self, **kwargs)
+    _orig_html_init(self, *args, **kwargs)
 
 
 gr.HTML.__init__ = _patched_html_init
