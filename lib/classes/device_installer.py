@@ -1499,6 +1499,7 @@ class DeviceInstaller():
             repo_id:str = f"{parts[-5]}/{parts[-4]}"
             repo_type:str = 'dataset' if 'datasets' in parts else 'model'
             zip_path:Path = Path(hf_hub_download(repo_id=repo_id, filename=filename, repo_type=repo_type, local_dir='.'))
+            print(f'Downloaded {zip_path.stat().st_size / (1024*1024):.1f} MB to {zip_path}')
             with zipfile.ZipFile(zip_path, 'r') as zf:
                 members = zf.infolist()
                 desc = 'Extracting voices'
