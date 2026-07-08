@@ -478,6 +478,7 @@ def compare_checksums(session_id:str)->tuple[bool, str|None]:
             else:
                 with open(checksum_path, 'r', encoding='utf-8') as f:
                     saved_checksum = f.read().strip()
+                print(f'--------------{new_checksum} - {saved_checksum}')
                 if saved_checksum == new_checksum:
                     return True, None
                 else:
@@ -3517,8 +3518,8 @@ def convert_ebook(args:dict)->tuple:
                         session['blocks_orig_json'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                         session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                         session['blocks_current_db']   = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.db")
-                        checksum, error = compare_checksums(session_id)
-                        if not checksum or not os.path.exists(session['epub_path']):
+                        ok_checksum, error = compare_checksums(session_id)
+                        if not ok_checksum or not os.path.exists(session['epub_path']):
                             result_epub = convert2epub(session_id)
                             if result_epub:
                                 if os.path.exists(session['epub_path']):
