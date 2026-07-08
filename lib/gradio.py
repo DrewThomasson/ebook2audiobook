@@ -1665,7 +1665,8 @@ def build_interface(args:dict)->gr.Blocks:
                                         vtt_path = Path(audiobook).with_suffix('.vtt')
                                         if os.path.exists(vtt_path):
                                             os.remove(vtt_path)
-                                        process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], base_selected_name).encode()).hexdigest()}")
+                                        language = session['translate'] if session['translate_enabled'] and session['translate'] is not None else session['language']
+                                        process_dir = os.path.join(session['session_dir'], hashlib.md5((selected_name + (f'_{language}' if session['translate_enabled'] else '')).encode()).hexdigest())
                                         shutil.rmtree(process_dir, ignore_errors=True)
                                     msg = f'Audiobook {selected_name} deleted!'
                                     session['audiobook'] = None
