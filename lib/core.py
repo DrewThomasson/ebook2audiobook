@@ -3427,7 +3427,7 @@ def convert_ebook(args:dict)->tuple:
                         msg = 'Conversion skipped.'
                         return msg, True
                 if error is None:
-                    #delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
+                    delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
