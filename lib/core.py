@@ -3413,7 +3413,7 @@ def convert_ebook(args:dict)->tuple:
                 audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
                 if audio_pre_final_exist or audio_sentences_exist:
-                    msg = f"Warning! This conversion already exists. Continue? WARNING! The whole previous conversion will be deleted!" if audio_pre_final_exist else f"Warning! Some sentences are already converted. Resume?"
+                    msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists. If you continue resume will restart from the last sentence converted!"
                     print(msg)
                     while True:
                         choice = input("[s]kip / [y]es: ").strip().lower()
@@ -3427,7 +3427,7 @@ def convert_ebook(args:dict)->tuple:
                         msg = 'Conversion skipped.'
                         return msg, True
                 if error is None:
-                    delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
+                    #delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
                             os.makedirs(session['custom_model_dir'], exist_ok=True)
