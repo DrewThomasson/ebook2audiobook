@@ -3399,7 +3399,7 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
             cleanup_models_cache()
-            session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(ebook_name + ('_'+language if session.get('translate_enabled') else '')).encode().hexdigest()}")
+            session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(ebook_name + ('_'+language if session.get('translate_enabled') else '').encode()).hexdigest()}")
             session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
             session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             if session['is_gui_process']:
