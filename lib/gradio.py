@@ -2361,14 +2361,16 @@ def build_interface(args:dict)->gr.Blocks:
                                             session['ebook_src'] = source
                                             stem_base = get_sanitized(Path(source).stem)
                                             if translate_enabled and translate_target and translate_target != session.get('language'):
-                                                stem = f"{stem_base}_{translate_target}"
+                                                language = translate_target
+                                                ebook_name = f"{stem_base}_{translate_target}"
                                             else:
-                                                stem = stem_base
-                                            final_name = f"{stem}.{session['output_format']}"
-                                            process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(final_name).stem).encode()).hexdigest()}")
+                                                language = session.get('language')
+                                                ebook_name = stem_base
+                                            final_name = f"{ebook_name}.{session['output_format']}"
+                                            process_dir = os.path.join(session['session_dir'], hashlib.md5((ebook_name + (f'_{language}' if translate_enabled else '')).encode()).hexdigest())
                                             chapters_dir = os.path.join(process_dir, 'chapters')
                                             sentences_dir = os.path.join(chapters_dir, 'sentences')
-                                            pre_name = f"{stem}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
+                                            pre_name = f"{ebook_name}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"
                                             pre_file = os.path.join(process_dir, pre_name)
                                             final_file = os.path.join(session['audiobooks_dir'], final_name)
                                             audio_sentences_exist = False
