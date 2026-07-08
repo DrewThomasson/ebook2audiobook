@@ -478,7 +478,6 @@ def compare_checksums(session_id:str)->tuple[bool, str|None]:
             else:
                 with open(checksum_path, 'r', encoding='utf-8') as f:
                     saved_checksum = f.read().strip()
-                print(f'--------------{new_checksum} - {saved_checksum}')
                 if saved_checksum == new_checksum:
                     return True, None
                 else:
@@ -3542,7 +3541,6 @@ def convert_ebook(args:dict)->tuple:
                                 missing_orig_json = False
                                 blocks_orig = load_json_blocks(session['blocks_orig_json'])
                                 is_changed = False
-                                is_reset = False
                                 if blocks_orig:
                                     blocks = blocks_orig.get('blocks', [])
                                     new_blocks = []
@@ -3552,17 +3550,15 @@ def convert_ebook(args:dict)->tuple:
                                                 block['id'] = str(uuid.uuid4())
                                                 is_changed = True
                                             new_blocks.append(block)
-                                        else:
-                                            is_reset = True
                                     blocks_orig['blocks'] = new_blocks
                                     session['blocks_orig'] = blocks_orig
-                                if is_changed or is_reset:
+                                if is_changed:
                                     save_json_blocks(session_id, 'blocks_orig')
                                 if os.path.exists(session['blocks_saved_json']):
                                     blocks_saved = load_json_blocks(session['blocks_saved_json'])
                                     if blocks_saved:
                                         session['blocks_saved'] = blocks_saved
-                                        if is_changed or is_reset:
+                                        if is_changed:
                                             if is_changed:
                                                 blocks = blocks_saved.get('blocks', [])
                                                 for i, block in enumerate(blocks):
@@ -3570,14 +3566,12 @@ def convert_ebook(args:dict)->tuple:
                                                         block['id'] = blocks_orig['blocks'][i]['id']
                                                 blocks_saved['blocks'] = blocks
                                                 session['blocks_saved'] = blocks_saved
-                                            elif is_reset:
-                                                session['blocks_saved'] = copy.deepcopy(blocks_orig)
                                             save_json_blocks(session_id, 'blocks_saved')
                                 if os.path.exists(session['blocks_current_db']):
                                     blocks_current = load_db_blocks(session['blocks_current_db'])
                                     if blocks_current:
                                         session['blocks_current'] = blocks_current
-                                        if is_changed or is_reset:
+                                        if is_changed:
                                             if is_changed:
                                                 blocks = blocks_current.get('blocks', [])
                                                 for i, block in enumerate(blocks):
@@ -3585,8 +3579,6 @@ def convert_ebook(args:dict)->tuple:
                                                         block['id'] = blocks_orig['blocks'][i]['id']
                                                 blocks_current['blocks'] = blocks
                                                 session['blocks_current'] = blocks_current
-                                            elif is_reset:
-                                                session['blocks_current'] = copy.deepcopy(blocks_orig)
                                             save_db_blocks(session_id)
                             epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                             if epubBook:
