@@ -3399,18 +3399,15 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
             cleanup_models_cache()
+            session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(ebook_name + ('_'+language if session.get('translate_enabled') else '')).encode()).hexdigest()}")
+            session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+            session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format']
-                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
-                session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format'])
-                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
-                session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
