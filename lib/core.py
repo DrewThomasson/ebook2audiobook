@@ -3399,24 +3399,21 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
             cleanup_models_cache()
+            session['process_dir'] = os.path.join(session['session_dir'], hashlib.md5((ebook_name + (f'_{language}' if session.get('translate_enabled') else '')).encode()).hexdigest())
+            session['chapters_dir'] = os.path.join(session['process_dir'], 'chapters')
+            session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format']
-                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
-                session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             else:
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
                 session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format'])
-                session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], Path(session['final_name']).stem).encode()).hexdigest()}")
-                session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
                 if audio_pre_final_exist or audio_sentences_exist:
-                    msg = f"Warning! This conversion already exists. Continue? WARNING! The whole previous conversion will be deleted!" if audio_pre_final_exist else f"Warning! Some sentences are already converted. Resume?"
+                    msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists. If you continue resume will restart from the last sentence converted!"
                     print(msg)
                     while True:
                         choice = input("[s]kip / [y]es: ").strip().lower()
@@ -3520,8 +3517,8 @@ def convert_ebook(args:dict)->tuple:
                         session['blocks_orig_json'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                         session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                         session['blocks_current_db']   = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.db")
-                        checksum, error = compare_checksums(session_id)
-                        if not checksum or not os.path.exists(session['epub_path']):
+                        ok_checksum, error = compare_checksums(session_id)
+                        if not ok_checksum or not os.path.exists(session['epub_path']):
                             result_epub = convert2epub(session_id)
                             if result_epub:
                                 if os.path.exists(session['epub_path']):
@@ -3544,7 +3541,6 @@ def convert_ebook(args:dict)->tuple:
                                 missing_orig_json = False
                                 blocks_orig = load_json_blocks(session['blocks_orig_json'])
                                 is_changed = False
-                                is_reset = False
                                 if blocks_orig:
                                     blocks = blocks_orig.get('blocks', [])
                                     new_blocks = []
@@ -3554,17 +3550,15 @@ def convert_ebook(args:dict)->tuple:
                                                 block['id'] = str(uuid.uuid4())
                                                 is_changed = True
                                             new_blocks.append(block)
-                                        else:
-                                            is_reset = True
                                     blocks_orig['blocks'] = new_blocks
                                     session['blocks_orig'] = blocks_orig
-                                if is_changed or is_reset:
+                                if is_changed:
                                     save_json_blocks(session_id, 'blocks_orig')
                                 if os.path.exists(session['blocks_saved_json']):
                                     blocks_saved = load_json_blocks(session['blocks_saved_json'])
                                     if blocks_saved:
                                         session['blocks_saved'] = blocks_saved
-                                        if is_changed or is_reset:
+                                        if is_changed:
                                             if is_changed:
                                                 blocks = blocks_saved.get('blocks', [])
                                                 for i, block in enumerate(blocks):
@@ -3572,14 +3566,12 @@ def convert_ebook(args:dict)->tuple:
                                                         block['id'] = blocks_orig['blocks'][i]['id']
                                                 blocks_saved['blocks'] = blocks
                                                 session['blocks_saved'] = blocks_saved
-                                            elif is_reset:
-                                                session['blocks_saved'] = copy.deepcopy(blocks_orig)
                                             save_json_blocks(session_id, 'blocks_saved')
                                 if os.path.exists(session['blocks_current_db']):
                                     blocks_current = load_db_blocks(session['blocks_current_db'])
                                     if blocks_current:
                                         session['blocks_current'] = blocks_current
-                                        if is_changed or is_reset:
+                                        if is_changed:
                                             if is_changed:
                                                 blocks = blocks_current.get('blocks', [])
                                                 for i, block in enumerate(blocks):
@@ -3587,8 +3579,6 @@ def convert_ebook(args:dict)->tuple:
                                                         block['id'] = blocks_orig['blocks'][i]['id']
                                                 blocks_current['blocks'] = blocks
                                                 session['blocks_current'] = blocks_current
-                                            elif is_reset:
-                                                session['blocks_current'] = copy.deepcopy(blocks_orig)
                                             save_db_blocks(session_id)
                             epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                             if epubBook:
