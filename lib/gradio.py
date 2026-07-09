@@ -2277,11 +2277,13 @@ def build_interface(args:dict)->gr.Blocks:
                                     return gr.update()
                                 session['status'] = status_tags['END']
                             return gr.update(value=error)
+                        else:
+                            return gr.update()
                 except Exception as e:
                     session['status'] = status_tags['END']
                     error = f'_start_conversion(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(value=error)
+                    return gr.update(value=error)
 
             def _update_gr_audiobook_list(session_id:str)->dict:
                 try:
