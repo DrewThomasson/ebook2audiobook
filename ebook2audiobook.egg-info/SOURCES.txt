@@ -1,6 +1,7 @@
 LICENSE
 README.md
 VERSION.txt
+app.py
 pyproject.toml
 setup.py
 ebook2audiobook.egg-info/PKG-INFO
