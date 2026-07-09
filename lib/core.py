@@ -3378,7 +3378,7 @@ def convert_ebook(args:dict)->tuple:
                     f.write(text)
                 session['ebook_textarea'] = args['ebook_textarea']
                 session['ebook_textarea_src'] = text_filepath
-                ebook_file = text_filename
+                ebook_file = strip_invalid_filename_characters(text_filename)
                 ebook_name = Path(text_filename).stem
             else:
                 if not args.get('ebook_src'):
@@ -3391,7 +3391,7 @@ def convert_ebook(args:dict)->tuple:
                     error = 'File does not exist or Directory empty.'
                     return error, False
                 session['ebook_src'] = str(args['ebook_src'])
-                ebook_file = Path(session['ebook_src']).name
+                ebook_file = strip_invalid_filename_characters(Path(session['ebook_src']).name)
                 ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             ebook_name = strip_invalid_filename_characters(ebook_name)
             print(f"Processing eBook file: {ebook_file}")
