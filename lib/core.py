@@ -3160,6 +3160,33 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(sml_token('pause'), '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis='…')
 
+def strip_invalid_filename_characters(filename:str, max_bytes:int=200)->str:
+    # Replicates gradio upload filename sanitization for headless mode.
+    try:
+        from gradio_client.utils import strip_invalid_filename_characters as gr_strip
+        return gr_strip(filename, max_bytes)
+    except ImportError:
+        pass
+    use_blocklist = True
+    try:
+        import gradio_client
+        parts = gradio_client.__version__.split(".")
+        use_blocklist = (int(parts[0]), int(parts[1])) > (1, 13)
+    except Exception:
+        pass
+    name, ext = os.path.splitext(filename)
+    if use_blocklist:
+        # gradio_client > 1.13: remove only dangerous chars
+        name = re.sub(r'[<>:"/\\|?*\x00-\x1f\x7f`$!{}]', "", name)
+    else:
+        # gradio_client 1.13.x: keep only alnum + "._-, "
+        name = "".join(char for char in name if char.isalnum() or char in "._-, ")
+    filename = name + ext
+    while len(filename.encode()) > max_bytes and name:
+        name = name[:-1]
+        filename = name + ext
+    return filename
+
 def delete_proc_audio_files(dir:str, files:list)->None:
     base = Path(dir)
     for file in base.rglob(f'[0-9]*.{default_audio_proc_format}'):
@@ -3329,12 +3356,12 @@ def convert_ebook(args:dict)->tuple:
                 args['translate_enabled'] = True
                 args['translate'] = translate_to
                 args['translate_iso1'] = target_iso1
-                language = str(args['translate'])
+                final_language = str(args['translate'])
             else:
                 args['translate_enabled'] = False
                 args['translate'] = None
                 args['translate_iso1'] = None
-                language = str(args['language'])
+                final_language = str(args['language'])
             session['ebook_mode'] = args['ebook_mode']
             if session['ebook_mode'] == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
@@ -3351,7 +3378,7 @@ def convert_ebook(args:dict)->tuple:
                     f.write(text)
                 session['ebook_textarea'] = args['ebook_textarea']
                 session['ebook_textarea_src'] = text_filepath
-                ebook_file = text_filename
+                ebook_file = strip_invalid_filename_characters(text_filename)
                 ebook_name = Path(text_filename).stem
             else:
                 if not args.get('ebook_src'):
@@ -3364,8 +3391,9 @@ def convert_ebook(args:dict)->tuple:
                     error = 'File does not exist or Directory empty.'
                     return error, False
                 session['ebook_src'] = str(args['ebook_src'])
-                ebook_file = Path(session['ebook_src']).name
+                ebook_file = strip_invalid_filename_characters(Path(session['ebook_src']).name)
                 ebook_name = get_sanitized(Path(session['ebook_src']).stem)
+            ebook_name = strip_invalid_filename_characters(ebook_name)
             print(f"Processing eBook file: {ebook_file}")
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
@@ -3398,31 +3426,36 @@ def convert_ebook(args:dict)->tuple:
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
-            cleanup_models_cache()
-            session['process_dir'] = os.path.join(session['session_dir'], hashlib.md5((ebook_name + (f'_{language}' if session.get('translate_enabled') else '')).encode()).hexdigest())
+            lang_prfx = (f'_{final_language}' if session.get('translate_enabled') else '')
+            session['process_dir'] = os.path.join(session['session_dir'], hashlib.md5((ebook_name + lang_prfx).encode()).hexdigest())
             session['chapters_dir'] = os.path.join(session['process_dir'], 'chapters')
             session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+            cleanup_models_cache()
             if session['is_gui_process']:
-                session['final_name'] = ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format']
+                session['final_name'] = ebook_name + lang_prfx + '.' + session['output_format']
             else:
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
-                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format'])
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
+                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + lang_prfx + '.' + session['output_format'])
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', final_language)
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
                 if audio_pre_final_exist or audio_sentences_exist:
-                    msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists. If you continue resume will restart from the last sentence converted!"
+                    msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists!"
                     print(msg)
                     while True:
-                        choice = input("[s]kip / [y]es: ").strip().lower()
-                        if choice in ('s', 'y'):
+                        choice = input("[s]kip / [r]esume / [d]elete and convert again: ").strip().lower()
+                        if choice in ('s', 'r', 'd'):
                             break
-                        print("Please enter 's', or 'y'.")
-                    if choice == 'y':
+                        print("Please enter 's', 'r' or 'd'.")
+                    if choice == 'r':
                         if audio_pre_final_exist:
-                            delete_folder(session['process_dir'])
+                            os.unlink(audio_pre_final_exist)
+                        if os.path.exists(session['final_name']):
+                            os.unlink(session['final_name'])
+                    elif choice == 'd':
+                        delete_folder(session['process_dir'])
                     elif choice == 's':
                         msg = 'Conversion skipped.'
                         return msg, True
@@ -3588,13 +3621,13 @@ def convert_ebook(args:dict)->tuple:
                                     if data:
                                         for value, attributes in data:
                                             metadata[key] = value
-                                metadata['language'] = language
+                                metadata['language'] = final_language
                                 metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_', ' ')
                                 metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                                 session['metadata'] = metadata
                                 try:
                                     if len(session['metadata']['language']) == 2:
-                                        lang_dict = Lang(language)
+                                        lang_dict = Lang(final_language)
                                         if lang_dict:
                                             session['metadata']['language'] = lang_dict.pt3
                                 except Exception as e:
@@ -3605,7 +3638,7 @@ def convert_ebook(args:dict)->tuple:
                                         show_alert(session_id, {'type': 'warning', 'msg': error})
                                 is_lang_in_tts_engine = (
                                     session.get('tts_engine') in default_engine_settings and
-                                    language in default_engine_settings[session['tts_engine']].get('languages', {})
+                                    final_language in default_engine_settings[session['tts_engine']].get('languages', {})
                                 )
                                 if is_lang_in_tts_engine:
                                     session['cover'] = get_cover(epubBook, session_id)
@@ -3658,7 +3691,7 @@ def convert_ebook(args:dict)->tuple:
                                     else:
                                         error = 'get_cover() failed!'
                                 else:
-                                    error = f"language {language} not supported by {session['tts_engine']}!"
+                                    error = f"language {final_language} not supported by {session['tts_engine']}!"
                             else:
                                 error = 'epubBook.read_epub failed!'
                     else:
