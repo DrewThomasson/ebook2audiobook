@@ -154,7 +154,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — feste Pause (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — Stimme von der Standard- oder in der GUI/CLI ausgewählten Stimme wechseln
 
-**Sehen Sie sich unser anderes Repo an, das dem automatischen Hinzufügen von SML in Ihrem E-Book gewidmet ist -> [E2A-SML](./tools/E2A-SML)**
+**Sehen Sie sich unser anderes Repo an, das dem automatischen Hinzufügen von SML in Ihrem E-Book gewidmet ist -> [E2A-SML](./components/E2A-SML)**
 
 > [!IMPORTANT]
 **Bevor Sie ein Installations- oder Fehlerproblem melden, durchsuchen Sie sorgfältig den Tab mit offenen und geschlossenen Issues<br>
@@ -430,7 +430,7 @@ Podman Compose (i.e. cuda 12.8:
 ## Feinabgestimmte (fine-tuned) TTS-Modelle
 #### Stimmen Sie Ihr eigenes XTTSv2-Modell fein ab
 
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
+[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
 #### Trainingsdaten entrauschen
