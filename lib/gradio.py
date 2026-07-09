@@ -2162,125 +2162,126 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     reset_ebook_session(session_id, force=True, filter_keys=False)
                     if session and session.get('id', False):
-                        args = {
-                            "id": session_id,
-                            "is_gui_process": session['is_gui_process'],
-                            "script_mode": script_mode,
-                            "blocks_preview": blocks_preview,
-                            "device": device,
-                            "tts_engine": tts_engine,
-                            "ebook": None,
-                            "ebook_mode": ebook_mode,
-                            "ebook_src": ebook_src if ebook_mode == ebook_modes['SINGLE'] else session['ebook_src'],
-                            "ebook_list": ebook_src if ebook_mode == ebook_modes['DIRECTORY'] else session['ebook_list'],
-                            "ebook_textarea": ebook_textarea if ebook_mode == ebook_modes['TEXT'] else session['ebook_textarea'],
-                            "voice": voice,
-                            "language": language,
-                            "custom_model": custom_model,
-                            "fine_tuned": fine_tuned,
-                            "output_format": output_format,
-                            "output_channel": output_channel,
-                            "xtts_temperature": float(xtts_temperature),
-                            "xtts_length_penalty": float(xtts_length_penalty),
-                            "xtts_num_beams":int(session['xtts_num_beams']),
-                            "xtts_repetition_penalty": float(xtts_repetition_penalty),
-                            "xtts_top_k":int(xtts_top_k),
-                            "xtts_top_p": float(xtts_top_p),
-                            "xtts_speed": float(xtts_speed),
-                            "xtts_enable_text_splitting":bool(xtts_enable_text_splitting),
-                            "bark_text_temp": float(bark_text_temp),
-                            "bark_waveform_temp": float(bark_waveform_temp),
-                            "output_split":bool(output_split),
-                            "output_split_hours": output_split_hours,
-                            "translate_enabled": bool(translate_enabled),
-                            "translate": translate_target if translate_enabled else None,
-                            "translate_iso1": (Lang(translate_target).pt1 if (translate_enabled and translate_target) else None)
-                        }
-                        if args['ebook_mode'] == ebook_modes['DIRECTORY']:
-                            if isinstance(args['ebook_list'], list):
-                                if not args['ebook_list']:
-                                    error = 'A directory with ebook files is required.'
-                        elif args['ebook_mode'] == ebook_modes['SINGLE']:
-                            if not args['ebook_src']:
-                                error = 'An ebook file is required.'
-                        elif args['ebook_mode'] == ebook_modes['TEXT']:
-                            if not args['ebook_textarea']:
-                                error = 'Textarea is empty.'
-                            elif len(args['ebook_textarea']) < 10:
-                                error = 'Textarea must be > 10 chars.'
-                            else:
-                                args['ebook_textarea'] = args['ebook_textarea'].strip()
-                                if len(args['ebook_textarea']) < 10:
-                                    error = 'Textarea must be > 10 chars.'                     
-                        #elif args['xtts_num_beams'] < args['xtts_length_penalty']:
-                        #    error = 'num beams must be greater or equal than length penalty.'               
-                        if error is None:
-                            session['ticker'] = len(audiobook_options)
+                        if not session['cancellation_requested']:
+                            args = {
+                                "id": session_id,
+                                "is_gui_process": session['is_gui_process'],
+                                "script_mode": script_mode,
+                                "blocks_preview": blocks_preview,
+                                "device": device,
+                                "tts_engine": tts_engine,
+                                "ebook": None,
+                                "ebook_mode": ebook_mode,
+                                "ebook_src": ebook_src if ebook_mode == ebook_modes['SINGLE'] else session['ebook_src'],
+                                "ebook_list": ebook_src if ebook_mode == ebook_modes['DIRECTORY'] else session['ebook_list'],
+                                "ebook_textarea": ebook_textarea if ebook_mode == ebook_modes['TEXT'] else session['ebook_textarea'],
+                                "voice": voice,
+                                "language": language,
+                                "custom_model": custom_model,
+                                "fine_tuned": fine_tuned,
+                                "output_format": output_format,
+                                "output_channel": output_channel,
+                                "xtts_temperature": float(xtts_temperature),
+                                "xtts_length_penalty": float(xtts_length_penalty),
+                                "xtts_num_beams":int(session['xtts_num_beams']),
+                                "xtts_repetition_penalty": float(xtts_repetition_penalty),
+                                "xtts_top_k":int(xtts_top_k),
+                                "xtts_top_p": float(xtts_top_p),
+                                "xtts_speed": float(xtts_speed),
+                                "xtts_enable_text_splitting":bool(xtts_enable_text_splitting),
+                                "bark_text_temp": float(bark_text_temp),
+                                "bark_waveform_temp": float(bark_waveform_temp),
+                                "output_split":bool(output_split),
+                                "output_split_hours": output_split_hours,
+                                "translate_enabled": bool(translate_enabled),
+                                "translate": translate_target if translate_enabled else None,
+                                "translate_iso1": (Lang(translate_target).pt1 if (translate_enabled and translate_target) else None)
+                            }
                             if args['ebook_mode'] == ebook_modes['DIRECTORY']:
-                                if args['ebook_list']:
-                                    if isinstance(args['ebook_list'], list):
-                                        default_voice = session.get('voice')
-                                        voice_map = dict(session.get('voice_map') or {})
-                                        clean_list = sorted([
-                                            f for f in args['ebook_list']
-                                            if any(f.endswith(ext) for ext in ebook_formats)
-                                        ])
-                                        for skipped in [f for f in args['ebook_list'] if f not in clean_list]:
-                                            show_alert(session_id, {
-                                                "type": "warning",
-                                                "msg": f'{Path(skipped).name} has not a supported format! skipping'
-                                            })
-                                        ebook_list_full = copy.deepcopy(clean_list)
-                                        args['ebook_list'] = ebook_list_full
-                                        queue = list(ebook_list_full)
-                                        while queue:
-                                            file = queue.pop(0)
-                                            args['ebook_src'] = file
-                                            abs_file = os.path.abspath(file)
-                                            if abs_file in voice_map:
-                                                override = voice_map[abs_file]
-                                            elif os.path.basename(file) in voice_map:
-                                                override = voice_map[os.path.basename(file)]
-                                            else:
-                                                override = default_voice
-                                            if override is not None and not os.path.exists(override):
-                                                msg = f'Voice override for {Path(file).name} not found, using default.'
+                                if isinstance(args['ebook_list'], list):
+                                    if not args['ebook_list']:
+                                        error = 'A directory with ebook files is required.'
+                            elif args['ebook_mode'] == ebook_modes['SINGLE']:
+                                if not args['ebook_src']:
+                                    error = 'An ebook file is required.'
+                            elif args['ebook_mode'] == ebook_modes['TEXT']:
+                                if not args['ebook_textarea']:
+                                    error = 'Textarea is empty.'
+                                elif len(args['ebook_textarea']) < 10:
+                                    error = 'Textarea must be > 10 chars.'
+                                else:
+                                    args['ebook_textarea'] = args['ebook_textarea'].strip()
+                                    if len(args['ebook_textarea']) < 10:
+                                        error = 'Textarea must be > 10 chars.'                     
+                            #elif args['xtts_num_beams'] < args['xtts_length_penalty']:
+                            #    error = 'num beams must be greater or equal than length penalty.'               
+                            if error is None:
+                                session['ticker'] = len(audiobook_options)
+                                if args['ebook_mode'] == ebook_modes['DIRECTORY']:
+                                    if args['ebook_list']:
+                                        if isinstance(args['ebook_list'], list):
+                                            default_voice = session.get('voice')
+                                            voice_map = dict(session.get('voice_map') or {})
+                                            clean_list = sorted([
+                                                f for f in args['ebook_list']
+                                                if any(f.endswith(ext) for ext in ebook_formats)
+                                            ])
+                                            for skipped in [f for f in args['ebook_list'] if f not in clean_list]:
                                                 show_alert(session_id, {
                                                     "type": "warning",
-                                                    "msg": msg
+                                                    "msg": f'{Path(skipped).name} has not a supported format! skipping'
                                                 })
-                                                override = default_voice
-                                            args['voice'] = override
-                                            progress_status, passed = convert_ebook(args)
-                                            if passed:
-                                                return gr.update(value=progress_status)
-                                            else:
-                                                error = progress_status
-                                                break
-                            elif args['ebook_mode'] == ebook_modes['SINGLE']:
-                                progress_status, passed = convert_ebook(args)
-                                if passed:
-                                    return gr.update(value=progress_status)
-                                else:
-                                    error = progress_status
-                            elif args['ebook_mode'] == ebook_modes['TEXT']:
-                                progress_status, passed = convert_ebook(args)
-                                if passed:
-                                    return gr.update(value=progress_status)
-                                else:
-                                    error = progress_status
-                        if error is not None:
-                            show_alert(session_id, {"type": "warning", "msg": error})
-                            if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
-                                context_tracker.end_session(session_id, session['socket_hash'])
-                                return gr.update()
-                            session['status'] = status_tags['END']
-                        return gr.update(value=error)
+                                            ebook_list_full = copy.deepcopy(clean_list)
+                                            args['ebook_list'] = ebook_list_full
+                                            queue = list(ebook_list_full)
+                                            while queue:
+                                                file = queue.pop(0)
+                                                args['ebook_src'] = file
+                                                abs_file = os.path.abspath(file)
+                                                if abs_file in voice_map:
+                                                    override = voice_map[abs_file]
+                                                elif os.path.basename(file) in voice_map:
+                                                    override = voice_map[os.path.basename(file)]
+                                                else:
+                                                    override = default_voice
+                                                if override is not None and not os.path.exists(override):
+                                                    msg = f'Voice override for {Path(file).name} not found, using default.'
+                                                    show_alert(session_id, {
+                                                        "type": "warning",
+                                                        "msg": msg
+                                                    })
+                                                    override = default_voice
+                                                args['voice'] = override
+                                                progress_status, passed = convert_ebook(args)
+                                                if passed:
+                                                    return gr.update(value=progress_status)
+                                                else:
+                                                    error = progress_status
+                                                    break
+                                elif args['ebook_mode'] == ebook_modes['SINGLE']:
+                                    progress_status, passed = convert_ebook(args)
+                                    if passed:
+                                        return gr.update(value=progress_status)
+                                    else:
+                                        error = progress_status
+                                elif args['ebook_mode'] == ebook_modes['TEXT']:
+                                    progress_status, passed = convert_ebook(args)
+                                    if passed:
+                                        return gr.update(value=progress_status)
+                                    else:
+                                        error = progress_status
+                            if error is not None:
+                                show_alert(session_id, {"type": "warning", "msg": error})
+                                if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
+                                    context_tracker.end_session(session_id, session['socket_hash'])
+                                    return gr.update()
+                                session['status'] = status_tags['END']
+                            return gr.update(value=error)
                 except Exception as e:
                     session['status'] = status_tags['END']
                     error = f'_start_conversion(): {e}'
                     exception_alert(session_id, error)
-                    return gr.update(value=error)
+                return gr.update(value=error)
 
             def _update_gr_audiobook_list(session_id:str)->dict:
                 try:
