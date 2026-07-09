@@ -4156,6 +4156,14 @@ def convert_ebook(args: dict) -> tuple:
                 if args["output_split_hours"] is not None
                 else default_output_split_hours
             )
+            session["output_chapter_mode"] = bool(
+                args.get("output_chapter_mode", False)
+            )
+            session["output_overwrite"] = bool(args.get("output_overwrite", False))
+            session["abs_enabled"] = bool(args.get("abs_enabled", False))
+            session["abs_server_url"] = args.get("abs_server_url", "") or ""
+            session["abs_api_token"] = args.get("abs_api_token", "") or ""
+            session["abs_library_id"] = args.get("abs_library_id", "") or ""
             session["model_cache"] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session["session_dir"] = os.path.join(tmp_dir, f"proc-{session_id}")
             session["status"] = (

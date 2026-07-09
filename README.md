@@ -223,8 +223,15 @@ to let the web page reconnect to the new connection socket.**
   - **[--ebook]**: Path to your eBook file
   - **[--voice]**: Voice cloning file path (optional)
   - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german...).<br>
-    Default language is eng and --language is optional for default language set in ./lib/lang.py.<br>
-    The ISO-639-1 2 letters codes are also supported.
+     Default language is eng and --language is optional for default language set in ./lib/lang.py.<br>
+     The ISO-639-1 2 letters codes are also supported.
+  - **[--chapter_mode]**: Output one m4b file per chapter instead of a single file (optional)
+  - **[--output_overwrite]**: Force full rebuild, ignoring existing output (optional)
+  - **[--abs_enabled]**: Enable Audiobookshelf upload after conversion (optional)<br>
+     Requires `--abs_server_url`, `--abs_api_token`, `--abs_library_id` (or `.env` file, see below).
+  - **[--abs_server_url]**: Audiobookshelf server URL, e.g. `http://192.168.1.100:13378`
+  - **[--abs_api_token]**: Audiobookshelf API token from user settings
+  - **[--abs_library_id]**: Audiobookshelf library ID (e.g. `lib_abc123`)
 
 
 ###  Example of Custom Model Zip Upload
@@ -469,6 +476,7 @@ ABS_ENABLED=true
 ```
 
 Changes made in the web UI are automatically saved back to `.env`, so they survive restarts.
+In headless mode, `.env` values are used as fallback when `--abs_*` CLI flags are not provided.
 
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)

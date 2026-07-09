@@ -42,6 +42,12 @@ cli_options = [
     "--docker_device",
     "--workflow",
     "--help",
+    "--abs_enabled",
+    "--abs_server_url",
+    "--abs_api_token",
+    "--abs_library_id",
+    "--chapter_mode",
+    "--output_overwrite",
 ]
 
 workflow_id = "ba800d22-ee51-11ef-ac34-d4ae52cfd9ce"
