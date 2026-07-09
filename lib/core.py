@@ -3557,18 +3557,26 @@ def convert_ebook(args:dict)->tuple:
                                     session['blocks_orig'] = blocks_orig
                                 if is_changed or is_reset:
                                     save_json_blocks(session_id, 'blocks_orig')
+                                def _sync_blocks_with_orig_ids(raw_blocks):
+                                    filtered_blocks = [
+                                        block for block in raw_blocks
+                                        if any(c.isalnum() for c in block.get('text',''))
+                                    ]
+                                    orig_ids_by_text = {}
+                                    for orig_block in blocks_orig.get('blocks', []):
+                                        text = orig_block.get('text','')
+                                        orig_ids_by_text.setdefault(text, []).append(orig_block.get('id'))
+                                    for block in filtered_blocks:
+                                        text = block.get('text','')
+                                        if text in orig_ids_by_text and orig_ids_by_text[text]:
+                                            block['id'] = orig_ids_by_text[text].pop(0)
+                                    return filtered_blocks
                                 if os.path.exists(session['blocks_saved_json']):
                                     blocks_saved = load_json_blocks(session['blocks_saved_json'])
                                     if blocks_saved:
                                         session['blocks_saved'] = blocks_saved
                                         if is_changed or is_reset:
-                                            blocks = [
-                                                block for block in blocks_saved.get('blocks', [])
-                                                if any(c.isalnum() for c in block.get('text',''))
-                                            ]
-                                            for i, block in enumerate(blocks):
-                                                if i < len(blocks_orig['blocks']):
-                                                    block['id'] = blocks_orig['blocks'][i]['id']
+                                            blocks = _sync_blocks_with_orig_ids(blocks_saved.get('blocks', []))
                                             blocks_saved['blocks'] = blocks
                                             session['blocks_saved'] = blocks_saved
                                             save_json_blocks(session_id, 'blocks_saved')
@@ -3577,13 +3585,7 @@ def convert_ebook(args:dict)->tuple:
                                     if blocks_current:
                                         session['blocks_current'] = blocks_current
                                         if is_changed or is_reset:
-                                            blocks = [
-                                                block for block in blocks_current.get('blocks', [])
-                                                if any(c.isalnum() for c in block.get('text',''))
-                                            ]
-                                            for i, block in enumerate(blocks):
-                                                if i < len(blocks_orig['blocks']):
-                                                    block['id'] = blocks_orig['blocks'][i]['id']
+                                            blocks = _sync_blocks_with_orig_ids(blocks_current.get('blocks', []))
                                             blocks_current['blocks'] = blocks
                                             session['blocks_current'] = blocks_current
                                             save_db_blocks(session_id)
