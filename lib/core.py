@@ -3541,7 +3541,6 @@ def convert_ebook(args:dict)->tuple:
                                 missing_orig_json = False
                                 blocks_orig = load_json_blocks(session['blocks_orig_json'])
                                 is_changed = False
-                                is_cleaned = False
                                 if blocks_orig:
                                     blocks = blocks_orig.get('blocks', [])
                                     new_blocks = []
@@ -3551,44 +3550,36 @@ def convert_ebook(args:dict)->tuple:
                                                 block['id'] = str(uuid.uuid4())
                                                 is_changed = True
                                             new_blocks.append(block)
-                                        else:
-                                            is_cleaned = True
                                     blocks_orig['blocks'] = new_blocks
                                     session['blocks_orig'] = blocks_orig
-                                if is_changed or is_cleaned:
-                                    save_json_blocks(session_id, 'blocks_orig')
                                 if is_changed:
-                                    def _sync_blocks_with_orig_ids(raw_blocks):
-                                        orig_ids_by_text = {}
-                                        for orig_block in blocks_orig.get('blocks', []):
-                                            text = orig_block.get('text','')
-                                            orig_ids_by_text.setdefault(text, []).append(orig_block.get('id'))
-                                        for block in raw_blocks:
-                                            text = block.get('text','')
-                                            if text in orig_ids_by_text and orig_ids_by_text[text]:
-                                                block['id'] = orig_ids_by_text[text].pop(0)
-                                        return raw_blocks
-                                    if os.path.exists(session['blocks_saved_json']):
-                                        blocks_saved = load_json_blocks(session['blocks_saved_json'])
-                                        if blocks_saved:
-                                            blocks_saved['blocks'] = _sync_blocks_with_orig_ids(blocks_saved.get('blocks', []))
-                                            session['blocks_saved'] = blocks_saved
+                                    save_json_blocks(session_id, 'blocks_orig')
+                                if os.path.exists(session['blocks_saved_json']):
+                                    blocks_saved = load_json_blocks(session['blocks_saved_json'])
+                                    if blocks_saved:
+                                        session['blocks_saved'] = blocks_saved
+                                        if is_changed:
+                                            if is_changed:
+                                                blocks = blocks_saved.get('blocks', [])
+                                                for i, block in enumerate(blocks):
+                                                    if i < len(blocks_orig['blocks']):
+                                                        block['id'] = blocks_orig['blocks'][i]['id']
+                                                blocks_saved['blocks'] = blocks
+                                                session['blocks_saved'] = blocks_saved
                                             save_json_blocks(session_id, 'blocks_saved')
-                                    if os.path.exists(session['blocks_current_db']):
-                                        blocks_current = load_db_blocks(session['blocks_current_db'])
-                                        if blocks_current:
-                                            blocks_current['blocks'] = _sync_blocks_with_orig_ids(blocks_current.get('blocks', []))
-                                            session['blocks_current'] = blocks_current
+                                if os.path.exists(session['blocks_current_db']):
+                                    blocks_current = load_db_blocks(session['blocks_current_db'])
+                                    if blocks_current:
+                                        session['blocks_current'] = blocks_current
+                                        if is_changed:
+                                            if is_changed:
+                                                blocks = blocks_current.get('blocks', [])
+                                                for i, block in enumerate(blocks):
+                                                    if i < len(blocks_orig['blocks']):
+                                                        block['id'] = blocks_orig['blocks'][i]['id']
+                                                blocks_current['blocks'] = blocks
+                                                session['blocks_current'] = blocks_current
                                             save_db_blocks(session_id)
-                                else:
-                                    if os.path.exists(session['blocks_saved_json']):
-                                        blocks_saved = load_json_blocks(session['blocks_saved_json'])
-                                        if blocks_saved:
-                                            session['blocks_saved'] = blocks_saved
-                                    if os.path.exists(session['blocks_current_db']):
-                                        blocks_current = load_db_blocks(session['blocks_current_db'])
-                                        if blocks_current:
-                                            session['blocks_current'] = blocks_current
                             epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                             if epubBook:
                                 metadata = dict(session['metadata'])
