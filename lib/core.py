@@ -3643,26 +3643,6 @@ def convert_ebook(args:dict)->tuple:
                                         if not session.get('blocks_current', {}):
                                             session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
                                             save_db_blocks(session_id)
-                                        # --- legacy upgrade: old snapshots may lack top-level scalars (TO REMOVE AFTER A WHILE) ---
-                                        for key in ('blocks_orig', 'blocks_current', 'blocks_saved'):
-                                            snap = session.get(key)
-                                            if snap:
-                                                changed = False
-                                                if 'voice' not in snap:
-                                                    snap['voice'] = session.get('voice')
-                                                    snap['tts_engine'] = session.get('tts_engine')
-                                                    snap['fine_tuned'] = session.get('fine_tuned')
-                                                    changed = True
-                                                if 'page' not in snap:
-                                                    snap['page'] = 0
-                                                    changed = True
-                                                if changed:
-                                                    session[key] = snap
-                                                    if key == 'blocks_current':
-                                                        save_db_blocks(session_id)
-                                                    else:
-                                                        save_json_blocks(session_id, key)
-                                        # --------------------------------#
                                         if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
                                             sync_globals_to_blocks(session_id)
                                             if session['blocks_preview']:
