@@ -3422,7 +3422,9 @@ def convert_ebook(args:dict)->tuple:
                         print("Please enter 's', or 'y'.")
                     if choice == 'y':
                         if audio_pre_final_exist:
-                            delete_folder(session['process_dir'])
+                            os.unlink(audio_pre_final_exist)
+                        if os.path.exists(session['final_name']):
+                            os.unlink(session['final_name'])
                     elif choice == 's':
                         msg = 'Conversion skipped.'
                         return msg, True
