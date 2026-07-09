@@ -23,6 +23,26 @@ def format_timestamp(seconds:float)->str:
     h, m = divmod(m, 60)
     return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
+def _ensure_unidic() -> None:
+    try:
+        import unidic
+        mecabrc = os.path.join(unidic.DICDIR, 'mecabrc')
+        if os.path.exists(mecabrc):
+            return
+    except ImportError:
+        return
+    import subprocess as _sp
+    import sys as _sys
+    result = _sp.run(
+        [_sys.executable, '-m', 'unidic', 'download'],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            'Failed to download unidic dictionary data required by XTTS. '
+            'Run manually: python -m unidic download'
+        )
+
 def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tuple:
     try:
         import gradio as gr
@@ -360,6 +380,7 @@ class TTSUtils:
                             error = f'Missing or invalid config_path: {config_path}'
                             raise FileNotFoundError(error)
                         if engine_name == TTS_ENGINES['XTTS']:
+                            _ensure_unidic()
                             from TTS.tts.configs.xtts_config import XttsConfig
                             from TTS.tts.models.xtts import Xtts
                             config = XttsConfig()
