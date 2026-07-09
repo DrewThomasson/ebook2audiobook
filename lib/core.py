@@ -3329,12 +3329,12 @@ def convert_ebook(args:dict)->tuple:
                 args['translate_enabled'] = True
                 args['translate'] = translate_to
                 args['translate_iso1'] = target_iso1
-                language = str(args['translate'])
+                final_language = str(args['translate'])
             else:
                 args['translate_enabled'] = False
                 args['translate'] = None
                 args['translate_iso1'] = None
-                language = str(args['language'])
+                final_language = str(args['language'])
             session['ebook_mode'] = args['ebook_mode']
             if session['ebook_mode'] == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
@@ -3399,32 +3399,35 @@ def convert_ebook(args:dict)->tuple:
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
             cleanup_models_cache()
-            session['process_dir'] = os.path.join(session['session_dir'], hashlib.md5((ebook_name + (f'_{language}' if session.get('translate_enabled') else '')).encode()).hexdigest())
+            lang_prfx = (f'_{final_language}' if session.get('translate_enabled') else '')
+            session['process_dir'] = os.path.join(session['session_dir'], hashlib.md5((ebook_name + lang_prfx).encode()).hexdigest())
             session['chapters_dir'] = os.path.join(session['process_dir'], 'chapters')
             session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
             if session['is_gui_process']:
-                session['final_name'] = ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format']
+                session['final_name'] = ebook_name + lang_prfx + '.' + session['output_format']
             else:
                 session['system'] = DEVICE_SYSTEM
                 session['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args.get('output_dir') is not None else os.path.join(audiobooks_cli_dir, f'cli-{session_id}')
-                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + ('_'+language if session.get('translate_enabled') else '') + '.' + session['output_format'])
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
+                session['final_name'] = os.path.join(session['audiobooks_dir'], ebook_name + lang_prfx + '.' + session['output_format'])
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', final_language)
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
                 if audio_pre_final_exist or audio_sentences_exist:
-                    msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists. If you continue resume will restart from the last sentence converted!"
+                    msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists!"
                     print(msg)
                     while True:
-                        choice = input("[s]kip / [y]es: ").strip().lower()
-                        if choice in ('s', 'y'):
+                        choice = input("[s]kip / [r]esume / [d]elete and convert again: ").strip().lower()
+                        if choice in ('s', 'r', 'd'):
                             break
-                        print("Please enter 's', or 'y'.")
-                    if choice == 'y':
+                        print("Please enter 's', 'r' or 'd'.")
+                    if choice == 'r':
                         if audio_pre_final_exist:
                             os.unlink(audio_pre_final_exist)
                         if os.path.exists(session['final_name']):
                             os.unlink(session['final_name'])
+                    elif choice == 'd':
+                        delete_folder(session['process_dir'])
                     elif choice == 's':
                         msg = 'Conversion skipped.'
                         return msg, True
@@ -3590,13 +3593,13 @@ def convert_ebook(args:dict)->tuple:
                                     if data:
                                         for value, attributes in data:
                                             metadata[key] = value
-                                metadata['language'] = language
+                                metadata['language'] = final_language
                                 metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_', ' ')
                                 metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                                 session['metadata'] = metadata
                                 try:
                                     if len(session['metadata']['language']) == 2:
-                                        lang_dict = Lang(language)
+                                        lang_dict = Lang(final_language)
                                         if lang_dict:
                                             session['metadata']['language'] = lang_dict.pt3
                                 except Exception as e:
@@ -3607,7 +3610,7 @@ def convert_ebook(args:dict)->tuple:
                                         show_alert(session_id, {'type': 'warning', 'msg': error})
                                 is_lang_in_tts_engine = (
                                     session.get('tts_engine') in default_engine_settings and
-                                    language in default_engine_settings[session['tts_engine']].get('languages', {})
+                                    final_language in default_engine_settings[session['tts_engine']].get('languages', {})
                                 )
                                 if is_lang_in_tts_engine:
                                     session['cover'] = get_cover(epubBook, session_id)
@@ -3660,7 +3663,7 @@ def convert_ebook(args:dict)->tuple:
                                     else:
                                         error = 'get_cover() failed!'
                                 else:
-                                    error = f"language {language} not supported by {session['tts_engine']}!"
+                                    error = f"language {final_language} not supported by {session['tts_engine']}!"
                             else:
                                 error = 'epubBook.read_epub failed!'
                     else:
