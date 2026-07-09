@@ -1666,7 +1666,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         if os.path.exists(vtt_path):
                                             os.remove(vtt_path)
                                         language = session['translate'] if session['translate_enabled'] and session['translate'] is not None else session['language']
-                                        process_dir = os.path.join(session['session_dir'], hashlib.md5((selected_name + (f'_{language}' if session['translate_enabled'] else '')).encode()).hexdigest())
+                                        process_dir = os.path.join(session['session_dir'], hashlib.md5((selected_name).encode()).hexdigest())
                                         shutil.rmtree(process_dir, ignore_errors=True)
                                     msg = f'Audiobook {selected_name} deleted!'
                                     session['audiobook'] = None
@@ -2368,7 +2368,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 language = session.get('language')
                                                 ebook_name = stem_base
                                             final_name = f"{ebook_name}.{session['output_format']}"
-                                            process_dir = os.path.join(session['session_dir'], hashlib.md5((ebook_name + (f'_{language}' if translate_enabled else '')).encode()).hexdigest())
+                                            process_dir = os.path.join(session['session_dir'], hashlib.md5((ebook_name).encode()).hexdigest())
                                             chapters_dir = os.path.join(process_dir, 'chapters')
                                             sentences_dir = os.path.join(chapters_dir, 'sentences')
                                             pre_name = f"{ebook_name}{'_part1.' if session['output_split'] else '.'}{default_audio_proc_format}"

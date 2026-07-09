@@ -1,8 +1,10 @@
 LICENSE
+MANIFEST.in
 README.md
 VERSION.txt
 app.py
 pyproject.toml
+requirements.txt
 setup.py
 ebook2audiobook.egg-info/PKG-INFO
 ebook2audiobook.egg-info/SOURCES.txt
