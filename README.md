@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Run Remotely](#run-remotely)
   - [Docker](#docker)
     - [Steps to Run](#docker)
-    - [Common Docker Issues](#common-docker-issues)
   
+- [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Common Docker Issues
-- My NVIDIA GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Cloned Voices
+You can upload any voice audio in any of the supported audio formats, up to a maximum of 1 minute.
+It doesn't matter if the recording has a noisy background or music playing over it — e2a will clean up the voice for you.
+
+The built-in cloned voices list is mainly in English. If you need voices in other languages to be officially
+added to the list, please contact us and we'll add them after review.
 
 ## Fine Tuned TTS models
 #### Fine Tune your own XTTSv2 model
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle Notebook
 - [x] Google Colab Notebook
+- [ ] Audiobookshelf integration
 - [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf integration
 
 #### Extra Options
 - [x] Ebook Translation option
