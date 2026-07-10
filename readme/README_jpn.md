@@ -154,7 +154,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — 固定の一時停止（**N sec.**）
 - `[voice:/path/to/voice/file]...[/voice]` — デフォルトまたはGUI/CLIで選択した音声から音声を切り替え
 
-**電子書籍にSMLを自動的に追加することに特化した別のリポジトリをご覧ください -> [E2A-SML](./tools/E2A-SML)**
+**電子書籍にSMLを自動的に追加することに特化した別のリポジトリをご覧ください -> [E2A-SML](./components/E2A-SML)**
 
 > [!IMPORTANT]
 **インストールやバグの問題を投稿する前に、未解決および解決済みの課題タブを注意深く検索してください<br>
@@ -430,7 +430,7 @@ Podman Compose (i.e. cuda 12.8:
 ## ファインチューニング済み（fine-tuned）TTSモデル
 #### 独自のXTTSv2モデルをファインチューニング
 
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
+[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
 #### 学習データのノイズ除去

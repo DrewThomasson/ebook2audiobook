@@ -154,7 +154,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — নির্দিষ্ট বিরতি (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — ডিফল্ট বা GUI/CLI থেকে নির্বাচিত ভয়েস থেকে ভয়েস পরিবর্তন করুন
 
-**আপনার ই-বুকে স্বয়ংক্রিয়ভাবে SML যোগ করার জন্য নিবেদিত আমাদের অন্য রেপোটি দেখুন -> [E2A-SML](./tools/E2A-SML)**
+**আপনার ই-বুকে স্বয়ংক্রিয়ভাবে SML যোগ করার জন্য নিবেদিত আমাদের অন্য রেপোটি দেখুন -> [E2A-SML](./components/E2A-SML)**
 
 > [!IMPORTANT]
 **ইনস্টলেশন বা বাগ সমস্যা পোস্ট করার আগে, খোলা ও বন্ধ সমস্যার ট্যাবে সাবধানে অনুসন্ধান করুন<br>
@@ -430,7 +430,7 @@ Podman Compose (i.e. cuda 12.8:
 ## ফাইন-টিউন করা (fine-tuned) TTS মডেল
 #### আপনার নিজের XTTSv2 মডেল ফাইন-টিউন করুন
 
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
+[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
 #### প্রশিক্ষণ ডেটার শব্দ অপসারণ

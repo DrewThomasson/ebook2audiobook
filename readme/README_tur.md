@@ -154,7 +154,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — sabit duraklama (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — varsayılan sesten veya GUI/CLI'den seçilen sesten ses değiştirme
 
-**E-kitabınıza otomatik olarak SML eklemeye adanmış diğer deposumuza göz atın -> [E2A-SML](./tools/E2A-SML)**
+**E-kitabınıza otomatik olarak SML eklemeye adanmış diğer deposumuza göz atın -> [E2A-SML](./components/E2A-SML)**
 
 > [!IMPORTANT]
 **Bir kurulum veya hata sorunu göndermeden önce, açık ve kapalı sorunlar sekmesini dikkatlice arayın<br>
@@ -430,7 +430,7 @@ Podman Compose (i.e. cuda 12.8:
 ## İnce Ayarlı (fine-tuned) TTS modelleri
 #### Kendi XTTSv2 modelinizi ince ayarlayın
 
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
+[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
 #### Eğitim verilerinin gürültüsünü giderme

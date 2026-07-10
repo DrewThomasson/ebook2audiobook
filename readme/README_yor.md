@@ -154,7 +154,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — ìdúró tí a gbé kalẹ̀ (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — yí ohùn padà láti ohùn àpẹẹrẹ tàbí èyí tí a yàn láti GUI/CLI
 
-**Wo repo wa míràn tí a yà sọ́tọ̀ fún àfikún SML lọ́nà aládàáṣiṣẹ́ nínú eBook rẹ -> [E2A-SML](./tools/E2A-SML)**
+**Wo repo wa míràn tí a yà sọ́tọ̀ fún àfikún SML lọ́nà aládàáṣiṣẹ́ nínú eBook rẹ -> [E2A-SML](./components/E2A-SML)**
 
 > [!IMPORTANT]
 **Kí o tó fi ìṣòro ìfìsọ́nà tàbí àṣìṣe sílẹ̀, ṣàwárí dáradára nínú TAB àwọn ìṣòro tó ṣí sílẹ̀ àti èyí tí a ti tì<br>
@@ -430,7 +430,7 @@ Podman Compose (i.e. cuda 12.8:
 ## Àwọn àwòṣe TTS Tí A Ti Ṣàtúnṣe (fine-tuned)
 #### Ṣàtúnṣe àwòṣe XTTSv2 tìrẹ
 
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
+[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
 #### Yíyọ ariwo kúrò nínú dátà ìdánilẹ́kọ̀ọ́
