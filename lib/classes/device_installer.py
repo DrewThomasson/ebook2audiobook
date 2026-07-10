@@ -53,6 +53,21 @@ class DeviceInstaller():
                     error = f'warning: could not write .device_info.json: {e}'
                     print(error, file=sys.stderr)
                 return json.dumps(device_info)
+        elif mode == BUILD_DOCKER:
+            name, tag, msg = self.check_hardware
+            os_env = 'manylinux_2_28'
+            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
+            arch = archs['AARCH64'] if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else self.arch
+            if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
+                name = tag = devices['CPU']['proc']
+            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
+            try:
+                with open(device_info_json, 'w', encoding='utf-8') as f:
+                    json.dump(device_info, f)
+            except OSError as e:
+                error = f'warning: could not write .device_info.json: {e}'
+                print(error, file=sys.stderr)
+            return json.dumps(device_info)
         elif mode == FULL_DOCKER:
             device_info = None
             if os.path.isfile(device_info_json):
@@ -71,21 +86,6 @@ class DeviceInstaller():
             if device_info is not None:
                 devices[device_info['name'].upper()]['found'] = True
                 return json.dumps(device_info)
-        elif mode == BUILD_DOCKER:
-            name, tag, msg = self.check_hardware
-            os_env = 'manylinux_2_28'
-            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
-            arch = archs['AARCH64'] if name in [devices['JETSON']['proc']] else self.arch
-            if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
-                name = tag = devices['CPU']['proc']
-            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
-            try:
-                with open(device_info_json, 'w', encoding='utf-8') as f:
-                    json.dump(device_info, f)
-            except OSError as e:
-                error = f'warning: could not write .device_info.json: {e}'
-                print(error, file=sys.stderr)
-            return json.dumps(device_info)
         return ''
         
     def get_package_version(self, pkg:str)->Union[str, bool]:
