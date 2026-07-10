@@ -1203,6 +1203,13 @@ class DeviceInstaller():
         obsolete_packages = ['unidic']
         try:
             for pkg_name in obsolete_packages:
+                dicdir = None
+                if pkg_name == 'unidic':
+                    try:
+                        import unidic
+                        dicdir = unidic.DICDIR
+                    except Exception:
+                        pass
                 try:
                     version(pkg_name)
                 except PackageNotFoundError:
@@ -1211,6 +1218,11 @@ class DeviceInstaller():
                 print(msg)
                 try:
                     subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', '--root-user-action=ignore', pkg_name])
+                    if pkg_name == 'unidic' and dicdir:
+                        import shutil
+                        if os.path.exists(dicdir):
+                            print(f'Removing UniDic dictionary directory: {dicdir}')
+                            shutil.rmtree(dicdir, ignore_errors=True)
                 except subprocess.CalledProcessError as e:
                     msg = f'Failed to remove obsolete package {pkg_name} (non-fatal): {e}'
                     print(msg)
