@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Uzaktan Çalıştırma](#run-remotely)
   - [Docker](#docker)
     - [Çalıştırma Adımları](#docker)
-    - [Yaygın Docker Sorunları](#common-docker-issues)
   
+- [Klonlanmış Sesler](#cloned-voices)
 - [İnce Ayarlı TTS modelleri](#fine-tuned-tts-models)
   - [İnce Ayarlı TTS Modelleri Koleksiyonu](#fine-tuned-tts-collection)
   - [XTTSv2 Eğitimi](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Yaygın Docker Sorunları
-- NVIDIA GPU'm algılanmıyor mu?? -> [GPU SORUNLARI Wiki Sayfası](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Klonlanmış Sesler
+Desteklenen ses formatlarından herhangi birinde herhangi bir ses dosyasını yükleyebilirsiniz, ideal süre yaklaşık 1 ila 5 dakikadır.
+Kaydın gürültülü bir arka plana sahip olması veya üzerinde müzik çalması önemli değildir — E2A sesi sizin için temizleyecektir.
+
+Yerleşik klonlanmış sesler listesi esas olarak İngilizcedir. Resmi olarak başka dillerde seslere ihtiyacınız varsa
+listeye eklendi, lütfen bizimle iletişime geçin. İncelemeden sonra bunları ekleyeceğiz.
 
 ## İnce Ayarlı (fine-tuned) TTS modelleri
 #### Kendi XTTSv2 modelinizi ince ayarlayın
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle Notebook
 - [x] Google Colab Notebook
+- [ ] Audiobookshelf entegrasyonu
 - [ ] [Bir iOS uygulaması yapmak](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Bir android uygulaması yapmak](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf entegrasyonu
 
 #### Ekstra Seçenekler
 - [x] E-kitap Çeviri seçeneği

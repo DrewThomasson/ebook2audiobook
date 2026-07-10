@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [اجرای از راه دور](#run-remotely)
   - [Docker](#docker)
     - [مراحل اجرا](#docker)
-    - [مشکلات رایج Docker](#common-docker-issues)
   
+- [صداهای کلون شده](#cloned-voices)]
 - [مدل‌های TTS تنظیم‌دقیق‌شده](#fine-tuned-tts-models)
   - [مجموعه مدل‌های TTS تنظیم‌دقیق‌شده](#fine-tuned-tts-collection)
   - [آموزش XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### مشکلات رایج Docker
-- پردازنده گرافیکی NVIDIA من شناسایی نمی‌شود؟؟ -> [صفحه ویکی مشکلات GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## صداهای کلون‌شده
+شما می‌توانید هر فایل صوتی را با هر یک از فرمت‌های صوتی پشتیبانی‌شده آپلود کنید، مدت زمان ایده‌آل حدود ۱ تا ۵ دقیقه است.
+فرقی نمی‌کند که صدای ضبط شده نویز پس‌زمینه داشته باشد یا موسیقی در حال پخش باشد - E2A صدا را برای شما واضح‌تر می‌کند.
+
+لیست صداهای کلون شده داخلی عمدتاً به زبان انگلیسی است. اگر به صداهایی به زبان‌های دیگر نیاز دارید تا رسماً ...
+به لیست اضافه شد، لطفا با ما تماس بگیرید تا پس از بررسی، آنها را اضافه کنیم.
 
 ## مدل‌های TTS تنظیم‌دقیق‌شده (fine-tuned)
 #### مدل XTTSv2 خود را تنظیم دقیق کنید
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] دفترچه Kaggle
 - [x] دفترچه Google Colab
+- [ ] یکپارچه‌سازی Audiobookshelf
 - [ ] [ساخت یک اپلیکیشن iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [ساخت یک اپلیکیشن android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] یکپارچه‌سازی Audiobookshelf
 
 #### گزینه‌های اضافی
 - [x] گزینه ترجمه کتاب الکترونیکی

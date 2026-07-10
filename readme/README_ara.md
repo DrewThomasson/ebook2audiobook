@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [التشغيل عن بُعد](#run-remotely)
   - [Docker](#docker)
     - [خطوات التشغيل](#docker)
-    - [مشكلات Docker الشائعة](#common-docker-issues)
   
+- [Cloned Voices](#cloned-voices)
 - [نماذج TTS المضبوطة بدقة](#fine-tuned-tts-models)
   - [مجموعة نماذج TTS المضبوطة بدقة](#fine-tuned-tts-collection)
   - [تدريب XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### مشكلات Docker الشائعة
-- لا يتم اكتشاف بطاقة NVIDIA الرسومية لدي؟؟ -> [صفحة Wiki لمشكلات GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## أصوات مستنسخة
+يمكنك تحميل أي صوت بأي من تنسيقات الصوت المدعومة، والمدة المثالية حوالي 1 إلى 5 دقائق.
+لا يهم ما إذا كان التسجيل يحتوي على خلفية صاخبة أو موسيقى تعزف عليه — ستقوم E2A بتنظيف الصوت نيابة عنك.
+
+قائمة الأصوات المستنسخة المدمجة باللغة الإنجليزية بشكل أساسي. إذا كنت بحاجة إلى أصوات بلغات أخرى لتكون رسمية
+تمت إضافته إلى القائمة، يرجى الاتصال بنا وسنضيفه بعد المراجعة.
 
 ## نماذج TTS المضبوطة بدقة (fine-tuned)
 #### اضبط نموذج XTTSv2 الخاص بك بدقة
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] دفتر Kaggle
 - [x] دفتر Google Colab
+- [ ] دمج Audiobookshelf
 - [ ] [إنشاء تطبيق iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [إنشاء تطبيق android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] دمج Audiobookshelf
 
 #### خيارات إضافية
 - [x] خيار ترجمة الكتاب الإلكتروني

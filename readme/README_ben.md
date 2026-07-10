@@ -85,10 +85,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Headless কাস্টম XTTS মডেল ব্যবহার](#example-of-custom-model-zip-upload)
     - [সহায়তা কমান্ড আউটপুট](#help-command-output)
   - [দূরবর্তীভাবে চালান](#run-remotely)
-  - [Docker](#docker)
+  - [ডকার](#docker)
     - [চালানোর ধাপ](#docker)
-    - [সাধারণ Docker সমস্যা](#common-docker-issues)
   
+- [ক্লোনড ভয়েসেস](#cloned-voices)
 - [ফাইন-টিউন করা TTS মডেল](#fine-tuned-tts-models)
   - [ফাইন-টিউন করা TTS মডেলের সংগ্রহ](#fine-tuned-tts-collection)
   - [XTTSv2 প্রশিক্ষণ](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### সাধারণ Docker সমস্যা
-- আমার NVIDIA GPU শনাক্ত হচ্ছে না?? -> [GPU সমস্যা Wiki পৃষ্ঠা](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## ক্লোনড ভয়েসেস
+আপনি সমর্থিত যে কোনও অডিও ফর্ম্যাটে যে কোনও ভয়েস অডিও আপলোড করতে পারেন, আদর্শ সময়কাল প্রায় 1 থেকে 5 মিলিয়ন ।
+রেকর্ডিংয়ে শোরগোলের পটভূমি বা মিউজিক বাজছে কিনা তা বিবেচ্য নয় — E2A আপনার জন্য ভয়েস পরিষ্কার করবে ।
+
+বিল্ট-ইন ক্লোনড ভয়েস লিস্ট মূলত ইংরেজিতে । আপনার যদি অন্য ভাষায় কণ্ঠের প্রয়োজন হয় তবে আনুষ্ঠানিকভাবে
+তালিকায় যোগ করা হয়েছে, অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন এবং পর্যালোচনার পরে আমরা সেগুলি যোগ করব ।
 
 ## ফাইন-টিউন করা (fine-tuned) TTS মডেল
 #### আপনার নিজের XTTSv2 মডেল ফাইন-টিউন করুন
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle Notebook
 - [x] Google Colab Notebook
+- [ ] Audiobookshelf ইন্টিগ্রেশন
 - [ ] [একটি iOS অ্যাপ তৈরি করা](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [একটি android অ্যাপ তৈরি করা](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf ইন্টিগ্রেশন
 
 #### অতিরিক্ত বিকল্প
 - [x] ই-বুক অনুবাদ বিকল্প

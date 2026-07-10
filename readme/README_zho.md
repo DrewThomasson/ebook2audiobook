@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [远程运行](#run-remotely)
   - [Docker](#docker)
     - [运行步骤](#docker)
-    - [常见的 Docker 问题](#common-docker-issues)
   
+- [克隆声音](#cloned-voices)
 - [微调 TTS 模型](#fine-tuned-tts-models)
   - [微调 TTS 模型集合](#fine-tuned-tts-collection)
   - [训练 XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### 常见的 Docker 问题
-- 未检测到我的 NVIDIA GPU？？ -> [GPU 问题 Wiki 页面](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## 克隆的声音
+您可以上传任何支持的音频格式的任何语音音频，理想的持续时间约为1至5分钟。
+无论录音的背景是嘈杂的还是播放的音乐， E2A都会为您清理声音。
+
+内置克隆语音列表主要为英文。如果您需要其他语言的声音才能正式
+添加到列表中，请联系我们，我们将在审核后添加它们。
 
 ## 微调（fine-tuned）TTS 模型
 #### 微调您自己的 XTTSv2 模型
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle Notebook
 - [x] Google Colab Notebook
+- [ ] Audiobookshelf 集成
 - [ ] [制作 iOS 应用](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [制作 android 应用](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf 集成
 
 #### 额外选项
 - [x] 电子书翻译选项

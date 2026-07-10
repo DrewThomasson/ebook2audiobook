@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Chạy từ xa](#run-remotely)
   - [Docker](#docker)
     - [Các bước để chạy](#docker)
-    - [Các vấn đề Docker thường gặp](#common-docker-issues)
   
+- [Cloned Voices](#cloned-voices)
 - [Các mô hình TTS đã tinh chỉnh](#fine-tuned-tts-models)
   - [Bộ sưu tập các mô hình TTS đã tinh chỉnh](#fine-tuned-tts-collection)
   - [Huấn luyện XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Các vấn đề Docker thường gặp
-- GPU NVIDIA của tôi không được phát hiện?? -> [Trang Wiki VẤN ĐỀ GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Giọng nói được nhân bản
+Bạn có thể tải lên bất kỳ âm thanh giọng nói nào ở bất kỳ định dạng âm thanh nào được hỗ trợ, thời lượng lý tưởng là khoảng 1 đến 5 phút.
+Không có vấn đề gì nếu bản ghi âm có nền ồn ào hoặc phát nhạc trên đó — E2A sẽ làm sạch giọng nói cho bạn.
+
+Danh sách giọng nói nhân bản tích hợp chủ yếu bằng tiếng Anh. Nếu bạn cần giọng nói bằng các ngôn ngữ khác để được chính thức
+đã thêm vào danh sách, vui lòng liên hệ với chúng tôi và chúng tôi sẽ thêm chúng sau khi đánh giá.
 
 ## Các mô hình TTS đã tinh chỉnh (fine-tuned)
 #### Tinh chỉnh mô hình XTTSv2 của riêng bạn
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle Notebook
 - [x] Google Colab Notebook
+- [ ] Tích hợp Audiobookshelf
 - [ ] [Tạo một ứng dụng IOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Tạo một ứng dụng android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Tích hợp Audiobookshelf
 
 #### Tùy chọn bổ sung
 - [x] Tùy chọn dịch sách điện tử

@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [リモートで実行](#run-remotely)
   - [Docker](#docker)
     - [実行手順](#docker)
-    - [よくあるDockerの問題](#common-docker-issues)
   
+- [クローン音声](#cloned-voices)
 - [ファインチューニング済みTTSモデル](#fine-tuned-tts-models)
   - [ファインチューニング済みTTSモデルのコレクション](#fine-tuned-tts-collection)
   - [XTTSv2の学習](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### よくあるDockerの問題
-- NVIDIA GPUが検出されない？？ -> [GPUの問題に関するWikiページ](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## クローン音声
+サポートされているオーディオフォーマットのいずれかで任意のボイスオーディオをアップロードできます。理想的な長さは約1〜5分です。
+録音にノイズの多い背景や音楽が再生されているかどうかは関係ありません。E 2 Aが音声をクリーンアップします。
+
+内蔵されているクローン音声リストは、主に英語です。他の言語での音声が正式に必要な場合
+リストに追加されました。お問い合わせください。審査後に追加させていただきます。
 
 ## ファインチューニング済み（fine-tuned）TTSモデル
 #### 独自のXTTSv2モデルをファインチューニング
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggleノートブック
 - [x] Google Colabノートブック
+- [ ] Audiobookshelf統合
 - [ ] [iOSアプリを作成](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [androidアプリを作成](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf統合
 
 #### 追加オプション
 - [x] 電子書籍翻訳オプション

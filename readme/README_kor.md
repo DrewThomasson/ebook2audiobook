@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [원격으로 실행](#run-remotely)
   - [Docker](#docker)
     - [실행 단계](#docker)
-    - [일반적인 Docker 문제](#common-docker-issues)
   
+- [Cloned Voices](#cloned-voices)
 - [미세 조정된 TTS 모델](#fine-tuned-tts-models)
   - [미세 조정된 TTS 모델 모음](#fine-tuned-tts-collection)
   - [XTTSv2 학습](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### 일반적인 Docker 문제
-- 내 NVIDIA GPU가 감지되지 않나요?? -> [GPU 문제 위키 페이지](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## 복제된 음성
+지원되는 오디오 형식으로 모든 음성 오디오를 업로드할 수 있으며, 이상적인 지속 시간은 약 1 ~ 5분입니다.
+녹음에 시끄러운 배경이 있거나 음악이 재생되는지 여부는 중요하지 않습니다. E2A가 음성을 정리합니다.
+
+내장된 복제된 음성 목록은 주로 영어로 되어 있습니다. 공식적으로 사용하려면 다른 언어로 된 목소리가 필요한 경우
+목록에 추가되었습니다. 문의해 주시면 검토 후 추가해 드리겠습니다.
 
 ## 미세 조정된(fine-tuned) TTS 모델
 #### 자신만의 XTTSv2 모델을 미세 조정하세요
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle 노트북
 - [x] Google Colab 노트북
+- [ ] Audiobookshelf 통합
 - [ ] [iOS 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [android 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf 통합
 
 #### 추가 옵션
 - [x] 전자책 번역 옵션

@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Ṣíṣe ní Òkèèrè](#run-remotely)
   - [Docker](#docker)
     - [Àwọn Ìgbésẹ̀ láti Ṣe](#docker)
-    - [Àwọn Ìṣòro Docker Tó Wọ́pọ̀](#common-docker-issues)
   
+- [Cloned Voices](#cloned-voices)
 - [Àwọn àwòṣe TTS Tí A Ti Ṣàtúnṣe](#fine-tuned-tts-models)
   - [Àkójọ Àwọn Àwòṣe TTS Tí A Ti Ṣàtúnṣe](#fine-tuned-tts-collection)
   - [Dídá XTTSv2 Lẹ́kọ̀ọ́](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Àwọn Ìṣòro Docker Tó Wọ́pọ̀
-- A kò rí GPU NVIDIA mi?? -> [Ojú-ìwé Wiki ÀWỌN ÌṢÒRO GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Àwọn Oríṣun àwòrán, Cloned Voices
+O lè gbé ohùn ohùn èyíkéyìí sókè nínú èyíkéyìí nínú àwọn fọ́mù ohùn tí a ṣe àtìlẹyìn, iye tí ó dára ni nǹkan bí 1 sí 5 mn.
+Kò ṣe pàtàkì bí àkọsílẹ̀ náà bá ní ìpìlẹ̀ ariwo tàbí orin tí ó ń ṣeré lórí rẹ̀ — E2A yóò fọ ohùn náà fún ọ.
+
+Èdè Gẹ̀ẹ́sì ni àtòjọ àwọn ohùn tí wọ́n kọ́ sínú rẹ̀. Tí o bá nílò ohùn ní èdè mìíràn kí ó lè jẹ́ ti ìjọba.
+àfikún sí àtòjọ náà, jọ̀wọ́ kàn sí wa a ó sì fi kún un lẹ́yìn àtúnyẹ̀wò.
 
 ## Àwọn àwòṣe TTS Tí A Ti Ṣàtúnṣe (fine-tuned)
 #### Ṣàtúnṣe àwòṣe XTTSv2 tìrẹ
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Notebook Kaggle
 - [x] Notebook Google Colab
+- [ ] Ìṣọ̀kan Audiobookshelf
 - [ ] [Ṣe ohun-èlò IOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Ṣe ohun-èlò android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Ìṣọ̀kan Audiobookshelf
 
 #### Àwọn Àṣàyàn Àfikún
 - [x] Àṣàyàn Ìtumọ̀ eBook

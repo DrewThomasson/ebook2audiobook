@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Kör på distans](#run-remotely)
   - [Docker](#docker)
     - [Steg för att köra](#docker)
-    - [Vanliga Docker-problem](#common-docker-issues)
   
+- [Klonade röster](#cloned-voices)
 - [Finjusterade TTS-modeller](#fine-tuned-tts-models)
   - [Samling av finjusterade TTS-modeller](#fine-tuned-tts-collection)
   - [Träna XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Vanliga Docker-problem
-- Min NVIDIA-GPU upptäcks inte?? -> [Wiki-sida om GPU-PROBLEM](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Klonade röster
+Du kan ladda upp valfritt röstljud i något av de ljudformat som stöds, den ideala varaktigheten är cirka 1 till 5 minuter.
+Det spelar ingen roll om inspelningen har en bullrig bakgrund eller musik som spelas över den — E2A kommer att städa upp rösten åt dig.
+
+Den inbyggda klonade röstlistan är huvudsakligen på engelska. Om du behöver röster på andra språk för att vara officiellt
+tillagd i listan, vänligen kontakta oss så lägger vi till dem efter granskning.
 
 ## Finjusterade (fine-tuned) TTS-modeller
 #### Finjustera din egen XTTSv2-modell
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle-notebook
 - [x] Google Colab-notebook
+- [ ] Audiobookshelf-integrering
 - [ ] [Skapa en iOS-app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Skapa en Android-app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf-integrering
 
 #### Extra alternativ
 - [x] Alternativ för e-boksöversättning

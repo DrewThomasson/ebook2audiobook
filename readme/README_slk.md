@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Spustenie vzdialene](#run-remotely)
   - [Docker](#docker)
     - [Kroky na spustenie](#docker)
-    - [Časté problémy s Dockerom](#common-docker-issues)
   
+- [Cloned Voices](#cloned-voices)
 - [Doladené TTS modely](#fine-tuned-tts-models)
   - [Kolekcia doladených TTS modelov](#fine-tuned-tts-collection)
   - [Trénovanie XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Časté problémy s Dockerom
-- Moje GPU NVIDIA nie je detekované?? -> [Wiki stránka PROBLÉMY S GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Klonované hlasy
+Môžete nahrať akýkoľvek hlasový zvuk v ktoromkoľvek z podporovaných zvukových formátov, ideálne trvanie je približne 1 až 5 miliónov.
+Nezáleží na tom, či má nahrávka hlučné pozadie alebo cez ňu hrá hudba — E2A hlas vyčistí za vás.
+
+Vstavaný zoznam klonovaných hlasov je prevažne v angličtine. Ak potrebujete, aby hlasy v iných jazykoch boli oficiálne
+pridané do zoznamu, kontaktujte nás a po kontrole ich pridáme.
 
 ## Doladené (fine-tuned) TTS modely
 #### Doláďte svoj vlastný model XTTSv2
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Notebook Kaggle
 - [x] Notebook Google Colab
+- [ ] Integrácia s Audiobookshelf
 - [ ] [Vytvoriť aplikáciu pre iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Vytvoriť aplikáciu pre Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Integrácia s Audiobookshelf
 
 #### Ďalšie možnosti
 - [x] Možnosť prekladu e-knihy

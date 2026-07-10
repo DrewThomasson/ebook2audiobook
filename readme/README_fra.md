@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Exécution à distance](#run-remotely)
   - [Docker](#docker)
     - [Étapes d'exécution](#docker)
-    - [Problèmes Docker courants](#common-docker-issues)
   
+- [Cloned Voices](#cloned-voices)
 - [Modèles TTS affinés](#fine-tuned-tts-models)
   - [Collection de modèles TTS affinés](#fine-tuned-tts-collection)
   - [Entraîner XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Problèmes Docker courants
-- Mon GPU NVIDIA n'est pas détecté ?? -> [Page wiki PROBLÈMES GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Voix clonées
+Vous pouvez télécharger n'importe quel audio vocal dans n'importe lequel des formats audio pris en charge, la durée idéale est d'environ 1 à 5 min.
+Peu importe si l'enregistrement a un fond bruyant ou de la musique qui y joue — E2A nettoiera la voix pour vous.
+
+La liste des voix clonées intégrée est principalement en anglais. Si vous avez besoin de voix dans d'autres langues pour être officiellement
+ajouté à la liste, veuillez nous contacter et nous les ajouterons après vérification.
 
 ## Modèles TTS affinés (fine-tuned)
 #### Affinez votre propre modèle XTTSv2
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Notebook Kaggle
 - [x] Notebook Google Colab
+- [ ] Intégration Audiobookshelf
 - [ ] [Créer une application iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Créer une application Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Intégration Audiobookshelf
 
 #### Options supplémentaires
 - [x] Option de traduction de l'e-book

@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Запуск удалённо](#run-remotely)
   - [Docker](#docker)
     - [Шаги для запуска](#docker)
-    - [Распространённые проблемы с Docker](#common-docker-issues)
   
+- [Клонированные голоса](#cloned-voices)
 - [Дообученные модели TTS](#fine-tuned-tts-models)
   - [Коллекция дообученных моделей TTS](#fine-tuned-tts-collection)
   - [Обучение XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Распространённые проблемы с Docker
-- Мой графический процессор NVIDIA не обнаружен?? -> [Страница вики ПРОБЛЕМЫ С GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Клонированные голоса
+Вы можете загрузить любой голосовой звук в любом из поддерживаемых аудиоформатов, идеальная продолжительность составляет от 1 до 5 мин.
+Неважно, имеет ли запись шумный фон или над ней играет музыка — E2A очистит голос для вас.
+
+Встроенный список клонированных голосов в основном на английском языке. Если вам нужны голоса на других языках, чтобы быть официально
+добавлены в список, свяжитесь с нами, и мы добавим их после проверки.
 
 ## Дообученные (fine-tuned) модели TTS
 #### Дообучите свою собственную модель XTTSv2
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Подман сочиняет
 - [x] Ноутбук Kaggle
 - [x] Записная книжка Google Colab
+- [ ] Интеграция с аудиокнижной полкой
 - [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Интеграция с аудиокнижной полкой
 
 #### Дополнительные параметры
 - [x] Опция перевода электронной книги

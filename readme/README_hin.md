@@ -85,10 +85,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Headless कस्टम XTTS मॉडल उपयोग](#example-of-custom-model-zip-upload)
     - [सहायता कमांड आउटपुट](#help-command-output)
   - [दूरस्थ रूप से चलाएं](#run-remotely)
-  - [Docker](#docker)
+  - [डॉकर](#docker)
     - [चलाने के चरण](#docker)
-    - [सामान्य Docker समस्याएं](#common-docker-issues)
   
+- [क्लोन की गई आवाज़ें](#cloned-voices)
 - [फ़ाइन-ट्यून किए गए TTS मॉडल](#fine-tuned-tts-models)
   - [फ़ाइन-ट्यून किए गए TTS मॉडल का संग्रह](#fine-tuned-tts-collection)
   - [XTTSv2 का प्रशिक्षण](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### सामान्य Docker समस्याएं
-- मेरा NVIDIA GPU नहीं पहचाना जा रहा?? -> [GPU समस्याएं Wiki पृष्ठ](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## क्लोन की गई आवाज़ें
+आप किसी भी समर्थित ऑडियो प्रारूप में कोई भी ध्वनि ऑडियो अपलोड कर सकते हैं, आदर्श अवधि लगभग 1 से 5 मिलियन है।
+इससे कोई फर्क नहीं पड़ता कि रिकॉर्डिंग में शोरगुल वाला बैकग्राउंड है या संगीत बज रहा है — E2A आपकी आवाज़ को साफ़ कर देगा।
+
+अंतर्निहित क्लोन की गई आवाज़ों की सूची मुख्य रूप से अंग्रेजी में है। अगर आपको आधिकारिक रूप से अन्य भाषाओं में आवाज़ें चाहिए
+सूची में जोड़ा गया, कृपया हमसे संपर्क करें और हम समीक्षा के बाद उन्हें जोड़ देंगे।
 
 ## फ़ाइन-ट्यून किए गए (fine-tuned) TTS मॉडल
 #### अपना स्वयं का XTTSv2 मॉडल फ़ाइन-ट्यून करें
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle Notebook
 - [x] Google Colab Notebook
+- [ ] Audiobookshelf एकीकरण
 - [ ] [एक iOS ऐप बनाना](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [एक android ऐप बनाना](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf एकीकरण
 
 #### अतिरिक्त विकल्प
 - [x] ई-बुक अनुवाद विकल्प

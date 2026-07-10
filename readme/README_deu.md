@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Remote ausführen](#run-remotely)
   - [Docker](#docker)
     - [Schritte zur Ausführung](#docker)
-    - [Häufige Docker-Probleme](#common-docker-issues)
   
+- [Geklonte Stimmen](#cloned-voices)
 - [Feinabgestimmte TTS-Modelle](#fine-tuned-tts-models)
   - [Sammlung feinabgestimmter TTS-Modelle](#fine-tuned-tts-collection)
   - [XTTSv2 trainieren](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Häufige Docker-Probleme
-- Meine NVIDIA-GPU wird nicht erkannt?? -> [Wiki-Seite zu GPU-PROBLEMEN](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Geklonte Stimmen
+Sie können jedes Sprachaudio in jedem der unterstützten Audioformate hochladen. Die ideale Dauer beträgt etwa 1 bis 5 Minuten.
+Es spielt keine Rolle, ob die Aufnahme einen lauten Hintergrund hat oder Musik darüber abgespielt wird — E2A wird die Stimme für Sie aufräumen.
+
+Die eingebaute Liste der geklonten Stimmen ist hauptsächlich auf Englisch. Wenn Sie Stimmen in anderen Sprachen benötigen, um offiziell
+der Liste hinzugefügt, kontaktieren Sie uns bitte und wir werden sie nach der Überprüfung hinzufügen.
 
 ## Feinabgestimmte (fine-tuned) TTS-Modelle
 #### Stimmen Sie Ihr eigenes XTTSv2-Modell fein ab
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle-Notebook
 - [x] Google-Colab-Notebook
+- [ ] Audiobookshelf-Integration
 - [ ] [Eine iOS-App erstellen](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Eine Android-App erstellen](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf-Integration
 
 #### Zusätzliche Optionen
 - [x] Option zur E-Book-Übersetzung

@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Pokretanje na daljinu](#run-remotely)
   - [Docker](#docker)
     - [Koraci za pokretanje](#docker)
-    - [Česti problemi s Dockerom](#common-docker-issues)
   
+- [Klonirani glasovi](#cloned-voices)
 - [Fino podešeni TTS modeli](#fine-tuned-tts-models)
   - [Zbirka fino podešenih TTS modela](#fine-tuned-tts-collection)
   - [Treniranje XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Česti problemi s Dockerom
-- Moj NVIDIA GPU nije otkriven?? -> [Wiki stranica PROBLEMI S GPU-om](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Klonirani glasovi
+Možete prenijeti bilo koji glasovni zvuk u bilo kojem od podržanih audio formata, idealno trajanje je oko 1 do 5 milijuna.
+Nije važno ima li snimka bučnu pozadinu ili se nad njom reproducira glazba — E2A će očistiti glas za vas.
+
+Ugrađeni popis kloniranih glasova uglavnom je na engleskom jeziku. Ako želite da glasovi na drugim jezicima budu službeno
+dodano na popis, obratite nam se i dodat ćemo ih nakon pregleda.
 
 ## Fino podešeni (fine-tuned) TTS modeli
 #### Fino podesite vlastiti XTTSv2 model
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle bilježnica
 - [x] Google Colab bilježnica
+- [ ] Integracija s Audiobookshelf
 - [ ] [Napraviti iOS aplikaciju](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Napraviti Android aplikaciju](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Integracija s Audiobookshelf
 
 #### Dodatne opcije
 - [x] Opcija prijevoda e-knjige
