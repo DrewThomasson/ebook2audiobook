@@ -425,8 +425,8 @@ Podman Compose (i.e. cuda 12.8:
 - NOTE: MPS is not exposed in docker so CPU must be used
 
 ## Cloned Voices
-You can upload any voice audio in any of the supported audio formats, up to a maximum of 1 minute.
-It doesn't matter if the recording has a noisy background or music playing over it — e2a will clean up the voice for you.
+You can upload any voice audio in any of the supported audio formats, the ideal duration is around 1 to 5 mn.
+It doesn't matter if the recording has a noisy background or music playing over it — E2A will clean up the voice for you.
 
 The built-in cloned voices list is mainly in English. If you need voices in other languages to be officially
 added to the list, please contact us and we'll add them after review.
