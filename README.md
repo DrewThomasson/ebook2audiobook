@@ -87,7 +87,6 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Run Remotely](#run-remotely)
   - [Docker](#docker)
     - [Steps to Run](#docker)
-    - [Common Docker Issues](#common-docker-issues)
   
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
@@ -424,9 +423,6 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Common Docker Issues
-- My NVIDIA GPU isn't being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 
 ## Cloned Voices
 You can upload any voice audio in any of the supported audio formats, up to a maximum of 1 minute.
