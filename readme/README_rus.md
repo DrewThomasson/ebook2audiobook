@@ -532,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Перевод Readme
-- [x] Арабский (ara)
-- [x] Китайский (zho)
+- [ ] Арабский (ara)
+- [ ] Китайский (zho)
 - [x] Английский (ENG)
-- [x] Испанский (спа)
-- [x] Французский (фра)
-- [x] Немецкий (DEU)
-- [x] Итальянский (ита)
-- [x] Португальский (por)
-- [x] Польский (pol)
-- [x] Турецкий (tur)
-- [x] Russian (rus)
-- [x] Голландский (nld)
-- [x] Чешский (ces)
-- [x] Японский (jpn)
-- [x] Хинди
-- [x] Бенгальский (ben)
-- [x] Hungarian (HUN)
-- [x] Корейский (кор)
-- [x] Вьетнамский (VIE)
-- [x] Шведский (Swe)
-- [x] Персидский (фас)
-- [x] Йоруба (йор)
-- [x] Суахили (сва)
-- [x] Индонезийский (инд.)
-- [x] Словацкий (slk)
-- [x] Хорватский (грн)
+- [ ] Испанский (спа)
+- [ ] Французский (фра)
+- [ ] Немецкий (DEU)
+- [ ] Итальянский (ита)
+- [ ] Португальский (por)
+- [ ] Польский (pol)
+- [ ] Турецкий (tur)
+- [ ] Russian (rus)
+- [ ] Голландский (nld)
+- [ ] Чешский (ces)
+- [ ] Японский (jpn)
+- [ ] Хинди
+- [ ] Бенгальский (ben)
+- [ ] Hungarian (HUN)
+- [ ] Корейский (кор)
+- [ ] Вьетнамский (VIE)
+- [ ] Шведский (Swe)
+- [ ] Персидский (фас)
+- [ ] Йоруба (йор)
+- [ ] Суахили (сва)
+- [ ] Индонезийский (инд.)
+- [ ] Словацкий (slk)
+- [ ] Хорватский (грн)
 
 #### 🐍 Совместимость с ОС
 - [x] 🍎 Mac Intel x86
@@ -632,7 +632,4 @@ if config['default_role'] in roles:
 -->
 
 ## Особая благодарность
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 за лучший метод сохранения глав](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Для всех финансовых и кодовых вкладчиков каждый вклад и предложение помогают улучшить качество E2A.

@@ -532,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3 - TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### ترجمة Readme
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [ ] العربية (ARA)
+- [ ] الصينية (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
+- [ ] الإسبانية (SPA)
+- [ ] الفرنسية (فرنك فرنسي)
+- [ ] الألمانية (deu)
 - [ ] Italian (ita)
-- [ ] Portuguese (por)
+- [ ] Portuguese (POR)
 - [ ] Polish (pol)
 - [ ] Turkish (tur)
 - [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
+- [ ] الهولندية (nld)
+- [ ] التشيكية
 - [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
+- [ ] الهندية (hin)
+- [ ] البنغالية (بن)
+- [ ] الهنغارية (HUN)
 - [ ] Korean (kor)
-- [ ] Vietnamese (vie)
+- [ ] الفيتنامية (VIE)
 - [ ] Swedish (swe)
-- [ ] Persian (fas)
+- [ ] الفارسية (فاس)
 - [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [ ] السواحلية (SWA)
+- [ ] الإندونيسية (الهند)
+- [ ] السلوفاكية (slk)
+- [ ] الكرواتية (hrv)
 
 #### 🐍 توافق نظام التشغيل
 - [x] 🍎 Mac Intel x86
@@ -632,7 +632,4 @@ if config['default_role'] in roles:
 -->
 
 ## شكر خاص
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 لطريقة أفضل لحفظ الفصول](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+إلى جميع المساهمين الماليين والرمزيين، تساعد كل مساهمة واقتراح على تحسين جودة E2A.

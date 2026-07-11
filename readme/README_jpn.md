@@ -532,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen 3 - TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readmeの翻訳
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [ ] アラビア語(ara)
+- [ ] 中国語(zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [ ] スペイン語（スパ）
+- [ ] フランス語(fra)
+- [ ] ドイツ語(DEU)
+- [ ] イタリア語(ita)
+- [ ] ポルトガル語（ポーランド）
+- [ ] ポーランド語(pol)
+- [ ] トルコ語(TUR)
+- [ ] ロシア語(rus)
+- [ ] オランダ語(nld)
+- [ ] チェコ語(ces)
+- [ ] 日本語(jpn)
+- [ ] ヒンディー語(HIN)
+- [ ] ベンガル語（ベン）
+- [ ] ハンガリー語(HUN)
+- [ ] 韓国語(kor)
+- [ ] ベトナム語(VIE)
+- [ ] スウェーデン語(スウェーデン)
+- [ ] ペルシャ語(fas)
+- [ ] ヨルバ語(yor)
+- [ ] スワヒリ語(swa)
+- [ ] インドネシア語（インド）
+- [ ] スロバキア語(SLK)
+- [ ] クロアチア語(hrv)
 
 #### 🐍 OS互換性
 - [x] 🍎 Mac Intel x86
@@ -632,7 +632,4 @@ if config['default_role'] in roles:
 -->
 
 ## 特別な感謝
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 より良い章保存方法のために](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+すべての財務およびコード貢献者にとって、それぞれの貢献と提案はE 2 Aの品質を向上させるのに役立ちます。

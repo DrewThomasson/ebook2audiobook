@@ -532,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Traduction du Readme
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [ ] Arabe (ara)
+- [ ] Chinois (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
+- [ ] Espagnol (spa)
+- [ ] Français (FRA)
+- [ ] Allemand (deu)
+- [ ] Italien (ita)
+- [ ] Portugais (por)
+- [ ] Polonais (POL)
+- [ ] Turc (tur)
+- [ ] Russe (rus)
+- [ ] Néerlandais (nld)
+- [ ] Tchèque (ces)
+- [ ] Japonais (JPN)
 - [ ] Hindi (hin)
 - [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
+- [ ] Hongrois - HUN
+- [ ] Coréen (kor)
+- [ ] Vietnamien (vie)
+- [ ] Suédois (swe)
+- [ ] Persan (fas)
 - [ ] Yoruba (yor)
 - [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [ ] Indonésien (ind)
+- [ ] Slovaque (slovaque)
+- [ ] Croate (hrv)
 
 #### 🐍 Compatibilité des systèmes d'exploitation
 - [x] 🍎 Mac Intel x86
@@ -632,7 +632,4 @@ Nous acceptons tout type de matériel pour tester notre développement, comme :
 -->
 
 ## Remerciements particuliers
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 pour une meilleure méthode de sauvegarde des chapitres](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Pour tous les contributeurs financiers et de code, chaque contribution et suggestion contribue à améliorer la qualité d'E2A.

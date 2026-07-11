@@ -532,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readme 翻译
-- [ ] Arabic (ara)
+- [ ] 阿拉伯语(ara)
 - [ ] Chinese (zho)
 - [x] English (eng)
 - [ ] Spanish (spa)
 - [ ] French (fra)
-- [ ] German (deu)
+- [ ] 德语(deu)
 - [ ] Italian (ita)
 - [ ] Portuguese (por)
 - [ ] Polish (pol)
-- [ ] Turkish (tur)
+- [ ] 土耳其语(TUR)
 - [ ] Russian (rus)
 - [ ] Dutch (nld)
-- [ ] Czech (ces)
+- [ ] 捷克语（ ces ）
 - [ ] Japanese (jpn)
 - [ ] Hindi (hin)
 - [ ] Bengali (ben)
-- [ ] Hungarian (hun)
+- [ ] 匈牙利语(HUN)
 - [ ] Korean (kor)
-- [ ] Vietnamese (vie)
+- [ ] 越南语（ VIE ）
 - [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
+- [ ] 波斯语(fas)
+- [ ] 约鲁巴语（ yor ）
+- [ ] 斯瓦希里语(swa)
+- [ ] 印尼语（印尼）
 - [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [ ] 克罗地亚语(hrv)
 
 #### 🐍 操作系统兼容性
 - [x] 🍎 Mac Intel x86
@@ -632,7 +632,4 @@ if config['default_role'] in roles:
 -->
 
 ## 特别鸣谢
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 提供了更好的章节保存方法](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+对于所有财务和代码贡献者，每项贡献和建议都有助于提高E2A的质量。

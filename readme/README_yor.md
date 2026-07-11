@@ -532,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Ìtumọ̀ Readme
-- [ ] Arabic (ara)
+- [ ] Lárúbáwá (Lárúbáwá)
 - [ ] Chinese (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
+- [ ] Èdè Sípáníìṣì (SPA)
+- [ ] Faranse (fra)
+- [ ] Jẹmánì (DEU)
+- [ ] Itali (ita)
+- [ ] Èdè Potogí (por)
+- [ ] Pólándì (pol)
+- [ ] Tọki (TUR)
+- [ ] Rọ́ṣíà (Rọ́ṣíà)
 - [ ] Dutch (nld)
 - [ ] Czech (ces)
 - [ ] Japanese (jpn)
 - [ ] Hindi (hin)
-- [ ] Bengali (ben)
+- [ ] Èdè Bengali (BEN)
 - [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
+- [ ] Kòréà (kor)
+- [ ] Vietnamese (VIVE)
 - [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
+- [ ] Persian (FAS)
+- [ ] Yorùbá (yor)
 - [ ] Swahili (swa)
-- [ ] Indonesian (ind)
+- [ ] Indonesian (IND)
 - [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [ ] Croatian (hrv)
 
 #### 🐍 Ìbáramu OS
 - [x] 🍎 Mac Intel x86
@@ -632,7 +632,4 @@ A gba irú ohun-èlò èyíkéyìí láti dán ìdàgbàsókè wa wò bíi:
 -->
 
 ## Ọpẹ́ Pàtàkì
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 fún ọ̀nà tó dára jù láti tọ́jú àwọn orí](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Fún gbogbo àwọn olùpínlẹ̀ owó àti kóódù, ìfowópamọ́ àti àbá kọ̀ọ̀kan ń ṣe ìrànlọ́wọ́ láti mú kí E2A dára sí i.
