@@ -632,7 +632,4 @@ We accept any kind of hardware to test our development like:
 -->
 
 ## Special Thanks
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+To all finance and code contributors, each contribution and suggestion help to improve the quality of E2A.
