@@ -716,7 +716,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_abs_enabled = gr.Checkbox(label='Upload to Audiobookshelf', elem_id='gr_abs_enabled', value=default_abs_enabled, interactive=True)
                                     gr_abs_server_url = gr.Textbox(label='Server URL', elem_id='gr_abs_server_url', value=default_abs_server_url, placeholder='http://localhost:13378', interactive=True)
                                     gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', interactive=True)
-                                    gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True, allow_custom_value=True)
+                                    gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
                                 with gr.Group(elem_id='gr_group_output_format'):
                                     gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value='Output')
                                     with gr.Row(elem_id='gr_row_output_format'):
@@ -1212,7 +1212,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=bool(session.get('abs_enabled', False))),
                             gr.update(value=session.get('abs_server_url', '')),
                             gr.update(value=session.get('abs_api_token', '')),
-                            gr.update(value=session.get('abs_library_id', ''))
+                            _refresh_abs_libraries(session_id, session.get('abs_server_url', ''), session.get('abs_api_token', ''))
                         )
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
