@@ -532,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readme 翻译
-- [ ] 阿拉伯语(ara)
-- [ ] Chinese (zho)
+- [x] 阿拉伯语(ara)
+- [x] Chinese (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] 德语(deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] 土耳其语(TUR)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] 捷克语（ ces ）
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] 匈牙利语(HUN)
-- [ ] Korean (kor)
-- [ ] 越南语（ VIE ）
-- [ ] Swedish (swe)
-- [ ] 波斯语(fas)
-- [ ] 约鲁巴语（ yor ）
-- [ ] 斯瓦希里语(swa)
-- [ ] 印尼语（印尼）
-- [ ] Slovak (slk)
-- [ ] 克罗地亚语(hrv)
+- [x] Spanish (spa)
+- [x] French (fra)
+- [x] 德语(deu)
+- [x] Italian (ita)
+- [x] Portuguese (por)
+- [x] Polish (pol)
+- [x] 土耳其语(TUR)
+- [x] Russian (rus)
+- [x] Dutch (nld)
+- [x] 捷克语（ ces ）
+- [x] Japanese (jpn)
+- [x] Hindi (hin)
+- [x] Bengali (ben)
+- [x] 匈牙利语(HUN)
+- [x] Korean (kor)
+- [x] 越南语（ VIE ）
+- [x] Swedish (swe)
+- [x] 波斯语(fas)
+- [x] 约鲁巴语（ yor ）
+- [x] 斯瓦希里语(swa)
+- [x] 印尼语（印尼）
+- [x] Slovak (slk)
+- [x] 克罗地亚语(hrv)
 
 #### 🐍 操作系统兼容性
 - [x] 🍎 Mac Intel x86
