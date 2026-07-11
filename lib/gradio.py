@@ -839,7 +839,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', interactive=True)
                             gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
                             with gr.Row(elem_id='gr_row_abs_upload'):
-                                gr_abs_status = gr.HTML(elem_id='gr_abs_status', value='Configure server settings above, then click Upload')
+                                gr_abs_status = gr.Textbox(elem_id='gr_abs_status', label='', interactive=False, visible=True)
                                 gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='primary', interactive=False)
                 
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
@@ -1218,7 +1218,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=session.get('abs_api_token', '')),
                             _refresh_abs_libraries(session_id, session.get('abs_server_url', ''), session.get('abs_api_token', '')),
                             gr.update(interactive=abs_upload_enabled),
-                            gr.update(value=('Ready to upload: ' + Path(session['audiobook']).name) if session.get('audiobook') else 'Configure server settings above, then click Upload'),
+                            gr.update(value=''),
                         )
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
@@ -1271,7 +1271,7 @@ def build_interface(args:dict)->gr.Blocks:
                     return (gr.update(interactive=True), 'Session not found')
                 audiobook = session.get('audiobook')
                 if not audiobook or not os.path.isfile(str(audiobook)):
-                    return (gr.update(interactive=True), 'No completed audiobook. Convert a book first.')
+                    return (gr.update(interactive=True), 'No audiobook to upload')
                 from lib.classes.audiobookshelf import upload_to_abs
                 title = Path(audiobook).stem
                 author = str(session.get('author') or '')
@@ -1279,12 +1279,12 @@ def build_interface(args:dict)->gr.Blocks:
                 api_token = str(session.get('abs_api_token') or '')
                 library_id = str(session.get('abs_library_id') or '')
                 if not server_url or not api_token or not library_id:
-                    return (gr.update(interactive=True), 'Configure server URL, token, and library first.')
+                    return (gr.update(interactive=True), 'Configure ABS settings first')
                 ok = upload_to_abs([audiobook], title, author, server_url, api_token, library_id)
                 if ok:
-                    return (gr.update(interactive=True), 'Uploaded: ' + title)
+                    return (gr.update(interactive=True), 'Uploaded ✓')
                 else:
-                    return (gr.update(interactive=True), 'Upload failed - check console')
+                    return (gr.update(interactive=True), 'Upload failed')
 
             def _refresh_interface(session_id:str)->tuple:
                 try:
