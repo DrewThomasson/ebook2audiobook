@@ -839,7 +839,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', interactive=True)
                             gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
                             with gr.Row(elem_id='gr_row_abs_upload'):
-                                gr_abs_status = gr.Markdown(elem_id='gr_abs_status', elem_classes=['gr-markdown'], value='Configure server settings above, then click Upload')
+                                gr_abs_status = gr.HTML(elem_id='gr_abs_status', value='Configure server settings above, then click Upload')
                                 gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='primary', interactive=False)
                 
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
@@ -1296,6 +1296,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_main = True
                             visible_xtts = False
                             visible_bark = False
+                            visible_abs = visible_gr_tab_abs_params
                             visible_ebook_src = False
                             visible_ebook_textarea = False
                             enabled_convert_btn = False
@@ -1317,14 +1318,14 @@ def build_interface(args:dict)->gr.Blocks:
                             enabled_convert_btn = True if session['ebook_mode'] == ebook_modes['TEXT'] or ebook_data is not None else False
                             return (
                                 gr.update(value='', visible=False), gr.update(visible=visible_main),
-                                gr.update(visible=visible_xtts), gr.update(visible=visible_bark),
+                                gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(visible=visible_abs),
                                 gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_ebook_src, value=ebook_data), gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                                 gr.update(value=session['device']), gr.update(value=session['audiobook']), _update_gr_audiobook_list(session_id),
                                 _update_gr_voice_list(session_id), gr.update(''), gr.update(value='')
                             )
                         elif session['status'] in [status_tags['CONVERTING']]:
                             return (
-                                gr.update(), gr.update(), gr.update(),
+                                gr.update(), gr.update(), gr.update(), gr.update(),
                                 gr.update(), gr.update(), gr.update(visible=True, value=session['ebook_list']), gr.update(),
                                 gr.update(), gr.update(), gr.update(),
                                 gr.update(), gr.update(), gr.update()
