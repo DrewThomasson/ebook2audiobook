@@ -28,6 +28,7 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
+        visible_gr_tab_abs_params = interface_component_options.get('gr_tab_abs_params', False)
         js_hide_elements = 'document.querySelector("#ebook_textarea_toolbar")?.remove();'
         js_show_elements = 'window.gr_ebook_textarea_counter();'
         theme = gr.themes.Origin(
@@ -713,10 +714,6 @@ def build_interface(args:dict)->gr.Blocks:
                                             gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                             gr_custom_model_train_link = gr.Markdown(value='<a href="https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu" target="_blank" rel="noopener noreferrer">Create My Own Model</a>', elem_id='gr_custom_model_train_link', elem_classes=['gr-markdown'], visible=True)
                                             gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                                    gr_abs_enabled = gr.Checkbox(label='Upload to Audiobookshelf', elem_id='gr_abs_enabled', value=default_abs_enabled, interactive=True)
-                                    gr_abs_server_url = gr.Textbox(label='Server URL', elem_id='gr_abs_server_url', value=default_abs_server_url, placeholder='http://localhost:13378', interactive=True)
-                                    gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', interactive=True)
-                                    gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
                                 with gr.Group(elem_id='gr_group_output_format'):
                                     gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value='Output')
                                     with gr.Row(elem_id='gr_row_output_format'):
@@ -836,6 +833,14 @@ def build_interface(args:dict)->gr.Blocks:
                                 elem_id='gr_bark_waveform_temp',
                                 info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                             )
+                    with gr.Tab('Audiobookshelf Upload', elem_id='gr_tab_abs_params', elem_classes='gr-tab', visible=visible_gr_tab_abs_params) as gr_tab_abs_params:
+                        with gr.Group(elem_id='gr_group_abs_params', elem_classes=['gr-group']):
+                            gr_abs_server_url = gr.Textbox(label='Server URL', elem_id='gr_abs_server_url', value=default_abs_server_url, placeholder='http://localhost:13378', interactive=True)
+                            gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', interactive=True)
+                            gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
+                            with gr.Row(elem_id='gr_row_abs_upload'):
+                                gr_abs_status = gr.Markdown(elem_id='gr_abs_status', elem_classes=['gr-markdown'], value='Configure server settings above, then click Upload')
+                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='primary', interactive=False)
                 
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                     gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
@@ -1008,7 +1013,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     enabled_convert_btn = True
                             elif session['ebook_mode'] == ebook_modes['TEXT']:
                                 enabled_convert_btn = True
-                            return tuple(outputs) + (gr.update(interactive=True, visible=visible_custom_model_del_btn), gr.update(value=''), gr.update(interactive=enabled_convert_btn))
                 except Exception as e:
                     error = f'_enable_components(): {e}'
                     exception_alert(session_id, error)
@@ -1135,7 +1139,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(29)])
+                            outputs = tuple([gr.update() for _ in range(30)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1165,6 +1169,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 enabled_convert_btn = True
                             visible_ebook_src = True
                         visible_row_split_hours = True if session['output_split'] else False
+                        abs_upload_enabled = session.get('audiobook') is not None and session.get('status') not in ['converting', 'edit']
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
                         visible_voice_buttons = True if session.get('voice') is not None else False
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
@@ -1209,15 +1214,16 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=visible_voice_buttons),
                             gr.update(label=f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
                             gr.update(visible=visible_custom_model_del_btn),
-                            gr.update(value=bool(session.get('abs_enabled', False))),
                             gr.update(value=session.get('abs_server_url', '')),
                             gr.update(value=session.get('abs_api_token', '')),
-                            _refresh_abs_libraries(session_id, session.get('abs_server_url', ''), session.get('abs_api_token', ''))
+                            _refresh_abs_libraries(session_id, session.get('abs_server_url', ''), session.get('abs_api_token', '')),
+                            gr.update(interactive=abs_upload_enabled),
+                            gr.update(value=('Ready to upload: ' + Path(session['audiobook']).name) if session.get('audiobook') else 'Configure server settings above, then click Upload'),
                         )
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(29)])
+                outputs = tuple([gr.update() for _ in range(30)])
                 return outputs
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -1229,11 +1235,6 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                     outputs = tuple([gr.update() for _ in range(3)])
                     return outputs
-
-            def _change_gr_abs_enabled(session_id:str, val:bool)->None:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    session['abs_enabled'] = val
 
             def _change_gr_abs_server_url(session_id:str, val:str)->None:
                 session = context.get_session(session_id)
@@ -1263,6 +1264,27 @@ def build_interface(args:dict)->gr.Blocks:
                         session['abs_library_id'] = value
                     return gr.update(choices=libs, value=value)
                 return gr.update(choices=[('No libraries found - check URL/token', '')])
+
+            def _click_gr_abs_upload_btn(session_id:str)->tuple:
+                session = context.get_session(session_id)
+                if not session or not session.get('id', False):
+                    return (gr.update(interactive=True), 'Session not found')
+                audiobook = session.get('audiobook')
+                if not audiobook or not os.path.isfile(str(audiobook)):
+                    return (gr.update(interactive=True), 'No completed audiobook. Convert a book first.')
+                from lib.classes.audiobookshelf import upload_to_abs
+                title = Path(audiobook).stem
+                author = str(session.get('author') or '')
+                server_url = str(session.get('abs_server_url') or '')
+                api_token = str(session.get('abs_api_token') or '')
+                library_id = str(session.get('abs_library_id') or '')
+                if not server_url or not api_token or not library_id:
+                    return (gr.update(interactive=True), 'Configure server URL, token, and library first.')
+                ok = upload_to_abs([audiobook], title, author, server_url, api_token, library_id)
+                if ok:
+                    return (gr.update(interactive=True), 'Uploaded: ' + title)
+                else:
+                    return (gr.update(interactive=True), 'Upload failed - check console')
 
             def _refresh_interface(session_id:str)->tuple:
                 try:
@@ -2859,10 +2881,10 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn,
-                gr_abs_enabled, gr_abs_server_url, gr_abs_api_token, gr_abs_library_id
+                gr_abs_server_url, gr_abs_api_token, gr_abs_library_id, gr_abs_upload_btn, gr_abs_status
             ]
             outputs_refresh_interface = [
-                gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_convert_btn,
+                gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_abs_params, gr_convert_btn,
                 gr_ebook_src, gr_ebook_textarea, gr_device, gr_audiobook_player, gr_audiobook_list,
                 gr_voice_list, gr_voice_highlight_css, gr_progress
             ]
@@ -3476,10 +3498,15 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_modal, gr_custom_model_list, gr_audiobook_list, gr_voice_list],
                 show_progress_on=[gr_progress]
             )
-            gr_abs_enabled.select(fn=_change_gr_abs_enabled, inputs=[gr_session, gr_abs_enabled], outputs=None)
             gr_abs_server_url.change(fn=_change_gr_abs_server_url, inputs=[gr_session, gr_abs_server_url], outputs=None).then(fn=_refresh_abs_libraries, inputs=[gr_session, gr_abs_server_url, gr_abs_api_token], outputs=gr_abs_library_id)
             gr_abs_api_token.change(fn=_change_gr_abs_api_token, inputs=[gr_session, gr_abs_api_token], outputs=None).then(fn=_refresh_abs_libraries, inputs=[gr_session, gr_abs_server_url, gr_abs_api_token], outputs=gr_abs_library_id)
             gr_abs_library_id.change(fn=_change_gr_abs_library_id, inputs=[gr_session, gr_abs_library_id], outputs=None)
+            gr_abs_upload_btn.click(
+                fn=_click_gr_abs_upload_btn,
+                inputs=[gr_session],
+                outputs=[gr_abs_upload_btn, gr_abs_status],
+                show_progress_on=[gr_progress]
+            )
             ############
             app.load(
                 fn=None,
