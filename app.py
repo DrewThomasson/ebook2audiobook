@@ -231,6 +231,10 @@ SML tags available:
     headless_optional_group.add_argument(cli_options[29], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
     headless_optional_group.add_argument(cli_options[30], action='store_true', help=argparse.SUPPRESS)
     headless_optional_group.add_argument(cli_options[31], action='store_true', help=argparse.SUPPRESS)
+    headless_optional_group.add_argument(cli_options[33], action='store_true', help='''(Optional) Upload output to Audiobookshelf after processing.''')
+    headless_optional_group.add_argument(cli_options[34], type=str, default='', help='''(Optional) Audiobookshelf server URL (e.g. http://localhost:13378).''')
+    headless_optional_group.add_argument(cli_options[35], type=str, default='', help='''(Optional) Audiobookshelf API token.''')
+    headless_optional_group.add_argument(cli_options[36], type=str, default='', help='''(Optional) Audiobookshelf library ID.''')
 
     for arg in sys.argv:
         if arg.startswith('--') and arg not in cli_options:

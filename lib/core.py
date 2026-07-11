@@ -194,6 +194,10 @@ class SessionContext:
             "output_channel": default_output_channel,
             "output_split": default_output_split,
             "output_split_hours": default_output_split_hours,
+            "abs_enabled": default_abs_enabled,
+            "abs_server_url": default_abs_server_url,
+            "abs_api_token": default_abs_api_token,
+            "abs_library_id": default_abs_library_id,
             ####### Xtts settings
             "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['temperature'],
             #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['codec_temperature'],
@@ -3420,6 +3424,10 @@ def convert_ebook(args:dict)->tuple:
             session['output_channel'] = str(args['output_channel'])
             session['output_split'] = bool(args['output_split'])
             session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
+            session['abs_enabled'] = bool(args.get('abs_enabled', False))
+            session['abs_server_url'] = str(args.get('abs_server_url', ''))
+            session['abs_api_token'] = str(args.get('abs_api_token', ''))
+            session['abs_library_id'] = str(args.get('abs_library_id', ''))
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
@@ -3759,6 +3767,25 @@ def finalize_audiobook(session_id:str)->tuple:
         if exported_files is None:
             return _fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
+        if session.get('abs_enabled', False):
+            from lib.classes.audiobookshelf import upload_to_abs
+            abs_title = Path(session['audiobook']).stem
+            abs_author = session.get('author') or ''
+            abs_server_url = session.get('abs_server_url') or ''
+            abs_api_token = session.get('abs_api_token') or ''
+            abs_library_id = session.get('abs_library_id') or ''
+            if abs_server_url and abs_api_token and abs_library_id:
+                try:
+                    upload_to_abs(
+                        exported_files,
+                        abs_title,
+                        abs_author,
+                        abs_server_url,
+                        abs_api_token,
+                        abs_library_id,
+                    )
+                except Exception as e:
+                    show_alert(session_id, {'type': 'error', 'msg': f'Audiobookshelf upload failed: {e}'})
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
         if session['ebook_mode'] == ebook_modes['DIRECTORY']:
