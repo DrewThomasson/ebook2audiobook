@@ -644,6 +644,7 @@ def build_interface(args:dict)->gr.Blocks:
                 .button-red:hover  { background-color: #ff6f71 !important; }
                 .button-purple button { background-color: #6f42c1 !important; color: white !important; }
                 .button-purple button:hover { background-color: #8b5cf6 !important; }
+                #gr_abs_upload_btn { --button-primary-background-fill: #6f42c1; --button-primary-background-fill-hover: #8b5cf6; --button-primary-text-color: white; --button-primary-border-color: #6f42c1; }
                 .button-green:active, .button-red:active, .button-purple button:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
@@ -839,7 +840,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
                             with gr.Row(elem_id='gr_row_abs_upload'):
                                 gr_abs_status = gr.HTML(elem_id='gr_abs_status', value='')
-                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='secondary', interactive=False, elem_classes=['button-purple'])
+                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='primary', interactive=False, elem_classes=['button-purple'])
                 
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                     gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
