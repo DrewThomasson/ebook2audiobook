@@ -985,14 +985,14 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _disable_components(session_id:str, exceptions:list|None=None)->tuple:
                 if session_id is None:
-                    outputs = tuple(gr.update() for _ in range(22))
+                    outputs = tuple(gr.update() for _ in range(23))
                 else:
                     if exceptions is None:
                         exceptions = []
                     if 'gr_session_switch_btn' in exceptions:
-                        outputs = tuple(gr.update(interactive=False) for _ in range(21)) + (gr.update(interactive=True),)
+                        outputs = tuple(gr.update(interactive=False) for _ in range(22)) + (gr.update(interactive=True),)
                     else:
-                        outputs = tuple(gr.update(interactive=False) for _ in range(22))
+                        outputs = tuple(gr.update(interactive=False) for _ in range(23))
                 return outputs
 
             def _enable_components(session_id:str)->tuple:
@@ -1002,7 +1002,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
-                            outputs = list(gr.update(interactive=True) for _ in range(25))
+                            outputs = list(gr.update(interactive=True) for _ in range(26))
                             outputs[23] = gr.update()  # gr_modal is gr.HTML, no interactive support
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             enabled_convert_btn = False
@@ -1015,12 +1015,15 @@ def build_interface(args:dict)->gr.Blocks:
                             elif session['ebook_mode'] == ebook_modes['TEXT']:
                                 enabled_convert_btn = True
                             outputs[24] = gr.update(interactive=enabled_convert_btn)
+                            audiobook = session.get('audiobook')
+                            enabled_upload_btn = bool(audiobook and os.path.isfile(str(audiobook)))
+                            outputs[25] = gr.update(interactive=enabled_upload_btn)
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             return tuple(outputs)
                 except Exception as e:
                     error = f'_enable_components(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(25))
+                outputs = tuple(gr.update() for _ in range(26))
                 return outputs
 
             def _disable_on_voice_upload()->tuple:
@@ -2871,14 +2874,16 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate,
-                gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn
+                gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn,
+                gr_abs_upload_btn
             ]
             outputs_enable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate,
-                gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn
+                gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn,
+                gr_abs_upload_btn
             ]
             outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
@@ -3514,6 +3519,12 @@ def build_interface(args:dict)->gr.Blocks:
             gr_abs_api_token.change(fn=_change_gr_abs_api_token, inputs=[gr_session, gr_abs_api_token], outputs=None).then(fn=_refresh_abs_libraries, inputs=[gr_session, gr_abs_server_url, gr_abs_api_token], outputs=gr_abs_library_id)
             gr_abs_library_id.change(fn=_change_gr_abs_library_id, inputs=[gr_session, gr_abs_library_id], outputs=None)
             gr_abs_upload_btn.click(
+                fn=lambda: gr.update(interactive=False),
+                inputs=None,
+                outputs=[gr_abs_upload_btn],
+                show_progress_on=[gr_progress],
+                queue=False
+            ).then(
                 fn=_click_gr_abs_upload_btn,
                 inputs=[gr_session],
                 outputs=[gr_abs_upload_btn, gr_abs_status],
