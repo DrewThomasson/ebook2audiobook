@@ -1003,7 +1003,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
-                            outputs = list(gr.update(interactive=True) for _ in range(22))
+                            outputs = list(gr.update(interactive=True) for _ in range(25))
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             enabled_convert_btn = False
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
@@ -1014,13 +1014,13 @@ def build_interface(args:dict)->gr.Blocks:
                                     enabled_convert_btn = True
                             elif session['ebook_mode'] == ebook_modes['TEXT']:
                                 enabled_convert_btn = True
-                            outputs[5] = gr.update(interactive=enabled_convert_btn)
+                            outputs[24] = gr.update(interactive=enabled_convert_btn)
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             return tuple(outputs)
                 except Exception as e:
                     error = f'_enable_components(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(22))
+                outputs = tuple(gr.update() for _ in range(25))
                 return outputs
 
             def _disable_on_voice_upload()->tuple:
