@@ -646,9 +646,9 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
-                .button-purple { background-color: #6f42c1 !important; color: white !important; }
-                .button-purple:hover { background-color: #8b5cf6 !important; }
-                .button-green:active, .button-red:active, .button-purple:active {
+                button.secondary.button-purple { background-color: #6f42c1 !important; color: white !important; }
+                button.secondary.button-purple:hover { background-color: #8b5cf6 !important; }
+                .button-green:active, .button-red:active, button.secondary.button-purple:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
