@@ -840,7 +840,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
                             with gr.Row(elem_id='gr_row_abs_upload'):
                                 gr_abs_status = gr.HTML(elem_id='gr_abs_status', value='')
-                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', interactive=False, elem_classes=['button-purple'])
+                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='primary', interactive=False, elem_classes=['button-purple'])
                 
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                     gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
