@@ -63,13 +63,13 @@ def upload_to_abs(
     api_token: str,
     library_id: str,
     folder_id: str = "",
-) -> bool:
+) -> tuple[bool, str]:
     if isinstance(file_path, str):
         file_path = [file_path]
     existing: list[str] = [f for f in file_path if os.path.isfile(f)]
     if not existing:
         print(f"  ABS upload skipped: no valid files in {file_path}")
-        return False
+        return (False, 'No valid files to upload')
     url: str = server_url.rstrip("/") + "/api/upload"
     headers: dict = {"Authorization": f"Bearer {api_token}"}
     if not folder_id:
@@ -99,19 +99,19 @@ def upload_to_abs(
         if resp.ok:
             names: str = ", ".join(Path(f).name for f in existing)
             print(f"  Uploaded to Audiobookshelf: {names}")
-            return True
+            return (True, f'Uploaded: {names}')
         else:
             print(f"  ABS upload failed ({resp.status_code}): {resp.text[:200]}")
-            return False
+            return (False, f'HTTP {resp.status_code}: {resp.text[:200]}')
     except requests.exceptions.ConnectionError:
         print(f"  ABS upload failed: cannot connect to {server_url}")
-        return False
+        return (False, f'Cannot connect to {server_url}')
     except requests.exceptions.Timeout:
         print(f"  ABS upload timed out after 300s")
-        return False
+        return (False, 'Upload timed out after 300s')
     except Exception as e:
         print(f"  ABS upload error: {e}")
-        return False
+        return (False, str(e))
     finally:
         for fh in handles:
             fh.close()

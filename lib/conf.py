@@ -29,7 +29,8 @@ cli_options = [
     '--speed', '--enable_text_splitting', '--text_temp',
     '--waveform_temp', '--output_dir', '--version', 
     '--docker_device', '--workflow', '--help',
-    '--abs_enabled', '--abs_server_url', '--abs_api_token', '--abs_library_id'
+    '--abs_enabled', '--abs_server_url', '--abs_api_token', '--abs_library_id',
+    '--abs_auto_upload'
 ]
 
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
@@ -238,3 +239,4 @@ default_abs_enabled = False
 default_abs_server_url = ''
 default_abs_api_token = ''
 default_abs_library_id = ''
+default_abs_auto_upload = False

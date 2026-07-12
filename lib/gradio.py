@@ -640,16 +640,17 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
-                .button-green:active, .button-red:active {
-                    background: var(--body-text-color) !important;
-                    color: var(--body-background-fill) !important;
-                }
                 .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
-                .button-green:active, .button-red:active {
+                .button-purple { background-color: #6f42c1 !important; color: white !important; }
+                .button-purple:hover { background-color: #8b5cf6 !important; }
+                .button-green:active, .button-red:active, .button-purple:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
+                #gr_abs_server_url textarea::-webkit-scrollbar { display: none; }
+                #gr_abs_server_url textarea { overflow-y: hidden; }
+                #gr_row_abs_upload { justify-content: center !important; }
                 .spinner {
                     margin: 15px auto !important;
                     border: 4px solid rgba(255, 255, 255, 0.2) !important;
@@ -833,14 +834,14 @@ def build_interface(args:dict)->gr.Blocks:
                                 elem_id='gr_bark_waveform_temp',
                                 info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                             )
-                    with gr.Tab('Audiobookshelf Upload', elem_id='gr_tab_abs_params', elem_classes='gr-tab', visible=visible_gr_tab_abs_params) as gr_tab_abs_params:
+                    with gr.Tab('Audiobookshelf', elem_id='gr_tab_abs_params', elem_classes='gr-tab', visible=visible_gr_tab_abs_params) as gr_tab_abs_params:
                         with gr.Group(elem_id='gr_group_abs_params', elem_classes=['gr-group']):
                             gr_abs_server_url = gr.Textbox(label='Server URL', elem_id='gr_abs_server_url', value=default_abs_server_url, placeholder='http://localhost:13378', interactive=True)
                             gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', interactive=True)
                             gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
                             with gr.Row(elem_id='gr_row_abs_upload'):
                                 gr_abs_status = gr.HTML(elem_id='gr_abs_status', value='')
-                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='primary', interactive=False)
+                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='primary', interactive=False, elem_classes=['button-purple'])
                 
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                     gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
@@ -1013,10 +1014,13 @@ def build_interface(args:dict)->gr.Blocks:
                                     enabled_convert_btn = True
                             elif session['ebook_mode'] == ebook_modes['TEXT']:
                                 enabled_convert_btn = True
+                            outputs[5] = gr.update(interactive=enabled_convert_btn)
+                            visible_custom_model_del_btn = True if session['custom_model'] is not None else False
+                            return tuple(outputs)
                 except Exception as e:
                     error = f'_enable_components(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(25))
+                outputs = tuple(gr.update() for _ in range(22))
                 return outputs
 
             def _disable_on_voice_upload()->tuple:
@@ -1273,6 +1277,7 @@ def build_interface(args:dict)->gr.Blocks:
                 if not audiobook or not os.path.isfile(str(audiobook)):
                     return (gr.update(interactive=True), '<span>No audiobook to upload</span>')
                 from lib.classes.audiobookshelf import upload_to_abs
+                from urllib.parse import urlparse
                 title = Path(audiobook).stem
                 author = str(session.get('author') or '')
                 server_url = str(session.get('abs_server_url') or '')
@@ -1280,11 +1285,14 @@ def build_interface(args:dict)->gr.Blocks:
                 library_id = str(session.get('abs_library_id') or '')
                 if not server_url or not api_token or not library_id:
                     return (gr.update(interactive=True), '<span>Configure ABS settings first</span>')
-                ok = upload_to_abs([audiobook], title, author, server_url, api_token, library_id)
+                parsed = urlparse(server_url)
+                if not parsed.scheme or not parsed.netloc:
+                    return (gr.update(interactive=True), '<span>Invalid server URL</span>')
+                ok, msg = upload_to_abs([audiobook], title, author, server_url, api_token, library_id)
                 if ok:
-                    return (gr.update(interactive=True), '<span>Uploaded ✓</span>')
+                    return (gr.update(interactive=True), f'<span>{msg}</span>')
                 else:
-                    return (gr.update(interactive=True), '<span>Upload failed</span>')
+                    return (gr.update(interactive=True), f'<span>Error: {msg}</span>')
 
             def _refresh_interface(session_id:str)->tuple:
                 try:

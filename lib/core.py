@@ -198,6 +198,7 @@ class SessionContext:
             "abs_server_url": default_abs_server_url,
             "abs_api_token": default_abs_api_token,
             "abs_library_id": default_abs_library_id,
+            "abs_auto_upload": default_abs_auto_upload,
             ####### Xtts settings
             "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['temperature'],
             #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['codec_temperature'],
@@ -3428,6 +3429,7 @@ def convert_ebook(args:dict)->tuple:
             session['abs_server_url'] = str(args.get('abs_server_url', ''))
             session['abs_api_token'] = str(args.get('abs_api_token', ''))
             session['abs_library_id'] = str(args.get('abs_library_id', ''))
+            session['abs_auto_upload'] = bool(args.get('abs_auto_upload', False))
             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
             session['session_dir'] = os.path.join(tmp_dir, f'proc-{session_id}')
             session['status'] = status_tags['EDIT'] if session['blocks_preview'] else status_tags['CONVERTING'] 
@@ -3767,6 +3769,18 @@ def finalize_audiobook(session_id:str)->tuple:
         if exported_files is None:
             return _fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
+        if session.get('abs_enabled') and session.get('abs_auto_upload'):
+            from lib.classes.audiobookshelf import upload_to_abs
+            a_url = str(session.get('abs_server_url') or '')
+            a_tok = str(session.get('abs_api_token') or '')
+            a_lib = str(session.get('abs_library_id') or '')
+            if a_url and a_tok and a_lib:
+                try:
+                    a_title = os.path.basename(session['audiobook'])
+                    a_author = str(session.get('author') or '')
+                    upload_to_abs([session['audiobook']], a_title, a_author, a_url, a_tok, a_lib)
+                except Exception as e:
+                    print(f'ABS auto-upload error: {e}')
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
         if session['ebook_mode'] == ebook_modes['DIRECTORY']:
