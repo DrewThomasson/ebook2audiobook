@@ -3769,7 +3769,7 @@ def finalize_audiobook(session_id:str)->tuple:
         if exported_files is None:
             return _fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
-        if session.get('abs_enabled') and session.get('abs_auto_upload'):
+        if not session['is_gui_process'] and session.get('abs_enabled') and session.get('abs_auto_upload'):
             from lib.classes.audiobookshelf import upload_to_abs
             a_url = str(session.get('abs_server_url') or '')
             a_tok = str(session.get('abs_api_token') or '')
@@ -3780,11 +3780,14 @@ def finalize_audiobook(session_id:str)->tuple:
                     a_author = str(session.get('metadata', {}).get('creator') or '')
                     ok, msg = upload_to_abs([session['audiobook']], a_title, a_author, a_url, a_tok, a_lib)
                     if ok:
-                        print(f'  ABS auto-upload: {msg}')
+                        msg = f'ABS auto-upload: {msg}'
+                        print(msg)
                     else:
-                        print(f'  ABS auto-upload failed: {msg}')
+                        error = f'ABS auto-upload failed: {msg}'
+                        print(error)
                 except Exception as e:
-                    print(f'ABS auto-upload error: {e}')
+                    error = f'ABS auto-upload error: {e}'
+                    print(error)
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
         if session['ebook_mode'] == ebook_modes['DIRECTORY']:

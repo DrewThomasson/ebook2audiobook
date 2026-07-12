@@ -17,10 +17,12 @@ def fetch_libraries(server_url: str, api_token: str) -> list[tuple[str, str]]:
                 if lib.get("id")
             ]
         else:
-            print(f"  ABS library fetch failed ({resp.status_code}): {resp.text[:200]}")
+            error = f"ABS library fetch failed ({resp.status_code}): {resp.text[:200]}"
+            print(error)
             return []
     except Exception as e:
-        print(f"  ABS library fetch error: {e}")
+        error = f"ABS library fetch error: {e}"
+        print(error)
         return []
 
 
@@ -51,7 +53,8 @@ def _detect_folder_id(server_url: str, headers: dict, library_id: str) -> str:
                     if folders:
                         return folders[0]["id"]
     except Exception as e:
-        print(f"  ABS folder auto-detect failed: {e}")
+        error = f"ABS folder auto-detect failed: {e}"
+        print(error)
     return ""
 
 
@@ -68,7 +71,8 @@ def upload_to_abs(
         file_path = [file_path]
     existing: list[str] = [f for f in file_path if os.path.isfile(f)]
     if not existing:
-        print(f"  ABS upload skipped: no valid files in {file_path}")
+        msg = f"ABS upload skipped: no valid files in {file_path}"
+        print(msg)
         return (False, 'No valid files to upload')
     url: str = server_url.rstrip("/") + "/api/upload"
     headers: dict = {"Authorization": f"Bearer {api_token}"}
@@ -98,19 +102,24 @@ def upload_to_abs(
         )
         if resp.ok:
             names: str = ", ".join(Path(f).name for f in existing)
-            print(f"  Uploaded to Audiobookshelf: {names}")
+            msg = f"Uploaded to Audiobookshelf: {names}"
+            print(msg)
             return (True, f'Uploaded: {names}')
         else:
-            print(f"  ABS upload failed ({resp.status_code}): {resp.text[:200]}")
+            error = f"ABS upload failed ({resp.status_code}): {resp.text[:200]}"
+            print(error)
             return (False, f'HTTP {resp.status_code}: {resp.text[:200]}')
     except requests.exceptions.ConnectionError:
-        print(f"  ABS upload failed: cannot connect to {server_url}")
+        error = f"ABS upload failed: cannot connect to {server_url}"
+        print(error)
         return (False, f'Cannot connect to {server_url}')
     except requests.exceptions.Timeout:
-        print(f"  ABS upload timed out after 300s")
+        error = "ABS upload timed out after 300s"
+        print(error)
         return (False, 'Upload timed out after 300s')
     except Exception as e:
-        print(f"  ABS upload error: {e}")
+        error = f"ABS upload error: {e}"
+        print(error)
         return (False, str(e))
     finally:
         for fh in handles:
