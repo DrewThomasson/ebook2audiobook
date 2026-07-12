@@ -1,16 +1,25 @@
-[tool.ruff]
-line-length = 150
-target-version = "py311"
+[build-system]
+requires = ["setuptools >= 64"]
+build-backend = "setuptools.build_meta"
 
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-line-ending = "lf"
-docstring-code-format = false
+[project]
+name = "ebook2audiobook"
+dynamic = ["version", "dependencies"]
+description = "Convert eBooks to audiobooks with chapters and metadata"
+authors = [
+    { name = "Drew Thomasson" }
+]
+readme = "README.md"
+requires-python = ">3.9,<3.13"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+scripts = { "ebook2audiobook" = "app:main" }
 
-[tool.ruff.lint]
-select = ["E", "F", "I"]
-ignore = ["E501"]
+[project.urls]
+"Homepage" = "https://github.com/DrewThomasson/ebook2audiobook"
 
-[tool.ruff.lint.isort]
-force-single-line = true
+[tool.setuptools.dynamic]
+version = {file = "VERSION.txt"}
