@@ -3777,8 +3777,12 @@ def finalize_audiobook(session_id:str)->tuple:
             if a_url and a_tok and a_lib:
                 try:
                     a_title = os.path.basename(session['audiobook'])
-                    a_author = str(session.get('author') or '')
-                    upload_to_abs([session['audiobook']], a_title, a_author, a_url, a_tok, a_lib)
+                    a_author = str(session.get('metadata', {}).get('creator') or '')
+                    ok, msg = upload_to_abs([session['audiobook']], a_title, a_author, a_url, a_tok, a_lib)
+                    if ok:
+                        print(f'  ABS auto-upload: {msg}')
+                    else:
+                        print(f'  ABS auto-upload failed: {msg}')
                 except Exception as e:
                     print(f'ABS auto-upload error: {e}')
         filename = os.path.basename(session['ebook'])

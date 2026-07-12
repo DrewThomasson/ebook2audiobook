@@ -642,13 +642,12 @@ def build_interface(args:dict)->gr.Blocks:
                 .button-green:hover { background-color: #34d058 !important; }
                 .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
-                #gr_abs_upload_btn { --button-primary-background-fill: #6f42c1; --button-primary-background-fill-hover: #8b5cf6; --button-primary-text-color: white; --button-primary-border-color: #6f42c1; }
-                .button-green:active, .button-red:active, #gr_abs_upload_btn button:active {
+                .button-purple { background-color: #6f42c1 !important; color: white !important; }
+                .button-purple:hover { background-color: #8b5cf6 !important; }
+                .button-green:active, .button-red:active, .button-purple:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
-                #gr_abs_server_url textarea::-webkit-scrollbar { display: none; }
-                #gr_abs_server_url textarea { overflow-y: hidden; }
                 #gr_row_abs_upload { justify-content: center !important; }
                 .spinner {
                     margin: 15px auto !important;
@@ -840,7 +839,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
                             with gr.Row(elem_id='gr_row_abs_upload'):
                                 gr_abs_status = gr.HTML(elem_id='gr_abs_status', value='')
-                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='primary', interactive=False, elem_classes=['button-purple'])
+                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='secondary', interactive=False, elem_classes=['button-purple'])
                 
                 with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                     gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
@@ -1270,29 +1269,32 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(choices=[('No libraries found - check URL/token', '')])
 
             def _click_gr_abs_upload_btn(session_id:str)->tuple:
-                session = context.get_session(session_id)
-                if not session or not session.get('id', False):
-                    return (gr.update(interactive=True), 'Session not found')
-                audiobook = session.get('audiobook')
-                if not audiobook or not os.path.isfile(str(audiobook)):
-                    return (gr.update(interactive=True), '<span>No audiobook to upload</span>')
-                from lib.classes.audiobookshelf import upload_to_abs
-                from urllib.parse import urlparse
-                title = Path(audiobook).stem
-                author = str(session.get('author') or '')
-                server_url = str(session.get('abs_server_url') or '')
-                api_token = str(session.get('abs_api_token') or '')
-                library_id = str(session.get('abs_library_id') or '')
-                if not server_url or not api_token or not library_id:
-                    return (gr.update(interactive=True), '<span>Configure ABS settings first</span>')
-                parsed = urlparse(server_url)
-                if not parsed.scheme or not parsed.netloc:
-                    return (gr.update(interactive=True), '<span>Invalid server URL</span>')
-                ok, msg = upload_to_abs([audiobook], title, author, server_url, api_token, library_id)
-                if ok:
-                    return (gr.update(interactive=True), f'<span>{msg}</span>')
-                else:
-                    return (gr.update(interactive=True), f'<span>Error: {msg}</span>')
+                try:
+                    session = context.get_session(session_id)
+                    if not session or not session.get('id', False):
+                        return (gr.update(interactive=True), 'Session not found')
+                    audiobook = session.get('audiobook')
+                    if not audiobook or not os.path.isfile(str(audiobook)):
+                        return (gr.update(interactive=True), '<span>No audiobook to upload</span>')
+                    from lib.classes.audiobookshelf import upload_to_abs
+                    from urllib.parse import urlparse
+                    title = Path(audiobook).stem
+                    author = str(session.get('metadata', {}).get('creator') or '')
+                    server_url = str(session.get('abs_server_url') or '')
+                    api_token = str(session.get('abs_api_token') or '')
+                    library_id = str(session.get('abs_library_id') or '')
+                    if not server_url or not api_token or not library_id:
+                        return (gr.update(interactive=True), '<span>Configure ABS settings first</span>')
+                    parsed = urlparse(server_url)
+                    if not parsed.scheme or not parsed.netloc:
+                        return (gr.update(interactive=True), '<span>Invalid server URL</span>')
+                    ok, msg = upload_to_abs([audiobook], title, author, server_url, api_token, library_id)
+                    if ok:
+                        return (gr.update(interactive=True), f'<span>{msg}</span>')
+                    else:
+                        return (gr.update(interactive=True), f'<span>Error: {msg}</span>')
+                except Exception as e:
+                    return (gr.update(interactive=True), f'<span>Error: {e}</span>')
 
             def _refresh_interface(session_id:str)->tuple:
                 try:
