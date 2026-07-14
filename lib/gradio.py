@@ -2232,6 +2232,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             ebook_list_full = copy.deepcopy(clean_list)
                                             args['ebook_list'] = ebook_list_full
                                             queue = list(ebook_list_full)
+                                            last_progress_status = None
                                             while queue:
                                                 file = queue.pop(0)
                                                 args['ebook_src'] = file
@@ -2252,10 +2253,13 @@ def build_interface(args:dict)->gr.Blocks:
                                                 args['voice'] = override
                                                 progress_status, passed = convert_ebook(args)
                                                 if passed:
-                                                    return gr.update(value=progress_status)
+                                                    last_progress_status = progress_status
+                                                    continue
                                                 else:
                                                     error = progress_status
                                                     break
+                                            if error is None:
+                                                return gr.update(value=last_progress_status)
                                 elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                     progress_status, passed = convert_ebook(args)
                                     if passed:
