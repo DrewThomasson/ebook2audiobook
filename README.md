@@ -557,7 +557,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Swahili (swa)
 - [x] Indonesian (ind)
 - [x] Slovak (slk)
-- [x] Croatian (hrv)   
+- [x] Croatian (hrv)
 
 #### 🐍 OS Compatibility
 - [x] 🍎 Mac Intel x86
