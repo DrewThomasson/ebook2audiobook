@@ -639,10 +639,6 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
-                .button-green:active, .button-red:active {
-                    background: var(--body-text-color) !important;
-                    color: var(--body-background-fill) !important;
-                }
                 .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
                 .button-purple { background-color: #6f42c1 !important; color: white !important; }
