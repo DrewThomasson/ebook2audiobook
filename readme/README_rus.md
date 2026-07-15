@@ -632,7 +632,4 @@ if config['default_role'] in roles:
 -->
 
 ## Особая благодарность
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 за лучший метод сохранения глав](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Для всех финансовых и кодовых вкладчиков каждый вклад и предложение помогают улучшить качество E2A.

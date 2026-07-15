@@ -640,15 +640,11 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .button-green { background-color: #28a745 !important; color: white !important; }
                 .button-green:hover { background-color: #34d058 !important; }
-                .button-green:active, .button-red:active {
-                    background: var(--body-text-color) !important;
-                    color: var(--body-background-fill) !important;
-                }
                 .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
-                button.secondary.button-purple { background-color: #6f42c1 !important; color: white !important; }
-                button.secondary.button-purple:hover { background-color: #8b5cf6 !important; }
-                .button-green:active, .button-red:active, button.secondary.button-purple:active {
+                .button-purple { background-color: #6f42c1 !important; color: white !important; }
+                .button-purple:hover { background-color: #8b5cf6 !important; }
+                .button-green:active, .button-red:active, .button-purple:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
@@ -2346,6 +2342,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             ebook_list_full = copy.deepcopy(clean_list)
                                             args['ebook_list'] = ebook_list_full
                                             queue = list(ebook_list_full)
+                                            last_progress_status = None
                                             while queue:
                                                 file = queue.pop(0)
                                                 args['ebook_src'] = file
@@ -2366,10 +2363,13 @@ def build_interface(args:dict)->gr.Blocks:
                                                 args['voice'] = override
                                                 progress_status, passed = convert_ebook(args)
                                                 if passed:
-                                                    return gr.update(value=progress_status)
+                                                    last_progress_status = progress_status
+                                                    continue
                                                 else:
                                                     error = progress_status
                                                     break
+                                            if error is None:
+                                                return gr.update(value=last_progress_status)
                                 elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                     progress_status, passed = convert_ebook(args)
                                     if passed:

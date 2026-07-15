@@ -557,7 +557,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Swahili (swa)
 - [x] Indonesian (ind)
 - [x] Slovak (slk)
-- [x] Croatian (hrv)   
+- [x] Croatian (hrv)
 
 #### 🐍 OS Compatibility
 - [x] 🍎 Mac Intel x86
@@ -632,7 +632,4 @@ We accept any kind of hardware to test our development like:
 -->
 
 ## Special Thanks
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+To all financial and code contributors, each contribution and suggestion helps to improve the quality of E2A.
