@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [원격으로 실행](#run-remotely)
   - [Docker](#docker)
     - [실행 단계](#docker)
-    - [일반적인 Docker 문제](#common-docker-issues)
   
+- [Cloned Voices](#cloned-voices)
 - [미세 조정된 TTS 모델](#fine-tuned-tts-models)
   - [미세 조정된 TTS 모델 모음](#fine-tuned-tts-collection)
   - [XTTSv2 학습](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### 일반적인 Docker 문제
-- 내 NVIDIA GPU가 감지되지 않나요?? -> [GPU 문제 위키 페이지](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## 복제된 음성
+지원되는 오디오 형식으로 모든 음성 오디오를 업로드할 수 있으며, 이상적인 지속 시간은 약 1 ~ 5분입니다.
+녹음에 시끄러운 배경이 있거나 음악이 재생되는지 여부는 중요하지 않습니다. E2A가 음성을 정리합니다.
+
+내장된 복제된 음성 목록은 주로 영어로 되어 있습니다. 공식적으로 사용하려면 다른 언어로 된 목소리가 필요한 경우
+목록에 추가되었습니다. 문의해 주시면 검토 후 추가해 드리겠습니다.
 
 ## 미세 조정된(fine-tuned) TTS 모델
 #### 자신만의 XTTSv2 모델을 미세 조정하세요
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle 노트북
 - [x] Google Colab 노트북
+- [ ] Audiobookshelf 통합
 - [ ] [iOS 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [android 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf 통합
 
 #### 추가 옵션
 - [x] 전자책 번역 옵션
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readme 번역
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] 아랍어 (ara)
+- [x] 중국어 (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] 스페인어 (스파)
+- [x] French (fra)
+- [x] 독일어 (deu)
+- [x] 이탈리아어 (ita)
+- [x] 포르투갈어 (por)
+- [x] 폴란드어 (pol)
+- [x] 터키어 (tur)
+- [x] 러시아어 (rus)
+- [x] 네덜란드어 (nld)
+- [x] 체코어 (ces)
+- [x] 일본어 (jpn)
+- [x] 힌디어 (HIN)
+- [x] 벵골어 (ben)
+- [x] 헝가리어 (훈)
+- [x] 한국어 (kor)
+- [x] 베트남어 (VIE)
+- [x] 스웨덴어 (swe)
+- [x] 페르시아어 (fas)
+- [x] 요루바어 (yor)
+- [x] 스와힐리어 (swa)
+- [x] 인도네시아어 (인도)
+- [x] 슬로바키아어 (slk)
+- [x] 크로아티아어 (HRV)
 
 #### 🐍 OS 호환성
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ if config['default_role'] in roles:
 -->
 
 ## 특별히 감사드립니다
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 더 나은 챕터 저장 방법에 대해](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+모든 재정 및 코드 기여자에게 각 기여와 제안은 E2A의 품질을 개선하는 데 도움이 됩니다.

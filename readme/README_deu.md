@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Remote ausführen](#run-remotely)
   - [Docker](#docker)
     - [Schritte zur Ausführung](#docker)
-    - [Häufige Docker-Probleme](#common-docker-issues)
   
+- [Geklonte Stimmen](#cloned-voices)
 - [Feinabgestimmte TTS-Modelle](#fine-tuned-tts-models)
   - [Sammlung feinabgestimmter TTS-Modelle](#fine-tuned-tts-collection)
   - [XTTSv2 trainieren](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Häufige Docker-Probleme
-- Meine NVIDIA-GPU wird nicht erkannt?? -> [Wiki-Seite zu GPU-PROBLEMEN](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Geklonte Stimmen
+Sie können jedes Sprachaudio in jedem der unterstützten Audioformate hochladen. Die ideale Dauer beträgt etwa 1 bis 5 Minuten.
+Es spielt keine Rolle, ob die Aufnahme einen lauten Hintergrund hat oder Musik darüber abgespielt wird — E2A wird die Stimme für Sie aufräumen.
+
+Die eingebaute Liste der geklonten Stimmen ist hauptsächlich auf Englisch. Wenn Sie Stimmen in anderen Sprachen benötigen, um offiziell
+der Liste hinzugefügt, kontaktieren Sie uns bitte und wir werden sie nach der Überprüfung hinzufügen.
 
 ## Feinabgestimmte (fine-tuned) TTS-Modelle
 #### Stimmen Sie Ihr eigenes XTTSv2-Modell fein ab
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle-Notebook
 - [x] Google-Colab-Notebook
+- [ ] Audiobookshelf-Integration
 - [ ] [Eine iOS-App erstellen](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Eine Android-App erstellen](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf-Integration
 
 #### Zusätzliche Optionen
 - [x] Option zur E-Book-Übersetzung
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readme-Übersetzung
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] Arabisch (ara)
+- [x] Chinesisch (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] Spanisch (Spa)
+- [x] Französisch (fra)
+- [x] Deutsch (deu)
+- [x] Italienisch (ita)
+- [x] Portugiesisch (por)
+- [x] Polnisch (pol)
+- [x] Türkisch (tur)
+- [x] Russisch (rus)
+- [x] Niederländisch (nld)
+- [x] Tschechisch (ces)
+- [x] Japanisch (jpn)
+- [x] Hindi (hin)
+- [x] Bengalisch (ben)
+- [x] Ungarisch (hun)
+- [x] Koreanisch (kor)
+- [x] Vietnamesisch (Vie)
+- [x] Schwedisch (swe)
+- [x] Persisch (fas)
+- [x] Yoruba (yor)
+- [x] Swahili (swa)
+- [x] Indonesisch (ind)
+- [x] Slowakisch (slk)
+- [x] Kroatisch (hrv)
 
 #### 🐍 Betriebssystem-Kompatibilität
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ Wir nehmen jede Art von Hardware an, um unsere Entwicklung zu testen, wie zum Be
 -->
 
 ## Besonderer Dank
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 für eine bessere Methode zum Speichern von Kapiteln](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Für alle Finanz- und Code-Mitwirkenden trägt jeder Beitrag und Vorschlag dazu bei, die Qualität von E2A zu verbessern.

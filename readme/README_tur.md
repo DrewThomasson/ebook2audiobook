@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Uzaktan Çalıştırma](#run-remotely)
   - [Docker](#docker)
     - [Çalıştırma Adımları](#docker)
-    - [Yaygın Docker Sorunları](#common-docker-issues)
   
+- [Klonlanmış Sesler](#cloned-voices)
 - [İnce Ayarlı TTS modelleri](#fine-tuned-tts-models)
   - [İnce Ayarlı TTS Modelleri Koleksiyonu](#fine-tuned-tts-collection)
   - [XTTSv2 Eğitimi](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Yaygın Docker Sorunları
-- NVIDIA GPU'm algılanmıyor mu?? -> [GPU SORUNLARI Wiki Sayfası](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Klonlanmış Sesler
+Desteklenen ses formatlarından herhangi birinde herhangi bir ses dosyasını yükleyebilirsiniz, ideal süre yaklaşık 1 ila 5 dakikadır.
+Kaydın gürültülü bir arka plana sahip olması veya üzerinde müzik çalması önemli değildir — E2A sesi sizin için temizleyecektir.
+
+Yerleşik klonlanmış sesler listesi esas olarak İngilizcedir. Resmi olarak başka dillerde seslere ihtiyacınız varsa
+listeye eklendi, lütfen bizimle iletişime geçin. İncelemeden sonra bunları ekleyeceğiz.
 
 ## İnce Ayarlı (fine-tuned) TTS modelleri
 #### Kendi XTTSv2 modelinizi ince ayarlayın
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle Notebook
 - [x] Google Colab Notebook
+- [ ] Audiobookshelf entegrasyonu
 - [ ] [Bir iOS uygulaması yapmak](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Bir android uygulaması yapmak](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf entegrasyonu
 
 #### Ekstra Seçenekler
 - [x] E-kitap Çeviri seçeneği
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readme Çevirisi
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] Arapça (ara)
+- [x] Çince (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] İspanyolca (spa)
+- [x] Fransızca (fra)
+- [x] Almanca (deu)
+- [x] İtalyanca (ita)
+- [x] Portekizce (por)
+- [x] Lehçe (pol)
+- [x] Türkçe (tur)
+- [x] Rusça (Rusça)
+- [x] Felemenkçe (Nld)
+- [x] Çekçe (ces)
+- [x] Japonca (jpn)
+- [x] Hintçe (hin)
+- [x] Bengalce (ben)
+- [x] Macarca (Hun)
+- [x] Korece (kor)
+- [x] Vietnamca (VIe)
+- [x] İsveççe (Swe)
+- [x] Farsça (fas)
+- [x] Yoruba (yor)
+- [x] Svahili dili (swa)
+- [x] Endonezce (ind)
+- [x] Slovakça (slk)
+- [x] Hırvatça (hrv)
 
 #### 🐍 İşletim Sistemi Uyumluluğu
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ Geliştirmemizi test etmek için her türlü donanımı kabul ediyoruz, örneği
 -->
 
 ## Özel Teşekkürler
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 daha iyi bölüm kaydetme yöntemi için](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Tüm mali ve koda katkıda bulunanlara, her katkı ve öneri E2A'nın kalitesini artırmaya yardımcı olur.

@@ -85,10 +85,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Použití vlastního modelu XTTS v režimu headless](#example-of-custom-model-zip-upload)
     - [Výstup příkazu nápovědy](#help-command-output)
   - [Spuštění vzdáleně](#run-remotely)
-  - [Docker](#docker)
+  - [Dokovací stanice](#docker)
     - [Kroky ke spuštění](#docker)
-    - [Časté problémy s Dockerem](#common-docker-issues)
   
+- [Klonované hlasy](#cloned-voices)
 - [Doladěné TTS modely](#fine-tuned-tts-models)
   - [Kolekce doladěných TTS modelů](#fine-tuned-tts-collection)
   - [Trénování XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Časté problémy s Dockerem
-- Moje GPU NVIDIA není detekováno?? -> [Wiki stránka PROBLÉMY S GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Klonované hlasy
+Můžete nahrát libovolný hlasový zvuk v kterémkoli z podporovaných zvukových formátů, ideální doba trvání je přibližně 1 až 5 milionů.
+Nezáleží na tom, jestli má nahrávka hlučné pozadí nebo přehrává hudbu — E2A vám hlas vyčistí.
+
+Vestavěný seznam klonovaných hlasů je převážně v angličtině. Pokud potřebujete, aby hlasy v jiných jazycích byly oficiálně
+přidáno do seznamu, kontaktujte nás a po kontrole je přidáme.
 
 ## Doladěné (fine-tuned) TTS modely
 #### Dolaďte svůj vlastní model XTTSv2
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Notebook Kaggle
 - [x] Notebook Google Colab
+- [ ] Integrace s Audiobookshelf
 - [ ] [Vytvořit aplikaci pro iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Vytvořit aplikaci pro Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Integrace s Audiobookshelf
 
 #### Další možnosti
 - [x] Možnost překladu e-knihy
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Překlad souboru Readme
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] Arabština (ara)
+- [x] Čínština (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] Španělština (Spa)
+- [x] Francouzština (fra)
+- [x] Němčina (deu)
+- [x] Italština (ita)
+- [x] Portugalština (por)
+- [x] Polština (pol)
+- [x] Turečtina (tur)
+- [x] Ruština (rus)
+- [x] Holandština (nld)
+- [x] Czech (ces)
+- [x] Japonština (jpn)
+- [x] Hindština (hin)
+- [x] Bengálština (ben)
+- [x] Maďarština (Hun)
+- [x] Korejština (kor)
+- [x] Vietnamština (vie)
+- [x] Švédština (swe)
+- [x] Perština (fas)
+- [x] Yoruba (yor)
+- [x] Svahilština (swa)
+- [x] Indonéština (ind)
+- [x] Slovenština (slk)
+- [x] Chorvatština (hrv)
 
 #### 🐍 Kompatibilita operačních systémů
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ Přijímáme jakýkoli druh hardwaru pro testování našeho vývoje, jako např
 -->
 
 ## Zvláštní poděkování
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 za lepší metodu ukládání kapitol](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Pro všechny finanční a kódové přispěvatele každý příspěvek a návrh pomáhá zlepšit kvalitu E2A.

@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Jalankan dari Jarak Jauh](#run-remotely)
   - [Docker](#docker)
     - [Langkah-langkah Menjalankan](#docker)
-    - [Masalah Docker Umum](#common-docker-issues)
   
+- [Cloned Voices](#cloned-voices)
 - [Model TTS yang Disetel Halus](#fine-tuned-tts-models)
   - [Koleksi Model TTS yang Disetel Halus](#fine-tuned-tts-collection)
   - [Melatih XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Masalah Docker Umum
-- GPU NVIDIA saya tidak terdeteksi?? -> [Halaman Wiki MASALAH GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Suara Kloning
+Anda dapat mengunggah audio suara apa pun dalam format audio yang didukung, durasi ideal adalah sekitar 1 hingga 5 mn.
+Tidak masalah jika rekaman memiliki latar belakang berisik atau musik yang diputar di atasnya — E2A akan membersihkan suara untuk Anda.
+
+Daftar suara kloning bawaan terutama dalam bahasa Inggris. Jika Anda membutuhkan suara dalam bahasa lain untuk secara resmi
+ditambahkan ke daftar, silakan hubungi kami dan kami akan menambahkannya setelah ditinjau.
 
 ## Model TTS yang Disetel Halus (fine-tuned)
 #### Setel Halus model XTTSv2 Anda sendiri
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Notebook Kaggle
 - [x] Notebook Google Colab
+- [ ] Integrasi Audiobookshelf
 - [ ] [Membuat aplikasi IOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Membuat aplikasi android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Integrasi Audiobookshelf
 
 #### Opsi Tambahan
 - [x] Opsi Terjemahan eBook
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3 - tts (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Terjemahan Readme
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] Arab (ara)
+- [x] Bahasa Mandarin (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] Spanyol (spa)
+- [x] Prancis (fra)
+- [x] Jerman (deu)
+- [x] Italia (ita)
+- [x] Portugis (por)
+- [x] Polandia (pol)
+- [x] Turki (tur)
+- [x] Rusia (rus)
+- [x] Belanda (nld)
+- [x] Ceko (ces)
+- [x] Jepang (jpn)
+- [x] Hindi (hin)
+- [x] Bengali (ben)
+- [x] Hungaria (hun)
+- [x] Korea (kor)
+- [x] Vietnam (vie)
+- [x] Swedia (swe)
+- [x] Persia (fas)
+- [x] Yoruba (tahun)
+- [x] Swahili (swa)
+- [x] Bahasa Indonesia (ind)
+- [x] Slowakia (slk)
+- [x] Kroasia (hrv)
 
 #### 🐍 Kompatibilitas OS
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ Kami menerima segala jenis perangkat keras untuk menguji pengembangan kami seper
 -->
 
 ## Terima Kasih Khusus
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 untuk metode penyimpanan bab yang lebih baik](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Kepada semua kontributor keuangan dan kode, setiap kontribusi dan saran membantu meningkatkan kualitas E2A.

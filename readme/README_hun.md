@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Futtatás távolról](#run-remotely)
   - [Docker](#docker)
     - [Futtatási lépések](#docker)
-    - [Gyakori Docker-problémák](#common-docker-issues)
   
+- [Klónozott hangok](#cloned-voices)
 - [Finomhangolt TTS modellek](#fine-tuned-tts-models)
   - [Finomhangolt TTS modellek gyűjteménye](#fine-tuned-tts-collection)
   - [XTTSv2 tanítása](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Gyakori Docker-problémák
-- Nem érzékeli az NVIDIA GPU-mat?? -> [GPU-PROBLÉMÁK wiki oldal](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Klónozott hangok
+Bármilyen hangfelvételt feltölthet bármelyik támogatott hangformátumban, az ideális időtartam 1-5 mn.
+Nem számít, hogy a felvétel zajos háttérrel vagy zenével rendelkezik — az E2A megtisztítja a hangot az Ön számára.
+
+A beépített klónozott hangok listája főként angol nyelven érhető el. Ha más nyelvű hangokra van szüksége ahhoz, hogy hivatalosan
+hozzáadva a listához. Vedd fel velünk a kapcsolatot, és az ellenőrzés után hozzáadjuk őket.
 
 ## Finomhangolt (fine-tuned) TTS modellek
 #### Finomhangold a saját XTTSv2 modelledet
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle notebook
 - [x] Google Colab notebook
+- [ ] Audiobookshelf integráció
 - [ ] [iOS alkalmazás készítése](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Android alkalmazás készítése](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf integráció
 
 #### További opciók
 - [x] E-könyv fordítási opció
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### A Readme fordítása
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] Arab (ara)
+- [x] Kínai (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] Spanyol (Spa)
+- [x] Francia (fra)
+- [x] Német (deu)
+- [x] Olasz (ita)
+- [x] Portugál (por)
+- [x] Lengyel (pol)
+- [x] Török (tur)
+- [x] Orosz (orosz)
+- [x] Holland (nld)
+- [x] Czech (ces)
+- [x] Japán (jpn)
+- [x] Hindi (hin)
+- [x] Bengáli (ben)
+- [x] Hungarian (hun)
+- [x] Koreai (kor)
+- [x] Vietnami (vie)
+- [x] Svéd (swe)
+- [x] Perzsa (fas)
+- [x] Yoruba (yor)
+- [x] Szuahéli (swa)
+- [x] Indonéz (ind)
+- [x] Slovak (slk)
+- [x] Horvát (hrv)
 
 #### 🐍 Operációsrendszer-kompatibilitás
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ Bármilyen típusú hardvert elfogadunk a fejlesztésünk teszteléséhez, péld
 -->
 
 ## Külön köszönet
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 a fejezetek jobb mentési módszeréért](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Minden pénzügyi és kód közreműködő számára minden hozzájárulás és javaslat hozzájárul az E2A minőségének javításához.

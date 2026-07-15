@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Pokretanje na daljinu](#run-remotely)
   - [Docker](#docker)
     - [Koraci za pokretanje](#docker)
-    - [Česti problemi s Dockerom](#common-docker-issues)
   
+- [Klonirani glasovi](#cloned-voices)
 - [Fino podešeni TTS modeli](#fine-tuned-tts-models)
   - [Zbirka fino podešenih TTS modela](#fine-tuned-tts-collection)
   - [Treniranje XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Česti problemi s Dockerom
-- Moj NVIDIA GPU nije otkriven?? -> [Wiki stranica PROBLEMI S GPU-om](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Klonirani glasovi
+Možete prenijeti bilo koji glasovni zvuk u bilo kojem od podržanih audio formata, idealno trajanje je oko 1 do 5 milijuna.
+Nije važno ima li snimka bučnu pozadinu ili se nad njom reproducira glazba — E2A će očistiti glas za vas.
+
+Ugrađeni popis kloniranih glasova uglavnom je na engleskom jeziku. Ako želite da glasovi na drugim jezicima budu službeno
+dodano na popis, obratite nam se i dodat ćemo ih nakon pregleda.
 
 ## Fino podešeni (fine-tuned) TTS modeli
 #### Fino podesite vlastiti XTTSv2 model
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle bilježnica
 - [x] Google Colab bilježnica
+- [ ] Integracija s Audiobookshelf
 - [ ] [Napraviti iOS aplikaciju](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Napraviti Android aplikaciju](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Integracija s Audiobookshelf
 
 #### Dodatne opcije
 - [x] Opcija prijevoda e-knjige
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Prijevod datoteke Readme
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] Arapski (ara)
+- [x] Kineski (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] Španjolski (spa)
+- [x] Francuski (fra)
+- [x] Njemački (deu)
+- [x] Talijanski (ita)
+- [x] Portugalski (por)
+- [x] Poljski (pol)
+- [x] Turski (tur)
+- [x] Ruski (rus)
+- [x] Nizozemski (nld)
+- [x] Češki (ces)
+- [x] Japanski (jpn)
+- [x] Hindski (hin)
+- [x] Bengalski (ben)
+- [x] Mađarski (hun)
+- [x] Korejski (kor)
+- [x] Vijetnamski (vie)
+- [x] Švedski (swe)
+- [x] Perzijski (fas)
+- [x] Yoruba (yor)
+- [x] Svahili (sva)
+- [x] Indonezijski (ind)
+- [x] Slovački (slk)
+- [x] Croatian (hrv)
 
 #### 🐍 Kompatibilnost operacijskih sustava
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ Prihvaćamo bilo koju vrstu hardvera za testiranje našeg razvoja, kao što su:
 -->
 
 ## Posebna zahvala
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 za bolju metodu spremanja poglavlja](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Svim financijskim i kodnim suradnicima, svaki doprinos i prijedlog pomaže u poboljšanju kvalitete E2A.

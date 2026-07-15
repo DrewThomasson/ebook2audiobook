@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Op afstand uitvoeren](#run-remotely)
   - [Docker](#docker)
     - [Stappen om uit te voeren](#docker)
-    - [Veelvoorkomende Docker-problemen](#common-docker-issues)
   
+- [Gekloonde stemmen](#cloned-voices)
 - [Fijnafgestelde TTS-modellen](#fine-tuned-tts-models)
   - [Collectie van fijnafgestelde TTS-modellen](#fine-tuned-tts-collection)
   - [XTTSv2 trainen](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Veelvoorkomende Docker-problemen
-- Mijn NVIDIA-GPU wordt niet gedetecteerd?? -> [Wikipagina GPU-PROBLEMEN](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Gekloonde stemmen
+U kunt spraakaudio uploaden in elk van de ondersteunde audioformaten, de ideale duur is ongeveer 1 tot 5 mn.
+Het maakt niet uit of de opname een lawaaierige achtergrond heeft of dat er muziek overheen wordt afgespeeld — E2A zal de stem voor u opruimen.
+
+De ingebouwde lijst met gekloonde stemmen is voornamelijk in het Engels. Als u wilt dat stemmen in andere talen officieel worden
+toegevoegd aan de lijst, neem dan contact met ons op en we zullen ze na beoordeling toevoegen.
 
 ## Fijnafgestelde (fine-tuned) TTS-modellen
 #### Stel je eigen XTTSv2-model fijn af
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle-notebook
 - [x] Google Colab-notebook
+- [ ] Audiobookshelf-integratie
 - [ ] [Een iOS-app maken](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Een Android-app maken](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf-integratie
 
 #### Extra opties
 - [x] Optie voor e-bookvertaling
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readme-vertaling
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] Arabisch (ara)
+- [x] Chinees (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] Spaans (spa)
+- [x] Frans (fra)
+- [x] Duits (deu)
+- [x] Italiaans (ita)
+- [x] Portugees (por)
+- [x] Pools (pol)
+- [x] Turks (tur)
+- [x] Russisch (rus)
+- [x] Nederlands (nld)
+- [x] Tsjechisch (ces)
+- [x] Japans (jpn)
+- [x] Hindi (hin)
+- [x] Bengaals (ben)
+- [x] Hongaars (hun)
+- [x] Koreaans (kor)
+- [x] Vietnamees (Vie)
+- [x] Zweeds (swe)
+- [x] Perzisch (fas)
+- [x] Yoruba (yor)
+- [x] Swahili (swa)
+- [x] Indonesisch (ind)
+- [x] Slowaaks (slk)
+- [x] Kroatisch (hrv)
 
 #### 🐍 Compatibiliteit met besturingssystemen
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ We accepteren elk soort hardware om onze ontwikkeling te testen, zoals:
 -->
 
 ## Speciale dank
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 voor een betere methode om hoofdstukken op te slaan](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Aan alle financiële en code-bijdragers helpt elke bijdrage en suggestie om de kwaliteit van E2A te verbeteren.

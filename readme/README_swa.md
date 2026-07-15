@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Endesha kwa Mbali](#run-remotely)
   - [Docker](#docker)
     - [Hatua za Kuendesha](#docker)
-    - [Matatizo ya Kawaida ya Docker](#common-docker-issues)
   
+- [Sauti Zilizopambwa](#cloned-voices)
 - [Modeli za TTS Zilizoboreshwa](#fine-tuned-tts-models)
   - [Mkusanyiko wa Modeli za TTS Zilizoboreshwa](#fine-tuned-tts-collection)
   - [Funza XTTSv2](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### Matatizo ya Kawaida ya Docker
-- GPU yangu ya NVIDIA haitambuliki?? -> [Ukurasa wa Wiki wa MATATIZO YA GPU](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## Sauti Zilizopambwa
+Unaweza kupakia sauti yoyote ya sauti katika muundo wowote wa sauti unaotumika, muda unaofaa ni karibu 1 hadi 5 mn.
+Haijalishi ikiwa rekodi ina mandharinyuma ya kelele au muziki unaocheza juu yake — E2A itakusafishia sauti.
+
+Orodha ya sauti zilizojengwa ndani ni hasa kwa Kiingereza. Ikiwa unahitaji sauti katika lugha zingine kuwa rasmi
+imeongezwa kwenye orodha, tafadhali wasiliana nasi na tutayaweka baada ya kutathminiwa.
 
 ## Modeli za TTS Zilizoboreshwa (fine-tuned)
 #### Boresha modeli yako mwenyewe ya XTTSv2
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Daftari la Kaggle
 - [x] Daftari la Google Colab
+- [ ] Ujumuishaji wa Audiobookshelf
 - [ ] [Tengeneza programu ya IOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Tengeneza programu ya android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Ujumuishaji wa Audiobookshelf
 
 #### Chaguo za Ziada
 - [x] Chaguo la Tafsiri ya eBook
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Tafsiri ya Readme
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] Kiarabu (ara)
+- [x] Kichina (zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] Kihispania (spa)
+- [x] Kifaransa (fra)
+- [x] Kijerumani (deu)
+- [x] Kiitaliano (ita)
+- [x] Kireno (por)
+- [x] Kipolandi (pol)
+- [x] Kituruki (tur)
+- [x] Kirusi (rus)
+- [x] Kiholanzi (nld)
+- [x] Kicheki (ces)
+- [x] Kijapani (jpn)
+- [x] Kihindi (hin)
+- [x] Kibengali (ben)
+- [x] Kihungaria (hun)
+- [x] Kikorea (kor)
+- [x] Kivietinamu (vie)
+- [x] Kiswidi (swe)
+- [x] Kiajemi (fas)
+- [x] Kiyoruba (yor)
+- [x] Kiswahili (swa)
+- [x] Kiindonesia (ind)
+- [x] Kislovakia (slk)
+- [x] Kikroeshia (hrv)
 
 #### 🐍 Uoanifu wa OS
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ Tunakubali aina yoyote ya maunzi ili kujaribu maendeleo yetu kama vile:
 -->
 
 ## Shukrani za Pekee
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 kwa njia bora ya kuhifadhi sura](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+Kwa wachangiaji wote wa kifedha na msimbo, kila mchango na pendekezo husaidia kuboresha ubora wa E2A.

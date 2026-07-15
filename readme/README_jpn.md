@@ -87,8 +87,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [リモートで実行](#run-remotely)
   - [Docker](#docker)
     - [実行手順](#docker)
-    - [よくあるDockerの問題](#common-docker-issues)
   
+- [クローン音声](#cloned-voices)
 - [ファインチューニング済みTTSモデル](#fine-tuned-tts-models)
   - [ファインチューニング済みTTSモデルのコレクション](#fine-tuned-tts-collection)
   - [XTTSv2の学習](#fine-tune-your-own-xttsv2-model)
@@ -423,9 +423,13 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-  
-### よくあるDockerの問題
-- NVIDIA GPUが検出されない？？ -> [GPUの問題に関するWikiページ](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
+## クローン音声
+サポートされているオーディオフォーマットのいずれかで任意のボイスオーディオをアップロードできます。理想的な長さは約1〜5分です。
+録音にノイズの多い背景や音楽が再生されているかどうかは関係ありません。E 2 Aが音声をクリーンアップします。
+
+内蔵されているクローン音声リストは、主に英語です。他の言語での音声が正式に必要な場合
+リストに追加されました。お問い合わせください。審査後に追加させていただきます。
 
 ## ファインチューニング済み（fine-tuned）TTSモデル
 #### 独自のXTTSv2モデルをファインチューニング
@@ -481,9 +485,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggleノートブック
 - [x] Google Colabノートブック
+- [ ] Audiobookshelf統合
 - [ ] [iOSアプリを作成](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [androidアプリを作成](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] Audiobookshelf統合
 
 #### 追加オプション
 - [x] 電子書籍翻訳オプション
@@ -528,32 +532,32 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Qwen 3 - TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
 
 #### Readmeの翻訳
-- [ ] Arabic (ara)
-- [ ] Chinese (zho)
+- [x] アラビア語(ara)
+- [x] 中国語(zho)
 - [x] English (eng)
-- [ ] Spanish (spa)
-- [ ] French (fra)
-- [ ] German (deu)
-- [ ] Italian (ita)
-- [ ] Portuguese (por)
-- [ ] Polish (pol)
-- [ ] Turkish (tur)
-- [ ] Russian (rus)
-- [ ] Dutch (nld)
-- [ ] Czech (ces)
-- [ ] Japanese (jpn)
-- [ ] Hindi (hin)
-- [ ] Bengali (ben)
-- [ ] Hungarian (hun)
-- [ ] Korean (kor)
-- [ ] Vietnamese (vie)
-- [ ] Swedish (swe)
-- [ ] Persian (fas)
-- [ ] Yoruba (yor)
-- [ ] Swahili (swa)
-- [ ] Indonesian (ind)
-- [ ] Slovak (slk)
-- [ ] Croatian (hrv)   
+- [x] スペイン語（スパ）
+- [x] フランス語(fra)
+- [x] ドイツ語(DEU)
+- [x] イタリア語(ita)
+- [x] ポルトガル語（ポーランド）
+- [x] ポーランド語(pol)
+- [x] トルコ語(TUR)
+- [x] ロシア語(rus)
+- [x] オランダ語(nld)
+- [x] チェコ語(ces)
+- [x] 日本語(jpn)
+- [x] ヒンディー語(HIN)
+- [x] ベンガル語（ベン）
+- [x] ハンガリー語(HUN)
+- [x] 韓国語(kor)
+- [x] ベトナム語(VIE)
+- [x] スウェーデン語(スウェーデン)
+- [x] ペルシャ語(fas)
+- [x] ヨルバ語(yor)
+- [x] スワヒリ語(swa)
+- [x] インドネシア語（インド）
+- [x] スロバキア語(SLK)
+- [x] クロアチア語(hrv)
 
 #### 🐍 OS互換性
 - [x] 🍎 Mac Intel x86
@@ -628,7 +632,4 @@ if config['default_role'] in roles:
 -->
 
 ## 特別な感謝
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
-- **Calibre**: [Calibre Website](https://calibre-ebook.com)
-- **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-- [@shakenbake15 より良い章保存方法のために](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+すべての財務およびコード貢献者にとって、それぞれの貢献と提案はE 2 Aの品質を向上させるのに役立ちます。
