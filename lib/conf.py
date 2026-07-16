@@ -230,4 +230,4 @@ default_audio_proc_format = 'flac' # or 'ogg', 'wav' (wav format is ok but limit
 default_output_format = 'm4b'
 default_output_channel = 'mono' # mono or stereo
 default_output_split = False
-default_output_split_hours = '6' # if the final ouput esceed outpout_split_hours * 2 hours the final file will be splitted by outpout_split_hours + the end if any.
+default_output_split_hours = '6' # if the final output exceeds output_split_hours * 2 hours, the final file is split by output_split_hours plus any remaining time.
