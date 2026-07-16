@@ -217,6 +217,7 @@ class SessionContext:
             "ebook": None,
             "ebook_src": None,
             "ebook_list": None,
+            "ebook_loaded": None,
             "ebook_textarea": None,
             "ebook_textarea_src": None,
             "audiobook_overridden": None,
@@ -3391,6 +3392,11 @@ def convert_ebook(args:dict)->tuple:
                 ebook_file = strip_invalid_filename_characters(Path(session['ebook_src']).name)
                 ebook_name = get_sanitized(Path(session['ebook_src']).stem)
             ebook_name = strip_invalid_filename_characters(ebook_name)
+            if session['ebook_mode'] != ebook_modes['TEXT']:
+                if session.get('ebook_loaded') != session['ebook_src']:
+                    session['blocks_orig'] = {}
+                    session['blocks_current'] = {}
+                    session['ebook_loaded'] = session['ebook_src']
             print(f"Processing eBook file: {ebook_file}")
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
