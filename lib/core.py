@@ -3396,6 +3396,7 @@ def convert_ebook(args:dict)->tuple:
                 if session.get('ebook_loaded') != session['ebook_src']:
                     session['blocks_orig'] = {}
                     session['blocks_current'] = {}
+                    session['blocks_saved'] = {}
                     session['ebook_loaded'] = session['ebook_src']
             print(f"Processing eBook file: {ebook_file}")
             session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session_id}")
