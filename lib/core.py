@@ -5,7 +5,7 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, csv, fnmatch, sqlite3, hashlib, io, json, math, os, pytesseract, gc
+import argparse, asyncio, csv, difflib, fnmatch, sqlite3, hashlib, io, json, math, os, pytesseract, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, fitz, multiprocessing
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
@@ -2511,6 +2511,129 @@ def block_hash(block: dict) -> str:
         )).encode('utf-8')
     ).hexdigest()
 
+def text_hash(text:str)->str:
+    # text-only hash, whitespace-insensitive: used to align blocks between two parses of the source file.
+    # block_hash() cannot be used here since a fresh parse has empty sentences and default voice/engine.
+    return hashlib.sha1(' '.join((text or '').split()).encode('utf-8')).hexdigest()
+
+def purge_block_audio(session:dict, block_id:str)->None:
+    try:
+        ch_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
+        if os.path.exists(ch_file):
+            os.unlink(ch_file)
+        block_dir = os.path.join(session['sentences_dir'], block_id)
+        if os.path.isdir(block_dir):
+            shutil.rmtree(block_dir)
+    except Exception as e:
+        error = f'purge_block_audio() error: {e}'
+        print(error)
+
+def realign_blocks(session_id:str, blocks_orig_old:dict)->bool:
+    # the source file changed: align the new parse (session['blocks_orig'], fresh uuids) against
+    # the previous parse (blocks_orig_old) so unchanged blocks inherit their old id and keep their
+    # audio files, inserted blocks get converted as new, deleted blocks get their audio purged,
+    # and modified blocks are reconverted by the existing block_hash() comparison.
+    try:
+        session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return False
+        blocks_orig = session['blocks_orig']
+        old_blocks = blocks_orig_old.get('blocks', [])
+        new_blocks = blocks_orig.get('blocks', [])
+        blocks_current = session['blocks_current']
+        old_current = blocks_current.get('blocks', []) if blocks_current else []
+        if not old_blocks or not new_blocks or not old_current:
+            return False
+        blocks_saved = session['blocks_saved']
+        old_saved = blocks_saved.get('blocks', []) if blocks_saved else []
+        current_by_id = {b['id']: b for b in old_current if b.get('id')}
+        saved_by_id = {b['id']: b for b in old_saved if b.get('id')}
+        old_hashes = [text_hash(b.get('text', '')) for b in old_blocks]
+        new_hashes = [text_hash(b.get('text', '')) for b in new_blocks]
+        matcher = difflib.SequenceMatcher(None, old_hashes, new_hashes, autojunk=False)
+        ratio_min = 0.6
+        merged_current = []
+        merged_saved = []
+        matched_ids = set()
+        equal_ids = set()
+        n_kept = n_changed = n_added = 0
+        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+            if tag == 'equal':
+                for k in range(j2 - j1):
+                    old_b = old_blocks[i1 + k]
+                    new_b = new_blocks[j1 + k]
+                    old_id = old_b['id']
+                    new_b['id'] = old_id
+                    matched_ids.add(old_id)
+                    equal_ids.add(old_id)
+                    cur_b = current_by_id.get(old_id)
+                    merged_current.append(copy.deepcopy(cur_b) if cur_b else copy.deepcopy(new_b))
+                    sav_b = saved_by_id.get(old_id)
+                    if sav_b:
+                        merged_saved.append(copy.deepcopy(sav_b))
+                    n_kept += 1
+            elif tag in ('replace', 'insert'):
+                pairs = min(i2 - i1, j2 - j1) if tag == 'replace' else 0
+                for k in range(j2 - j1):
+                    new_b = new_blocks[j1 + k]
+                    if k < pairs:
+                        old_b = old_blocks[i1 + k]
+                        ratio = difflib.SequenceMatcher(None, old_b.get('text', ''), new_b.get('text', ''), autojunk=False).ratio()
+                        if ratio >= ratio_min:
+                            # same block, edited: inherit id and per-block settings, force reconversion
+                            old_id = old_b['id']
+                            new_b['id'] = old_id
+                            matched_ids.add(old_id)
+                            cur_b = current_by_id.get(old_id)
+                            block = copy.deepcopy(cur_b) if cur_b else copy.deepcopy(new_b)
+                            block['id'] = old_id
+                            block['text'] = new_b.get('text', '')
+                            block['sentences'] = []
+                            merged_current.append(block)
+                            sav_b = saved_by_id.get(old_id)
+                            if sav_b:
+                                merged_saved.append(copy.deepcopy(sav_b))
+                            n_changed += 1
+                            continue
+                    merged_current.append(copy.deepcopy(new_b))
+                    n_added += 1
+        removed_ids = [b['id'] for b in old_blocks if b.get('id') and b['id'] not in matched_ids]
+        for removed_id in removed_ids:
+            purge_block_audio(session, removed_id)
+        # remap positional block_resume/sentence_resume to the new block order
+        block_resume = blocks_current.get('block_resume', 0) or 0
+        sentence_resume = blocks_current.get('sentence_resume', 0) or 0
+        new_index = {b['id']: i for i, b in enumerate(merged_current)}
+        new_block_resume = 0
+        new_sentence_resume = 0
+        pos = min(block_resume, len(old_current) - 1)
+        while pos >= 0:
+            old_id = old_current[pos].get('id')
+            if old_id in new_index:
+                new_block_resume = new_index[old_id]
+                if pos == block_resume and old_id in equal_ids:
+                    new_sentence_resume = sentence_resume
+                break
+            pos -= 1
+        blocks_current['blocks'] = merged_current
+        blocks_current['block_resume'] = new_block_resume
+        blocks_current['sentence_resume'] = new_sentence_resume
+        session['blocks_current'] = blocks_current
+        save_db_blocks(session_id)
+        if blocks_saved:
+            blocks_saved['blocks'] = merged_saved
+            session['blocks_saved'] = blocks_saved
+            save_json_blocks(session_id, 'blocks_saved')
+        session['blocks_orig'] = blocks_orig
+        msg = (f'Source file changed: {n_kept} unchanged, {n_changed} modified, '
+               f'{n_added} added, {len(removed_ids)} removed. '
+               f'Only modified and added blocks will be reconverted.')
+        show_alert(session_id, {'type': 'info', 'msg': msg})
+        return True
+    except Exception as e:
+        exception_alert(session_id, f'realign_blocks() error: {e}')
+        return False
+
 def convert_chapters2audio(session_id:str)->bool:
 
     def _reset_chapter_file(block_id:str)->None:
@@ -3555,17 +3678,24 @@ def convert_ebook(args:dict)->tuple:
                         session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
                         session['blocks_current_db']   = os.path.join(session['process_dir'], f"{file_prefixes['current']}{session['filename_noext']}.db")
                         ok_checksum, error = compare_checksums(session_id)
+                        blocks_orig_old = {}
                         if not ok_checksum or not os.path.exists(session['epub_path']):
                             result_epub = convert2epub(session_id)
                             if result_epub:
                                 if os.path.exists(session['epub_path']):
-                                    for jf in (session['blocks_orig_json'], session['blocks_saved_json']):
-                                        if os.path.exists(jf):
-                                            os.unlink(jf)
-                                    db = session['blocks_current_db']
-                                    for f in (db, db + '-wal', db + '-shm'):
-                                        if os.path.exists(f):
-                                            os.unlink(f)
+                                    if os.path.exists(session['blocks_orig_json']):
+                                        # keep the previous parse as baseline to realign block ids after the new parse
+                                        blocks_orig_old = load_json_blocks(session['blocks_orig_json'])
+                                        os.unlink(session['blocks_orig_json'])
+                                    if not blocks_orig_old.get('blocks'):
+                                        # no baseline to realign against: hard reset as before
+                                        blocks_orig_old = {}
+                                        if os.path.exists(session['blocks_saved_json']):
+                                            os.unlink(session['blocks_saved_json'])
+                                        db = session['blocks_current_db']
+                                        for f in (db, db + '-wal', db + '-shm'):
+                                            if os.path.exists(f):
+                                                os.unlink(f)
                                     msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
                                     print(msg)
                                 else:
@@ -3676,6 +3806,13 @@ def convert_ebook(args:dict)->tuple:
                                                     ],
                                                 }
                                             if session.get('blocks_orig', {}):
+                                                if blocks_orig_old:
+                                                    if not realign_blocks(session_id, blocks_orig_old):
+                                                        # realign failed or nothing to migrate: restart from scratch
+                                                        session['blocks_saved'] = {}
+                                                        session['blocks_current'] = {}
+                                                        if os.path.exists(session['blocks_saved_json']):
+                                                            os.unlink(session['blocks_saved_json'])
                                                 save_json_blocks(session_id, 'blocks_orig')
                                         if not session.get('blocks_current', {}):
                                             session['blocks_current'] = copy.deepcopy(session['blocks_orig'])
