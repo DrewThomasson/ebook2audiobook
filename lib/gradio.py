@@ -2232,6 +2232,12 @@ def build_interface(args:dict)->gr.Blocks:
                                             ebook_list_full = copy.deepcopy(clean_list)
                                             args['ebook_list'] = ebook_list_full
                                             queue = list(ebook_list_full)
+                                            if args['blocks_preview']:
+                                                selected = session.get('ebook_selected')
+                                                if selected in ebook_list_full:
+                                                    queue = [selected]
+                                                else:
+                                                    queue = ebook_list_full[:1]
                                             last_progress_status = None
                                             while queue:
                                                 file = queue.pop(0)
@@ -2254,6 +2260,8 @@ def build_interface(args:dict)->gr.Blocks:
                                                 progress_status, passed = convert_ebook(args)
                                                 if passed:
                                                     last_progress_status = progress_status
+                                                    if args['blocks_preview']:
+                                                        break
                                                     continue
                                                 else:
                                                     error = progress_status
