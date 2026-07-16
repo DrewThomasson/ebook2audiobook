@@ -2234,8 +2234,9 @@ def build_interface(args:dict)->gr.Blocks:
                                             queue = list(ebook_list_full)
                                             if args['blocks_preview']:
                                                 selected = session.get('ebook_selected')
-                                                if selected in ebook_list_full:
-                                                    queue = [selected]
+                                                abs_map = {os.path.abspath(p): p for p in ebook_list_full}
+                                                if selected and selected in abs_map:
+                                                    queue = [abs_map[selected]]
                                                 else:
                                                     queue = ebook_list_full[:1]
                                             last_progress_status = None
