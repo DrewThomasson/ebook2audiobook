@@ -2929,11 +2929,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             start_time = 0
             total = len(part_chapters)
             progress_desc = f'Metadata Part {part_num}' if part_num is not None else 'Metadata'
-            bar = None if is_gui_process else tqdm(total=total, desc=progress_desc, unit='ch', file=sys.stdout, dynamic_ncols=True, leave=True)
-            for i, (filename, chapter_title) in enumerate(part_chapters):
+            iterable = part_chapters if is_gui_process else tqdm(part_chapters, desc=progress_desc, total=total, unit='ch')
+            for i, (filename, chapter_title) in enumerate(iterable):
                 if session['cancellation_requested']:
-                    if bar:
-                        bar.close()
                     return False
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
@@ -2944,10 +2942,6 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 start_time += duration_ms
                 if is_gui_process:
                     _on_progress((((i + 1) / total) * 100.0), progress_desc)
-                else:
-                    bar.update(1)
-            if bar:
-                bar.close()
             with open(output_metadata_path, 'w', encoding='utf-8') as f:
                 f.write(ffmpeg_metadata)
             return output_metadata_path
@@ -3159,7 +3153,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     return None
                 metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
                 part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format, part_num=part_idx+1)
+                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
                 final_file = os.path.join(
                     session['audiobooks_dir'],
                     f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
@@ -3710,10 +3704,11 @@ def convert_ebook(args:dict)->tuple:
                                 error = 'convert2epub() error: could not convert to epub file!'
                         if error is None:
                             missing_orig_json = True
+                            is_changed = False
+                            blocks_orig = {}
                             if os.path.exists(session['blocks_orig_json']):
                                 missing_orig_json = False
                                 blocks_orig = load_json_blocks(session['blocks_orig_json'])
-                                is_changed = False
                                 if blocks_orig:
                                     blocks = blocks_orig.get('blocks', [])
                                     new_blocks = []
@@ -3727,32 +3722,33 @@ def convert_ebook(args:dict)->tuple:
                                     session['blocks_orig'] = blocks_orig
                                 if is_changed:
                                     save_json_blocks(session_id, 'blocks_orig')
-                                if os.path.exists(session['blocks_saved_json']):
-                                    blocks_saved = load_json_blocks(session['blocks_saved_json'])
-                                    if blocks_saved:
+                            # load previous work unconditionally: it must survive a source file change
+                            # so realign_blocks() has something to migrate. the positional id backfill
+                            # is only valid within one parse, never across a re-parse (realign's job).
+                            if os.path.exists(session['blocks_saved_json']):
+                                blocks_saved = load_json_blocks(session['blocks_saved_json'])
+                                if blocks_saved:
+                                    session['blocks_saved'] = blocks_saved
+                                    if is_changed and not missing_orig_json:
+                                        blocks = blocks_saved.get('blocks', [])
+                                        for i, block in enumerate(blocks):
+                                            if i < len(blocks_orig['blocks']):
+                                                block['id'] = blocks_orig['blocks'][i]['id']
+                                        blocks_saved['blocks'] = blocks
                                         session['blocks_saved'] = blocks_saved
-                                        if is_changed:
-                                            if is_changed:
-                                                blocks = blocks_saved.get('blocks', [])
-                                                for i, block in enumerate(blocks):
-                                                    if i < len(blocks_orig['blocks']):
-                                                        block['id'] = blocks_orig['blocks'][i]['id']
-                                                blocks_saved['blocks'] = blocks
-                                                session['blocks_saved'] = blocks_saved
-                                            save_json_blocks(session_id, 'blocks_saved')
-                                if os.path.exists(session['blocks_current_db']):
-                                    blocks_current = load_db_blocks(session['blocks_current_db'])
-                                    if blocks_current:
+                                        save_json_blocks(session_id, 'blocks_saved')
+                            if os.path.exists(session['blocks_current_db']):
+                                blocks_current = load_db_blocks(session['blocks_current_db'])
+                                if blocks_current:
+                                    session['blocks_current'] = blocks_current
+                                    if is_changed and not missing_orig_json:
+                                        blocks = blocks_current.get('blocks', [])
+                                        for i, block in enumerate(blocks):
+                                            if i < len(blocks_orig['blocks']):
+                                                block['id'] = blocks_orig['blocks'][i]['id']
+                                        blocks_current['blocks'] = blocks
                                         session['blocks_current'] = blocks_current
-                                        if is_changed:
-                                            if is_changed:
-                                                blocks = blocks_current.get('blocks', [])
-                                                for i, block in enumerate(blocks):
-                                                    if i < len(blocks_orig['blocks']):
-                                                        block['id'] = blocks_orig['blocks'][i]['id']
-                                                blocks_current['blocks'] = blocks
-                                                session['blocks_current'] = blocks_current
-                                            save_db_blocks(session_id)
+                                        save_db_blocks(session_id)
                             epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
                             if epubBook:
                                 metadata = dict(session['metadata'])
