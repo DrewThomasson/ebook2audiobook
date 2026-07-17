@@ -2528,11 +2528,91 @@ def purge_block_audio(session:dict, block_id:str)->None:
         error = f'purge_block_audio() error: {e}'
         print(error)
 
+def align_blocks(old_blocks:list, new_blocks:list, old_current:list, old_saved:list, ratio_min:float=0.6)->dict:
+    # pure function: no session, no disk, no globals. unit testable with plain lists.
+    # aligns a new parse of the source file against the previous parse so unchanged blocks
+    # inherit their old id (and therefore keep their audio, which is keyed by id).
+    # returns dict(merged_current, merged_saved, removed_ids, equal_ids, kept, changed, added).
+    current_by_id = {b['id']: b for b in old_current if b.get('id')}
+    saved_by_id = {b['id']: b for b in old_saved if b.get('id')}
+    old_hashes = [text_hash(b.get('text', '')) for b in old_blocks]
+    new_hashes = [text_hash(b.get('text', '')) for b in new_blocks]
+    matcher = difflib.SequenceMatcher(None, old_hashes, new_hashes, autojunk=False)
+    merged_current = []
+    merged_saved = []
+    matched_ids = set()
+    equal_ids = set()
+    n_kept = n_changed = n_added = 0
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == 'equal':
+            for k in range(j2 - j1):
+                old_b = old_blocks[i1 + k]
+                new_b = new_blocks[j1 + k]
+                old_id = old_b['id']
+                new_b['id'] = old_id
+                matched_ids.add(old_id)
+                equal_ids.add(old_id)
+                cur_b = current_by_id.get(old_id)
+                merged_current.append(copy.deepcopy(cur_b) if cur_b else copy.deepcopy(new_b))
+                sav_b = saved_by_id.get(old_id)
+                if sav_b:
+                    merged_saved.append(copy.deepcopy(sav_b))
+                n_kept += 1
+        elif tag in ('replace', 'insert'):
+            pairs = min(i2 - i1, j2 - j1) if tag == 'replace' else 0
+            for k in range(j2 - j1):
+                new_b = new_blocks[j1 + k]
+                if k < pairs:
+                    old_b = old_blocks[i1 + k]
+                    ratio = difflib.SequenceMatcher(None, old_b.get('text', ''), new_b.get('text', ''), autojunk=False).ratio()
+                    if ratio >= ratio_min:
+                        # same block, edited: inherit id and per-block settings, force reconversion
+                        old_id = old_b['id']
+                        new_b['id'] = old_id
+                        matched_ids.add(old_id)
+                        cur_b = current_by_id.get(old_id)
+                        block = copy.deepcopy(cur_b) if cur_b else copy.deepcopy(new_b)
+                        block['id'] = old_id
+                        block['text'] = new_b.get('text', '')
+                        block['sentences'] = []
+                        merged_current.append(block)
+                        sav_b = saved_by_id.get(old_id)
+                        if sav_b:
+                            merged_saved.append(copy.deepcopy(sav_b))
+                        n_changed += 1
+                        continue
+                merged_current.append(copy.deepcopy(new_b))
+                n_added += 1
+    removed_ids = [b['id'] for b in old_blocks if b.get('id') and b['id'] not in matched_ids]
+    return dict(
+        merged_current=merged_current,
+        merged_saved=merged_saved,
+        removed_ids=removed_ids,
+        equal_ids=equal_ids,
+        kept=n_kept,
+        changed=n_changed,
+        added=n_added,
+    )
+
+def remap_resume(old_current:list, merged_current:list, equal_ids:set, block_resume:int, sentence_resume:int)->tuple:
+    # pure function: block_resume/sentence_resume are positional, so they must follow the block
+    # they pointed at into the new order. if that block was edited or deleted, sentence_resume resets.
+    if not old_current or not merged_current:
+        return 0, 0
+    new_index = {b['id']: i for i, b in enumerate(merged_current)}
+    pos = min(block_resume, len(old_current) - 1)
+    while pos >= 0:
+        old_id = old_current[pos].get('id')
+        if old_id in new_index:
+            if pos == block_resume and old_id in equal_ids:
+                return new_index[old_id], sentence_resume
+            return new_index[old_id], 0
+        pos -= 1
+    return 0, 0
+
 def realign_blocks(session_id:str, blocks_orig_old:dict)->bool:
-    # the source file changed: align the new parse (session['blocks_orig'], fresh uuids) against
-    # the previous parse (blocks_orig_old) so unchanged blocks inherit their old id and keep their
-    # audio files, inserted blocks get converted as new, deleted blocks get their audio purged,
-    # and modified blocks are reconverted by the existing block_hash() comparison.
+    # thin i/o wrapper around align_blocks(): reads the session, purges the audio of deleted
+    # blocks, remaps the resume pointer and persists. all decision logic lives in align_blocks().
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
@@ -2546,87 +2626,26 @@ def realign_blocks(session_id:str, blocks_orig_old:dict)->bool:
             return False
         blocks_saved = session['blocks_saved']
         old_saved = blocks_saved.get('blocks', []) if blocks_saved else []
-        current_by_id = {b['id']: b for b in old_current if b.get('id')}
-        saved_by_id = {b['id']: b for b in old_saved if b.get('id')}
-        old_hashes = [text_hash(b.get('text', '')) for b in old_blocks]
-        new_hashes = [text_hash(b.get('text', '')) for b in new_blocks]
-        matcher = difflib.SequenceMatcher(None, old_hashes, new_hashes, autojunk=False)
-        ratio_min = 0.6
-        merged_current = []
-        merged_saved = []
-        matched_ids = set()
-        equal_ids = set()
-        n_kept = n_changed = n_added = 0
-        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-            if tag == 'equal':
-                for k in range(j2 - j1):
-                    old_b = old_blocks[i1 + k]
-                    new_b = new_blocks[j1 + k]
-                    old_id = old_b['id']
-                    new_b['id'] = old_id
-                    matched_ids.add(old_id)
-                    equal_ids.add(old_id)
-                    cur_b = current_by_id.get(old_id)
-                    merged_current.append(copy.deepcopy(cur_b) if cur_b else copy.deepcopy(new_b))
-                    sav_b = saved_by_id.get(old_id)
-                    if sav_b:
-                        merged_saved.append(copy.deepcopy(sav_b))
-                    n_kept += 1
-            elif tag in ('replace', 'insert'):
-                pairs = min(i2 - i1, j2 - j1) if tag == 'replace' else 0
-                for k in range(j2 - j1):
-                    new_b = new_blocks[j1 + k]
-                    if k < pairs:
-                        old_b = old_blocks[i1 + k]
-                        ratio = difflib.SequenceMatcher(None, old_b.get('text', ''), new_b.get('text', ''), autojunk=False).ratio()
-                        if ratio >= ratio_min:
-                            # same block, edited: inherit id and per-block settings, force reconversion
-                            old_id = old_b['id']
-                            new_b['id'] = old_id
-                            matched_ids.add(old_id)
-                            cur_b = current_by_id.get(old_id)
-                            block = copy.deepcopy(cur_b) if cur_b else copy.deepcopy(new_b)
-                            block['id'] = old_id
-                            block['text'] = new_b.get('text', '')
-                            block['sentences'] = []
-                            merged_current.append(block)
-                            sav_b = saved_by_id.get(old_id)
-                            if sav_b:
-                                merged_saved.append(copy.deepcopy(sav_b))
-                            n_changed += 1
-                            continue
-                    merged_current.append(copy.deepcopy(new_b))
-                    n_added += 1
-        removed_ids = [b['id'] for b in old_blocks if b.get('id') and b['id'] not in matched_ids]
-        for removed_id in removed_ids:
+        result = align_blocks(old_blocks, new_blocks, old_current, old_saved)
+        for removed_id in result['removed_ids']:
             purge_block_audio(session, removed_id)
-        # remap positional block_resume/sentence_resume to the new block order
-        block_resume = blocks_current.get('block_resume', 0) or 0
-        sentence_resume = blocks_current.get('sentence_resume', 0) or 0
-        new_index = {b['id']: i for i, b in enumerate(merged_current)}
-        new_block_resume = 0
-        new_sentence_resume = 0
-        pos = min(block_resume, len(old_current) - 1)
-        while pos >= 0:
-            old_id = old_current[pos].get('id')
-            if old_id in new_index:
-                new_block_resume = new_index[old_id]
-                if pos == block_resume and old_id in equal_ids:
-                    new_sentence_resume = sentence_resume
-                break
-            pos -= 1
-        blocks_current['blocks'] = merged_current
+        new_block_resume, new_sentence_resume = remap_resume(
+            old_current, result['merged_current'], result['equal_ids'],
+            blocks_current.get('block_resume', 0) or 0,
+            blocks_current.get('sentence_resume', 0) or 0,
+        )
+        blocks_current['blocks'] = result['merged_current']
         blocks_current['block_resume'] = new_block_resume
         blocks_current['sentence_resume'] = new_sentence_resume
         session['blocks_current'] = blocks_current
         save_db_blocks(session_id)
         if blocks_saved:
-            blocks_saved['blocks'] = merged_saved
+            blocks_saved['blocks'] = result['merged_saved']
             session['blocks_saved'] = blocks_saved
             save_json_blocks(session_id, 'blocks_saved')
         session['blocks_orig'] = blocks_orig
-        msg = (f'Source file changed: {n_kept} unchanged, {n_changed} modified, '
-               f'{n_added} added, {len(removed_ids)} removed. '
+        msg = (f"Source file changed: {result['kept']} unchanged, {result['changed']} modified, "
+               f"{result['added']} added, {len(result['removed_ids'])} removed. "
                f'Only modified and added blocks will be reconverted.')
         show_alert(session_id, {'type': 'info', 'msg': msg})
         return True
@@ -3810,7 +3829,12 @@ def convert_ebook(args:dict)->tuple:
                                             if session.get('blocks_orig', {}):
                                                 if blocks_orig_old:
                                                     if not realign_blocks(session_id, blocks_orig_old):
-                                                        # realign failed or nothing to migrate: restart from scratch
+                                                        # realign failed or nothing to migrate: restart from scratch.
+                                                        # loud on purpose: a silent fallback here looks like a random
+                                                        # full reconversion and is the whole bug class this guards.
+                                                        msg = 'realign_blocks() could not migrate the previous work: restarting the conversion from scratch.'
+                                                        print(msg)
+                                                        show_alert(session_id, {'type': 'warning', 'msg': msg})
                                                         session['blocks_saved'] = {}
                                                         session['blocks_current'] = {}
                                                         if os.path.exists(session['blocks_saved_json']):
