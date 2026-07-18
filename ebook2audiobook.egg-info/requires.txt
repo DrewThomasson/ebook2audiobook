@@ -11,6 +11,7 @@ pytorch-lightning>=1.7.0
 onnx-simplifier>=0.4.10
 onnxscript>=0.7.0
 cryptography
+requests
 py-cpuinfo
 tqdm
 regex
