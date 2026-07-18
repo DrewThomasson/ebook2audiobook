@@ -2953,9 +2953,11 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             start_time = 0
             total = len(part_chapters)
             progress_desc = f'Metadata Part {part_num}' if part_num is not None else 'Metadata'
-            iterable = part_chapters if is_gui_process else tqdm(part_chapters, desc=progress_desc, total=total, unit='ch')
-            for i, (filename, chapter_title) in enumerate(iterable):
+            bar = None if is_gui_process else tqdm(total=total, desc=progress_desc, unit='ch', file=sys.stdout, dynamic_ncols=True, leave=True)
+            for i, (filename, chapter_title) in enumerate(part_chapters):
                 if session['cancellation_requested']:
+                    if bar:
+                        bar.close()
                     return False
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
@@ -2966,6 +2968,10 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 start_time += duration_ms
                 if is_gui_process:
                     _on_progress((((i + 1) / total) * 100.0), progress_desc)
+                else:
+                    bar.update(1)
+            if bar:
+                bar.close()
             with open(output_metadata_path, 'w', encoding='utf-8') as f:
                 f.write(ffmpeg_metadata)
             return output_metadata_path
