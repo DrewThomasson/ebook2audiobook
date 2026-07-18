@@ -28,7 +28,9 @@ cli_options = [
     '--repetition_penalty', '--top_k', '--top_p', 
     '--speed', '--enable_text_splitting', '--text_temp',
     '--waveform_temp', '--output_dir', '--version', 
-    '--docker_device', '--workflow', '--help'
+    '--docker_device', '--workflow', '--help',
+    '--abs_enabled', '--abs_server_url', '--abs_api_token', '--abs_library_id',
+    '--abs_auto_upload'
 ]
 
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
@@ -200,7 +202,8 @@ interface_component_options = {
     "gr_tab_xtts_params": True,
     "gr_tab_bark_params": True,
     "gr_group_voice_file": True,
-    "gr_group_custom_model": True
+    "gr_group_custom_model": True,
+    "gr_tab_abs_params": True,
 }
 
 # ---------------------------------------------------------------------
@@ -231,3 +234,9 @@ default_output_format = 'm4b'
 default_output_channel = 'mono' # mono or stereo
 default_output_split = False
 default_output_split_hours = '6' # if the final output exceeds output_split_hours * 2 hours, the final file is split by output_split_hours plus any remaining time.
+
+default_abs_enabled = False
+default_abs_server_url = ''
+default_abs_api_token = ''
+default_abs_library_id = ''
+default_abs_auto_upload = False
