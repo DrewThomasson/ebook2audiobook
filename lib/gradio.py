@@ -200,6 +200,9 @@ def build_interface(args:dict)->gr.Blocks:
                     margin: 0 !important;
                     border: none !important;
                 }
+                #gr_tabs .tabitem:not(.selected) {
+                    display: none !important;
+                }
                 .gr-col {
                     padding: 0 6px 0 6px !important;
                     margin: 0 !important;
