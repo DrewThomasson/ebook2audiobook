@@ -28,7 +28,7 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
-        visible_gr_tab_abs_params = interface_component_options.get('gr_tab_abs_params', False)
+        visible_gr_tab_abs_params = interface_component_options['gr_tab_abs_params']
         js_hide_elements = 'document.querySelector("#ebook_textarea_toolbar")?.remove();'
         js_show_elements = 'window.gr_ebook_textarea_counter();'
         theme = gr.themes.Origin(
@@ -199,6 +199,10 @@ def build_interface(args:dict)->gr.Blocks:
                     padding: 0 3px 0 3px !important;
                     margin: 0 !important;
                     border: none !important;
+                }
+                #gr_tabs > div[role="tabpanel"]:not(.selected),
+                #gr_tabs > .tabitem:not(.selected) {
+                    display: none !important;
                 }
                 .gr-col {
                     padding: 0 6px 0 6px !important;
