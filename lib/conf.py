@@ -203,7 +203,7 @@ interface_component_options = {
     "gr_tab_bark_params": True,
     "gr_group_voice_file": True,
     "gr_group_custom_model": True,
-    "gr_tab_abs_params": False
+    "gr_tab_abs_params": True
 }
 
 # ---------------------------------------------------------------------
