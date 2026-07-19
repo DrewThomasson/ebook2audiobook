@@ -200,7 +200,6 @@ def build_interface(args:dict)->gr.Blocks:
                     margin: 0 !important;
                     border: none !important;
                 }
-                #gr_tabs > div[role="tabpanel"]:not(.selected),
                 #gr_tabs > .tabitem:not(.selected) {
                     display: none !important;
                 }
