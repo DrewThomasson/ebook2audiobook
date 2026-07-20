@@ -670,6 +670,7 @@ def build_interface(args:dict)->gr.Blocks:
                 with gr.Tabs(elem_id='gr_tabs') as gr_tabs:
                     with gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab') as gr_tab_main:
                         with gr.Row(elem_id='gr_row_tab_main'):
+
                             with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_ebook_src', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
@@ -698,6 +699,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
                                     gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
                                     gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[(k, v['proc']) for k, v in devices.items()], type='value', value=default_device, interactive=True)
+
                             with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_tts_engine', elem_classes=['gr-group']):
                                     gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value='TTS Engine')
@@ -732,25 +734,27 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                                         gr_session_switch_btn = gr.Button('🔒︎', elem_id='gr_session_switch_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
 
-                        with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
-                            gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
-                            gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
-                            gr_progress_bar = gr.Progress(track_tqdm=True)
+                            with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
+                                gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
+                                gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
+                                gr_progress_bar = gr.Progress(track_tqdm=True)
 
-                        with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True) as gr_group_audiobook_list:
-                            gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
-                            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
-                            gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
-                            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
-                            gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
-                            with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
-                                gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
-                                gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
-                                gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
-                            gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
-                            gr_audiobook_files_state = gr.State(False)
-                        with gr.Group(elem_id='gr_group_convert_btn', elem_classes=['gr-group-convert-btn']) as gr_group_convert_btn:
-                            gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
+                            with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True) as gr_group_audiobook_list:
+                                gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
+                                gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
+                                gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
+                                gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
+                                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
+                                with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
+                                    gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                    gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
+                                    gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
+                                gr_audiobook_files_state = gr.State(False)
+
+                            with gr.Group(elem_id='gr_group_convert_btn', elem_classes=['gr-group-convert-btn']) as gr_group_convert_btn:
+                                gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
+
                     with gr.Tab('XTTS Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
