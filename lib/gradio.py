@@ -650,7 +650,6 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
-                #gr_row_abs_upload { justify-content: center !important; }
                 .spinner {
                     margin: 15px auto !important;
                     border: 4px solid rgba(255, 255, 255, 0.2) !important;
@@ -861,9 +860,9 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_abs_server_url = gr.Textbox(label='Server URL', elem_id='gr_abs_server_url', value=default_abs_server_url, placeholder='http://localhost:13378', lines=1, max_lines=1, interactive=True)
                             gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', lines=1, max_lines=1, interactive=True)
                             gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
-                            with gr.Row(elem_id='gr_row_abs_upload'):
-                                gr_abs_status = gr.HTML(elem_id='gr_abs_status', value='')
-                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='secondary', interactive=False, elem_classes=['button-purple'])
+                        with gr.Group(elem_id='gr_group_abs_upload', elem_classes=['gr-group']):
+                            gr_abs_status = gr.Textbox(elem_id='gr_abs_status', label='', interactive=False, visible=True)
+                            gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', elem_classes=['button-purple'], variant='secondary', interactive=False)
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
             gr_blocks_data = gr.State([])
