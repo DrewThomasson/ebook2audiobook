@@ -217,8 +217,9 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .gr-group-no-col{
                     background: none !important;
+                    padding-right: 30px !important;
                     margin: 0 var(--size-2) 0 var(--size-2)!important;;
-                    border-radius: var(--radius-md) !important;
+                    border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
                 }
                 .gr-group-convert-btn{
                     margin: var(--size-2) !important;;
