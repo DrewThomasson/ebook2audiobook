@@ -217,7 +217,7 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .gr-group-no-col{
                     background: none !important;
-                    padding-right: 12px !important;
+                    padding-right: 15px !important;
                     margin: 0 var(--size-2) 0 var(--size-2)!important;;
                     border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
                 }
