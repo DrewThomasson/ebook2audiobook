@@ -215,6 +215,11 @@ def build_interface(args:dict)->gr.Blocks:
                     margin: 0 !important;
                     border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
                 }
+                .gr-group-no-col{
+                    background: none !important;
+                    margin: 0 var(--size-2) 0 var(--size-2)!important;;
+                    border-radius: var(--radius-md) !important;
+                }
                 .gr-group-convert-btn{
                     margin: var(--size-2) !important;;
                     border-radius: var(--radius-md) !important;
@@ -727,12 +732,12 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                                         gr_session_switch_btn = gr.Button('🔒︎', elem_id='gr_session_switch_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
 
-                        with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group']):
+                        with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-no-col']):
                             gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
                             gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
                             gr_progress_bar = gr.Progress(track_tqdm=True)
 
-                        with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group'], visible=True) as gr_group_audiobook_list:
+                        with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-no-col'], visible=True) as gr_group_audiobook_list:
                             gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
                             gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
