@@ -670,7 +670,6 @@ def build_interface(args:dict)->gr.Blocks:
                 with gr.Tabs(elem_id='gr_tabs') as gr_tabs:
                     with gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab') as gr_tab_main:
                         with gr.Row(elem_id='gr_row_tab_main'):
-
                             with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_ebook_src', elem_classes=['gr-group']):
                                     gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
@@ -699,7 +698,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
                                     gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
                                     gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[(k, v['proc']) for k, v in devices.items()], type='value', value=default_device, interactive=True)
-
                             with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_tts_engine', elem_classes=['gr-group']):
                                     gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value='TTS Engine')
@@ -733,7 +731,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     with gr.Row(elem_id='gr_row_session'):
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                                         gr_session_switch_btn = gr.Button('🔒︎', elem_id='gr_session_switch_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
-
+                        with gr.Row(elem_id='gr_row_tab_main2'):
                             with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
                                 gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
