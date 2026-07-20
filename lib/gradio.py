@@ -314,6 +314,14 @@ def build_interface(args:dict)->gr.Blocks:
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
+                .gr-abs-upload-btn {
+                    font-size: 30px !important;
+                }
+                .gr-abs-upload-btn:hover { background-color: #34d058 !important; }
+                .gr-abs-upload-btn:active, .button-red:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
+                }
                 [id^="block_"]:has(input[type="checkbox"]:checked) {
                     border-left: 3px solid #22c55e !important;
                 }
@@ -644,9 +652,7 @@ def build_interface(args:dict)->gr.Blocks:
                 .button-green:hover { background-color: #34d058 !important; }
                 .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
-                .button-purple { background-color: #6f42c1 !important; color: white !important; }
-                .button-purple:hover { background-color: #8b5cf6 !important; }
-                .button-green:active, .button-red:active, .button-purple:active {
+                .button-green:active, .button-red:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
@@ -862,7 +868,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
                             gr_abs_status = gr.Textbox(elem_id='gr_abs_status', label='Status', lines=1, max_lines=1, interactive=False, visible=True)
                         with gr.Group(elem_id='gr_group_abs_upload_btn', elem_classes=['gr-group-abs-upload-btn']) as gr_group_convert_btn:
-                            gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='🡅', elem_classes=['button-purple'], variant='secondary', interactive=False)
+                            gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='🡅', elem_classes=['gr-abs-upload-btn'], variant='secondary', interactive=False)
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
             gr_blocks_data = gr.State([])
