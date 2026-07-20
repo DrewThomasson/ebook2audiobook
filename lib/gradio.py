@@ -1156,7 +1156,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(30)])
+                            outputs = tuple([gr.update() for _ in range(32)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1193,6 +1193,12 @@ def build_interface(args:dict)->gr.Blocks:
                             and session.get('abs_api_token')
                             and session.get('abs_library_id')
                         )
+                        visible_xtts = False
+                        visible_bark = False
+                        if session['tts_engine'] == TTS_ENGINES['XTTS']:
+                            visible_xtts = visible_gr_tab_xtts_params
+                        elif session['tts_engine'] == TTS_ENGINES['BARK']:
+                            visible_bark = visible_gr_tab_bark_params
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
                         visible_voice_buttons = True if session.get('voice') is not None else False
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
@@ -1211,6 +1217,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['translate_iso1'] = None
                         translate_visible = translate_enabled_state and bool(translate_options)
                         return (
+                            gr.update(visible=visible_xtts),
+                            gr.update(visible=visible_bark),
                             gr.update(visible=visible_ebook_src, value=ebook_data, file_count=ebook_file_count),
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                             gr.update(value=session['ebook_mode']),
@@ -1246,7 +1254,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(30)])
+                outputs = tuple([gr.update() for _ in range(32)])
                 return outputs
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -2935,7 +2943,7 @@ def build_interface(args:dict)->gr.Blocks:
                 *blocks_components_flat, gr_blocks_header, gr_blocks_expands
             ]
             outputs_restore_interface = [
-                gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
+                gr_tab_xtts_params, gr_tab_bark_params, gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
                 gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
