@@ -223,6 +223,7 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .gr-group-convert-btn{
                     margin: var(--size-2) !important;;
+                    padding-right: 15px !important;
                     border-radius: var(--radius-md) !important;
                 }
                 .gr-label textarea[data-testid="textbox"]{
