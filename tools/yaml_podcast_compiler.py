@@ -223,6 +223,26 @@ def main() -> int:
                 except Exception:
                     pass
                 meta['chunk_annotations'].append(str(ann_path))
+                # If we have a plain text chunk and text_to_ssml exists, produce a .ssml variant
+                try:
+                    if p.suffix.lower() == '.txt':
+                        tssml = out_dir / (p.stem + '.ssml')
+                        tssml_cmd = [sys.executable, str(Path(__file__).parent / 'text_to_ssml.py'), str(p), '--out', str(tssml), '--annotations', str(ann_path)]
+                        # include lexicon if present in same dir
+                        lex = out_dir / 'lexicon.json'
+                        if lex.exists():
+                            tssml_cmd.extend(['--lexicon', str(lex)])
+                        try:
+                            import subprocess as _sub
+
+                            _sub.run(tssml_cmd, check=False)
+                            # if created, replace chunk file entry with .ssml
+                            if tssml.exists():
+                                meta['chunk_files'][idx] = str(tssml)
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
             # update meta.json with annotation paths
             out_meta.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
             print(f"Wrote annotations for {len(meta['chunk_annotations'])} chunks")
