@@ -158,6 +158,8 @@ def main() -> int:
             from pathlib import Path as _P
 
             def _simple_annotate(text: str) -> list[dict]:
+                import re
+
                 # Load optional external lexicon to enrich the built-in list
                 lex = {
                     'glücklich': 'joy',
@@ -188,12 +190,19 @@ def main() -> int:
                 }
                 # allow a local lexicon override/extension at tools/lexica/emotion_lexicon_de.json
                 try:
-                    lex_path = Path(__file__).parent / 'lexica' / 'emotion_lexicon_de.json'
-                    if lex_path.exists():
-                        with lex_path.open('r', encoding='utf-8') as lf:
+                    base = Path(__file__).parent / 'lexica'
+                    lex_de = base / 'emotion_lexicon_de.json'
+                    lex_en = base / 'emotion_lexicon_en.json'
+                    if lex_de.exists():
+                        with lex_de.open('r', encoding='utf-8') as lf:
                             data = json.load(lf)
                         if isinstance(data, dict):
                             lex.update({k: v for k, v in data.items() if isinstance(v, str)})
+                    if lex_en.exists():
+                        with lex_en.open('r', encoding='utf-8') as lf:
+                            data2 = json.load(lf)
+                        if isinstance(data2, dict):
+                            lex.update({k: v for k, v in data2.items() if isinstance(v, str)})
                 except Exception:
                     pass
                 intensifiers = {
