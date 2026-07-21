@@ -118,9 +118,33 @@ def annotation_to_ssml(annotation: dict) -> str:
         base = emotion_map[emo].copy()
         # scale magnitude by intensity (0..1)
         # rate: move slightly towards base depending on intensity
-        if intensity < 1.0:
-            base['rate'] = 1.0 + (base['rate'] - 1.0) * intensity
+        # intensity scaling: values >1 can amplify, <1 reduce
+        try:
+            intensity = float(intensity)
+        except Exception:
+            intensity = 1.0
+        if intensity != 1.0:
+            # rate scaling (lerp between 1.0 and base rate)
+            base['rate'] = 1.0 + (base['rate'] - 1.0) * max(0.0, min(1.0, intensity))
+            # pitch scaling: convert semitone like '+2st' -> numeric, scale
+            try:
+                if isinstance(base.get('pitch',''), str) and base['pitch'].endswith('st'):
+                    st = float(base['pitch'][:-2])
+                    base['pitch'] = f"{(st * max(0.0, min(1.5, intensity))):+.1f}st"
+            except Exception:
+                pass
+            # volume scaling: keep simple dB adjustments
+            try:
+                if isinstance(base.get('volume',''), str) and base['volume'].endswith('dB'):
+                    db = float(base['volume'][:-2])
+                    base['volume'] = f"{(db * max(0.0, min(1.5, intensity))):+.1f}dB"
+            except Exception:
+                pass
         overrides = {**base, **overrides}
+
+    # support explicit micro_contour and formant_preserve flags in overrides
+    formant_preserve = bool(overrides.get('formant_preserve') or overrides.get('preserve_formants'))
+    micro_contour = bool(overrides.get('micro_contour'))
 
     # defaults
     rate = overrides.get('rate', 1.0)
@@ -148,8 +172,27 @@ def annotation_to_ssml(annotation: dict) -> str:
     # Use conservative volume markers when dB-like
     vol_attr = str(volume)
 
+    # If micro_contour is requested, create a conservative pitch spike
+    if micro_contour:
+        # simple single-word spike with pre/post small breaks
+        spike_pitch = overrides.get('spike_pitch', overrides.get('pitch', '+3st'))
+        spike_rate = overrides.get('spike_rate', overrides.get('rate', 1.0))
+        if isinstance(spike_rate, (int, float)):
+            spike_rate_pct = f"{int(spike_rate*100)}%"
+        else:
+            spike_rate_pct = str(spike_rate)
+        spike_pre = f'<break time="{max(20, int(pause_ms/2))}ms"/>'
+        spike_post = f'<break time="{max(40, int(pause_ms))}ms"/>'
+        formant_comment = '<!--E2A:formant_preserve=1-->' if formant_preserve else ''
+        fragment = (
+            f"{spike_pre}{formant_comment}<prosody rate=\"{spike_rate_pct}\" pitch=\"{spike_pitch}\" volume=\"{vol_attr}\">"
+            f"{emph_start}{escape_xml(text)}{emph_end}</prosody>{spike_post}"
+        )
+        return fragment
+
+    formant_comment = '<!--E2A:formant_preserve=1-->' if formant_preserve else ''
     fragment = (
-        f"{pre}<prosody rate=\"{rate_pct}\" pitch=\"{pitch}\" volume=\"{vol_attr}\">"
+        f"{pre}{formant_comment}<prosody rate=\"{rate_pct}\" pitch=\"{pitch}\" volume=\"{vol_attr}\">"
         f"{emph_start}{escape_xml(text)}{emph_end}</prosody>{post}"
     )
     return fragment
