@@ -399,28 +399,63 @@ def _time_stretch_with_formant_preserve(audio_path: Path, factor: float) -> None
     if not audio_path.exists():
         return
     try:
-        # load mono for simpler spectral processing
-        y, sr = librosa.load(str(audio_path), sr=None, mono=True)
-        if y is None or len(y) == 0:
+        import soundfile as sf
+
+        data, sr = sf.read(str(audio_path))
+        if data is None:
             return
 
-        # STFT parameters
+        # ensure shape: (n_samples, ) or (n_samples, n_channels)
+        if data.ndim == 1:
+            mono = True
+            channels = [data]
+        else:
+            mono = False
+            # convert to list of 1d arrays per channel
+            channels = [data[:, i] for i in range(data.shape[1])]
+
         n_fft = 2048
         hop_length = 512
+        processed = []
+        for ch in channels:
+            if ch is None or len(ch) == 0:
+                processed.append(ch)
+                continue
+            S = librosa.stft(ch.astype(float), n_fft=n_fft, hop_length=hop_length)
+            try:
+                S_stretched = librosa.phase_vocoder(S, rate=float(factor), hop_length=hop_length)
+                # estimate target length
+                target_len = None
+                if factor != 0:
+                    target_len = int(len(ch) / float(factor))
+                y_hat = librosa.istft(S_stretched, hop_length=hop_length, length=target_len)
+            except Exception:
+                # fallback: naive resample-based time stretch
+                import numpy as _np
+                target_len = int(len(ch) / float(factor)) if factor != 0 else len(ch)
+                y_hat = _np.interp(
+                    _np.linspace(0, len(ch), target_len, endpoint=False),
+                    _np.arange(len(ch)),
+                    ch,
+                )
+            processed.append(y_hat)
 
-        S = librosa.stft(y, n_fft=n_fft, hop_length=hop_length)
-        S_stretched = librosa.phase_vocoder(S, rate=float(factor), hop_length=hop_length)
-        # target length estimate
-        target_len = int(len(y) / float(factor)) if factor != 0 else None
-        y_hat = librosa.istft(S_stretched, hop_length=hop_length, length=target_len)
+        # stack processed channels, ensure same length
+        import numpy as _np
+        maxlen = max(len(p) for p in processed if p is not None)
+        chans = []
+        for p in processed:
+            if p is None:
+                p = _np.zeros(maxlen)
+            if len(p) < maxlen:
+                p = _np.pad(p, (0, maxlen - len(p)), mode='constant')
+            chans.append(p)
+        if len(chans) == 1:
+            out = chans[0]
+        else:
+            out = _np.vstack(chans).T
 
-        # write mono back; if original was stereo we'll duplicate channels
-        try:
-            import soundfile as sf
-
-            sf.write(str(audio_path), y_hat, sr)
-        except Exception:
-            return
+        sf.write(str(audio_path), out, sr)
     except Exception:
         return
 

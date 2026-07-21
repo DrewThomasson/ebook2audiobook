@@ -209,20 +209,48 @@ def apply_annotations_to_ssml(ssml: str, annotations: list[dict]) -> str:
     if not annotations:
         return ssml
     s = ssml
+    # helper: find fuzzy span by matching tokens in order with limited gaps
+    def _find_span(target: str, needle: str) -> tuple[int, int] | None:
+        # normalize whitespace
+        ntoks = [w for w in re.findall(r"\w+", needle, flags=re.UNICODE) if w]
+        if not ntoks:
+            return None
+        # build regex like '\bword1\b(?:[\s\S]{0,60}?)\bword2\b...'
+        parts = []
+        max_gap = 60  # allow up to 60 chars between tokens
+        for i, w in enumerate(ntoks):
+            if i == 0:
+                parts.append(r"\b" + re.escape(w) + r"\b")
+            else:
+                parts.append(r"(?:[\s\S]{0,%d}?)" % max_gap + r"\b" + re.escape(w) + r"\b")
+        pattern = "".join(parts)
+        m = re.search(pattern, target, flags=re.IGNORECASE | re.UNICODE)
+        if m:
+            return (m.start(), m.end())
+        return None
+
     for ann in annotations:
         txt = ann.get('text')
         if not txt:
             continue
         esc = escape_xml(txt)
         fragment = annotation_to_ssml(ann)
+        # 1) try escaped exact match
         if esc in s:
             s = s.replace(esc, fragment, 1)
-        else:
-            # fallback: try unescaped plain substring
-            if txt in s:
-                s = s.replace(txt, fragment, 1)
-            else:
-                print(f"Warning: annotation text not found in SSML: '{txt}'")
+            continue
+        # 2) try raw exact match
+        if txt in s:
+            s = s.replace(txt, fragment, 1)
+            continue
+        # 3) fuzzy token-ordered match on unescaped SSML (search within text nodes may include tags)
+        span = _find_span(s, txt)
+        if span:
+            a, b = span
+            s = s[:a] + fragment + s[b:]
+            continue
+        # 4) final fallback: warn
+        print(f"Warning: annotation text not found in SSML: '{txt}'")
     return s
 
 
