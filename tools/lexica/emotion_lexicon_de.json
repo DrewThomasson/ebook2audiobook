@@ -1,0 +1,9 @@
+{
+  "zufrieden": "joy",
+  "erleichtert": "joy",
+  "beunruhigt": "fear",
+  "entsetzt": "surprise",
+  "sauer": "anger",
+  "genervt": "anger",
+  "herzzerreißend": "sad"
+}

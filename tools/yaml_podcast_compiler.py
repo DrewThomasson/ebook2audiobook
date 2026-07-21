@@ -158,7 +158,7 @@ def main() -> int:
             from pathlib import Path as _P
 
             def _simple_annotate(text: str) -> list[dict]:
-                # Conservative German lexicon for prototype
+                # Load optional external lexicon to enrich the built-in list
                 lex = {
                     'glücklich': 'joy',
                     'freude': 'joy',
@@ -173,7 +173,29 @@ def main() -> int:
                     'liebe': 'joy',
                     'schrecklich': 'sad',
                     'furchtbar': 'anger',
+                    'entzückt': 'joy',
+                    'begeistert': 'joy',
+                    'enttäuscht': 'sad',
+                    'bestürzt': 'sad',
+                    'empört': 'anger',
+                    'verärgert': 'anger',
+                    'besorgt': 'fear',
+                    'panik': 'fear',
+                    'schockiert': 'surprise',
+                    'überwältigt': 'surprise',
+                    'zufrieden': 'joy',
+                    'erschüttert': 'sad',
                 }
+                # allow a local lexicon override/extension at tools/lexica/emotion_lexicon_de.json
+                try:
+                    lex_path = Path(__file__).parent / 'lexica' / 'emotion_lexicon_de.json'
+                    if lex_path.exists():
+                        with lex_path.open('r', encoding='utf-8') as lf:
+                            data = json.load(lf)
+                        if isinstance(data, dict):
+                            lex.update({k: v for k, v in data.items() if isinstance(v, str)})
+                except Exception:
+                    pass
                 intensifiers = {
                     'sehr': 1.3,
                     'extrem': 1.5,
