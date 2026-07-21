@@ -624,6 +624,9 @@ def main() -> int:
     ap.add_argument("--merge-output", default="", help="Optional merged output audio path")
     ap.add_argument("--crossfade-ms", type=int, default=-1, help="Crossfade during merge (ms). -1 = auto from style")
     ap.add_argument("--preprocess-ssml", action="store_true", help="Preprocess chunk text with tools/text_to_ssml.py into SSML before rendering")
+    ap.add_argument("--offline", action="store_true", help="Run renderer in offline-safe mode (avoid network-dependent optional features)")
+    ap.add_argument("--no-formant-preserve", action="store_true", help="Ignore formant_preserve markers and use standard time-stretch")
+    ap.add_argument("--skip-render", action="store_true", help="Skip calling app.py renderer (useful for offline preprocessing/debug)")
     # SFX / Music mixing CLI defaults (per-chunk overrides in meta.chunk_sfx supported)
     ap.add_argument("--sfx-volume-db", type=float, default=0.0, help="Default SFX gain in dB (applied to sfx_before/after when specified in YAML)")
     ap.add_argument("--music-volume-db", type=float, default=-8.0, help="Default background music gain in dB (relative attenuation)")
@@ -718,16 +721,27 @@ def main() -> int:
                 except Exception:
                     need_formant_preserve = False
 
-            proc = _render_chunk(
-                python_cmd=py_cmd,
-                app_path=args.app,
-                text_file=tmp_path,
-                language=language,
-                speakers=speakers,
-                voice_map=voice_map,
-                style=style,
-                chunk_override=chunk_overrides[i - 1] if (i - 1) < len(chunk_overrides) else None,
-            )
+            proc = None
+            if not bool(args.skip_render):
+                proc = _render_chunk(
+                    python_cmd=py_cmd,
+                    app_path=args.app,
+                    text_file=tmp_path,
+                    language=language,
+                    speakers=speakers,
+                    voice_map=voice_map,
+                    style=style,
+                    chunk_override=chunk_overrides[i - 1] if (i - 1) < len(chunk_overrides) else None,
+                )
+            else:
+                # create a dummy CompletedProcess-like object indicating skip
+                class _Dummy:
+                    def __init__(self):
+                        self.returncode = 0
+                        self.stdout = ""
+                        self.stderr = ""
+
+                proc = _Dummy()
         finally:
             try:
                 tmp_path.unlink(missing_ok=True)
@@ -759,11 +773,15 @@ def main() -> int:
                 elif isinstance(style.get("post_time_stretch"), (int, float, str)):
                     chunk_ts = float(style.get("post_time_stretch"))
                 if chunk_ts and chunk_ts != 1.0:
-                    # prefer formant-preserving variant when marker present
-                    if need_formant_preserve:
-                        _time_stretch_with_formant_preserve(Path(out), chunk_ts)
-                    else:
+                    # respect CLI override to ignore formant preservation
+                    if args.no_formant_preserve:
                         _apply_time_stretch(Path(out), chunk_ts)
+                    else:
+                        # prefer formant-preserving variant when marker present
+                        if need_formant_preserve:
+                            _time_stretch_with_formant_preserve(Path(out), chunk_ts)
+                        else:
+                            _apply_time_stretch(Path(out), chunk_ts)
             except Exception:
                 pass
 
