@@ -9,7 +9,7 @@ llvmlite
 numba
 librosa>=0.9.2
 pytorch-lightning>=1.7.0
-onnx-simplifier>=0.4.10
+onnxsim>=0.4.10
 onnxscript>=0.7.0
 
 # E2A
