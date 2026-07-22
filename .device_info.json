@@ -1,0 +1,1 @@
+{"name": "cuda", "os": "win", "arch": "amd64", "pyvenv": [3, 12], "tag": "cu130", "note": ""}

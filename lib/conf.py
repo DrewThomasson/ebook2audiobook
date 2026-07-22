@@ -86,7 +86,7 @@ torch_matrix = {
     "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     "cu128":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.9.0", "codec": "0.7.0"},
     "cu129":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.9.0", "codec": "0.7.0"},
-    "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
+    "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.9.0", "last": "2.11.0", "codec": "0.11.1"},
     # ROCm
     "rocm5.7":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.3.1",  "last": "2.3.1",  "codec": ""},
     "rocm6.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.4.1",  "last": "2.4.1",  "codec": ""},

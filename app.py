@@ -18,7 +18,9 @@ def init_multiprocessing():
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
     search_python_env = str(os.path.basename(sys.prefix))
-    if search_python_env == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
+    # Accept named project venv `python_env`, common `.venv`, or any activated venv (VIRTUAL_ENV).
+    venv_env = os.environ.get('VIRTUAL_ENV')
+    if search_python_env in ('python_env', '.venv') or venv_env or script_mode == FULL_DOCKER or (current_version >= min_python_version and current_version <= max_python_version):
         return True
     error=f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
