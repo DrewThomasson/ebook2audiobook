@@ -1290,11 +1290,17 @@ class DeviceInstaller():
                 return True
         return False
 
-    def check_onnxruntime_pkg(self)->str|None:
+    def check_onnxruntime_pkg(self)->Union[str, None]:
+        name, tag, msg = self.check_hardware
         if self.python_version >= (3, 12) and (devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']):
+            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-directml'])
             subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
             return 'onnxruntime-gpu'
-        elif self.python_version < (3, 12) or self.system != systems['WINDOWS']:
+        if name == devices['CPU']['proc'] or self.python_version < (3, 12) or self.system != systems['WINDOWS']:
+            if self.get_package_version('onnxruntime-directml'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-directml'])
+            if self.get_package_version('onnxruntime-gpu'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-gpu'])
             return 'onnxruntime'
         if not self.has_directml_gpu():
             if self.get_package_version('onnxruntime-directml'):
