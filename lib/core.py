@@ -286,22 +286,32 @@ class AppAutosave:
 
     def start(self)->None:
         if self._started:
-            return
-        self._started = True
-        t = threading.Thread(target=self._timer, daemon=True)
-        t.start()
-
-    def register(self, session_id:str)->None:
-        with self._lock:
-            self._sessions.add(session_id)
-
-    def unregister(self, session_id:str)->None:
-        with self._lock:
-            self._sessions.discard(session_id)
-
-    def _timer(self)->None:
-        while True:
-            time.sleep(self._interval)
+            try:
+                result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    encoding='utf-8',
+                    check=True
+                )
+                print(result.stdout)
+                return True
+            except subprocess.CalledProcessError as e:
+                # log both streams for easier debugging
+                try:
+                    if e.stdout:
+                        print('ebook-convert stdout:')
+                        print(e.stdout)
+                    if e.stderr:
+                        print('ebook-convert stderr:')
+                        print(e.stderr)
+                except Exception:
+                    pass
+                DependencyError(e)
+                error = f'convert2epub subprocess.CalledProcessError: exit={e.returncode}'
+                print(error)
+                return False
             with self._lock:
                 session_ids = set(self._sessions)
             for session_id in session_ids:
@@ -904,12 +914,15 @@ def convert2epub(session_id:str)->bool:
                     return False
                 file_ext = '.epub'
             if file_ext == '.txt':
+                filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
+                normalized_path = os.path.join(session['process_dir'], f'{filename_noext}_normalized.txt')
                 with open(file_input, 'r', encoding='utf-8') as f:
                     text = f.read()
                 text = text.replace('\r\n', '\n')
                 text = re.sub(r'\n{2,}', f".{TTS_SML['pause']['static']}", text)
-                with open(file_input, 'w', encoding='utf-8') as f:
+                with open(normalized_path, 'w', encoding='utf-8') as f:
                     f.write(text)
+                file_input = normalized_path
             elif file_ext == '.pdf':
                 msg = 'File input is a PDF. flatten it in XHTML…'
                 print(msg)
@@ -1027,23 +1040,25 @@ def convert2epub(session_id:str)->bool:
                 from docx import Document as DocxDocument
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 docx_doc = DocxDocument(file_input)
-                all_text = ''.join(p.text.strip() for p in docx_doc.paragraphs)
-                if not all_text:
+                # prefer a lightweight presence check instead of concatenating all text
+                has_text = any(p.text and p.text.strip() for p in docx_doc.paragraphs)
+                # always populate title/author from core_properties when available
+                title = docx_doc.core_properties.title or filename_noext
+                author = docx_doc.core_properties.author or False
+                if not has_text:
                     for table in docx_doc.tables:
                         for row in table.rows:
                             for cell in row.cells:
-                                all_text += cell.text.strip()
-                                if all_text:
+                                if cell.text and cell.text.strip():
+                                    has_text = True
                                     break
-                            if all_text:
+                            if has_text:
                                 break
-                        if all_text:
+                        if has_text:
                             break
-                if not all_text:
+                if not has_text:
                     msg = f'File input is a DOCX with no extractable text. Extracting images for OCR…'
                     print(msg)
-                    title = docx_doc.core_properties.title or filename_noext
-                    author = docx_doc.core_properties.author or False
                     xhtml_pages = []
                     for rel in docx_doc.part.rels.values():
                         if 'image' in rel.reltype:
@@ -1074,6 +1089,55 @@ def convert2epub(session_id:str)->bool:
                             html_file.write(xhtml_text)
                     else:
                         return False
+                else:
+                    # Convert DOCX paragraphs to a simple XHTML wrapper so we can
+                    # inject title/author and preserve paragraph boundaries.
+                    from html import escape as html_escape
+                    xhtml_parts = []
+                    for p in docx_doc.paragraphs:
+                        txt = p.text.strip()
+                        if not txt:
+                            continue
+                        style_name = ''
+                        try:
+                            style_name = p.style.name if p.style is not None else ''
+                        except Exception:
+                            style_name = ''
+                        if style_name and style_name.lower().startswith('heading'):
+                            level = None
+                            for part in style_name.split()[::-1]:
+                                try:
+                                    level = int(part)
+                                    break
+                                except Exception:
+                                    continue
+                            if level and 1 <= level <= 6:
+                                xhtml_parts.append(f"<h{level}>{html_escape(txt)}</h{level}>")
+                                continue
+                        xhtml_parts.append(f"<p>{html_escape(txt)}</p>")
+                    # also include simple table extraction
+                    for table in docx_doc.tables:
+                        for row in table.rows:
+                            cells = [c.text.strip() for c in row.cells if c.text and c.text.strip()]
+                            if cells:
+                                xhtml_parts.append(f"<p>{html_escape(' | '.join(cells))}</p>")
+                    if not xhtml_parts:
+                        return False
+                    xhtml_body = '\n'.join(xhtml_parts)
+                    xhtml_text = (
+                        '<?xml version="1.0" encoding="utf-8"?>\n'
+                        '<html xmlns="http://www.w3.org/1999/xhtml">\n'
+                        '<head>\n'
+                        f'<meta charset="utf-8"/>\n<title>{html_escape(title)}</title>\n'
+                        '</head>\n'
+                        '<body>\n'
+                        f'{xhtml_body}\n'
+                        '</body>\n'
+                        '</html>\n'
+                    )
+                    file_input = os.path.join(session['process_dir'], f'{filename_noext}.xhtml')
+                    with open(file_input, 'w', encoding='utf-8') as html_file:
+                        html_file.write(xhtml_text)
             elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 msg = f'File input is an image ({file_ext}). Running OCR…'
@@ -1127,20 +1191,40 @@ def convert2epub(session_id:str)->bool:
                 cmd += ['--title', title]
             if author:
                 cmd += ['--authors', author]
-            result = subprocess.run(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                encoding='utf-8'
-            )
-            print(result.stdout)
-            return True
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
-            error = f'convert2epub subprocess.CalledProcessError: {e.stderr}'
-            print(error)
-            return False
+            try:
+                result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    encoding='utf-8',
+                    check=True
+                )
+                print(result.stdout)
+                return True
+            except subprocess.CalledProcessError as e:
+                # persist stdout/stderr to files for later inspection
+                try:
+                    ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+                    proc_dir = session.get('process_dir', '.')
+                    out_file = os.path.join(proc_dir, f'ebook-convert.stdout.{ts}.txt')
+                    err_file = os.path.join(proc_dir, f'ebook-convert.stderr.{ts}.txt')
+                    if e.stdout:
+                        print('ebook-convert stdout:')
+                        print(e.stdout)
+                        with open(out_file, 'w', encoding='utf-8') as fo:
+                            fo.write(e.stdout)
+                    if e.stderr:
+                        print('ebook-convert stderr:')
+                        print(e.stderr)
+                        with open(err_file, 'w', encoding='utf-8') as fe:
+                            fe.write(e.stderr)
+                except Exception:
+                    pass
+                DependencyError(e)
+                error = f'convert2epub subprocess.CalledProcessError: exit={e.returncode}'
+                print(error)
+                return False
         except FileNotFoundError as e:
             DependencyError(e)
             error = f'convert2epub FileNotFoundError: {e}'

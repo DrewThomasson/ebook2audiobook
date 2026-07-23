@@ -47,6 +47,14 @@ class DeviceInstaller():
             if all([name, tag, os_env, arch, pyvenv]):
                 device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
                 try:
+                    # Prefer using the active virtualenv's Python for pip operations when available.
+                    pip_exec = sys.executable
+                    venv_path = os.environ.get('VIRTUAL_ENV')
+                    if venv_path:
+                        if self.system == systems['WINDOWS']:
+                            pip_exec = os.path.join(venv_path, 'Scripts', 'python.exe')
+                        else:
+                            pip_exec = os.path.join(venv_path, 'bin', 'python')
                     with open(device_info_json, 'w', encoding='utf-8') as f:
                         json.dump(device_info, f)
                 except OSError as e:
@@ -1380,15 +1388,23 @@ class DeviceInstaller():
                             tag_dir = tag
                             py_major, py_minor = device_info['pyvenv']
                             tag_py = f'cp{py_major}{py_minor}'
-                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'filelock', 'typing-extensions', 'jinja2', 'fsspec', 'networkx', 'sympy'])
+                            # determine pip executable: prefer active VIRTUAL_ENV when present
+                            pip_exec = sys.executable
+                            venv_path = os.environ.get('VIRTUAL_ENV')
+                            if venv_path:
+                                if self.system == systems['WINDOWS']:
+                                    pip_exec = os.path.join(venv_path, 'Scripts', 'python.exe')
+                                else:
+                                    pip_exec = os.path.join(venv_path, 'bin', 'python')
+                            subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--no-cache-dir', 'filelock', 'typing-extensions', 'jinja2', 'fsspec', 'networkx', 'sympy'])
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
                                 torch_pkg = f"{url}/torch-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
                                 torchaudio_pkg = f"{url}/torchaudio-v{toolkit_version}/torchaudio-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', torch_pkg])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', torchaudio_pkg])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'scikit-learn'])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'scipy'])
+                                subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', torch_pkg])
+                                subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', torchaudio_pkg])
+                                subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--no-cache-dir', 'scikit-learn'])
+                                subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--no-cache-dir', 'scipy'])
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
                                 url = default_pytorch_amd_url
                                 norm_tag = tag.replace('-rel-', '')
@@ -1404,10 +1420,10 @@ class DeviceInstaller():
                                     ]
                                     msg = f'Installing ROCm SDK {rocm_ver}…'
                                     print(msg)
-                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', *sdk_pkgs])
+                                    subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--no-cache-dir', *sdk_pkgs])
                                 torch_pkg = f'{url}/{tag}/torch-{torch_version_matrix}%2B{norm_tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl'
                                 torchaudio_pkg = f'{url}/{tag}/torchaudio-{torch_version_matrix}%2B{norm_tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl'
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', torch_pkg, torchaudio_pkg])
+                                subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', torch_pkg, torchaudio_pkg])
                             else:
                                 url = default_pytorch_url
                                 tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
@@ -1416,8 +1432,8 @@ class DeviceInstaller():
                                 # uninstall step, then a plain resolve pass to pull just the missing
                                 # CUDA deps. Already-correct nvidia-* wheels are left as-is — pip's
                                 # default only-if-needed strategy won't re-download or re-uninstall them.
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', *torch_req])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', *torch_req])
+                                subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', *torch_req])
+                                subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--no-cache-dir', *torch_req])
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
                                 is_cpu_aarch64_linux = (
                                     tag == devices['CPU']['proc']
@@ -1430,13 +1446,13 @@ class DeviceInstaller():
                                 ) or tag == devices['CPU']['proc']
                                 if is_cpu_aarch64_linux:
                                     torchcodec_index_url = f"{default_torchcodec_arm_url}/torchcodec-{arch}-{tag_py}/torchcodec-{torchcodec_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
-                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', torchcodec_index_url])
+                                    subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', torchcodec_index_url])
                                 else:
                                     if has_native_codec:
                                         torchcodec_index_url = f'{default_pytorch_url}/{tag_dir}'
                                     else:
                                         torchcodec_index_url = f'{default_pytorch_url}/cpu'
-                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url])
+                                        subprocess.check_call([pip_exec, '-m', 'pip', 'install', '--ignore-installed', '--no-cache-dir', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url])
                         except subprocess.CalledProcessError as e:
                             error = f'Failed to install torch package: {e}'
                             print(error)
