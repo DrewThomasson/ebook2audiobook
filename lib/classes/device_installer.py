@@ -1293,8 +1293,12 @@ class DeviceInstaller():
     def check_onnxruntime_pkg(self)->Union[str, None]:
         name, tag, msg = self.check_hardware
         if self.python_version >= (3, 12) and (devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']):
-            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-directml'])
-            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
+            if self.get_package_version('onnxruntime-gpu'):
+                return None
+            if self.get_package_version('onnxruntime-directml'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-directml'])
+            if self.get_package_version('onnxruntime'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
             return 'onnxruntime-gpu'
         if name == devices['CPU']['proc'] or self.python_version < (3, 12) or self.system != systems['WINDOWS']:
             if self.get_package_version('onnxruntime-directml'):
@@ -1309,7 +1313,8 @@ class DeviceInstaller():
         if self.get_package_version('onnxruntime-directml'):
             return None
         try:
-            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
+            if self.get_package_version('onnxruntime'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
             return None
         except Exception as e:
