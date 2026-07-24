@@ -20,7 +20,7 @@ x-common: &common
     context: .
     dockerfile: Dockerfile
     args:
-      APP_VERSION: ${APP_VERSION:-26.7.16}
+      APP_VERSION: ${APP_VERSION:-26.7.23}
       DEVICE_TAG: ${DEVICE_TAG:-cpu}
       # PYTHON_VERSION and DOCKER_DEVICE_STR are the device-critical args: without them
       # the Dockerfile falls back to its cu130 / python3.12 defaults. Build via
