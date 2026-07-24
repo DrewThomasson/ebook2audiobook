@@ -425,7 +425,9 @@ class DeviceInstaller():
             # ============================================================
             # ROCm
             # ============================================================
-            elif has_rocm() and has_amd_gpu_pci():
+            # A common desktop setup has an NVIDIA dGPU and an AMD iGPU. Prefer
+            # a working CUDA device instead of selecting ROCm for the iGPU.
+            elif has_rocm() and has_amd_gpu_pci() and not has_cuda():
 
                 def _normalize_version(v:str)->tuple:
                     '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
@@ -441,7 +443,7 @@ class DeviceInstaller():
                 os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
                 version = ()
                 msg = ''
-                hip_device_count = 0
+                hip_runtime_has_no_devices = False
 
                 # 1) HIP runtime detection via ctypes (primary)
                 try:
@@ -490,8 +492,8 @@ class DeviceInstaller():
 
                     if libhip:
                         device_count = ctypes.c_int()
-                        if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
-                            hip_device_count = device_count.value
+                        hip_status = libhip.hipGetDeviceCount(ctypes.byref(device_count))
+                        hip_runtime_has_no_devices = hip_status != 0 or device_count.value == 0
                         v_int = ctypes.c_int()
                         if libhip.hipRuntimeGetVersion(ctypes.byref(v_int)) == 0:
                             v = v_int.value
@@ -505,7 +507,7 @@ class DeviceInstaller():
                                 patch = 0
                             else:
                                 major, minor, patch = v, 0, 0
-                            if hip_device_count > 0:
+                            if not hip_runtime_has_no_devices:
                                 version = (major, minor, patch)
                             else:
                                 ver_disp = f'{major}.{minor}.{patch}' if patch else f'{major}.{minor}'
@@ -514,7 +516,7 @@ class DeviceInstaller():
                     pass
 
                 # 2) hipcc fallback
-                if not version:
+                if not version and not hip_runtime_has_no_devices:
                     if os.name == 'posix' and has_cmd('hipcc'):
                         out = try_cmd('hipcc --version')
                         if out:
@@ -538,7 +540,7 @@ class DeviceInstaller():
                                     version = _normalize_version(m.group(1))
 
                 # 3) torch.version.hip fallback
-                if not version:
+                if not version and not hip_runtime_has_no_devices:
                     try:
                         import torch
                         if getattr(torch.version, 'hip', None):
@@ -547,7 +549,7 @@ class DeviceInstaller():
                         pass
 
                 # 4) ROCm install dir fallback
-                if not version:
+                if not version and not hip_runtime_has_no_devices:
                     if os.name == 'posix':
                         for p in sorted(glob('/opt/rocm-*'), reverse=True):
                             base = os.path.basename(p).replace('rocm-', '')
@@ -586,7 +588,7 @@ class DeviceInstaller():
                                                 pass
                                 if version:
                                     break
-                if version:
+                if version and not hip_runtime_has_no_devices:
                     version_str = '.'.join(str(p) for p in version)
                     cmp, current, min_tuple, max_tuple = version_classify(version_str, rocm_version_range)
                     # min_ver / max_ver: strip trailing .0 for display (range tuples are major.minor)
@@ -623,11 +625,11 @@ class DeviceInstaller():
                             msg = f'ROCm {version_str} but tested max {max_ver} so using torch for {tag}' if tag else f'ROCm {version_str} detected but torch with this version not ready for your OS'
                         elif not tag:
                             msg = f'ROCm {version_str} detected but no compatible torch build for this OS.'
-                else:
+                elif not hip_runtime_has_no_devices:
                     msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
 
                 # 5) Last-resort torch fallback
-                if not devices['ROCM']['found']:
+                if not devices['ROCM']['found'] and not hip_runtime_has_no_devices:
                     try:
                         import torch
                         if torch.cuda.is_available() and hasattr(torch.version, 'hip') and torch.version.hip:

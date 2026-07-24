@@ -20,3 +20,8 @@ models/*
 !audiobooks/gui/gradio/.gitkeep
 !audiobooks/gui/host/.gitkeep
 .installed
+
+# Runtime-generated device metadata and downloaded voice models
+.device_info.json
+voices/*
+!voices/.gitkeep
