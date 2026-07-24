@@ -881,11 +881,11 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
         exception_alert(session_id, error)
     return None
 
-def convert2epub(session_id:str)->bool:
+def convert2epub(session_id:str)->tuple[bool, str|None]:
     session = context.get_session(session_id)
     if session and session.get('id', False):
         if session['cancellation_requested']:
-            return False
+            return False, 'Conversion cancelled'
         try:
             title = False
             author = False
@@ -893,21 +893,21 @@ def convert2epub(session_id:str)->bool:
             if not ebook_convert:
                 error = 'ebook-convert utility is not installed or not found.'
                 print(error)
-                return False
+                return False, error
             file_input = session['ebook']
             if os.path.getsize(file_input) == 0:
                 error = f'Input file is empty: {file_input}'
                 print(error)
-                return False
+                return False, error
             file_ext = os.path.splitext(file_input)[1].lower()
             if file_ext not in ebook_formats:
                 error = f'Unsupported file format: {file_ext}'
                 print(error)
-                return False
+                return False, error
             if file_ext == '.zip':
                 file_input = normalize_epub_zip(session_id, file_input)
                 if file_input is None:
-                    return False
+                    return False, 'Could not normalize ZIP ebook as EPUB.'
                 file_ext = '.epub'
             if file_ext == '.txt':
                 with open(file_input, 'r', encoding='utf-8') as f:
@@ -964,7 +964,7 @@ def convert2epub(session_id:str)->bool:
                     with open(file_input, 'w', encoding='utf-8') as html_file:
                         html_file.write(xhtml_text)
                 else:
-                    return False
+                    return False, 'No readable text was found in the PDF.'
             elif file_ext == '.pptx':
                 from html import escape as html_escape
                 from pptx import Presentation as PptxPresentation
@@ -1028,7 +1028,7 @@ def convert2epub(session_id:str)->bool:
                     with open(file_input, 'w', encoding='utf-8') as html_file:
                         html_file.write(xhtml_text)
                 else:
-                    return False
+                    return False, 'No readable text was found in the presentation.'
             elif file_ext == '.docx':
                 from docx import Document as DocxDocument
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
@@ -1079,7 +1079,7 @@ def convert2epub(session_id:str)->bool:
                         with open(file_input, 'w', encoding='utf-8') as html_file:
                             html_file.write(xhtml_text)
                     else:
-                        return False
+                        return False, 'No readable text or images were found in the DOCX file.'
             elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
                 msg = f'File input is an image ({file_ext}). Running OCR…'
@@ -1113,7 +1113,7 @@ def convert2epub(session_id:str)->bool:
                         html_file.write(xhtml_text)
                     print(f'OCR completed for {page_count} image page(s).')
                 else:
-                    return False
+                    return False, 'OCR could not extract text from the image.'
             msg = f"Running command: {ebook_convert} {file_input} {session['epub_path']}"
             print(msg)
             cmd = [
@@ -1133,30 +1133,59 @@ def convert2epub(session_id:str)->bool:
                 cmd += ['--title', title]
             if author:
                 cmd += ['--authors', author]
+            calibre_dir = os.path.join(session['process_dir'], '.calibre')
+            os.makedirs(calibre_dir, exist_ok=True)
+            calibre_env = os.environ.copy()
+            calibre_env.update({
+                'CALIBRE_TEMP_DIR': calibre_dir,
+                'CALIBRE_CACHE_DIRECTORY': calibre_dir,
+                'CALIBRE_CONFIG_DIRECTORY': calibre_dir,
+            })
+            # Linux distro packages ship ebook-convert as an ``env python3`` script.
+            # When this app runs from Conda, that would load Calibre with the Conda
+            # interpreter instead of the system interpreter it was installed for.
+            try:
+                with open(ebook_convert, 'rb') as calibre_script:
+                    first_line = calibre_script.readline(256)
+                is_external_calibre = not Path(ebook_convert).resolve().is_relative_to(Path(sys.prefix).resolve())
+                if sys.platform.startswith('linux') and is_external_calibre and b'/usr/bin/env' in first_line and b'python' in first_line:
+                    calibre_env['PATH'] = os.defpath
+            except (IndexError, OSError):
+                pass
             result = subprocess.run(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                encoding='utf-8'
+                encoding='utf-8',
+                errors='replace',
+                env=calibre_env,
             )
-            print(result.stdout)
-            return True
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
-            error = f'convert2epub subprocess.CalledProcessError: {e.stderr}'
-            print(error)
-            return False
+            if result.stdout:
+                print(result.stdout)
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
+            if result.returncode != 0:
+                details = (result.stderr.strip() or result.stdout.strip() or 'no diagnostic output')[-4000:]
+                error = f'ebook-convert failed with exit code {result.returncode}: {details}'
+                print(error)
+                return False, error
+            if not os.path.isfile(session['epub_path']) or os.path.getsize(session['epub_path']) == 0:
+                error = f'ebook-convert completed without creating a valid EPUB: {session["epub_path"]}'
+                print(error)
+                return False, error
+            return True, None
         except FileNotFoundError as e:
             DependencyError(e)
             error = f'convert2epub FileNotFoundError: {e}'
             print(error)
-            return False
+            return False, error
         except Exception as e:
             DependencyError(e)
             error = f'convert2epub error: {e}'
             print(error)
-            return False
+            return False, error
+    return False, 'Session expired or does not exist.'
 
 def get_ebook_title(epubBook:EpubBook, all_docs:list[Any])->str|None:
     # 1. Try metadata (official EPUB title)
@@ -3715,7 +3744,7 @@ def convert_ebook(args:dict)->tuple:
                         ok_checksum, error = compare_checksums(session_id)
                         blocks_orig_old = {}
                         if not ok_checksum or not os.path.exists(session['epub_path']):
-                            result_epub = convert2epub(session_id)
+                            result_epub, conversion_error = convert2epub(session_id)
                             if result_epub:
                                 if os.path.exists(session['epub_path']):
                                     if os.path.exists(session['blocks_orig_json']):
@@ -3736,7 +3765,7 @@ def convert_ebook(args:dict)->tuple:
                                 else:
                                     error = f"convert2epub() {session['epub_path']} does not exists! check write permissions."
                             else:
-                                error = 'convert2epub() error: could not convert to epub file!'
+                                error = conversion_error or 'convert2epub() error: could not convert to epub file!'
                         if error is None:
                             missing_orig_json = True
                             is_changed = False
