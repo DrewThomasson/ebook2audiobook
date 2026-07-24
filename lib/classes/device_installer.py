@@ -1269,13 +1269,12 @@ class DeviceInstaller():
     def has_directml_gpu(self)->bool:
         if self.system != systems['WINDOWS']:
             return False
-        cmd = (
-            'powershell -NoProfile -NonInteractive -Command '
-            '"Get-CimInstance Win32_VideoController | '
-            'Select-Object -ExpandProperty Name"'
-        )
+        cmd = [
+            'powershell', '-NoProfile', '-NonInteractive', '-Command',
+            'Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name'
+        ]
         try:
-            out = subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL, timeout=30).decode(errors='ignore').lower()
+            out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=30).decode(errors='ignore').lower()
         except Exception as e:
             error = f'has_directml_gpu(): {e}'
             print(error)
@@ -1292,7 +1291,7 @@ class DeviceInstaller():
 
     def check_onnxruntime_pkg(self)->Union[str, None]:
         name, tag, msg = self.check_hardware
-        if self.python_version >= (3, 12) and (devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']):
+        if self.python_version >= (3, 12) and (devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found'] or devices['JETSON']['found']):
             if self.get_package_version('onnxruntime-gpu'):
                 return None
             if self.get_package_version('onnxruntime-directml'):

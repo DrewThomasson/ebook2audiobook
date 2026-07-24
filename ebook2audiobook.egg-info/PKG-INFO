@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: ebook2audiobook
-Version: 26.7.20
+Version: 26.7.23
 Summary: Convert eBooks to audiobooks with chapters and metadata
 Author: Drew Thomasson
 Project-URL: Homepage, https://github.com/DrewThomasson/ebook2audiobook
@@ -20,7 +20,7 @@ Requires-Dist: llvmlite
 Requires-Dist: numba
 Requires-Dist: librosa>=0.9.2
 Requires-Dist: pytorch-lightning>=1.7.0
-Requires-Dist: onnx-simplifier>=0.4.10
+Requires-Dist: onnxsim>=0.4.10
 Requires-Dist: onnxscript>=0.7.0
 Requires-Dist: cryptography
 Requires-Dist: requests

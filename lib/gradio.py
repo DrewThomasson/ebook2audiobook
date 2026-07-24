@@ -1161,7 +1161,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(32)])
+                            outputs = tuple([gr.update() for _ in range(len(outputs_restore_interface))])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1259,7 +1259,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(32)])
+                outputs = tuple([gr.update() for _ in range(len(outputs_restore_interface))])
                 return outputs
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -1321,7 +1321,7 @@ def build_interface(args:dict)->gr.Blocks:
                         return (gr.update(interactive=True), 'Session not found')
                     audiobook = session.get('audiobook')
                     if not audiobook or not os.path.isfile(str(audiobook)):
-                        return (gr.update(interactive=True), '<span>No audiobook to upload</span>')
+                        return (gr.update(interactive=True), 'No audiobook to upload')
                     from lib.classes.audiobookshelf import upload_to_abs
                     from urllib.parse import urlparse
                     title = Path(audiobook).stem
@@ -1330,17 +1330,17 @@ def build_interface(args:dict)->gr.Blocks:
                     api_token = str(session.get('abs_api_token') or '')
                     library_id = str(session.get('abs_library_id') or '')
                     if not server_url or not api_token or not library_id:
-                        return (gr.update(interactive=True), '<span>Configure ABS settings first</span>')
+                        return (gr.update(interactive=True), 'Configure ABS settings first')
                     parsed = urlparse(server_url)
                     if not parsed.scheme or not parsed.netloc:
-                        return (gr.update(interactive=True), '<span>Invalid server URL</span>')
+                        return (gr.update(interactive=True), 'Invalid server URL')
                     ok, msg = upload_to_abs([audiobook], title, author, server_url, api_token, library_id)
                     if ok:
-                        return (gr.update(interactive=True), f'<span>{msg}</span>')
+                        return (gr.update(interactive=True), f'{msg}')
                     else:
-                        return (gr.update(interactive=True), f'<span>Error: {msg}</span>')
+                        return (gr.update(interactive=True), f'Error: {msg}')
                 except Exception as e:
-                    return (gr.update(interactive=True), f'<span>Error: {e}</span>')
+                    return (gr.update(interactive=True), f'Error: {e}')
 
             def _refresh_interface(session_id:str)->tuple:
                 try:
@@ -3583,7 +3583,7 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_click_gr_abs_upload_btn,
                 inputs=[gr_session],
                 outputs=[gr_abs_upload_btn, gr_abs_status],
-                show_progress_on=[gr_progress]
+                show_progress_on=[gr_abs_status]
             )
             ############
             app.load(
