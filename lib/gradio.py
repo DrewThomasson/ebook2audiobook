@@ -28,7 +28,7 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
-        visible_gr_tab_abs_params = interface_component_options.get('gr_tab_abs_params', False)
+        visible_gr_tab_abs_params = interface_component_options['gr_tab_abs_params']
         js_hide_elements = 'document.querySelector("#ebook_textarea_toolbar")?.remove();'
         js_show_elements = 'window.gr_ebook_textarea_counter();'
         theme = gr.themes.Origin(
@@ -215,13 +215,15 @@ def build_interface(args:dict)->gr.Blocks:
                     margin: 0 !important;
                     border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
                 }
-                .gr-group-sides-padded{
+                .gr-group-no-col{
                     background: none !important;
+                    padding-right: 15px !important;
                     margin: 0 var(--size-2) 0 var(--size-2)!important;;
                     border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
                 }
                 .gr-group-convert-btn{
                     margin: var(--size-2) !important;;
+                    padding-right: 15px !important;
                     border-radius: var(--radius-md) !important;
                 }
                 .gr-label textarea[data-testid="textbox"]{
@@ -309,6 +311,14 @@ def build_interface(args:dict)->gr.Blocks:
                 }
                 .gr-convert-btn:hover { background-color: #34d058 !important; }
                 .gr-convert-btn:active, .button-red:active {
+                    background: var(--body-text-color) !important;
+                    color: var(--body-background-fill) !important;
+                }
+                .gr-abs-upload-btn {
+                    font-size: 30px !important;
+                }
+                .gr-abs-upload-btn:hover { background-color: #34d058 !important; }
+                .gr-abs-upload-btn:active, .button-red:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
@@ -642,13 +652,10 @@ def build_interface(args:dict)->gr.Blocks:
                 .button-green:hover { background-color: #34d058 !important; }
                 .button-red  {background-color: #dc3545 !important; color: white !important; }
                 .button-red:hover  { background-color: #ff6f71 !important; }
-                .button-purple { background-color: #6f42c1 !important; color: white !important; }
-                .button-purple:hover { background-color: #8b5cf6 !important; }
-                .button-green:active, .button-red:active, .button-purple:active {
+                .button-green:active, .button-red:active {
                     background: var(--body-text-color) !important;
                     color: var(--body-background-fill) !important;
                 }
-                #gr_row_abs_upload { justify-content: center !important; }
                 .spinner {
                     margin: 15px auto !important;
                     border: 4px solid rgba(255, 255, 255, 0.2) !important;
@@ -731,6 +738,28 @@ def build_interface(args:dict)->gr.Blocks:
                                     with gr.Row(elem_id='gr_row_session'):
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                                         gr_session_switch_btn = gr.Button('🔒︎', elem_id='gr_session_switch_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
+
+                        with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-no-col']):
+                            gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
+                            gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
+                            gr_progress_bar = gr.Progress(track_tqdm=True)
+
+                        with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-no-col'], visible=True) as gr_group_audiobook_list:
+                            gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
+                            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
+                            gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
+                            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
+                            gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
+                            with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
+                                gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
+                                gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
+                            gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
+                            gr_audiobook_files_state = gr.State(False)
+
+                        with gr.Group(elem_id='gr_group_convert_btn', elem_classes=['gr-group-convert-btn']) as gr_group_convert_btn:
+                            gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
+
                     with gr.Tab('XTTS Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=False) as gr_tab_xtts_params:
                         with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                             gr_xtts_temperature = gr.Slider(
@@ -837,29 +866,9 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_abs_server_url = gr.Textbox(label='Server URL', elem_id='gr_abs_server_url', value=default_abs_server_url, placeholder='http://localhost:13378', lines=1, max_lines=1, interactive=True)
                             gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', lines=1, max_lines=1, interactive=True)
                             gr_abs_library_id = gr.Dropdown(label='Library', elem_id='gr_abs_library_id', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library_id or None, interactive=True)
-                            with gr.Row(elem_id='gr_row_abs_upload'):
-                                gr_abs_status = gr.HTML(elem_id='gr_abs_status', value='')
-                                gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='Upload to Audiobookshelf', variant='secondary', interactive=False, elem_classes=['button-purple'])
-                
-                with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
-                    gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
-                    gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
-                    gr_progress_bar = gr.Progress(track_tqdm=True)
-
-                with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True) as gr_group_audiobook_list:
-                    gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
-                    gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
-                    gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
-                    gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
-                    gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
-                    with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
-                        gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
-                        gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
-                        gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
-                    gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
-                    gr_audiobook_files_state = gr.State(False)
-                with gr.Group(elem_id='gr_group_convert_btn', elem_classes=['gr-group-convert-btn']) as gr_group_convert_btn:
-                    gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
+                            gr_abs_status = gr.Textbox(elem_id='gr_abs_status', label='Status', lines=1, max_lines=1, interactive=False, visible=True)
+                        with gr.Group(elem_id='gr_group_abs_upload_btn', elem_classes=['gr-group-abs-upload-btn']) as gr_group_convert_btn:
+                            gr_abs_upload_btn = gr.Button(elem_id='gr_abs_upload_btn', value='🡅', elem_classes=['gr-abs-upload-btn'], variant='secondary', interactive=False)
 
             gr_blocks_page = gr.Number(value=0, visible=False, precision=0)
             gr_blocks_data = gr.State([])
@@ -1152,7 +1161,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         socket_hash = str(req.session_hash)
                         if not session.get(socket_hash):
-                            outputs = tuple([gr.update() for _ in range(30)])
+                            outputs = tuple([gr.update() for _ in range(32)])
                             return outputs
                         ebook_data = None
                         ebook_textarea = None
@@ -1189,6 +1198,12 @@ def build_interface(args:dict)->gr.Blocks:
                             and session.get('abs_api_token')
                             and session.get('abs_library_id')
                         )
+                        visible_xtts = False
+                        visible_bark = False
+                        if session['tts_engine'] == TTS_ENGINES['XTTS']:
+                            visible_xtts = visible_gr_tab_xtts_params
+                        elif session['tts_engine'] == TTS_ENGINES['BARK']:
+                            visible_bark = visible_gr_tab_bark_params
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
                         visible_voice_buttons = True if session.get('voice') is not None else False
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
@@ -1207,6 +1222,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['translate_iso1'] = None
                         translate_visible = translate_enabled_state and bool(translate_options)
                         return (
+                            gr.update(visible=visible_xtts),
+                            gr.update(visible=visible_bark),
                             gr.update(visible=visible_ebook_src, value=ebook_data, file_count=ebook_file_count),
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                             gr.update(value=session['ebook_mode']),
@@ -1242,7 +1259,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(30)])
+                outputs = tuple([gr.update() for _ in range(32)])
                 return outputs
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
@@ -2931,7 +2948,7 @@ def build_interface(args:dict)->gr.Blocks:
                 *blocks_components_flat, gr_blocks_header, gr_blocks_expands
             ]
             outputs_restore_interface = [
-                gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
+                gr_tab_xtts_params, gr_tab_bark_params, gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
                 gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,

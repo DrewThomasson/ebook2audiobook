@@ -1266,24 +1266,60 @@ class DeviceInstaller():
             print(error)
             return False
 
-    def check_onnxruntime_pkg(self)->str|None:
-        if self.python_version >= (3, 12) and (devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']):
-            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
-            return 'onnxruntime-gpu'
-        elif self.python_version < (3, 12) or self.system != systems['WINDOWS']:
-            return 'onnxruntime'
+    def has_directml_gpu(self)->bool:
+        if self.system != systems['WINDOWS']:
+            return False
+        cmd = (
+            'powershell -NoProfile -NonInteractive -Command '
+            '"Get-CimInstance Win32_VideoController | '
+            'Select-Object -ExpandProperty Name"'
+        )
         try:
-            import onnxruntime as ort
-            if 'DmlExecutionProvider' in ort.get_available_providers():
-                return 'onnxruntime-directml'
+            out = subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL, timeout=30).decode(errors='ignore').lower()
         except Exception as e:
-            error = f'check_onnxruntime_pkg(): {e}'
+            error = f'has_directml_gpu(): {e}'
             print(error)
+            return False
+        blacklist = ('microsoft basic display', 'remote display', 'standard vga', 'virtual', 'vmware', 'parallels', 'citrix')
+        vendors = ('nvidia', 'amd', 'radeon', 'intel', 'arc', 'qualcomm', 'adreno')
+        for line in out.splitlines():
+            name = line.strip()
+            if not name or any(b in name for b in blacklist):
+                continue
+            if any(v in name for v in vendors):
+                return True
+        return False
+
+    def check_onnxruntime_pkg(self)->Union[str, None]:
+        name, tag, msg = self.check_hardware
+        if self.python_version >= (3, 12) and (devices['CUDA']['found'] or devices['XPU']['found'] or devices['ROCM']['found']):
+            if self.get_package_version('onnxruntime-gpu'):
+                return None
+            if self.get_package_version('onnxruntime-directml'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-directml'])
+            if self.get_package_version('onnxruntime'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
+            return 'onnxruntime-gpu'
+        if name == devices['CPU']['proc'] or self.python_version < (3, 12) or self.system != systems['WINDOWS']:
+            if self.get_package_version('onnxruntime-directml'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-directml'])
+            if self.get_package_version('onnxruntime-gpu'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-gpu'])
+            return 'onnxruntime'
+        if not self.has_directml_gpu():
+            if self.get_package_version('onnxruntime-directml'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime-directml'])
+            return 'onnxruntime'
+        if self.get_package_version('onnxruntime-directml'):
+            return None
         try:
-            subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
+            if self.get_package_version('onnxruntime'):
+                subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', 'onnxruntime'])
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'onnxruntime-directml', 'protobuf<7'])
             return None
         except Exception as e:
+            error = f'check_onnxruntime_pkg(): {e}'
+            print(error)
             return 'onnxruntime'
           
     def install_device_packages(self, device_info_str:str)->int:
