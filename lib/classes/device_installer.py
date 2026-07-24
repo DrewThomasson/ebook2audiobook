@@ -1215,6 +1215,13 @@ class DeviceInstaller():
                 try:
                     version(pkg_name)
                 except PackageNotFoundError:
+                    if pkg_name == 'unidic':
+                        spec = importlib.util.find_spec('unidic')
+                        if spec:
+                            for path in spec.submodule_search_locations or ():
+                                if os.path.isdir(path) and not os.listdir(path):
+                                    print(f'Removing stale UniDic package directory: {path}')
+                                    os.rmdir(path)
                     continue
                 msg = f'Removing obsolete package {pkg_name}…'
                 print(msg)
