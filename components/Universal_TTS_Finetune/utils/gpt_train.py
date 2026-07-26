@@ -50,10 +50,10 @@ def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm
 
     # Define the path where XTTS v2.0.1 files will be downloaded
     shared_models = Path(
-        os.environ.get("E2A_MODELS_DIR", Path.cwd() / "models")
+        os.environ.get('E2A_MODELS_DIR', Path.cwd() / 'models')
     ).expanduser().resolve()
     CHECKPOINTS_OUT_PATH = os.path.join(
-        shared_models, "tts", "base_models", f"{version}"
+        shared_models, 'tts', 'base_models', f'{version}'
     )
     os.makedirs(CHECKPOINTS_OUT_PATH, exist_ok=True)
 

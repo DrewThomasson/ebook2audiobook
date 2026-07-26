@@ -5,6 +5,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import gradio as gr
 
@@ -331,11 +332,11 @@ def generate_output(session_state, progress=gr.Progress()):
 
 
 def create_app(
-    config: ComponentConfig | None = None,
+    config:ComponentConfig | None=None,
     *,
-    theme=None,
-    css: str | None = None,
-) -> gr.Blocks:
+    theme:Any=None,
+    css:str | None=None,
+)->gr.Blocks:
     """Create the Gradio web interface.
 
     The returned app is not launched. ebook2audiobook can later call ``render()``

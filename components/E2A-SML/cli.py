@@ -59,7 +59,7 @@ Examples:
         "-o",
         "--output-dir",
         default=str(_component_config.output_dir),
-        help="Output directory (default: E2A shared SML output directory)",
+        help='Output directory (default: E2A shared SML output directory)',
     )
     parser.add_argument(
         "--model",

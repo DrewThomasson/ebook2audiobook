@@ -10,15 +10,15 @@ from pathlib import Path
 import torch
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_MAIN_MODELS_DIR = _PROJECT_ROOT.parent.parent / "models"
-_CONFIGURED_MODELS_DIR = os.environ.get("E2A_MODELS_DIR")
+_MAIN_MODELS_DIR = _PROJECT_ROOT.parent.parent / 'models'
+_CONFIGURED_MODELS_DIR = os.environ.get('E2A_MODELS_DIR')
 if _CONFIGURED_MODELS_DIR:
     _MODELS_DIR = Path(_CONFIGURED_MODELS_DIR).expanduser().resolve()
     _MODELS_DIR.mkdir(parents=True, exist_ok=True)
 elif _MAIN_MODELS_DIR.exists() and _MAIN_MODELS_DIR.is_dir():
     _MODELS_DIR = _MAIN_MODELS_DIR
 else:
-    _MODELS_DIR = _PROJECT_ROOT / "models"
+    _MODELS_DIR = _PROJECT_ROOT / 'models'
     _MODELS_DIR.mkdir(exist_ok=True)
 
 def ensure_monotonic_align_compiled():
