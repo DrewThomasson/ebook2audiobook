@@ -39,6 +39,10 @@ except ImportError:
 import argparse
 import json
 
+from tts_finetune_config import ComponentConfig
+
+_component_config = ComponentConfig.resolve().prepare()
+
 from utils.pipeline import (
     default_test_output,
     dropdown_choices,

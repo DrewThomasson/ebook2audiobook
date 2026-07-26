@@ -20,7 +20,7 @@ docker compose up --build
 
 Open <http://localhost:7861>, upload a book, review the detected speakers, and download the generated SML files.
 
-The Compose configuration mounts the repository at `/ebook2audiobook`, so the app can use its voice library. Generated files persist in `components/E2A-SML/output`.
+The Compose configuration mounts the repository at `/ebook2audiobook`, so the app shares its model, voice, run, and output storage. Generated files persist under `audiobooks/gui/components/e2a-sml`.
 
 ## What you get
 
@@ -187,6 +187,21 @@ Options:
   --port                  Interface port (default: 7861)
   --share                 Create a public Gradio share link
 ```
+
+## E2A integration API
+
+`component_api.py` is the stable entry point for a future ebook2audiobook launcher. Its `create_app()` function returns an unlaunched Gradio app, so E2A can render it in a tab or manage its launch without triggering a browser or server during import.
+
+Configuration can be injected with `e2a_root`, `output_dir`, `theme`, and `css`. Standalone and embedded launches use the same visible locations:
+
+| Data | Default location |
+|---|---|
+| BookNLP and shared caches | `models/` |
+| Voices | `voices/` |
+| Generated SML | `audiobooks/gui/components/e2a-sml/` |
+| Temporary working data | `run/components/e2a-sml/` |
+
+The corresponding environment overrides are `E2A_ROOT`, `E2A_MODELS_DIR`, `E2A_VOICES_DIR`, `E2A_SML_OUTPUT_DIR`, and `E2A_RUN_DIR`.
 
 ## Requirements
 

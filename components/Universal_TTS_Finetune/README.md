@@ -114,8 +114,10 @@ The workflow uses CUDA when available and falls back to CPU. Training large mode
 The included Compose file mounts:
 
 - `audio_data` at `/app/audio_data`
-- `models` at `/app/models`
-- `finetune_models` at `/app/finetune_models`
+- E2A `models` at `/ebook2audiobook/models`
+- E2A `voices` at `/ebook2audiobook/voices`
+- E2A `finetune_models` at `/ebook2audiobook/finetune_models`
+- E2A `run` at `/ebook2audiobook/run`
 
 It also requests an NVIDIA GPU. GPU use requires the NVIDIA Container Toolkit; adjust the Compose device reservation if you intend to run Docker without one.
 
@@ -347,3 +349,18 @@ Speaker diarization may create suffixed datasets such as `LJSpeech-1.1_Speaker_1
 ## Advanced tuning
 
 Some upstream recipes retain model-specific assumptions. Use `--restore-path` to supply a checkpoint or `--extra-overrides-json` to change recipe values. Inspect the selected command’s `--help` output before launching a long run.
+
+## E2A integration API
+
+`component_api.py` is the stable entry point for a future ebook2audiobook launcher. Its `create_app()` function returns an unlaunched Gradio app, so E2A can render it in a tab or manage its launch without starting a server during import.
+
+Configuration can be injected with `e2a_root`, `output_dir`, `theme`, `css`, and UI defaults such as `num_epochs`. Standalone and embedded launches share:
+
+| Data | Default location |
+|---|---|
+| Model downloads and caches | `models/` |
+| Existing E2A voices | `voices/` |
+| Datasets and fine-tuned runs | `finetune_models/` |
+| Temporary working data | `run/components/tts-finetune/` |
+
+The corresponding environment overrides are `E2A_ROOT`, `E2A_MODELS_DIR`, `E2A_VOICES_DIR`, `E2A_FINETUNE_OUTPUT_DIR`, and `E2A_RUN_DIR`. Cache-related environment variables are pointed into `models/`, preventing implicit downloads into a user home directory.

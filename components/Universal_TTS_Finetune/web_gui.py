@@ -45,6 +45,10 @@ from pathlib import Path
 
 import gradio as gr
 
+from tts_finetune_config import ComponentConfig, E2A_COMPONENT_CSS, e2a_theme
+
+_component_config = ComponentConfig.resolve().prepare()
+
 from utils.pipeline import (
     default_test_output,
     dropdown_choices,
@@ -1002,36 +1006,28 @@ def preprocess_and_train(
         return empty_train + empty_prep + empty_infer
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Universal Coqui TTS fine-tuning web UI'
-    )
-    parser.add_argument('--share', action='store_true', default=False)
-    parser.add_argument('--port', type=int, default=7862)
-    parser.add_argument(
-        '--out_path', type=str, default=str(Path.cwd() / 'finetune_models')
-    )
-    parser.add_argument('--num_epochs', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=8)
-    parser.add_argument('--grad_acumm', type=int, default=1)
-    parser.add_argument('--max_audio_length', type=int, default=11)
-    args = parser.parse_args()
-
-    theme = gr.themes.Origin(
-        primary_hue='green',
-        secondary_hue='amber',
-        neutral_hue='gray',
-        radius_size='lg',
-        font_mono=[
-            'JetBrains Mono',
-            'monospace',
-            'Consolas',
-            'Menlo',
-            'Liberation Mono',
-        ],
+def create_app(
+    config:ComponentConfig | None = None,
+    *,
+    theme:Any=None,
+    css:str | None=None,
+    num_epochs:int=10,
+    batch_size:int=8,
+    grad_accum:int=1,
+    max_audio_length:int=11,
+)->gr.Blocks:
+    """Build but do not launch the UI, allowing E2A to render it later."""
+    global _component_config
+    _component_config = (config or ComponentConfig.resolve()).prepare()
+    args = argparse.Namespace(
+        out_path=str(_component_config.output_dir),
+        num_epochs=num_epochs,
+        batch_size=batch_size,
+        grad_acumm=grad_accum,
+        max_audio_length=max_audio_length,
     )
 
-    css_str = """
+    css_str = E2A_COMPONENT_CSS + """
     .primary-btn {
         background: linear-gradient(90deg, #22c55e 0%, #eab308 100%) !important;
         color: white !important;
@@ -1047,11 +1043,24 @@ if __name__ == '__main__':
     }
     """
 
-    with gr.Blocks(title='Universal TTS Finetune', theme=theme, css=css_str) as demo:
+    with gr.Blocks(
+        title='Universal TTS Finetune',
+        theme=theme or e2a_theme(),
+        css=css or css_str,
+    ) as demo:
         gr.Markdown(
             '# Universal TTS Finetune\n'
-            'Prepare an LJSpeech-style dataset, fine-tune a supported Coqui recipe, and test the trained model.'
+            'Prepare a speech dataset, fine-tune a supported model, and test the result.',
+            elem_classes=['e2a-component-header'],
         )
+
+        with gr.Accordion('Storage locations', open=False):
+            gr.Markdown(
+                f'- **Models/cache:** `{_component_config.models_dir}`\n'
+                f'- **Voices:** `{_component_config.voices_dir}`\n'
+                f'- **Datasets/training:** `{_component_config.output_dir}`\n'
+                f'- **Temporary work:** `{_component_config.run_dir}`'
+            )
 
         with gr.Tab('1 - Prepare dataset'):
             out_path = gr.Textbox(label='Output root', value=args.out_path)
@@ -1637,12 +1646,46 @@ if __name__ == '__main__':
             outputs=[model_checkpoint_warning, use_pretrained],
         )
 
-    allowed = [
-        str(Path(args.out_path).resolve()),
-        str(Path.home()),
-        str(Path.cwd().resolve()),
-        str(Path.cwd().parent.parent.resolve()),
-    ]
-    demo.launch(
-        share=args.share, debug=False, server_port=args.port, allowed_paths=allowed
+    return demo
+
+
+def _build_launch_parser()->argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description='Universal Coqui TTS fine-tuning web UI'
     )
+    parser.add_argument('--share', action='store_true', default=False)
+    parser.add_argument('--host', default='127.0.0.1')
+    parser.add_argument('--port', type=int, default=7862)
+    parser.add_argument('--out_path', type=str, default=None)
+    parser.add_argument('--num_epochs', type=int, default=10)
+    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--grad_acumm', type=int, default=1)
+    parser.add_argument('--max_audio_length', type=int, default=11)
+    return parser
+
+
+def launch()->None:
+    args = _build_launch_parser().parse_args()
+    config = ComponentConfig.resolve(output_dir=args.out_path).prepare()
+    demo = create_app(
+        config,
+        num_epochs=args.num_epochs,
+        batch_size=args.batch_size,
+        grad_accum=args.grad_acumm,
+        max_audio_length=args.max_audio_length,
+    )
+    demo.launch(
+        share=args.share,
+        debug=False,
+        server_name=args.host,
+        server_port=args.port,
+        allowed_paths=[
+            str(config.e2a_root),
+            str(config.output_dir),
+            str(config.run_dir),
+        ],
+    )
+
+
+if __name__ == '__main__':
+    launch()

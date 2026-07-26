@@ -8,6 +8,7 @@ from pathlib import Path
 
 import gradio as gr
 
+from e2a_sml_config import ComponentConfig, E2A_COMPONENT_CSS, e2a_theme
 from sml_extractor.core import (
     check_booknlp_installation,
     convert_ebook_to_txt,
@@ -23,8 +24,7 @@ from sml_extractor.voice_matcher import (
     scan_voice_library,
 )
 
-# Global state for the current session
-_session_state = {}
+_runtime_config = ComponentConfig.resolve()
 
 
 def _get_file_path(file_obj) -> str:
@@ -53,12 +53,14 @@ def _voice_display_label(voice_path: str) -> str:
 
 
 def process_book(
+    session_state,
     input_file,
     model_size,
     e2a_path,
     progress=gr.Progress(),
 ):
     """Process a book file through BookNLP and extract characters."""
+    session_state = {}
     if input_file is None:
         raise gr.Error("Please upload a book file.")
 
@@ -83,9 +85,12 @@ def process_book(
 
     progress(0.05, desc="Preparing...")
 
-    # Create temp working directory
-    work_dir = tempfile.mkdtemp(prefix="sml_extractor_")
-    _session_state["work_dir"] = work_dir
+    # Keep working data in E2A's visible run directory.
+    _runtime_config.prepare()
+    work_dir = tempfile.mkdtemp(
+        prefix="sml_extractor_", dir=str(_runtime_config.run_dir)
+    )
+    session_state["work_dir"] = work_dir
 
     input_path = _get_file_path(input_file)
 
@@ -112,31 +117,31 @@ def process_book(
         raise gr.Error(f"BookNLP processing failed: {e}")
 
     book_id = result["book_id"]
-    _session_state["book_id"] = book_id
-    _session_state["booknlp_dir"] = booknlp_dir
+    session_state["book_id"] = book_id
+    session_state["booknlp_dir"] = booknlp_dir
 
     progress(0.6, desc="Loading results...")
 
     # Load data
     booknlp_data = load_booknlp_output(booknlp_dir, book_id)
-    _session_state["booknlp_data"] = booknlp_data
+    session_state["booknlp_data"] = booknlp_data
 
     # Extract characters
     characters = extract_characters(booknlp_data)
-    _session_state["characters"] = characters
+    session_state["characters"] = characters
 
     progress(0.7, desc="Scanning voice library...")
 
     # Scan voice library from ebook2audiobook
     voice_library = scan_voice_library(e2a_path)
-    _session_state["voice_library"] = voice_library
-    _session_state["e2a_path"] = e2a_path
+    session_state["voice_library"] = voice_library
+    session_state["e2a_path"] = e2a_path
 
     # Auto-assign voices based on each character's inferred gender and age
     voice_assignments = {}
     if voice_library:
         voice_assignments = auto_assign_voices(characters, voice_library)
-    _session_state["voice_assignments"] = voice_assignments
+    session_state["voice_assignments"] = voice_assignments
 
     progress(0.8, desc="Preparing character editor...")
 
@@ -166,6 +171,7 @@ def process_book(
     voice_dropdown_update = gr.update(choices=voice_choices, value=None)
 
     return (
+        session_state,
         status_msg,                         # status_output
         char_table,                         # char_table
         preview,                            # book_preview
@@ -219,10 +225,11 @@ def _format_char_detail(characters, voice_assignments, selected_name):
     return f"Character '{selected_name}' not found."
 
 
-def on_char_selected(char_name):
+def on_char_selected(session_state, char_name):
     """Called when the user selects a character from the dropdown."""
-    characters = _session_state.get("characters", [])
-    voice_assignments = _session_state.get("voice_assignments", {})
+    session_state = session_state or {}
+    characters = session_state.get("characters", [])
+    voice_assignments = session_state.get("voice_assignments", {})
 
     detail = _format_char_detail(characters, voice_assignments, char_name)
 
@@ -231,44 +238,52 @@ def on_char_selected(char_name):
     return detail, gr.update(value=current_voice)
 
 
-def reassign_voice(char_name, voice_path):
+def reassign_voice(session_state, char_name, voice_path):
     """Reassign a voice to a character and refresh the table."""
     if not char_name:
-        return "Please select a character first.", gr.update(), ""
+        return session_state, "Please select a character first.", gr.update(), ""
 
-    if "voice_assignments" not in _session_state:
-        _session_state["voice_assignments"] = {}
+    session_state = session_state or {}
+    if "voice_assignments" not in session_state:
+        session_state["voice_assignments"] = {}
 
     if voice_path and voice_path.strip():
-        _session_state["voice_assignments"][char_name] = voice_path.strip()
+        session_state["voice_assignments"][char_name] = voice_path.strip()
         voice_label = _voice_display_label(voice_path)
     else:
-        _session_state["voice_assignments"].pop(char_name, None)
+        session_state["voice_assignments"].pop(char_name, None)
         voice_label = "(none)"
 
-    characters = _session_state.get("characters", [])
-    voice_assignments = _session_state["voice_assignments"]
+    characters = session_state.get("characters", [])
+    voice_assignments = session_state["voice_assignments"]
 
     char_table = _build_character_table(characters, voice_assignments)
     detail = _format_char_detail(characters, voice_assignments, char_name)
 
     return (
+        session_state,
         char_table,
         f"✅ {char_name} → {voice_label}",
         detail,
     )
 
 
-def generate_output(progress=gr.Progress()):
+def generate_output(session_state, progress=gr.Progress()):
     """Generate the SML output files."""
-    if "booknlp_data" not in _session_state:
+    session_state = session_state or {}
+    if "booknlp_data" not in session_state:
         raise gr.Error("Please process a book first.")
 
-    booknlp_data = _session_state["booknlp_data"]
-    characters = _session_state.get("characters", [])
-    voice_assignments = _session_state.get("voice_assignments", {})
-    book_id = _session_state.get("book_id", "book")
-    work_dir = _session_state.get("work_dir", tempfile.mkdtemp(prefix="sml_extractor_"))
+    booknlp_data = session_state["booknlp_data"]
+    characters = session_state.get("characters", [])
+    voice_assignments = session_state.get("voice_assignments", {})
+    book_id = session_state.get("book_id", "book")
+    work_dir = session_state.get("work_dir")
+    if not work_dir:
+        _runtime_config.prepare()
+        work_dir = tempfile.mkdtemp(
+            prefix="sml_extractor_", dir=str(_runtime_config.run_dir)
+        )
 
     book_txt = booknlp_data.get("book_txt", "")
     has_tokens = bool(booknlp_data.get("tokens"))
@@ -277,7 +292,7 @@ def generate_output(progress=gr.Progress()):
 
     progress(0.3, desc="Generating SML output...")
 
-    output_dir = os.path.join(work_dir, "sml_output")
+    output_dir = os.path.join(str(_runtime_config.output_dir), book_id)
     os.makedirs(output_dir, exist_ok=True)
 
     # Generate SML text with macro-based voice tags (character names)
@@ -315,21 +330,27 @@ def generate_output(progress=gr.Progress()):
     )
 
 
-def create_app(default_e2a_path: str = "") -> gr.Blocks:
-    if not default_e2a_path:
-        default_e2a_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        if not os.path.isdir(os.path.join(default_e2a_path, "voices")) and os.path.isdir("/ebook2audiobook/voices"):
-            default_e2a_path = "/ebook2audiobook"
-    
+def create_app(
+    config: ComponentConfig | None = None,
+    *,
+    theme=None,
+    css: str | None = None,
+) -> gr.Blocks:
     """Create the Gradio web interface.
 
-    Args:
-        default_e2a_path: Default value for the ebook2audiobook path field.
+    The returned app is not launched. ebook2audiobook can later call ``render()``
+    on it inside a tab, while the standalone launcher calls ``launch()``.
     """
+    global _runtime_config
+    _runtime_config = (config or ComponentConfig.resolve()).prepare()
+    default_e2a_path = str(_runtime_config.e2a_root)
 
     with gr.Blocks(
         title="SML Book Dialog Extractor",
+        theme=theme or e2a_theme(),
+        css=css or E2A_COMPONENT_CSS,
     ) as app:
+        session_state = gr.State({})
 
         gr.Markdown(
             """
@@ -346,8 +367,17 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
             2. **Analyze** - BookNLP identifies characters, dialog, and narration
             3. **Assign voices** - Auto-assign from ebook2audiobook library
             4. **Generate** - Download SML output ready for ebook2audiobook
-            """
+            """,
+            elem_classes=["e2a-component-header"],
         )
+
+        with gr.Accordion("Storage locations", open=False):
+            gr.Markdown(
+                f"- **Models/cache:** `{_runtime_config.models_dir}`\n"
+                f"- **Voices:** `{_runtime_config.voices_dir}`\n"
+                f"- **Generated SML:** `{_runtime_config.output_dir}`\n"
+                f"- **Temporary work:** `{_runtime_config.run_dir}`"
+            )
 
         with gr.Tab("📖 Process Book"):
             with gr.Row():
@@ -371,7 +401,12 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
                         info="Full path to your local ebook2audiobook folder (auto-detected by default)",
                     )
 
-            process_btn = gr.Button("🔍 Analyze Book", variant="primary", size="lg")
+            process_btn = gr.Button(
+                "🔍 Analyze Book",
+                variant="primary",
+                size="lg",
+                elem_classes=["e2a-primary"],
+            )
             status_output = gr.Textbox(label="Status", interactive=False)
 
         with gr.Tab("👥 Characters & Voices"):
@@ -406,7 +441,11 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
                             interactive=True,
                             info="Pick a voice from the ebook2audiobook library",
                         )
-                        assign_btn = gr.Button("🎤 Assign Selected Voice", variant="primary")
+                        assign_btn = gr.Button(
+                            "🎤 Assign Selected Voice",
+                            variant="primary",
+                            elem_classes=["e2a-primary"],
+                        )
                         assign_status = gr.Textbox(label="Status", interactive=False)
 
         with gr.Tab("📝 Preview & Generate"):
@@ -421,6 +460,7 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
                 variant="primary",
                 size="lg",
                 visible=False,
+                elem_classes=["e2a-primary"],
             )
 
             gen_status = gr.Textbox(label="Generation Status", interactive=False)
@@ -440,8 +480,9 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
         # Process book → populate character table, dropdowns, and preview
         process_btn.click(
             fn=process_book,
-            inputs=[input_file, model_size, e2a_path],
+            inputs=[session_state, input_file, model_size, e2a_path],
             outputs=[
+                session_state,
                 status_output,
                 char_table,
                 book_preview,
@@ -456,20 +497,21 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
         # Selecting a character → show details and current voice
         char_selector.change(
             fn=on_char_selected,
-            inputs=[char_selector],
+            inputs=[session_state, char_selector],
             outputs=[char_detail, voice_selector],
         )
 
         # Assign voice from dropdown → update table and detail
         assign_btn.click(
             fn=reassign_voice,
-            inputs=[char_selector, voice_selector],
-            outputs=[char_table, assign_status, char_detail],
+            inputs=[session_state, char_selector, voice_selector],
+            outputs=[session_state, char_table, assign_status, char_detail],
         )
 
         # Generate SML output
         generate_btn.click(
             fn=generate_output,
+            inputs=[session_state],
             outputs=[gen_status, sml_preview, sml_download, deprecated_sml_download, macros_download],
         )
 
@@ -477,5 +519,14 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
 
 
 if __name__ == "__main__":
-    app = create_app()
-    app.launch(server_name="127.0.0.1", server_port=7861, theme=gr.themes.Soft())
+    config = ComponentConfig.resolve().prepare()
+    app = create_app(config)
+    app.launch(
+        server_name="127.0.0.1",
+        server_port=7861,
+        allowed_paths=[
+            str(config.e2a_root),
+            str(config.output_dir),
+            str(config.run_dir),
+        ],
+    )

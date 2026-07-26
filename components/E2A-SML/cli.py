@@ -7,6 +7,10 @@ import os
 import sys
 from pathlib import Path
 
+from e2a_sml_config import ComponentConfig
+
+_component_config = ComponentConfig.resolve().prepare()
+
 from sml_extractor.core import (
     check_booknlp_installation,
     convert_ebook_to_txt,
@@ -54,8 +58,8 @@ Examples:
     parser.add_argument(
         "-o",
         "--output-dir",
-        default="output",
-        help="Output directory (default: output/)",
+        default=str(_component_config.output_dir),
+        help="Output directory (default: E2A shared SML output directory)",
     )
     parser.add_argument(
         "--model",
@@ -63,7 +67,7 @@ Examples:
         default="small",
         help="BookNLP model size (default: small)",
     )
-    default_e2a_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    default_e2a_path = str(_component_config.e2a_root)
     if not os.path.isdir(os.path.join(default_e2a_path, "voices")) and os.path.isdir("/ebook2audiobook/voices"):
         default_e2a_path = "/ebook2audiobook"
 
@@ -272,11 +276,17 @@ def _launch_gui(args):
         import gradio as gr
         from web_gui import create_app
 
-        app = create_app(default_e2a_path=args.e2a_path or "")
+        config = ComponentConfig.resolve(e2a_root=args.e2a_path).prepare()
+        app = create_app(config)
         app.launch(
             server_name=args.host,
             server_port=args.port,
             share=args.share,
+            allowed_paths=[
+                str(config.e2a_root),
+                str(config.output_dir),
+                str(config.run_dir),
+            ],
         )
     except ImportError as e:
         print(f"Error: Could not launch GUI. Make sure gradio is installed: {e}")

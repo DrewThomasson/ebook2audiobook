@@ -5,10 +5,18 @@ services:
     build: .
     ports:
       - "7862:7862"
+    environment:
+      E2A_ROOT: /ebook2audiobook
+      E2A_MODELS_DIR: /ebook2audiobook/models
+      E2A_VOICES_DIR: /ebook2audiobook/voices
+      E2A_FINETUNE_OUTPUT_DIR: /ebook2audiobook/finetune_models
+      E2A_RUN_DIR: /ebook2audiobook/run/components/tts-finetune
     volumes:
-      - ./models:/app/models
-      - ./finetune_models:/app/finetune_models
-      # Mount your audio inputs here to access them in the container
+      # Reuse ebook2audiobook's visible model, voice, output, and run stores.
+      - ../../models:/ebook2audiobook/models
+      - ../../voices:/ebook2audiobook/voices
+      - ../../finetune_models:/ebook2audiobook/finetune_models
+      - ../../run:/ebook2audiobook/run
       - ./audio_data:/app/audio_data
     # Enable GPU support if you have an NVIDIA GPU and nvidia-container-toolkit installed
     deploy:

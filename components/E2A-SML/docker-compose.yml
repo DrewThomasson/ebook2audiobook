@@ -3,9 +3,13 @@ services:
     build: .
     ports:
       - "7861:7861"
+    environment:
+      E2A_ROOT: /ebook2audiobook
+      E2A_MODELS_DIR: /ebook2audiobook/models
+      E2A_VOICES_DIR: /ebook2audiobook/voices
+      E2A_SML_OUTPUT_DIR: /ebook2audiobook/audiobooks/gui/components/e2a-sml
+      E2A_RUN_DIR: /ebook2audiobook/run/components/e2a-sml
     volumes:
       # Mount the parent ebook2audiobook folder for voice library access.
       # Automatically mounts the directory two levels up.
       - ../../:/ebook2audiobook
-      # Mount a local output directory to persist generated SML files
-      - ./output:/app/output

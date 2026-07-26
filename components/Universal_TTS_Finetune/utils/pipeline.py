@@ -51,15 +51,23 @@ from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 _MAIN_MODELS_DIR = _PROJECT_ROOT.parent.parent / 'models'
-if _MAIN_MODELS_DIR.exists() and _MAIN_MODELS_DIR.is_dir():
+_CONFIGURED_MODELS_DIR = os.environ.get('E2A_MODELS_DIR')
+if _CONFIGURED_MODELS_DIR:
+    _MODELS_DIR = Path(_CONFIGURED_MODELS_DIR).expanduser().resolve()
+    _MODELS_DIR.mkdir(parents=True, exist_ok=True)
+elif _MAIN_MODELS_DIR.exists() and _MAIN_MODELS_DIR.is_dir():
     _MODELS_DIR = _MAIN_MODELS_DIR
 else:
     _MODELS_DIR = _PROJECT_ROOT / 'models'
     _MODELS_DIR.mkdir(exist_ok=True)
 
-os.environ['HF_HOME'] = str(_MODELS_DIR)
+_TTS_CACHE_DIR = _MODELS_DIR / 'tts'
+_TTS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+os.environ['HF_HOME'] = str(_TTS_CACHE_DIR)
+os.environ['HUGGINGFACE_HUB_CACHE'] = str(_TTS_CACHE_DIR)
+os.environ['HF_DATASETS_CACHE'] = str(_TTS_CACHE_DIR)
 os.environ['TTS_HOME'] = str(_MODELS_DIR)
-os.environ['TORCH_HOME'] = str(_MODELS_DIR)
+os.environ['TORCH_HOME'] = str(_TTS_CACHE_DIR)
 
 _CURRENT_PROCESS:subprocess.Popen | None = None
 

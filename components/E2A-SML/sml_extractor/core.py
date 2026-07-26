@@ -144,8 +144,14 @@ def run_booknlp(
     if progress_callback:
         progress_callback("Initializing BookNLP...", 5)
 
-    # Set model path to ebook2audiobook/models/booknlp_models
-    model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "models", "booknlp_models"))
+    # Keep BookNLP downloads in ebook2audiobook's visible shared model store.
+    shared_models_dir = os.environ.get(
+        "E2A_MODELS_DIR",
+        os.path.join(os.path.dirname(__file__), "..", "..", "..", "models"),
+    )
+    model_dir = os.path.abspath(
+        os.path.join(os.path.expanduser(shared_models_dir), "booknlp_models")
+    )
     
     model_params = {
         "pipeline": "entity,quote,supersense,event,coref",
