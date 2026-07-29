@@ -129,22 +129,22 @@ jobs:
        
             # Fetch both branches. For the head, we must fetch from the actual source repo (fork)
             # because 'origin' might not have the fork's branch.
-            git fetch origin "$BASE_REF":"origin/$BASE_REF"
+            git fetch --prune origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
             
             if [ -n "$HEAD_REPO_URL" ]; then
               echo "==> Fetching head from fork: $HEAD_REPO_URL"
-              git fetch "$HEAD_REPO_URL" "$HEAD_REF":refs/remotes/origin/$HEAD_REF
+              git fetch --force "$HEAD_REPO_URL" "refs/heads/$HEAD_REF:refs/remotes/pr/head"
             else
               # Fallback (shouldn't happen for PRs)
-              git fetch origin "$HEAD_REF":"origin/$HEAD_REF"
+              git fetch --force origin "refs/heads/$HEAD_REF:refs/remotes/pr/head"
             fi
        
             # Reset to base branch
             git checkout -B "$BASE_REF" "remotes/origin/$BASE_REF"
-            git reset --hard "origin/$BASE_REF"
+            git reset --hard "refs/remotes/origin/$BASE_REF"
        
             # Merge PR source
-            if ! git merge --no-ff --no-edit "origin/$HEAD_REF"; then
+            if ! git merge --no-ff --no-edit "refs/remotes/pr/head"; then
               echo "❌ Merge conflict simulating PR merge"
               echo "❌ Initial merge failed, attempting cleanup of __pycache__ and retry..."
 
@@ -153,7 +153,7 @@ jobs:
               git clean -ffd lib/
 
               # Retry the merge
-              if ! git merge --no-ff --no-edit "origin/$HEAD_REF"; then
+              if ! git merge --no-ff --no-edit "refs/remotes/pr/head"; then
                 echo "❌ Merge still failed after cleanup"
                 exit 1
               fi
