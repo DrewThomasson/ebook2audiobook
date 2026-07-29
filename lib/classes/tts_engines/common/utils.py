@@ -340,7 +340,10 @@ class TTSUtils:
                     engine = loaded_tts.get(key, False)
                     if engine:
                         return engine
-                    if self.session['custom_model'] is None:
+                    if (
+                        self.session['custom_model'] is None
+                        and not kwargs.get('skip_piper_download', False)
+                    ):
                         download_voice(Path(self.model_path).stem, Path(self.model_path))
                     use_cuda = device == devices['CUDA']['proc']
                     engine = PiperVoice.load(checkpoint_path, config_path=config_path, use_cuda=use_cuda)

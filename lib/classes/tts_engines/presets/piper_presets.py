@@ -45,5 +45,56 @@ models = {
         "voice": default_engine_settings[TTS_ENGINES['PIPER']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
         "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+    },
+    'BobOdenkirk': {
+        'lang': 'eng',
+        'repo': 'drewThomasson/fineTunedTTSModels',
+        'sub': 'piperTTS/en-US/BobOdenkirk/',
+        'files': ['model.onnx.json', 'model.onnx'],
+        'voice': None,
+        'samplerate': 22050,
+    },
+    'DavidAttenborough': {
+        'lang': 'eng',
+        'repo': 'drewThomasson/fineTunedTTSModels',
+        'sub': 'piperTTS/en-US/DavidAttenborough/',
+        'files': ['model.onnx.json', 'model.onnx'],
+        'voice': None,
+        'samplerate': 22050,
+    },
+    'DeathPuss&Boots': {
+        'lang': 'eng',
+        'repo': 'drewThomasson/fineTunedTTSModels',
+        'sub': 'piperTTS/en-US/DeathPuss&Boots/en_US-death-high_onnx/',
+        'files': [
+            'en_US-death-high_onnx_en_US-death-high.onnx.json',
+            'en_US-death-high.onnx',
+        ],
+        'voice': None,
+        'samplerate': 22050,
+    },
+    'MorganFreeman': {
+        'lang': 'eng',
+        'repo': 'drewThomasson/fineTunedTTSModels',
+        'sub': 'piperTTS/en-US/MorganFreeman/',
+        'files': ['model.onnx.json', 'model.onnx'],
+        'voice': None,
+        'samplerate': 22050,
+    },
+    'Top15s': {
+        'lang': 'eng',
+        'repo': 'drewThomasson/fineTunedTTSModels',
+        'sub': 'piperTTS/en-US/Top15s/',
+        'files': ['model.onnx.json', 'model.onnx'],
+        'voice': None,
+        'samplerate': 22050,
+    },
+    'WhisperSalemASMR': {
+        'lang': 'eng',
+        'repo': 'drewThomasson/fineTunedTTSModels',
+        'sub': 'piperTTS/en-US/WhisperSalemASMR/',
+        'files': ['model.onnx.json', 'model.onnx'],
+        'voice': None,
+        'samplerate': 22050,
     }
 }

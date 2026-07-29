@@ -1,5 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.conf_models import default_fine_tuned
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
@@ -41,7 +42,7 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
             self.model_path = None
-            self.sub_list = model_cfg['sub']
+            self.sub_list = model_cfg.get('sub')
             self.params['samplerate'] = model_cfg['samplerate']
             self.syn_config = SynthesisConfig(
                 volume=1.0,
@@ -77,6 +78,36 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                     model_name = os.path.basename(os.path.normpath(self.model_path))
                     self.tts_key = f"{self.tts_engine}-{model_name}"
                     engine = self._load_checkpoint(tts_engine=self.tts_engine, key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, device=self.device)
+                elif self.session['fine_tuned'] != default_fine_tuned:
+                    from huggingface_hub import hf_hub_download
+                    model_cfg = self.models[self.session['fine_tuned']]
+                    files = model_cfg['files']
+                    if len(files) < 2:
+                        raise ValueError(
+                            f"Piper preset {self.session['fine_tuned']} must declare "
+                            "a config and ONNX model in 'files'."
+                        )
+                    hf_sub = model_cfg.get('sub', '')
+                    config_path = hf_hub_download(
+                        repo_id=model_cfg['repo'],
+                        filename=f"{hf_sub}{files[0]}",
+                        cache_dir=self.cache_dir,
+                    )
+                    checkpoint_path = hf_hub_download(
+                        repo_id=model_cfg['repo'],
+                        filename=f"{hf_sub}{files[1]}",
+                        cache_dir=self.cache_dir,
+                    )
+                    self.model_path = os.path.dirname(checkpoint_path)
+                    self.tts_key = f"{self.tts_engine}-{self.session['fine_tuned']}"
+                    engine = self._load_checkpoint(
+                        tts_engine=self.tts_engine,
+                        key=self.tts_key,
+                        checkpoint_path=checkpoint_path,
+                        config_path=config_path,
+                        device=self.device,
+                        skip_piper_download=True,
+                    )
                 else:
                     piper_lang = self.engine_langs[self.language]
                     voice_file = self.session.get('block_voice', self.session['voice'])
