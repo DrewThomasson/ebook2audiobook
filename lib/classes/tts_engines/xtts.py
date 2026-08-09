@@ -113,6 +113,24 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
+    def _should_retry_short_xtts_output(self, text:str, audio_data:Any)->bool:
+        try:
+            samples = len(audio_data) if audio_data is not None else 0
+        except TypeError:
+            samples = 0
+        if samples <= 0:
+            return False
+        words = len(re.findall(r'\w+', text, flags=re.UNICODE))
+        if words < 3:
+            return False
+        duration_sec = samples / float(self.params['samplerate'])
+        min_duration_sec = max(0.35, min(words * 0.12, 2.0))
+        return duration_sec < min_duration_sec
+
+    def _min_new_tokens_for_retry(self, text:str)->int:
+        words = len(re.findall(r'\w+', text, flags=re.UNICODE))
+        return min(120, max(12, words * 3))
+
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
@@ -165,6 +183,21 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                                         speaker_embedding=self.params['speaker_embedding'],
                                         **self.fine_tuned_params
                                     )
+                                    if result and self._should_retry_short_xtts_output(part, result.get('wav')):
+                                        retry_params = dict(self.fine_tuned_params)
+                                        retry_params.setdefault('min_new_tokens', self._min_new_tokens_for_retry(part))
+                                        try:
+                                            retry_result = self.engine.inference(
+                                                text=part,
+                                                language=self.language_iso1,
+                                                gpt_cond_latent=self.params['gpt_cond_latent'],
+                                                speaker_embedding=self.params['speaker_embedding'],
+                                                **retry_params
+                                            )
+                                            if retry_result and retry_result.get('wav') is not None:
+                                                result = retry_result
+                                        except TypeError:
+                                            pass
                             if result:
                                 audio_part = result.get('wav')
                                 if audio_part is not None and len(audio_part) > 0:
