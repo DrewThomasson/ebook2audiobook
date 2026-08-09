@@ -124,12 +124,18 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
         if words < 3:
             return False
         duration_sec = samples / float(self.params['samplerate'])
-        min_duration_sec = max(0.35, min(words * 0.12, 2.0))
+        min_duration_floor_sec = 0.35
+        seconds_per_word = 0.12
+        min_duration_cap_sec = 2.0
+        min_duration_sec = max(min_duration_floor_sec, min(words * seconds_per_word, min_duration_cap_sec))
         return duration_sec < min_duration_sec
 
     def _min_new_tokens_for_retry(self, text:str)->int:
         words = len(re.findall(r'\w+', text, flags=re.UNICODE))
-        return min(120, max(12, words * 3))
+        min_token_floor = 12
+        max_token_cap = 120
+        tokens_per_word = 3
+        return min(max_token_cap, max(min_token_floor, words * tokens_per_word))
 
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
@@ -185,7 +191,9 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                                     )
                                     if result and self._should_retry_short_xtts_output(part, result.get('wav')):
                                         retry_params = dict(self.fine_tuned_params)
-                                        retry_params.setdefault('min_new_tokens', self._min_new_tokens_for_retry(part))
+                                        retry_floor = self._min_new_tokens_for_retry(part)
+                                        existing_min = retry_params.get('min_new_tokens')
+                                        retry_params['min_new_tokens'] = max(int(existing_min), retry_floor) if existing_min is not None else retry_floor
                                         try:
                                             retry_result = self.engine.inference(
                                                 text=part,
@@ -196,8 +204,8 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                                             )
                                             if retry_result and retry_result.get('wav') is not None:
                                                 result = retry_result
-                                        except TypeError:
-                                            pass
+                                        except TypeError as e:
+                                            print(f'XTTS retry with min_new_tokens failed: {e}')
                             if result:
                                 audio_part = result.get('wav')
                                 if audio_part is not None and len(audio_part) > 0:
