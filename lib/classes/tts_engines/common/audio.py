@@ -42,6 +42,21 @@ def detect_gender(voice_path:str)->str|None:
         print(error)
         return None
 
+NATURAL_TAIL_TARGET_SEC = 0.020
+NATURAL_TAIL_MAX_SEC = 0.050
+
+
+def _bounded_natural_tail_sec(buffer_sec: float) -> float:
+    """Return a short, bounded tail buffer for trimmed speech audio."""
+    return min(max(buffer_sec, NATURAL_TAIL_TARGET_SEC), NATURAL_TAIL_MAX_SEC)
+
+
+def _trimmed_end_index(last_non_silent_index: int, audio_length: int, samplerate: int, buffer_sec: float) -> int:
+    """Return an inclusive-safe end boundary for a trimmed waveform."""
+    tail_samples = int(_bounded_natural_tail_sec(buffer_sec) * samplerate)
+    return min(last_non_silent_index + 1 + tail_samples, audio_length)
+
+
 def trim_audio(audio_data: Union[list[float], 'Tensor'], samplerate: int, silence_threshold: float = 0.003, buffer_sec: float = 0.005)->'Tensor':
     import torch
     # Ensure audio_data is a PyTorch tensor
@@ -58,9 +73,10 @@ def trim_audio(audio_data: Union[list[float], 'Tensor'], samplerate: int, silenc
         non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
         if len(non_silent_indices) == 0:
             return torch.tensor([], dtype=audio_data.dtype)
-        # Calculate start and end trimming indices with buffer
+        # Keep the caller's leading buffer, but retain enough natural decay at
+        # the end for final phonemes without carrying sentence-length silence.
         start_index = max(non_silent_indices[0].item() - int(buffer_sec * samplerate), 0)
-        end_index = min(non_silent_indices[-1].item() + int(buffer_sec * samplerate), audio_data.size(0))
+        end_index = _trimmed_end_index(non_silent_indices[-1].item(), audio_data.size(0), samplerate, buffer_sec)
         return audio_data[start_index:end_index]
     error = 'audio_data must be a PyTorch tensor or a list of numerical values.'
     print(error)
