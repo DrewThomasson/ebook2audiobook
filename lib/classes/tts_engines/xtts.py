@@ -113,6 +113,25 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
+    def _split_xtts_text(self, text:str, language:str|None=None)->list[str]:
+        try:
+            lang = (language or self.language_iso1 or self.language or 'en').split('-')[0]
+            if not hasattr(self.engine, 'tokenizer'):
+                return [text]
+            limit = getattr(self.engine.tokenizer, 'char_limits', {}).get(lang, 250)
+            if not limit or len(text) <= limit:
+                return [text]
+            try:
+                import TTS.tts.layers.xtts.tokenizer as xtts_tokenizer
+                chunks = xtts_tokenizer.split_sentence(text, lang, limit)
+                if chunks and any(chunk.strip() for chunk in chunks):
+                    return [c.strip() for c in chunks if c and c.strip()]
+            except Exception:
+                pass
+            return [text[i:i + limit] for i in range(0, len(text), limit)]
+        except Exception:
+            return [text]
+
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
@@ -144,60 +163,64 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                         if part.endswith("'"):
                             part = part[:-1]
                         part = part.replace('.', ' ;\n')
-                        if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
-                            self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
-                        else:
-                            msg = 'Computing speaker latents…'
-                            print(msg)
-                            if self.speaker in default_engine_settings[TTS_ENGINES['XTTS']]['voices'].keys():
-                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTS']]['voices'][self.speaker]].values()
+                        for text_chunk in self._split_xtts_text(part, self.language_iso1 or self.language):
+                            text_chunk = text_chunk.strip()
+                            if not text_chunk:
+                                continue
+                            if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
                             else:
-                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], load_sr=24000, sound_norm_refs=True)
-                            self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
-                        result = False
-                        try:
-                            with torch.inference_mode():
-                                with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                    result = self.engine.inference(
-                                        text=part,
-                                        language=self.language_iso1,
-                                        gpt_cond_latent=self.params['gpt_cond_latent'],
-                                        speaker_embedding=self.params['speaker_embedding'],
-                                        **self.fine_tuned_params
-                                    )
-                            if result:
-                                audio_part = result.get('wav')
-                                if audio_part is not None and len(audio_part) > 0:
-                                    if torch.is_tensor(audio_part):
-                                        audio_part = audio_part.detach().cpu()
-                                    if not is_audio_data_valid(audio_part):
+                                msg = 'Computing speaker latents…'
+                                print(msg)
+                                if self.speaker in default_engine_settings[TTS_ENGINES['XTTS']]['voices'].keys():
+                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTS']]['voices'][self.speaker]].values()
+                                else:
+                                    self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.engine.get_conditioning_latents(audio_path=[self.params['current_voice']], load_sr=24000, sound_norm_refs=True)
+                                self.params['latent_embedding'][self.params['current_voice']] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
+                            result = False
+                            try:
+                                with torch.inference_mode():
+                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                        result = self.engine.inference(
+                                            text=text_chunk,
+                                            language=self.language_iso1,
+                                            gpt_cond_latent=self.params['gpt_cond_latent'],
+                                            speaker_embedding=self.params['speaker_embedding'],
+                                            **self.fine_tuned_params
+                                        )
+                                if result:
+                                    audio_part = result.get('wav')
+                                    if audio_part is not None and len(audio_part) > 0:
+                                        if torch.is_tensor(audio_part):
+                                            audio_part = audio_part.detach().cpu()
+                                        if not is_audio_data_valid(audio_part):
+                                            error = 'audio_part not valid'
+                                            return False, error
+                                        part_tensor = self._tensor_type(audio_part).unsqueeze(0)
+                                        if part_tensor.numel() == 0:
+                                            error = 'part_tensor not valid'
+                                            return False, error
+                                        if text_chunk[-1].isalnum() or text_chunk[-1] == '—':
+                                            part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                                        self.audio_segments.append(part_tensor)
+                                        if not re.search(r'\w$', text_chunk, flags=re.UNICODE) and text_chunk[-1] != '—':
+                                            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                            self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)))
+                                    else:
                                         error = 'audio_part not valid'
                                         return False, error
-                                    part_tensor = self._tensor_type(audio_part).unsqueeze(0)
-                                    if part_tensor.numel() == 0:
-                                        error = 'part_tensor not valid'
-                                        return False, error
-                                    if part[-1].isalnum() or part[-1] == '—':
-                                        part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                                    self.audio_segments.append(part_tensor)
-                                    if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
-                                        silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                                        self.audio_segments.append(torch.zeros(1, int(self.params['samplerate'] * silence_time)))
                                 else:
                                     error = 'audio_part not valid'
                                     return False, error
-                            else:
-                                error = 'audio_part not valid'
+                            except IndexError as e:
+                                self.cleanup_memory()
+                                error = f'convert() error at {e} segment: {text_chunk}'
                                 return False, error
-                        except IndexError as e:
-                            self.cleanup_memory()
-                            error = f'convert() error at {e} segment: {part}'
-                            return False, error
-                        except Exception as e:
-                            # free the failed part's tensors before returning False;
-                            # core.py then unloads the engine via unload_tts_manager().
-                            self.cleanup_memory()
-                            return False, self.log_exception(f'{self.__class__.__name__}.convert() part loop', e)
+                            except Exception as e:
+                                # free the failed part's tensors before returning False;
+                                # core.py then unloads the engine via unload_tts_manager().
+                                self.cleanup_memory()
+                                return False, self.log_exception(f'{self.__class__.__name__}.convert() part loop', e)
                 if self.audio_segments:
                     segment_tensor = torch.cat(self.audio_segments, dim=-1)
                     if not self.audio_save(sentence_file, segment_tensor, self.params['samplerate']):

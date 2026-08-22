@@ -56,20 +56,20 @@ punctuation_switch = {
     '‽': '?',    # Interrobang (U+200D) -> Replace with "?"
     '⁉': '?!',   # Exclamation question mark (U+2049) -> "?!"
     '‼': '!!',   # Double exclamation (U+200C) -> "!!"
-    
+
     # Odd Unicode punctuation that can create strange effects
     '⁈': '?!',  # Question mark with an exclamation mark
     '⁇': '??',  # Double question marks
     '﹖': '?',   # Small form question mark
     '﹗': '!',   # Small form exclamation mark
-    
+
     # Misinterpreted pauses
     '۔': '.',  # Arabic full stop
     '॥': '.',   # Devanagari double danda (used in Hindi, Bengali) -> Period
     '。': '.',  # Chinese full stop -> Period
     '።': '.',  # Ethiopic full stop
     '།': '.',    # Tibetan shad
-    
+
     # Miscellaneous
     '፡': ':',  # Ethiopic colon
     '፤': ';',  # Ethiopic semicolon
@@ -79,7 +79,7 @@ punctuation_switch = {
     '#': '-', # hashtag by Em Dash
     '†': '-', # Dagger (footnote marker) U+2020
     '¶': '-',  # Pilcrow (paragraph mark) U+0086
-    
+
     # Global replacement
     '—': '.',
     '(': ',',
@@ -150,6 +150,24 @@ punctuation_split_soft = [
     '໌', 'ໍ'
 ]
 punctuation_split_soft_set = set(punctuation_split_soft)
+
+# Clause connectors used as a last-resort sentence boundary. Keep the legacy fallback
+# unchanged so languages without dedicated entries retain the current segmentation behavior.
+default_clause_split_words = [
+    'et', 'ou', 'mais', 'car', 'donc', 'puis', 'alors', 'ensuite', 'cependant', 'pourtant',
+    'ainsi', 'tandis', 'parce', 'puisque', 'quand', 'comme', 'lorsque', 'si', 'or',
+    'bien que', 'quoique', 'quoi que', 'sans que', 'de sorte que', 'avant que', 'après que',
+    'pendant que', 'depuis que', 'tandis que', 'alors que', 'par contre', 'en revanche',
+    'au lieu de', 'au contraire', 'dès lors', "d'abord", 'ensuite', 'en effet', 'de plus',
+    'de même', 'également', 'non seulement', 'mais aussi', 'ce qui', 'ce que',
+    "c'est pourquoi", 'pourtant', 'néanmoins', 'toutefois', 'malgré cela', 'malgré tout',
+    'au final', 'finalement', 'au début', 'au bout', 'au moment où', 'où', 'lorsque',
+    'chaque fois que', 'si bien que', 'tellement que', 'assez pour que', 'trop pour que'
+]
+
+# Add language-specific connector lists here as they are reviewed. An entry overrides
+# the legacy fallback for that language without changing languages not yet covered.
+language_clause_split_words = {}
 
 chars_remove = [
     '\\', '|', '©', '®', '™',
@@ -930,9 +948,9 @@ language_mapping = {
     "tel": {"name": "Telugu", "native_name": "తెలుగు", "max_chars": 142, "script": "telugu"},
     "tur": {"name": "Turkish", "native_name": "Türkçe", "max_chars": 226, "script": "latin"},
     "yor": {"name": "Yoruba", "native_name": "Èdè Yorùbá", "max_chars": 142, "script": "latin"},
-    
+
     "zzz": {"name": "------------------ More languages (A to Z) ------------------", "native_name": "------------------ More languages (A to Z) ------------------", "max_chars": 182, "script": "latin"},
-    
+
     "abi": {"name": "Abidji", "native_name": "Abidji", "max_chars": 142, "script": "latin"},
     "ace": {"name": "Aceh", "native_name": "Acèh", "max_chars": 142, "script": "latin"},
     "aca": {"name": "Achagua", "native_name": "Achagua", "max_chars": 142, "script": "latin"},

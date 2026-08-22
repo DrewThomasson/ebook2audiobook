@@ -18,6 +18,7 @@ from .conf_lang import (
     language_math_phonemes, language_clock, os, punctuation_list, 
     punctuation_list_set, punctuation_split_hard, punctuation_split_hard_set,
     punctuation_split_soft, punctuation_split_soft_set, punctuation_switch,
+    default_clause_split_words, language_clause_split_words,
     specialchars_mapping, chars_remove, year_to_decades_languages,
 )
 
@@ -48,6 +49,7 @@ __all__ = [
     "language_math_phonemes", "language_clock", "os", "punctuation_list", 
     "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
     "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
+    "default_clause_split_words", "language_clause_split_words",
     "specialchars_mapping", "chars_remove", "year_to_decades_languages",
     
     # from conf_models

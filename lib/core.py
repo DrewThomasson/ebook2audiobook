@@ -1860,37 +1860,108 @@ def get_sentences(session_id:str, text:str)->list|None:
 
     def _force_split_segment(segment:str)->list[str]:
         results = []
-        rest = segment
+        rest = segment.strip()
         hard_set = tuple(punctuation_split_hard_set)
         soft_set = tuple(punctuation_split_soft_set)
+
+        if not rest:
+            return []
+
+        clause_words = language_clause_split_words.get(lang, default_clause_split_words)
+        clause_pattern = re.compile(
+            r'(?i)\b(?:' + '|'.join(map(re.escape, clause_words)) + r')\b'
+        )
+
+        # If there is no punctuation at all, prefer a natural clause boundary instead of
+        # slicing in the middle of the phrase. This keeps long unpunctuated clauses readable.
+        if not any(ch in hard_set or ch in soft_set for ch in rest):
+            clause_positions = [m.end() for m in clause_pattern.finditer(rest) if m.end() > 0.35 * len(rest)]
+            if clause_positions:
+                best_idx = max(clause_positions)
+                left = rest[:best_idx].strip()
+                right = rest[best_idx:].strip()
+                if left and right:
+                    results.extend(_force_split_segment(left))
+                    results.extend(_force_split_segment(right))
+                    return results
+            return [rest]
+
         while rest:
             if _clean_len(rest) <= max_chars:
+                sentence_end = -1
+                for i, char in enumerate(rest[:-1]):
+                    if char not in hard_set:
+                        continue
+                    j = i + 1
+                    while j < len(rest) and rest[j].isspace():
+                        j += 1
+                    if j < len(rest) and (rest[j].isupper() or rest[j].isdigit()):
+                        sentence_end = i + 1
+                        break
+                if sentence_end > 0:
+                    results.append(rest[:sentence_end].strip())
+                    rest = rest[sentence_end:].strip()
+                    continue
                 results.append(rest.strip())
                 break
-            cut = rest[:max_chars + 1]
+
+            target = min(len(rest), max_chars)
             best_idx = -1
-            # 1) regress to the last hard punctuation in the window
-            for i in range(len(cut) - 1, -1, -1):
-                if cut[i] in hard_set:
+
+            # 1) prefer a real sentence-ending punctuation before the target length
+            for i in range(min(target, len(rest) - 1), -1, -1):
+                if rest[i] in hard_set:
                     best_idx = i + 1
                     break
-            # 2) no hard punct -> regress to the last soft punctuation
+
+            # 2) if no hard end was found nearby, allow a hard sentence end a little beyond the
+            # target when it truly closes the sentence (next token starts a new sentence)
             if best_idx == -1:
-                for i in range(len(cut) - 1, -1, -1):
-                    if cut[i] in soft_set:
-                        best_idx = i + 1
-                        break
-            # 3) no punctuation at all -> fall back to last space
+                scan_end = min(len(rest) - 1, target + max_chars * 2)
+                for i in range(target, scan_end + 1):
+                    if rest[i] in hard_set:
+                        j = i + 1
+                        while j < len(rest) and rest[j].isspace():
+                            j += 1
+                        next_text = rest[j:j + 20]
+                        if next_text and (next_text[0].isupper() or next_text[0].isdigit()):
+                            best_idx = i + 1
+                            break
+
+            # 3) soft punctuation is the preferred natural split before clause connectors.
+            # In practice, users prefer a later comma/semicolon over an earlier conjunction
+            # when the sentence is long, because it preserves the narration rhythm. Never
+            # search beyond the next hard sentence boundary.
             if best_idx == -1:
-                idx = cut.rfind(' ')
+                next_hard_end = next(
+                    (i for i in range(target, len(rest)) if rest[i] in hard_set),
+                    len(rest)
+                )
+                for i in range(next_hard_end - 1, -1, -1):
+                    if rest[i] in soft_set:
+                        if i >= max_chars * 0.35 or i >= target:
+                            best_idx = i + 1
+                            break
+
+            # 4) if there is still no safe break, prefer a clause connector before the target
+            if best_idx == -1:
+                clause_positions = [m.end() for m in clause_pattern.finditer(rest[:target]) if m.end() > 0.35 * target]
+                if clause_positions:
+                    best_idx = max(clause_positions)
+
+            # 5) final fallback: whitespace near the max length
+            if best_idx == -1:
+                idx = rest.rfind(' ', 0, target)
                 if idx > 0:
-                    best_idx = idx
-            # 4) last resort -> hard cut at max_chars
-            if best_idx <= 0:
-                best_idx = max_chars
+                    best_idx = idx + 1
+
+            if best_idx <= 0 or best_idx >= len(rest):
+                best_idx = max(1, min(len(rest) - 1, target))
+
             # Safety: never cut inside an SML group
             while best_idx < len(rest) and ord(rest[best_idx]) >= sml_escape_tag:
                 best_idx += 1
+
             left = rest[:best_idx].strip()
             right = rest[best_idx:].strip()
             if not left or right == rest:
@@ -2016,48 +2087,21 @@ def get_sentences(session_id:str, text:str)->list|None:
             if combined:
                 if _strip_escaped_sml(combined).strip():
                     if _clean_len(combined) <= max_chars:
-                        final_list.append(combined)
+                        final_list.extend(_force_split_segment(combined))
                     else:
                         final_list.extend(_force_split_segment(combined))
                 elif final_list:
                     # Trailing pure-SML — attach to last sentence, no standalone
                     final_list[-1] = final_list[-1].rstrip() + ' ' + combined
 
-        final_list = [_strip_leading_noise(s) for s in final_list if s.strip()]
+        normalized_list = []
+        for item in final_list:
+            if _clean_len(item) <= max_chars:
+                normalized_list.extend(_force_split_segment(item))
+            else:
+                normalized_list.append(item)
+        final_list = [_strip_leading_noise(s) for s in normalized_list if s.strip()]
         final_list = [s for s in final_list if s]
-
-        # Merge orphan-short sentences. A sentence below max_chars/2 is "too short";
-        # absorb it into the previous (preferred) or next sentence when that fits.
-        merge_threshold = max_chars // 2
-        merge_ceiling   = max_chars + max_chars // 2   # max_chars + overhead of max_chars/2
-
-        merged_list = []
-        i = 0
-        n = len(final_list)
-        while i < n:
-            cur = final_list[i].strip()
-            if not cur:
-                i += 1
-                continue
-            cur_len = _clean_len(cur)
-            if cur_len <= merge_threshold:
-                # 1) try to attach to the previous sentence
-                if merged_list:
-                    prev = merged_list[-1]
-                    if _clean_len(prev) + 1 + cur_len <= merge_ceiling:
-                        merged_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
-                        i += 1
-                        continue
-                # 2) otherwise try to glue it onto the next sentence
-                if i + 1 < n:
-                    nxt = final_list[i + 1].strip()
-                    if cur_len + 1 + _clean_len(nxt) <= merge_ceiling:
-                        merged_list.append(cur.rstrip() + ' ' + nxt.lstrip())
-                        i += 2
-                        continue
-            merged_list.append(cur)
-            i += 1
-        final_list = merged_list
 
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []

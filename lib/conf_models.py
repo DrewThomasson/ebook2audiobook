@@ -88,7 +88,7 @@ default_engine_settings = {
         "speed": 1.0,
         #"gpt_cond_len": 512,
         #"gpt_batch_size": 1,
-        "enable_text_splitting": False,
+        "enable_text_splitting": True,
         "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav'],
         "voice": default_speaker,
         "voices": {
