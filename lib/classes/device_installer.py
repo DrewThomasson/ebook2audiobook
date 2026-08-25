@@ -445,6 +445,22 @@ class DeviceInstaller():
                 return False
             return False
 
+        def _normalize_version(v:str)->tuple:
+            '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
+            m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
+            if m:
+                major = int(m.group(1))
+                minor = int(m.group(2))
+                patch = int(m.group(3)) if m.group(3) else 0
+                return (major, minor, patch)
+            compact = re.fullmatch(r'(\d{2})(\d)', v or '')
+            if not compact:
+                return ()
+            major = int(compact.group(1))
+            minor = int(compact.group(2))
+            patch = 0
+            return (major, minor, patch)
+
         name = None
         tag = None
         msg = ''
@@ -494,17 +510,6 @@ class DeviceInstaller():
             # ROCm
             # ============================================================
             elif has_rocm() and has_amd_gpu_pci():
-
-                def _normalize_version(v:str)->tuple:
-                    '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
-                    m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
-                    if not m:
-                        return ()
-                    major = int(m.group(1))
-                    minor = int(m.group(2))
-                    patch = int(m.group(3)) if m.group(3) else 0
-                    return (major, minor, patch)
-
                 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
                 os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
                 version = ()
@@ -679,7 +684,7 @@ class DeviceInstaller():
                             compat_versions.append(tag_ver)
                         tag = None
                         if compat_versions:
-                            le_versions = [v for v in compat_versions if v <= version]
+                            le_versions = [v for v in compat_versions if v <= current]
                             if le_versions:
                                 matched = max(le_versions)
                                 if self.system == systems['WINDOWS']:
@@ -890,7 +895,7 @@ class DeviceInstaller():
                                 compat_versions.append(tag_ver)
                             tag = None
                             if compat_versions:
-                                le_versions = [v for v in compat_versions if v <= version]
+                                le_versions = [v for v in compat_versions if v <= current]
                                 if le_versions:
                                     matched = max(le_versions)
                                     if self.system == systems['WINDOWS']:
