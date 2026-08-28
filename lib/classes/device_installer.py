@@ -223,6 +223,16 @@ class DeviceInstaller():
                 return m.group(3)
             return None
 
+        def _normalize_version(v:str)->tuple:
+            '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
+            m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
+            if not m:
+                return ()
+            major = int(m.group(1))
+            minor = int(m.group(2))
+            patch = int(m.group(3)) if m.group(3) else 0
+            return (major, minor, patch)
+
         def version_classify(version_str:Union[str, None], version_range:dict)->tuple:
             # Returns (cmp, current_tuple, min_tuple, max_tuple)
             # cmp: -1 = below min, 0 = in range, 1 = above max, None = parse fail / unranged
@@ -494,16 +504,6 @@ class DeviceInstaller():
             # ROCm
             # ============================================================
             elif has_rocm() and has_amd_gpu_pci():
-
-                def _normalize_version(v:str)->tuple:
-                    '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
-                    m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
-                    if not m:
-                        return ()
-                    major = int(m.group(1))
-                    minor = int(m.group(2))
-                    patch = int(m.group(3)) if m.group(3) else 0
-                    return (major, minor, patch)
 
                 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
                 os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
