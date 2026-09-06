@@ -62,12 +62,8 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                 import subprocess
                 import time
 
-                # breeze-tts's upstream repo has no setup.py/pyproject.toml, so it is
-                # not pip-installable as published. This repo instead vendors it at
-                # ext/py/breeze-tts (with an authored setup.py) and installs it in
-                # editable mode via requirements.txt, same as ./ext/py/demucs. That
-                # means `breeze_infer` (and the `models` package it imports from) are
-                # on sys.path globally - no cwd/PYTHONPATH juggling needed here.
+                # breeze-tts installs editable (see ext/py/breeze-tts/setup.py), so
+                # breeze_infer is importable globally - no cwd/PYTHONPATH juggling here.
                 weights_dir = os.path.join(self.cache_dir, "breeze-tts-2")
                 if not os.path.isdir(weights_dir):
                     from huggingface_hub import snapshot_download
@@ -76,9 +72,11 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                         repo_id=self.models[self.session["fine_tuned"]]["repo"],
                         local_dir=weights_dir,
                     )
-                # Point Triton at system ptxas: bundled torch/triton's ptxas doesn't
-                # support this box's GPU target, needed for --fast-all's compile path.
+                # --fast-all's compile path needs Triton's ptxas to support the GPU
+                # target; the bundled torch/triton one may not on newer architectures.
                 env = os.environ.copy()
+                # Respect an already-set TRITON_PTXAS_PATH; only fall back to the
+                # system CUDA toolkit's ptxas.
                 env.setdefault("TRITON_PTXAS_PATH", "/usr/local/cuda/bin/ptxas")
                 proc = subprocess.Popen(
                     [

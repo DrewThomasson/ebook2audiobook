@@ -89,11 +89,8 @@ torch_matrix = {
     "win-cu128":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.9.1", "codec": "0.9.0"},
     "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.15.0"},
     "win-cu129":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.8.0", "codec": "0.8.0"},
-    # NOTE: 'last' pinned to 2.9.1 (not the newer 2.13.0 otherwise available for this tag) because
-    # 2.9.1+cu130 is the specific build proven working via manual install on the GB10 (Grace
-    # Blackwell, aarch64, sm_121) dev box used for the Breeze-TTS-2 integration; 2.13.0 is untested
-    # on that hardware. codec 0.10.0 is the oldest torchcodec actually published on the cu130
-    # index (nothing as low as '0.9.1' exists there, unlike the ROCm entries' convention below).
+    # 'last' pinned to 2.9.1: verified working for Breeze-TTS-2 on aarch64; 2.13.0 is untested there.
+    # codec bumped to 0.10.0, the oldest torchcodec published on the cu130 index.
     "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.9.1", "codec": "0.10.0"},
     "cu132":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
     # ROCm
