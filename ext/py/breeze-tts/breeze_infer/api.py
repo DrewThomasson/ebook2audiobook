@@ -26,8 +26,8 @@ from breeze_models.logits_process import (
 )
 from breeze_models.warmup_profile import load_warmup_profile
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, Response, StreamingResponse
-from starlette.concurrency import run_in_threadpool
 from transformers.generation.logits_process import LogitsProcessorList
 
 from breeze_infer.runtime import (
