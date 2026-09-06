@@ -445,6 +445,16 @@ class DeviceInstaller():
                 return False
             return False
 
+        def _normalize_version(v:str)->tuple:
+            '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
+            m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
+            if not m:
+                return ()
+            major = int(m.group(1))
+            minor = int(m.group(2))
+            patch = int(m.group(3)) if m.group(3) else 0
+            return (major, minor, patch)
+
         name = None
         tag = None
         msg = ''
@@ -494,16 +504,6 @@ class DeviceInstaller():
             # ROCm
             # ============================================================
             elif has_rocm() and has_amd_gpu_pci():
-
-                def _normalize_version(v:str)->tuple:
-                    '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
-                    m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
-                    if not m:
-                        return ()
-                    major = int(m.group(1))
-                    minor = int(m.group(2))
-                    patch = int(m.group(3)) if m.group(3) else 0
-                    return (major, minor, patch)
 
                 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
                 os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
