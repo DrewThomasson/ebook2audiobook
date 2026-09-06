@@ -101,7 +101,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ## Features
-- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
+- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`, `Breeze-TTS-2`*
 - 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** to convert directly a short text in audio
 - 🔍 **OCR scanning** for files with text pages as images
@@ -115,6 +115,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🎛️ **Fine-tuned preset models** trained by the E2A Team<br/>
      <i>(Contact us if you need additional fine-tuned models, or if you’d like to share yours to the official preset list)</i>
 
+<i>* `Breeze-TTS-2` model weights are distributed by BreezeBlue under their "Research and Non-Commercial License" (non-commercial use only). E2A's own code stays Apache-2.0, but if you use E2A commercially, do not enable the `breeze` engine without checking BreezeBlue's license terms yourself.</i>
 
 ##  Hardware Requirements
 - 2GB RAM min, 8GB recommended.

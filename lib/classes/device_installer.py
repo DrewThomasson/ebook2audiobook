@@ -254,6 +254,16 @@ class DeviceInstaller():
                 return (1, current, min_tuple, max_tuple)
             return (0, current, min_tuple, max_tuple)
 
+        def _normalize_version(v:str)->tuple:
+            '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
+            m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
+            if not m:
+                return ()
+            major = int(m.group(1))
+            minor = int(m.group(2))
+            patch = int(m.group(3)) if m.group(3) else 0
+            return (major, minor, patch)
+
         def tegra_version()->str:
             if os.path.exists('/etc/nv_tegra_release'):
                 return try_cmd('cat /etc/nv_tegra_release')
@@ -494,16 +504,6 @@ class DeviceInstaller():
             # ROCm
             # ============================================================
             elif has_rocm() and has_amd_gpu_pci():
-
-                def _normalize_version(v:str)->tuple:
-                    '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
-                    m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
-                    if not m:
-                        return ()
-                    major = int(m.group(1))
-                    minor = int(m.group(2))
-                    patch = int(m.group(3)) if m.group(3) else 0
-                    return (major, minor, patch)
 
                 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
                 os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
@@ -1772,7 +1772,13 @@ class DeviceInstaller():
                 return True
             m_ta = re.search(r'\+(.+)$', torchaudio_full)
             torchaudio_tag = m_ta.group(1) if m_ta else None
-            if not _tag_ok(torchaudio_tag):
+            # Unlike torch, torchaudio wheels from the PyTorch index (this cu130 build
+            # included) do not carry a device-local version tag at all - the installed
+            # version string is bare (e.g. '2.9.1', no '+cu130'). Only enforce the tag
+            # match when torchaudio actually reports one; a bare version is expected and
+            # must not be treated as a mismatch (previously caused every run to force a
+            # reinstall even when torch/torchaudio were already correct).
+            if torchaudio_tag is not None and not _tag_ok(torchaudio_tag):
                 return True
             # torchcodec: presence only (when torch >= 2.9 needs it)
             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and not self.get_package_version('torchcodec'):
