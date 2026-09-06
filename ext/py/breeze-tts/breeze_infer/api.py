@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import tempfile
 import threading
@@ -14,8 +15,20 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
+import torch
+from breeze_models.fast_streaming import (
+    FastBreezeStreamingRuntime,
+    FastStreamingChunk,
+    FastStreamingConfig,
+)
+from breeze_models.logits_process import (
+    GeneratedTokenRepetitionPenaltyLogitsProcessor,
+)
+from breeze_models.warmup_profile import load_warmup_profile
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
+from starlette.concurrency import run_in_threadpool
+from transformers.generation.logits_process import LogitsProcessorList
 
 from breeze_infer.runtime import (
     load_runtime,
@@ -24,12 +37,6 @@ from breeze_infer.runtime import (
     update_generation_config_for_breeze,
 )
 from breeze_infer.templates import get_template, prepare_inputs
-from breeze_models.fast_streaming import (
-    FastBreezeStreamingRuntime,
-    FastStreamingChunk,
-    FastStreamingConfig,
-)
-from breeze_models.warmup_profile import load_warmup_profile
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FAST_CONFIG = REPO_ROOT / "configs" / "fast.json"
@@ -38,6 +45,9 @@ MAX_NEW_TOKENS = 1500
 MAX_SEQ_LEN = 2048
 REPETITION_PENALTY = 1.1
 OPTIONAL_AUDIO_FILE = File(None)
+# Once decode stops being bandwidth bound, larger batches stop paying for
+# themselves while padding waste keeps growing.
+MAX_BATCH_TEXTS = 128
 
 
 @dataclass(frozen=True)
@@ -257,6 +267,163 @@ async def speech(
         body(),
         media_type="audio/pcm",
         headers={
+            "X-Sample-Rate": str(app.state.runtime.sample_rate),
+            "X-Sample-Format": "s16le",
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+def _generate_batch_pcm(
+    texts: list[str],
+    *,
+    instruction: str,
+    cfg_scale: float,
+    seed: int,
+    reference_path: Path | None,
+    ref_text: str,
+) -> list[bytes]:
+    """Synthesize many texts in one batched forward pass.
+
+    Bypasses FastBreezeStreamingRuntime, whose CUDA-graph batch dimension is
+    consumed by CFG and so cannot batch texts. Eager generate() is slower per
+    single sequence but takes a real batch, which wins where decode is
+    bandwidth bound: at batch 1 every weight is re-read per frame.
+    """
+    requests = []
+    for index, text in enumerate(texts):
+        request = {
+            "id": f"batch-{index}",
+            "text": text,
+            "instruction": instruction,
+            "speaker": "S0",
+        }
+        if reference_path is not None:
+            request["ref_audio_path"] = str(reference_path)
+            request["ref_text"] = ref_text
+        requests.append(request)
+
+    template_name = "ref_edit_tata" if reference_path is not None else "tts_instruction"
+
+    set_all_seeds(seed)
+    inputs = prepare_inputs(
+        app.state.tokenizer,
+        app.state.audio_tokenizer,
+        app.state.model,
+        requests,
+        get_template(template_name),
+        guidance_scale=cfg_scale,
+        guidance_scale_ref=None,
+        guidance_scale_ins=None,
+    )
+
+    # the fast path applies REPETITION_PENALTY through FastStreamingConfig; eager
+    # generate needs it supplied explicitly so both paths sample alike
+    processors = LogitsProcessorList(
+        [GeneratedTokenRepetitionPenaltyLogitsProcessor(REPETITION_PENALTY)]
+    )
+
+    set_all_seeds(seed)
+    with torch.no_grad():
+        audio_list = app.state.model.generate(
+            **inputs,
+            output_audio=True,
+            audio_tokenizer=app.state.audio_tokenizer,
+            logits_processor=processors,
+            max_new_tokens=MAX_NEW_TOKENS,
+        )
+
+    if len(audio_list) != len(texts):
+        raise RuntimeError(
+            f"batch size mismatch: sent {len(texts)} texts, got {len(audio_list)} audio segments"
+        )
+
+    return [
+        _pcm16(audio.detach().float().cpu().numpy().reshape(-1)) for audio in audio_list
+    ]
+
+
+@app.post("/v1/audio/speech/batch")
+async def speech_batch(
+    texts: str = Form(...),
+    instruction: str = Form("Speak clearly and naturally."),
+    cfg_scale: float = Form(DEFAULT_CFG_SCALE),
+    ref_audio: UploadFile | None = OPTIONAL_AUDIO_FILE,
+    ref_text: str = Form(""),
+    seed: int = Form(42),
+) -> Response:
+    """Batched synthesis. ``texts`` is a JSON-encoded list of strings.
+
+    The body is the concatenated s16le PCM of every segment in request order and
+    ``X-Segment-Bytes`` gives each segment's length, so the caller can split them
+    apart. One binary blob avoids base64-inflating the audio.
+    """
+    if not _request_lock.acquire(blocking=False):
+        raise HTTPException(
+            status_code=409, detail="An inference request is already running."
+        )
+
+    reference_path: Path | None = None
+    try:
+        try:
+            parsed = json.loads(texts)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(
+                status_code=400, detail=f"texts must be a JSON array of strings: {exc}"
+            ) from exc
+        if not isinstance(parsed, list) or not parsed:
+            raise HTTPException(
+                status_code=400, detail="texts must be a non-empty JSON array."
+            )
+        if len(parsed) > MAX_BATCH_TEXTS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"texts exceeds MAX_BATCH_TEXTS ({len(parsed)} > {MAX_BATCH_TEXTS}).",
+            )
+        for item in parsed:
+            if not isinstance(item, str) or not item.strip():
+                raise HTTPException(
+                    status_code=400,
+                    detail="every entry in texts must be a non-empty string.",
+                )
+
+        if not np.isfinite(cfg_scale) or cfg_scale <= 0:
+            raise HTTPException(
+                status_code=400, detail="cfg_scale must be greater than 0."
+            )
+
+        ref_text = ref_text.strip()
+        has_reference = ref_audio is not None and bool(ref_audio.filename)
+        if has_reference != bool(ref_text):
+            raise HTTPException(
+                status_code=400,
+                detail="ref_audio and ref_text must be provided together or both omitted.",
+            )
+        if has_reference:
+            assert ref_audio is not None
+            reference_path = await _save_upload(ref_audio)
+
+        # generation is synchronous and CPU/GPU bound; keep it off the event loop
+        # so /health stays responsive for the whole minutes-long batch
+        segments = await run_in_threadpool(
+            _generate_batch_pcm,
+            parsed,
+            instruction=instruction,
+            cfg_scale=cfg_scale,
+            seed=seed,
+            reference_path=reference_path,
+            ref_text=ref_text,
+        )
+    finally:
+        if reference_path is not None:
+            reference_path.unlink(missing_ok=True)
+        _request_lock.release()
+
+    return Response(
+        content=b"".join(segments),
+        media_type="application/octet-stream",
+        headers={
+            "X-Segment-Bytes": ",".join(str(len(segment)) for segment in segments),
             "X-Sample-Rate": str(app.state.runtime.sample_rate),
             "X-Sample-Format": "s16le",
             "Cache-Control": "no-store",

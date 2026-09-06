@@ -294,6 +294,8 @@ default_engine_settings = {
         "voice": None,
         "voices": {},
         "default_instruction": "A clear, neutral adult narrator voice with a calm, steady reading pace.",
+        # batched inference size; retune per GPU with E2A_BREEZE_BATCH_SIZE
+        "batch_size": 64,
         "rating": {"VRAM": 8, "CPU": 1, "RAM": 8, "Realism": 5}
     }
 }

@@ -2804,6 +2804,37 @@ def convert_chapters2audio(session_id:str)->bool:
     def _count_sentences(sentences:list)->int:
         return sum(1 for s in sentences if any(c.isalnum() for c in s.strip()))
 
+    def _mark_baseline()->None:
+        # first successful conversion of the run establishes the saved-blocks baseline
+        nonlocal baseline_initialized
+        if baseline_initialized:
+            return
+        session['blocks_current'] = blocks_current
+        session['blocks_saved'] = copy.deepcopy(blocks_current)
+        save_json_blocks(session_id, 'blocks_saved')
+        baseline_initialized = True
+
+    def _advance_progress(count:int, desc:str)->None:
+        t.update(count)
+        total_progress = t.n / total_sentences
+        if session['is_gui_process']:
+            progress_bar(progress=total_progress, desc=f'{ebook_name} - {desc}')
+        t.set_description(f'{total_progress * 100:.2f}%')
+
+    def _finalize_block(ch_num:int, x:int, block_id:str, chapter_audio_file:str, block_len:int, sent_start:int, sent_end:int, combine:bool)->bool:
+        nonlocal last_save_time
+        show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
+        if not combine:
+            return True
+        show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
+        session['blocks_current'] = blocks_current
+        save_db_stamp(session_id)
+        last_save_time = time.monotonic()
+        if not combine_audio_sentences(session_id, chapter_audio_file, block_id, block_len):
+            show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
+            return False
+        return True
+
     session = context.get_session(session_id)
     if not (session and session.get('id', False)):
         return False
@@ -2921,12 +2952,46 @@ def convert_chapters2audio(session_id:str)->bool:
                 save_db_stamp(session_id)
                 converted = False
                 block_voice = block.get('voice') or session.get('voice')
-                for j in range(block_len):
-                    if session['cancellation_requested']:
-                        msg = 'Conversion Cancelled'
-                        return False
-                    sentence = sentences[j].strip()
-                    if j in valid_idx:
+                batch_size = tts_manager.batch_size if tts_manager.supports_batching else 1
+                if batch_size > 1:
+                    pending = [j for j in sorted(valid_idx) if j >= start_sentence or j in missing_sentences]
+                    skipped = len(valid_idx) - len(pending)
+                    if skipped > 0:
+                        t.update(skipped)
+                    if pending and start_sentence > 0:
+                        show_alert(session_id, {'type': 'info', 'msg': f'*** Resuming from sentence {global_sent + skipped} ***'})
+                    # A batch runs until its longest sequence finishes, so mixing lengths
+                    # wastes compute; character count tracks duration closely enough to
+                    # group similar sentences together.
+                    pending.sort(key=lambda idx: len(sentences[idx].strip()))
+                    for start in range(0, len(pending), batch_size):
+                        if session['cancellation_requested']:
+                            return False
+                        group = pending[start:start + batch_size]
+                        items = [
+                            (os.path.join(block_dir, f'{j}.{default_audio_proc_format}'), sentences[j].strip())
+                            for j in group
+                        ]
+                        run, error = tts_manager.convert_sentences2audio(items, block_voice=block_voice)
+                        if not run:
+                            show_alert(session_id, {'type': 'warning', 'msg': error})
+                            return False
+                        converted = True
+                        # sentence_resume is not advanced mid-block: batched sentences
+                        # finish out of order, so one watermark cannot describe partial
+                        # progress and an interrupted block is redone whole.
+                        _mark_baseline()
+                        _advance_progress(len(group), f'batch of {len(group)}')
+                        for _, sentence_text in items:
+                            print(f' : {sentence_text}')
+                    global_sent += len(valid_idx)
+                else:
+                    for j in range(block_len):
+                        if session['cancellation_requested']:
+                            return False
+                        sentence = sentences[j].strip()
+                        if j not in valid_idx:
+                            continue
                         if j >= start_sentence or j in missing_sentences:
                             if j == start_sentence and start_sentence > 0:
                                 show_alert(session_id, {'type': 'info', 'msg': f'*** Resuming from sentence {global_sent} ***'})
@@ -2936,34 +3001,22 @@ def convert_chapters2audio(session_id:str)->bool:
                                 show_alert(session_id, {'type': 'warning', 'msg': error})
                                 return False
                             converted = True
+                            # unbatched sentences finish in order, so the watermark can
+                            # track them one by one and resume mid-block.
                             blocks_current['sentence_resume'] = j
                             now = time.monotonic()
                             if not baseline_initialized:
-                                session['blocks_current'] = blocks_current
-                                session['blocks_saved'] = copy.deepcopy(blocks_current)
-                                save_json_blocks(session_id, 'blocks_saved')
-                                baseline_initialized = True
+                                _mark_baseline()
                             elif now - last_save_time >= 5:
                                 session['blocks_current'] = blocks_current
                                 save_db_stamp(session_id)
                                 last_save_time = now
                         global_sent += 1
-                        total_progress = (t.n + 1) / total_sentences
-                        if session['is_gui_process']:
-                            progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
-                        t.set_description(f'{total_progress * 100:.2f}%')
+                        _advance_progress(1, sentence)
                         print(f' : {sentence}')
-                        t.update(1)
                 sent_end = global_sent - 1
-                show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
-                if converted or block_changed or missing_sentences:
-                    show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
-                    session['blocks_current'] = blocks_current
-                    save_db_stamp(session_id)
-                    last_save_time = time.monotonic()
-                    if not combine_audio_sentences(session_id, chapter_audio_file, block_id, block_len):
-                        show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
-                        return False
+                if not _finalize_block(ch_num, x, block_id, chapter_audio_file, block_len, sent_start, sent_end, bool(converted or block_changed or missing_sentences)):
+                    return False
             #blocks_current['block_resume'] = 0
             #blocks_current['sentence_resume'] = 0
             session['blocks_current'] = blocks_current

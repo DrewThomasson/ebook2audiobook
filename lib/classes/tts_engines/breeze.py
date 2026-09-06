@@ -20,6 +20,7 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                 error = f"Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}"
                 raise ValueError(error)
             self.params["samplerate"] = self.models[fine_tuned]["samplerate"]
+            self.batch_size = self._resolve_batch_size()
             self.device = (
                 devices["CUDA"]["proc"]
                 if self.session["device"]
@@ -31,14 +32,36 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                 else self.session["device"]
             )
             self.engine = self.load_engine()
-        except Exception as e:
+        except (KeyError, OSError, RuntimeError, ValueError) as e:
+            # load_engine() already wraps its own failures; anything outside this set
+            # is a bug here and should keep its traceback.
             error = f"__init__() error: {e}"
-            raise ValueError(error)
+            raise ValueError(error) from e
+
+    # tells lib.core it can call convert_batch() instead of one convert() per sentence
+    supports_batching = True
+
+    def _resolve_batch_size(self) -> int:
+        default = default_engine_settings[TTS_ENGINES["BREEZE"]]["batch_size"]
+        raw = os.environ.get("E2A_BREEZE_BATCH_SIZE")
+        if not raw:
+            return default
+        try:
+            value = int(raw)
+        except ValueError:
+            print(
+                f"Ignoring E2A_BREEZE_BATCH_SIZE={raw!r}: not an integer, using {default}"
+            )
+            return default
+        if value < 1:
+            print(
+                f"Ignoring E2A_BREEZE_BATCH_SIZE={value}: must be >= 1, using {default}"
+            )
+            return default
+        return value
 
     def _server_is_up(self) -> bool:
-        # GET /health, not /v1/health - confirmed against the running server
-        # (returns {"status":"ok","sample_rate":24000}/200 once ready,
-        # {"status":"loading"}/503 while the model is still loading).
+        # /health returns 503 while the model is still loading, 200 once ready.
         import requests
 
         try:
@@ -114,20 +137,23 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                 # Respect an already-set TRITON_PTXAS_PATH; only fall back to the
                 # system CUDA toolkit's ptxas.
                 env.setdefault("TRITON_PTXAS_PATH", "/usr/local/cuda/bin/ptxas")
-                proc = subprocess.Popen(
-                    [
-                        "python",
-                        "-m",
-                        "breeze_infer.api",
-                        weights_dir,
-                        "--host",
-                        BREEZE_API_HOST,
-                        "--port",
-                        str(BREEZE_API_PORT),
-                        "--fast-all",
-                    ],
-                    env=env,
-                )
+                # sys.executable, not "python": PATH may point at an interpreter
+                # without breeze_infer installed.
+                command = [
+                    sys.executable,
+                    "-m",
+                    "breeze_infer.api",
+                    weights_dir,
+                    "--host",
+                    BREEZE_API_HOST,
+                    "--port",
+                    str(BREEZE_API_PORT),
+                ]
+                # --fast-all's CUDA-graph batch dimension is consumed by CFG, so the
+                # batch endpoint cannot use it and the warmup would be wasted.
+                if self.batch_size == 1:
+                    command.append("--fast-all")
+                proc = subprocess.Popen(command, env=env)
                 for _ in range(90):
                     if self._server_is_up():
                         break
@@ -226,10 +252,137 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                     error = f"Cannot create {sentence_file}"
                     return False, error
             return True, None
-        except Exception as e:
+        except (OSError, requests.RequestException, RuntimeError, ValueError) as e:
+            # what the per-part loop does not already handle: SML parsing, torch.cat
+            # and audio_save. Bugs stay unhandled.
             self.cleanup_memory()
             self.audio_segments = []
             return False, self.log_exception(f"{self.__class__.__name__}.convert()", e)
+
+    def _request_batch(self, texts: list) -> list:
+        # The server answers with every segment's PCM concatenated plus an
+        # X-Segment-Bytes header, so the blob is split back apart here.
+        import json
+
+        import numpy as np
+        import requests
+
+        segments = []
+        for start in range(0, len(texts), self.batch_size):
+            chunk = texts[start : start + self.batch_size]
+            with open(self.engine["ref_audio_path"], "rb") as ref_audio_file:
+                resp = requests.post(
+                    f"http://{BREEZE_API_HOST}:{self.engine['port']}/v1/audio/speech/batch",
+                    data={
+                        "cfg_scale": 4,
+                        "texts": json.dumps(chunk),
+                        "instruction": default_engine_settings[TTS_ENGINES["BREEZE"]][
+                            "default_instruction"
+                        ],
+                        "ref_text": self.engine["ref_text"],
+                    },
+                    files={"ref_audio": ref_audio_file},
+                    # a full batch decodes for minutes, not seconds
+                    timeout=1800,
+                )
+            if resp.status_code != 200:
+                error = f"Breeze batch API returned HTTP {resp.status_code}: {resp.text[:200]}"
+                raise RuntimeError(error)
+            header = resp.headers.get("X-Segment-Bytes", "")
+            if not header:
+                error = (
+                    "Breeze batch API response is missing the X-Segment-Bytes header"
+                )
+                raise RuntimeError(error)
+            sizes = [int(value) for value in header.split(",")]
+            if len(sizes) != len(chunk):
+                error = (
+                    f"Breeze batch API returned {len(sizes)} segments "
+                    f"for {len(chunk)} texts"
+                )
+                raise RuntimeError(error)
+            if sum(sizes) != len(resp.content):
+                error = (
+                    f"Breeze batch API segment sizes sum to {sum(sizes)} "
+                    f"but body is {len(resp.content)} bytes"
+                )
+                raise RuntimeError(error)
+            offset = 0
+            for size in sizes:
+                raw = resp.content[offset : offset + size]
+                offset += size
+                segments.append(
+                    np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32768.0
+                )
+        return segments
+
+    def convert_batch(self, items: list, **kwargs) -> tuple:
+        """Synthesize many sentences per inference request.
+
+        ``items`` is a list of ``(sentence_file, sentence)``. A sentence can mix
+        speech with SML tags, so parts are flattened into one flat list of texts
+        for the model and reassembled per sentence afterwards; SML tags stay
+        local and never reach the server.
+        """
+        # outside the try so the except clause can name requests.RequestException
+        import requests
+        import torch
+
+        try:
+            if not self.engine:
+                error = f"TTS engine {self.session['tts_engine']} failed to load!"
+                return False, error
+
+            plans = []
+            texts = []
+            for sentence_file, sentence in items:
+                plan = []
+                for part in self._split_sentence_on_sml(sentence):
+                    part = part.strip()
+                    if not part:
+                        continue
+                    if SML_TAG_PATTERN.fullmatch(part):
+                        plan.append(("sml", part))
+                        continue
+                    if not any(c.isalnum() for c in part):
+                        continue
+                    plan.append(("tts", len(texts)))
+                    texts.append(part)
+                plans.append((sentence_file, plan))
+
+            audio_parts = self._request_batch(texts) if texts else []
+
+            for sentence_file, plan in plans:
+                self.audio_segments = []
+                for kind, payload in plan:
+                    if kind == "sml":
+                        success, error = self._convert_sml(payload)
+                        if not success:
+                            return False, error
+                        continue
+                    part_tensor = self._tensor_type(audio_parts[payload]).unsqueeze(0)
+                    self.audio_segments.append(part_tensor)
+                if not self.audio_segments:
+                    continue
+                segment_tensor = torch.cat(self.audio_segments, dim=-1)
+                if not self.audio_save(
+                    sentence_file, segment_tensor, self.params["samplerate"]
+                ):
+                    error = f"audio_save() error: cannot save {sentence_file}"
+                    return False, error
+                self.audio_segments = []
+                if not os.path.exists(sentence_file):
+                    error = f"Cannot create {sentence_file}"
+                    return False, error
+            return True, None
+        except (OSError, requests.RequestException, RuntimeError, ValueError) as e:
+            # _request_batch's HTTP and response-shape failures, plus torch.cat and
+            # audio_save. Bugs stay unhandled.
+            self.cleanup_memory()
+            self.audio_segments = []
+            return False, self.log_exception(
+                f"{self.__class__.__name__}.convert_batch()", e
+            )
 
     def create_vtt(self, all_sentences: list) -> bool:
         return bool(self._build_vtt_file(all_sentences))
