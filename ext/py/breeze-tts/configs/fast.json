@@ -1,0 +1,273 @@
+{
+  "schema_version": 1,
+  "name": "fast",
+  "service": {
+    "concurrency": 1,
+    "freeze_after_warmup": true,
+    "cfg_scales": [
+      1.0,
+      4.0
+    ]
+  },
+  "stages": {
+    "text_encoder": {
+      "graphs": [
+        {
+          "batch_size": 1,
+          "token_length": 32
+        },
+        {
+          "batch_size": 1,
+          "token_length": 64
+        },
+        {
+          "batch_size": 1,
+          "token_length": 96
+        },
+        {
+          "batch_size": 1,
+          "token_length": 128
+        },
+        {
+          "batch_size": 1,
+          "token_length": 160
+        },
+        {
+          "batch_size": 1,
+          "token_length": 192
+        },
+        {
+          "batch_size": 1,
+          "token_length": 224
+        },
+        {
+          "batch_size": 1,
+          "token_length": 256
+        },
+        {
+          "batch_size": 2,
+          "token_length": 32
+        },
+        {
+          "batch_size": 2,
+          "token_length": 64
+        },
+        {
+          "batch_size": 2,
+          "token_length": 96
+        },
+        {
+          "batch_size": 2,
+          "token_length": 128
+        },
+        {
+          "batch_size": 2,
+          "token_length": 160
+        },
+        {
+          "batch_size": 2,
+          "token_length": 192
+        },
+        {
+          "batch_size": 2,
+          "token_length": 224
+        },
+        {
+          "batch_size": 2,
+          "token_length": 256
+        },
+        {
+          "batch_size": 2,
+          "token_length": 288
+        },
+        {
+          "batch_size": 2,
+          "token_length": 320
+        },
+        {
+          "batch_size": 2,
+          "token_length": 352
+        },
+        {
+          "batch_size": 2,
+          "token_length": 384
+        },
+        {
+          "batch_size": 2,
+          "token_length": 416
+        },
+        {
+          "batch_size": 2,
+          "token_length": 448
+        },
+        {
+          "batch_size": 2,
+          "token_length": 480
+        },
+        {
+          "batch_size": 2,
+          "token_length": 512
+        },
+        {
+          "batch_size": 4,
+          "token_length": 32
+        },
+        {
+          "batch_size": 4,
+          "token_length": 64
+        },
+        {
+          "batch_size": 4,
+          "token_length": 96
+        },
+        {
+          "batch_size": 4,
+          "token_length": 128
+        },
+        {
+          "batch_size": 4,
+          "token_length": 160
+        },
+        {
+          "batch_size": 4,
+          "token_length": 256
+        }
+      ]
+    },
+    "backbone_prefill": {
+      "graphs": [
+        {
+          "branch_batch_size": 1,
+          "sequence_length": 32
+        },
+        {
+          "branch_batch_size": 1,
+          "sequence_length": 64
+        },
+        {
+          "branch_batch_size": 1,
+          "sequence_length": 96
+        },
+        {
+          "branch_batch_size": 1,
+          "sequence_length": 128
+        },
+        {
+          "branch_batch_size": 1,
+          "sequence_length": 160
+        },
+        {
+          "branch_batch_size": 1,
+          "sequence_length": 192
+        },
+        {
+          "branch_batch_size": 1,
+          "sequence_length": 224
+        },
+        {
+          "branch_batch_size": 1,
+          "sequence_length": 256
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 32
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 64
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 96
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 128
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 160
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 192
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 224
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 256
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 288
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 320
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 352
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 384
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 416
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 448
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 480
+        },
+        {
+          "branch_batch_size": 2,
+          "sequence_length": 512
+        }
+      ]
+    },
+    "backbone_decode": {
+      "graphs": [
+        {
+          "branch_batch_size": 1
+        },
+        {
+          "branch_batch_size": 2
+        }
+      ]
+    },
+    "depth_decoder": {
+      "graphs": [
+        {
+          "batch_size": 1
+        },
+        {
+          "batch_size": 2
+        }
+      ]
+    },
+    "codec": {
+      "graphs": [
+        {
+          "num_lanes": 1,
+          "chunk_frames": 1
+        }
+      ]
+    }
+  },
+  "warmup_request": {
+    "template": "tts_instruction",
+    "text": "The cat sat on the mat.",
+    "instruction": "Speak naturally and clearly.",
+    "speaker": "S0",
+    "seed": 42
+  }
+}
