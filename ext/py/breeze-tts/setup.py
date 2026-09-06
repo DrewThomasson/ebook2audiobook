@@ -11,5 +11,7 @@ setup(
     name="breeze-tts",
     version="0.0.0",
     packages=find_packages(exclude=["tests", "tests.*"]),
+    package_data={"configs": ["*.json"]},
+    include_package_data=True,
     install_requires=[],  # deps already listed in this repo's requirements.txt
 )
