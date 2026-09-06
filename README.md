@@ -101,7 +101,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ## Features
-- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
+- 🔧 **TTS Engines supported**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`, `Piper`, `Kokoro`, `Fish-Speech`*<br/>
+     <i>*Fish-Speech (s2-pro) weights are Fish Audio Research License — non-commercial; commercial use requires a paid license from Fish Audio (business@fish.audio). All other engines in this repo remain Apache-2.0/permissive.</i>
 - 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** to convert directly a short text in audio
 - 🔍 **OCR scanning** for files with text pages as images
@@ -517,7 +518,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Piper
 - [ ] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)
 - [ ] OpenVoice (https://github.com/myshell-ai/OpenVoice)
-- [ ] fish-speech (https://github.com/fishaudio/fish-speech)
+- [x] fish-speech (https://github.com/fishaudio/fish-speech) — s2-pro weights are **Fish Audio Research License (non-commercial)**; commercial use requires a paid license from Fish Audio (business@fish.audio)
 - [ ] ChatTTS (https://github.com/2noise/ChatTTS)
 - [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
 - [ ] F5-TTS (https://github.com/swivid/f5-tts)
@@ -526,7 +527,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] Spark-TTS (https://github.com/sparkaudio/spark-tts)
 - [ ] index-tts (https://github.com/index-tts/index-tts)
 - [ ] MeloTTS (https://github.com/myshell-ai/MeloTTS)
-- [ ] Kokoro-TTS (https://github.com/hexgrad/kokoro)
+- [x] Kokoro-TTS (https://github.com/hexgrad/kokoro) — Apache-2.0, fully commercial-safe
 - [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
 - [ ] Zonos (https://github.com/Zyphra/Zonos)
 - [ ] Style-TTS2 (https://github.com/yl4579/StyleTTS2)
