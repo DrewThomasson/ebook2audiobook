@@ -42,9 +42,11 @@ class Kokoro(TTSUtils, TTSRegistry, name="kokoro"):
                 else self.session["device"]
             )
             self.engine = self.load_engine()
-        except Exception as e:
+        except (KeyError, OSError, RuntimeError, ValueError) as e:
+            # load_engine() already wraps its own failures; anything outside this set
+            # is a bug here and should keep its traceback.
             error = f"__init__() error: {e}"
-            raise ValueError(error)
+            raise ValueError(error) from e
 
     def load_engine(self) -> Any:
         try:
@@ -129,7 +131,9 @@ class Kokoro(TTSUtils, TTSRegistry, name="kokoro"):
                             0.006,
                         ).unsqueeze(0)
                         self.audio_segments.append(part_tensor)
-                except Exception as e:
+                except (OSError, RuntimeError, ValueError) as e:
+                    # what one part can legitimately hit: model/runtime failures and
+                    # bad audio data. Bugs stay unhandled.
                     self.cleanup_memory()
                     return False, self.log_exception(
                         f"{self.__class__.__name__}.convert() part loop", e
@@ -146,7 +150,9 @@ class Kokoro(TTSUtils, TTSRegistry, name="kokoro"):
                     error = f"Cannot create {sentence_file}"
                     return False, error
             return True, None
-        except Exception as e:
+        except (OSError, RuntimeError, ValueError) as e:
+            # what the per-part loop does not already handle: voice resolution,
+            # torch.cat and audio_save. Bugs stay unhandled.
             self.cleanup_memory()
             self.audio_segments = []
             return False, self.log_exception(f"{self.__class__.__name__}.convert()", e)

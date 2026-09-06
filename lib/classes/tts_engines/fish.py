@@ -40,9 +40,11 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                 else self.session["device"]
             )
             self.engine = self.load_engine()
-        except Exception as e:
+        except (KeyError, OSError, RuntimeError, ValueError) as e:
+            # load_engine() already wraps its own failures; anything outside this set
+            # is a bug here and should keep its traceback.
             error = f"__init__() error: {e}"
-            raise ValueError(error)
+            raise ValueError(error) from e
 
     def _server_is_up(self) -> bool:
         import requests
@@ -52,7 +54,9 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                 f"http://{FISH_API_HOST}:{FISH_API_PORT}/v1/health", timeout=2
             )
             return r.status_code == 200
-        except Exception:
+        except requests.RequestException:
+            # only network failures mean "not up yet"; a bug here must not masquerade
+            # as an unhealthy server and time out the wait loop.
             return False
 
     def load_engine(self) -> Any:
@@ -120,11 +124,12 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
             raise RuntimeError(error) from e
 
     def convert(self, sentence_file: str, sentence: str, **kwargs) -> tuple:
-        try:
-            import requests, ormsgpack
-            from fish_speech.utils.schema import ServeTTSRequest
-            from fish_speech.utils.file import audio_to_bytes
+        import ormsgpack
+        import requests
+        from fish_speech.utils.file import audio_to_bytes
+        from fish_speech.utils.schema import ServeTTSRequest
 
+        try:
             if not self.engine:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 return False, error
@@ -186,9 +191,8 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                             req, option=ormsgpack.OPT_SERIALIZE_PYDANTIC
                         ),
                         headers={"content-type": "application/msgpack"},
-                        # Autoregression runs to its own stop token, not to len(part);
-                        # budget generously rather than a short number that only works
-                        # uncontended.
+                        # autoregression runs to its own stop token, not to len(part),
+                        # so budget generously rather than for the uncontended case
                         timeout=600,
                     )
                     if resp.status_code != 200:
@@ -210,7 +214,14 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                         )
                     part_tensor = self._tensor_type(audio_np).unsqueeze(0)
                     self.audio_segments.append(part_tensor)
-                except Exception as e:
+                except (
+                    OSError,
+                    requests.RequestException,
+                    RuntimeError,
+                    ValueError,
+                ) as e:
+                    # what one part can legitimately hit: network, tmp-file I/O,
+                    # decode/resample. Bugs stay unhandled.
                     self.cleanup_memory()
                     return False, self.log_exception(
                         f"{self.__class__.__name__}.convert() part loop", e
@@ -229,7 +240,9 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                     error = f"Cannot create {sentence_file}"
                     return False, error
             return True, None
-        except Exception as e:
+        except (OSError, requests.RequestException, RuntimeError, ValueError) as e:
+            # what the per-part loop does not already handle: voice resolution,
+            # torch.cat and audio_save. Bugs stay unhandled.
             self.cleanup_memory()
             self.audio_segments = []
             return False, self.log_exception(f"{self.__class__.__name__}.convert()", e)
