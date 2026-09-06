@@ -3,6 +3,7 @@ from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
 BREEZE_API_HOST = "127.0.0.1"
 BREEZE_API_PORT = 7861
+BREEZE_REFERENCE_TEXT = "This is a clear, steady voice reading aloud for narration."
 
 
 class Breeze(TTSUtils, TTSRegistry, name="breeze"):
@@ -47,6 +48,39 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
             return r.status_code == 200
         except Exception:
             return False
+
+    def _load_or_create_reference_voice(self) -> tuple:
+        # Without a reference, Breeze runs in reference-free "Voice Design" mode and
+        # samples a new voice per call. Generate one reference clip once and reuse it
+        # (via "Voice Direction" mode) on every request to keep the narrator consistent.
+        ref_wav = os.path.join(self.cache_dir, "breeze-tts-2", "reference_voice.wav")
+        ref_txt = f"{ref_wav}.txt"
+        if os.path.exists(ref_wav) and os.path.exists(ref_txt):
+            return ref_wav, Path(ref_txt).read_text(encoding="utf-8")
+        import requests
+
+        resp = requests.post(
+            f"http://{BREEZE_API_HOST}:{BREEZE_API_PORT}/v1/audio/speech",
+            data={
+                "cfg_scale": 4,
+                "text": BREEZE_REFERENCE_TEXT,
+                "instruction": default_engine_settings[TTS_ENGINES["BREEZE"]][
+                    "default_instruction"
+                ],
+            },
+            timeout=120,
+        )
+        if resp.status_code != 200:
+            error = f"Breeze API returned HTTP {resp.status_code} generating reference voice: {resp.text[:200]}"
+            raise RuntimeError(error)
+        os.makedirs(os.path.dirname(ref_wav), exist_ok=True)
+        with wave.open(ref_wav, "wb") as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            f.setframerate(self.params["samplerate"])
+            f.writeframes(resp.content)
+        Path(ref_txt).write_text(BREEZE_REFERENCE_TEXT, encoding="utf-8")
+        return ref_wav, BREEZE_REFERENCE_TEXT
 
     def load_engine(self) -> Any:
         try:
@@ -100,11 +134,15 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                     proc.terminate()
                     error = "Breeze API server did not become healthy within 180s"
                     raise RuntimeError(error)
-                loaded_tts[self.tts_key] = {"process": proc, "port": BREEZE_API_PORT}
+                entry = {"process": proc, "port": BREEZE_API_PORT}
             else:
                 # server already running (e.g. started out-of-band) - reuse it rather than
                 # spawning a second one; the server is single-concurrency (see convert()).
-                loaded_tts[self.tts_key] = {"process": None, "port": BREEZE_API_PORT}
+                entry = {"process": None, "port": BREEZE_API_PORT}
+            entry["ref_audio_path"], entry["ref_text"] = (
+                self._load_or_create_reference_voice()
+            )
+            loaded_tts[self.tts_key] = entry
             msg = f"TTS {self.tts_key} Loaded!"
             print(msg)
             return loaded_tts[self.tts_key]
@@ -139,17 +177,20 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                     # a second request while one is in flight gets HTTP 409. Not handled here
                     # (retry/backoff) since ebook2audiobook does not call convert() concurrently
                     # within one engine instance; flagged for future hardening if that changes.
-                    resp = requests.post(
-                        f"http://{BREEZE_API_HOST}:{self.engine['port']}/v1/audio/speech",
-                        data={
-                            "cfg_scale": 4,
-                            "text": part,
-                            "instruction": default_engine_settings[
-                                TTS_ENGINES["BREEZE"]
-                            ]["default_instruction"],
-                        },
-                        timeout=120,
-                    )
+                    with open(self.engine["ref_audio_path"], "rb") as ref_audio_file:
+                        resp = requests.post(
+                            f"http://{BREEZE_API_HOST}:{self.engine['port']}/v1/audio/speech",
+                            data={
+                                "cfg_scale": 4,
+                                "text": part,
+                                "instruction": default_engine_settings[
+                                    TTS_ENGINES["BREEZE"]
+                                ]["default_instruction"],
+                                "ref_text": self.engine["ref_text"],
+                            },
+                            files={"ref_audio": ref_audio_file},
+                            timeout=120,
+                        )
                     if resp.status_code != 200:
                         error = f"Breeze API returned HTTP {resp.status_code}: {resp.text[:200]}"
                         return False, error
