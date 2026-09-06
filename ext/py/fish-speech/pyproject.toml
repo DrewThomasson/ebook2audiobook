@@ -1,0 +1,152 @@
+[project]
+name = "fish-speech"
+version = "2.0.0"
+authors = [
+    {name = "Fish Audio", email = "oss@fish.audio"},
+]
+description = "Fish Speech"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["TTS", "Speech"]
+license = {text = "Fish Audio Research License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+# Vendored copy (see ../../../README.md TTS-engine table) of
+# https://github.com/fishaudio/fish-speech, pinned deps relaxed for this repo's
+# integration:
+#   - torch/torchaudio: upstream pins ==2.8.0, which has no aarch64+CUDA wheel on
+#     PyPI (CPU-only there) and cannot drive an NVIDIA GB10 (sm_121a, needs cu130,
+#     shipped from torch 2.9 on). Widened to a floor so this repo's own
+#     device_installer-managed torch (>=2.9 on this class of hardware) is left
+#     alone instead of being downgraded underneath every other TTS engine.
+#   - transformers: upstream caps at <=4.57.3. fish-speech only touches
+#     `transformers` for AutoTokenizer/PreTrainedTokenizerFast (no AutoModel; the
+#     actual LLM/decoder is fish-speech's own DualARTransformer/DAC code), and a
+#     live spike against the real s2-pro checkpoint confirmed tokenizer load +
+#     full model load/generate both work unchanged under transformers 5.0.0 (the
+#     version this repo's device_installer pins once torch>=2.9). Cap dropped.
+#   - pyaudio: removed entirely. It is only used by fish-speech's own local
+#     mic-record demo (tools/api_client.py), never imported by tools/api_server.py
+#     or by this repo's HTTP client (lib/classes/tts_engines/fish.py), and it
+#     needs the portaudio19-dev system header to build from source.
+dependencies = [
+    "numpy",
+    "torch>=2.8.0",
+    "torchaudio>=2.8.0",
+    "transformers>=4.57.3",
+    "datasets==2.18.0",
+    "lightning>=2.1.0",
+    "hydra-core>=1.3.2",
+    "tensorboard>=2.14.1",
+    "natsort>=8.4.0",
+    "einops>=0.7.0",
+    "librosa>=0.10.1",
+    "rich>=13.5.3",
+    "gradio>5.0.0",
+    "wandb>=0.19.0",
+    "grpcio>=1.58.0",
+    "kui>=1.6.0",
+    "uvicorn>=0.30.0",
+    "loguru>=0.6.0",
+    "loralib>=0.1.2",
+    "pyrootutils>=1.0.4",
+    "resampy>=0.4.3",
+    "einx[torch]==0.2.2",
+    "zstandard>=0.22.0",
+    "pydub",
+    "modelscope==1.17.1",
+    "opencc-python-reimplemented==0.1.7",
+    "silero-vad",
+    "ormsgpack",
+    "tiktoken>=0.8.0",
+    "pydantic==2.9.2",
+    "cachetools",
+    "descript-audio-codec",
+    "safetensors"
+]
+
+[project.optional-dependencies]
+stable = [
+    "torch==2.8.0",
+    "torchaudio",
+]
+cpu = [
+  "torch==2.8.0",
+  "torchaudio",
+]
+cu126 = [
+  "torch==2.8.0",
+  "torchaudio",
+]
+cu128 = [
+  "torch==2.8.0",
+  "torchaudio",
+]
+cu129 = [
+  "torch==2.8.0",
+  "torchaudio",
+]
+
+[tool.uv]
+override-dependencies = [
+    # descript-audiotools (transitive via descript-audio-codec) pins protobuf<3.20,
+    # but fish-speech's generated proto code requires >=3.20; cap at <6 for API stability
+    "protobuf>=3.20.0,<6.0.0",
+]
+conflicts = [
+  [
+    { extra = "cpu" },
+    { extra = "cu126" },
+    { extra = "cu128" },
+    { extra = "cu129" },
+  ],
+]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu126", extra = "cu126" },
+  { index = "pytorch-cu128", extra = "cu128" },
+  { index = "pytorch-cu129", extra = "cu129" },
+]
+torchaudio = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu126", extra = "cu126" },
+  { index = "pytorch-cu128", extra = "cu128" },
+  { index = "pytorch-cu129", extra = "cu129" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu129"
+url = "https://download.pytorch.org/whl/cu129"
+explicit = true
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# "tools" deliberately dropped from the installed packages: it is a generic
+# name that would collide with other dependencies' top-level packages in this
+# repo's shared venv. tools/api_server.py is launched as a subprocess by plain
+# file path (see lib/classes/tts_engines/fish.py), so it never needs to be
+# `import`-able — only present on disk, which the vendored checkout guarantees.
+packages = ["fish_speech"]
+
+[tool.setuptools_scm]
