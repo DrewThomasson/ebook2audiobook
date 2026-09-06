@@ -13,7 +13,9 @@ TTS_ENGINES = {
     "FAIRSEQ": "fairseq",
     "GLOWTTS": "glowtts",
     "TACOTRON": "tacotron",
-    "YOURTTS": "yourtts"
+    "YOURTTS": "yourtts",
+    "KOKORO": "kokoro",
+    "FISH": "fish"
 }
 
 TTS_VOICE_CONVERSION = {
@@ -66,7 +68,7 @@ default_voice_detection_model = 'drewThomasson/segmentation'
 default_speaker = os.path.join(voices_dir, 'eng', 'adult', 'male', 'KumarDahl.wav')
 
 tts_engines_from_coqui = [TTS_ENGINES['XTTS'], TTS_ENGINES['BARK'], TTS_ENGINES['TORTOISE'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON'], TTS_ENGINES['YOURTTS']]
-tts_engines_with_inner_speaker = [TTS_ENGINES['PIPER'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON'], TTS_ENGINES['YOURTTS']]
+tts_engines_with_inner_speaker = [TTS_ENGINES['PIPER'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON'], TTS_ENGINES['YOURTTS'], TTS_ENGINES['KOKORO']]
 tts_engines_with_custom_model = (TTS_ENGINES['PIPER'], TTS_ENGINES['XTTS'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'])
 
 max_custom_model = 100
@@ -285,5 +287,31 @@ default_engine_settings = {
         "voice": None,
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
+    },
+    TTS_ENGINES['KOKORO']: {
+        "languages": {"eng": "a", "jpn": "j", "zho": "z", "spa": "e", "fra": "f", "hin": "h", "ita": "i", "por": "p"},
+        "samplerate": 24000,
+        "files": [],
+        "voice": None,
+        "voices": {
+            "af_heart": "Heart (US female)", "af_bella": "Bella (US female)", "af_nicole": "Nicole (US female)",
+            "af_aoede": "Aoede (US female)", "af_kore": "Kore (US female)", "af_sarah": "Sarah (US female)",
+            "af_nova": "Nova (US female)", "af_sky": "Sky (US female)", "af_alloy": "Alloy (US female)",
+            "af_jessica": "Jessica (US female)", "af_river": "River (US female)",
+            "am_michael": "Michael (US male)", "am_fenrir": "Fenrir (US male)", "am_puck": "Puck (US male)",
+            "am_echo": "Echo (US male)", "am_eric": "Eric (US male)", "am_liam": "Liam (US male)",
+            "am_onyx": "Onyx (US male)", "am_santa": "Santa (US male)", "am_adam": "Adam (US male)",
+            "bf_emma": "Emma (UK female)", "bf_isabella": "Isabella (UK female)",
+            "bm_george": "George (UK male)", "bm_fable": "Fable (UK male)"
+        },
+        "rating": {"VRAM": 1, "CPU": 3, "RAM": 2, "Realism": 4}
+    },
+    TTS_ENGINES['FISH']: {
+        "languages": {"eng": "en", "zho": "zh"},
+        "samplerate": 44100,
+        "files": [],
+        "voice": default_speaker,
+        "voices": {},
+        "rating": {"VRAM": 8, "CPU": 1, "RAM": 8, "Realism": 5}
     }
 }
