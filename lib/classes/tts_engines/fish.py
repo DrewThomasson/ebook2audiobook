@@ -1,10 +1,8 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 
-# Vendored at ext/py/fish-speech (see that dir's pyproject.toml header for why:
-# no clean pip-installable single-file path exists for tools/api_server.py, and
-# a couple of upstream pins needed relaxing for this repo's shared venv). Kept
-# out of models_dir/tts_dir since it is source, not a downloaded model.
+# Vendored at ext/py/fish-speech, same pattern as ext/py/demucs — source, not a
+# downloaded model, so kept out of models_dir/tts_dir.
 FISH_SPEECH_REPO_DIR = os.path.abspath(os.path.join("ext", "py", "fish-speech"))
 FISH_API_HOST = "127.0.0.1"
 FISH_API_PORT = 8090
@@ -76,11 +74,8 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                         repo_id=self.models[self.session["fine_tuned"]]["repo"],
                         local_dir=checkpoint_dir,
                     )
-                # Same interpreter/venv as the running app (sys.executable, not a
-                # bare 'python' looked up on PATH) so the subprocess shares
-                # whatever torch/transformers this repo's device_installer
-                # already resolved for this device — confirmed compatible with a
-                # live spike against the real s2-pro checkpoint (see PR notes).
+                # sys.executable (not a bare 'python') so the subprocess shares this
+                # app's already-resolved torch/transformers venv.
                 proc = subprocess.Popen(
                     [
                         sys.executable,
@@ -89,12 +84,8 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                         f"{FISH_API_HOST}:{FISH_API_PORT}",
                         "--llama-checkpoint-path",
                         checkpoint_dir,
-                        # tools/server/api_utils.py defaults this to the *relative*
-                        # path 'checkpoints/s2-pro/codec.pth' (resolved against the
-                        # server's cwd, independently of --llama-checkpoint-path) —
-                        # must be set explicitly or the DAC decoder fails to load
-                        # from underneath our real checkpoint_dir (confirmed via a
-                        # real crashed run: FileNotFoundError on that relative path).
+                        # Defaults to a path relative to server cwd, independent of
+                        # --llama-checkpoint-path; must be set explicitly.
                         "--decoder-checkpoint-path",
                         os.path.join(checkpoint_dir, "codec.pth"),
                     ],
@@ -102,12 +93,8 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                 )
                 import time
 
-                # ModelManager.__init__ (tools/server/model_manager.py) does a
-                # real, unconditional 1024-token warmup generation before the
-                # health endpoint ever returns 200 — confirmed via a real cold
-                # start this session taking well over 120s once the GPU was
-                # also under real contention from an unrelated job. Budget
-                # generously (15 min) rather than fabricate a shorter number.
+                # ModelManager does an unconditional warmup generation before /health
+                # returns 200; budget generously (15 min) for a cold start under load.
                 for _ in range(180):
                     if self._server_is_up():
                         break
@@ -117,9 +104,7 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                     try:
                         proc.wait(timeout=10)
                     except subprocess.TimeoutExpired:
-                        # SIGTERM observed (this session) to be ignored while
-                        # the subprocess is deep in a blocking CUDA generation
-                        # call; SIGKILL is needed to actually free the GPU.
+                        # SIGTERM is ignored mid blocking-CUDA-call; SIGKILL frees the GPU.
                         proc.kill()
                         proc.wait(timeout=10)
                     error = "Fish-Speech API server did not become healthy within 900s"
@@ -201,13 +186,9 @@ class Fish(TTSUtils, TTSRegistry, name="fish"):
                             req, option=ormsgpack.OPT_SERIALIZE_PYDANTIC
                         ),
                         headers={"content-type": "application/msgpack"},
-                        # Real measured cost: ~1.7s/semantic-token during
-                        # generation on this box, and per-sentence generation
-                        # is not capped short (autoregression runs to its own
-                        # stop token, not to len(part)) — a real request for
-                        # one short sentence exceeded a 120s read-timeout under
-                        # normal GPU contention. Budget generously rather than
-                        # fabricate a shorter number that only works uncontended.
+                        # Autoregression runs to its own stop token, not to len(part);
+                        # budget generously rather than a short number that only works
+                        # uncontended.
                         timeout=600,
                     )
                     if resp.status_code != 200:
