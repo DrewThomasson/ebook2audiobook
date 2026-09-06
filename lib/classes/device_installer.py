@@ -1566,9 +1566,8 @@ class DeviceInstaller():
         return False
 
     def has_torchcodec_stack(self)->bool:
-        # single source of truth for the whole dependency universe:
-        #   torch >= 2.9 -> torchcodec exists -> pyannote 4 -> hub 1.x -> transformers 5
-        #   torch <  2.9 -> no torchcodec     -> pyannote 3.4.0 -> hub <1.0 -> transformers 4.57.6
+        # single source of truth for whether torchcodec exists, which decides the
+        # pyannote-audio version (4.x needs torchcodec; 3.4.0 doesn't support it).
         # torch_matrix tags with codec '' (cu118/cu121/cu124, rocm<=6.2.4, jetson*)
         # top out below 2.9 and must stay on the old branch.
         # (2, 9) is the same boundary _needs_reinstall() uses to decide whether
@@ -1639,10 +1638,11 @@ class DeviceInstaller():
                 # requires torchcodec>=0.7, which only exists from torch 2.8 on.
                 return 'pyannote-audio>=4.0.0' if self.has_torchcodec_stack() else 'pyannote-audio==3.4.0'
             case 'huggingface-hub':
-                # pyannote 3.4.0 predates hub 1.0 and calls APIs it removed, but
-                # only declares a floor (huggingface-hub>=0.13.0) — a floor cannot
-                # pull a version down, so the cap has to come from here.
-                return 'huggingface-hub>=1.0' if self.has_torchcodec_stack() else 'huggingface-hub>=0.36.2,<1.0'
+                # Capped <1.0 regardless of torch version: transformers==4.57.3 (see
+                # below) requires it, and neither pyannote-audio (floor: >=0.28.1,
+                # no upper bound) nor torchcodec declare a hub version requirement
+                # of their own, so there is nothing pulling this above 1.0 anymore.
+                return 'huggingface-hub>=0.36.2,<1.0'
             case 'transformers':
                 # Hard-pinned regardless of torch version: transformers 5.x's
                 # rope-embedding rewrite breaks qwen-tts and Breeze at model-load time.
