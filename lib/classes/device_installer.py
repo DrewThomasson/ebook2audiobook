@@ -1771,12 +1771,8 @@ class DeviceInstaller():
                 return True
             m_ta = re.search(r'\+(.+)$', torchaudio_full)
             torchaudio_tag = m_ta.group(1) if m_ta else None
-            # Unlike torch, torchaudio wheels from the PyTorch index (this cu130 build
-            # included) do not carry a device-local version tag at all - the installed
-            # version string is bare (e.g. '2.9.1', no '+cu130'). Only enforce the tag
-            # match when torchaudio actually reports one; a bare version is expected and
-            # must not be treated as a mismatch (previously caused every run to force a
-            # reinstall even when torch/torchaudio were already correct).
+            # Unlike torch, torchaudio wheels don't always carry a device-local version
+            # tag; only enforce the match when torchaudio actually reports one.
             if torchaudio_tag is not None and not _tag_ok(torchaudio_tag):
                 return True
             # torchcodec: presence only (when torch >= 2.9 needs it)
