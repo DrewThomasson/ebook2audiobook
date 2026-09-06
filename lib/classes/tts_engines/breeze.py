@@ -46,7 +46,9 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                 f"http://{BREEZE_API_HOST}:{BREEZE_API_PORT}/health", timeout=2
             )
             return r.status_code == 200
-        except Exception:
+        except requests.RequestException:
+            # only network failures mean "not up yet"; a bug here must not masquerade
+            # as an unhealthy server and time out the wait loop.
             return False
 
     def _load_or_create_reference_voice(self) -> tuple:
@@ -151,11 +153,11 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
             raise RuntimeError(error) from e
 
     def convert(self, sentence_file: str, sentence: str, **kwargs) -> tuple:
-        try:
-            import numpy as np
-            import requests
-            import torch
+        import numpy as np
+        import requests
+        import torch
 
+        try:
             if not self.engine:
                 error = f"TTS engine {self.session['tts_engine']} failed to load!"
                 return False, error
@@ -173,10 +175,8 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                 if not any(c.isalnum() for c in part):
                     continue
                 try:
-                    # NOTE known v1 limitation: the Breeze API server is single-concurrency -
-                    # a second request while one is in flight gets HTTP 409. Not handled here
-                    # (retry/backoff) since ebook2audiobook does not call convert() concurrently
-                    # within one engine instance; flagged for future hardening if that changes.
+                    # the server is single-concurrency and answers 409 if busy; no retry
+                    # here because convert() is never called concurrently.
                     with open(self.engine["ref_audio_path"], "rb") as ref_audio_file:
                         resp = requests.post(
                             f"http://{BREEZE_API_HOST}:{self.engine['port']}/v1/audio/speech",
@@ -202,7 +202,14 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                     )
                     part_tensor = self._tensor_type(pcm).unsqueeze(0)
                     self.audio_segments.append(part_tensor)
-                except Exception as e:
+                except (
+                    OSError,
+                    requests.RequestException,
+                    RuntimeError,
+                    ValueError,
+                ) as e:
+                    # what one part can legitimately hit: missing reference file,
+                    # network, runtime, malformed PCM. Bugs stay unhandled.
                     self.cleanup_memory()
                     return False, self.log_exception(
                         f"{self.__class__.__name__}.convert() part loop", e
