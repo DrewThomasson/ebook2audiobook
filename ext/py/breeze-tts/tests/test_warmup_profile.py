@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from models.warmup_profile import load_warmup_profile, parse_warmup_profile
+from breeze_models.warmup_profile import load_warmup_profile, parse_warmup_profile
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 

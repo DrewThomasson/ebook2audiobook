@@ -14,8 +14,8 @@ import qwen_tts
 import torch
 import transformers
 
-from models.fast_streaming import FastStreamingConfig
-from models.warmup_profile import load_warmup_profile
+from breeze_models.fast_streaming import FastStreamingConfig
+from breeze_models.warmup_profile import load_warmup_profile
 
 EXPECTED = {
     "torch": "2.9.1",

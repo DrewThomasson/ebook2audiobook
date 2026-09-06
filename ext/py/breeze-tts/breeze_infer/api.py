@@ -24,12 +24,12 @@ from breeze_infer.runtime import (
     update_generation_config_for_breeze,
 )
 from breeze_infer.templates import get_template, prepare_inputs
-from models.fast_streaming import (
+from breeze_models.fast_streaming import (
     FastBreezeStreamingRuntime,
     FastStreamingChunk,
     FastStreamingConfig,
 )
-from models.warmup_profile import load_warmup_profile
+from breeze_models.warmup_profile import load_warmup_profile
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FAST_CONFIG = REPO_ROOT / "configs" / "fast.json"

@@ -6,7 +6,7 @@ This module provides:
 2. BreezeBackboneAdapter: Adapter to use external pretrained LLMs as Breeze backbone
 
 Usage:
-    from models.breeze_backbone_factory import BreezeBackboneFactory
+    from breeze_models.breeze_backbone_factory import BreezeBackboneFactory
 
     # In BreezeForConditionalGeneration.__init__:
     self.backbone_model = BreezeBackboneFactory.create_backbone(config)

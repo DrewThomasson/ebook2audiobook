@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from transformers import AutoTokenizer
 
-from models.breeze import BreezeForConditionalGeneration
+from breeze_models.breeze import BreezeForConditionalGeneration
 
 
 def get_dist_info() -> tuple[int, int, int]:

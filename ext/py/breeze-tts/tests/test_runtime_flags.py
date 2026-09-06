@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from models.fast_streaming import FastBreezeStreamingRuntime
+from breeze_models.fast_streaming import FastBreezeStreamingRuntime
 
 
 def test_runtime_fast_properties_return_values_not_methods() -> None:

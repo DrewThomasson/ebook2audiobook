@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from models.breeze import _resolve_text_encoder_attn_implementation
+from breeze_models.breeze import _resolve_text_encoder_attn_implementation
 
 
 def _config(*, caller=None, preferred=None):

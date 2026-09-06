@@ -121,8 +121,8 @@ class BreezeDepthDecoderConfig(PretrainedConfig):
             The attention head dimension. If None, it will default to hidden_size // num_attention_heads
 
     ```python
-    >>> from models.breeze import BreezeDepthDecoderModel
-    from models.breeze_config import BreezeDepthDecoderConfig
+    >>> from breeze_models.breeze import BreezeDepthDecoderModel
+    from breeze_models.breeze_config import BreezeDepthDecoderConfig
 
     >>> # Initializing a BreezeDepthDecoder
     >>> configuration = BreezeDepthDecoderConfig()
@@ -322,8 +322,8 @@ class BreezeConfig(PretrainedConfig):
             Configuration for the codec.
 
     ```python
-    >>> from models.breeze import BreezeForConditionalGeneration
-    from models.breeze_config import BreezeConfig
+    >>> from breeze_models.breeze import BreezeForConditionalGeneration
+    from breeze_models.breeze_config import BreezeConfig
 
     >>> # Initializing a BreezeConfig
     >>> configuration = BreezeConfig()

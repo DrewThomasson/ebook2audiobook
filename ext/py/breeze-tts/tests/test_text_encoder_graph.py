@@ -1,4 +1,4 @@
-from models.text_encoder_graph import TextEncoderGraphCache
+from breeze_models.text_encoder_graph import TextEncoderGraphCache
 
 
 def test_smallest_fitting_key_reuses_larger_token_bucket() -> None:

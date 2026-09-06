@@ -1164,7 +1164,7 @@ class BreezeGenerationMixin(GenerationMixin):
         Example:
 
         ```python
-        >>> from models.breeze import BreezeForConditionalGeneration
+        >>> from breeze_models.breeze import BreezeForConditionalGeneration
         from transformers import AutoTokenizer
         >>> from datasets import load_dataset, Audio
 
