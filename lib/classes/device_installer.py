@@ -1644,8 +1644,8 @@ class DeviceInstaller():
                 # pull a version down, so the cap has to come from here.
                 return 'huggingface-hub>=1.0' if self.has_torchcodec_stack() else 'huggingface-hub>=0.36.2,<1.0'
             case 'transformers':
-                # Hard-pinned regardless of torch version: transformers 5.x breaks
-                # qwen-tts and Breeze at model-load time (see PR description).
+                # Hard-pinned regardless of torch version: transformers 5.x's
+                # rope-embedding rewrite breaks qwen-tts and Breeze at model-load time.
                 return 'transformers==4.57.3'
             case _:
                 raise ValueError(f'select_pkg(): no rule for {pkg}')
