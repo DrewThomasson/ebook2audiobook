@@ -76,6 +76,10 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                         repo_id=self.models[self.session["fine_tuned"]]["repo"],
                         local_dir=weights_dir,
                     )
+                # Point Triton at system ptxas: bundled torch/triton's ptxas doesn't
+                # support this box's GPU target, needed for --fast-all's compile path.
+                env = os.environ.copy()
+                env.setdefault("TRITON_PTXAS_PATH", "/usr/local/cuda/bin/ptxas")
                 proc = subprocess.Popen(
                     [
                         "python",
@@ -87,7 +91,8 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                         "--port",
                         str(BREEZE_API_PORT),
                         "--fast-all",
-                    ]
+                    ],
+                    env=env,
                 )
                 for _ in range(90):
                     if self._server_is_up():
