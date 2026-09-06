@@ -13,7 +13,8 @@ TTS_ENGINES = {
     "FAIRSEQ": "fairseq",
     "GLOWTTS": "glowtts",
     "TACOTRON": "tacotron",
-    "YOURTTS": "yourtts"
+    "YOURTTS": "yourtts",
+    "BREEZE": "breeze"
 }
 
 TTS_VOICE_CONVERSION = {
@@ -285,5 +286,14 @@ default_engine_settings = {
         "voice": None,
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
         "rating": {"VRAM": 1, "CPU": 5, "RAM": 1, "Realism": 2}
+    },
+    TTS_ENGINES['BREEZE']: {
+        "languages": {"eng": "en", "zho": "zh"},
+        "samplerate": 24000,
+        "files": [],
+        "voice": None,
+        "voices": {},
+        "default_instruction": "A clear, neutral adult narrator voice with a calm, steady reading pace.",
+        "rating": {"VRAM": 8, "CPU": 1, "RAM": 8, "Realism": 5}
     }
 }
