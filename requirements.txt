@@ -49,4 +49,5 @@ pandas>=1.0,<3.0
 gradio==5.49.1
 coqui-tts[languages]==0.27.5
 piper-tts==1.4.2
+kokoro>=0.9.4
 ./ext/py/demucs
