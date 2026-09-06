@@ -72,6 +72,7 @@ class Kokoro(TTSUtils, TTSRegistry, name="kokoro"):
     def convert(self, sentence_file: str, sentence: str, **kwargs) -> tuple:
         try:
             import torch
+
             from lib.classes.tts_engines.common.audio import (
                 is_audio_data_valid,
                 trim_audio,
