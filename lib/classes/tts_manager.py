@@ -22,15 +22,3 @@ class TTSManager:
 
     def convert_sentence2audio(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         return self.engine.convert(sentence_file, sentence, **kwargs)
-
-    @property
-    def supports_batching(self)->bool:
-        # engines opt in; the rest keep the one-sentence-per-call path
-        return bool(getattr(self.engine, 'supports_batching', False))
-
-    @property
-    def batch_size(self)->int:
-        return int(getattr(self.engine, 'batch_size', 1))
-
-    def convert_sentences2audio(self, items:list, **kwargs)->tuple:
-        return self.engine.convert_batch(items, **kwargs)
