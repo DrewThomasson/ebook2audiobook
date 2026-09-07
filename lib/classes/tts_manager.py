@@ -22,3 +22,21 @@ class TTSManager:
 
     def convert_sentence2audio(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         return self.engine.convert(sentence_file, sentence, **kwargs)
+
+    def plan_chunks(self, pending:list, sentences:list)->list:
+        # one sentence per call unless the engine groups them itself
+        planner = getattr(self.engine, "plan_chunks", None)
+        if planner is None:
+            return [[i] for i in pending]
+        return planner(pending, sentences)
+
+    def convert_sentences2audio(self, items:list, **kwargs)->tuple:
+        # items is [(sentence_file, sentence), ...]
+        converter = getattr(self.engine, "convert_batch", None)
+        if converter is not None:
+            return converter(items, **kwargs)
+        for sentence_file, sentence in items:
+            run, error = self.convert_sentence2audio(sentence_file, sentence, **kwargs)
+            if not run:
+                return False, error
+        return True, None

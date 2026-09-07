@@ -38,8 +38,14 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
             error = f"__init__() error: {e}"
             raise ValueError(error) from e
 
-    # tells lib.core it can call convert_batch() instead of one convert() per sentence
-    supports_batching = True
+    def plan_chunks(self, pending: list, sentences: list) -> list:
+        # sorted by length first: a batch runs until its longest sequence finishes,
+        # and character count tracks duration closely enough to cut padding waste.
+        ordered = sorted(pending, key=lambda i: len(sentences[i].strip()))
+        return [
+            ordered[start : start + self.batch_size]
+            for start in range(0, len(ordered), self.batch_size)
+        ]
 
     def _resolve_batch_size(self) -> int:
         default = default_engine_settings[TTS_ENGINES["BREEZE"]]["batch_size"]
@@ -121,8 +127,7 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                 import subprocess
                 import time
 
-                # breeze-tts installs editable (see ext/py/breeze-tts/setup.py), so
-                # breeze_infer is importable globally - no cwd/PYTHONPATH juggling here.
+                # breeze-tts installs editable, so breeze_infer needs no PYTHONPATH.
                 weights_dir = os.path.join(self.cache_dir, "breeze-tts-2")
                 if not os.path.isdir(weights_dir):
                     from huggingface_hub import snapshot_download
@@ -234,8 +239,8 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                     RuntimeError,
                     ValueError,
                 ) as e:
-                    # what one part can legitimately hit: missing reference file,
-                    # network, runtime, malformed PCM. Bugs stay unhandled.
+                    # narrow on purpose: missing reference file, network, runtime,
+                    # malformed PCM. Anything else is a bug and keeps its traceback.
                     self.cleanup_memory()
                     return False, self.log_exception(
                         f"{self.__class__.__name__}.convert() part loop", e
@@ -253,15 +258,13 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                     return False, error
             return True, None
         except (OSError, requests.RequestException, RuntimeError, ValueError) as e:
-            # what the per-part loop does not already handle: SML parsing, torch.cat
-            # and audio_save. Bugs stay unhandled.
+            # SML parsing, torch.cat and audio_save; the part loop covers the rest.
             self.cleanup_memory()
             self.audio_segments = []
             return False, self.log_exception(f"{self.__class__.__name__}.convert()", e)
 
     def _request_batch(self, texts: list) -> list:
-        # The server answers with every segment's PCM concatenated plus an
-        # X-Segment-Bytes header, so the blob is split back apart here.
+        # The server concatenates every segment's PCM and sizes them in X-Segment-Bytes.
         import json
 
         import numpy as np
@@ -376,8 +379,7 @@ class Breeze(TTSUtils, TTSRegistry, name="breeze"):
                     return False, error
             return True, None
         except (OSError, requests.RequestException, RuntimeError, ValueError) as e:
-            # _request_batch's HTTP and response-shape failures, plus torch.cat and
-            # audio_save. Bugs stay unhandled.
+            # _request_batch HTTP/shape failures, plus torch.cat and audio_save.
             self.cleanup_memory()
             self.audio_segments = []
             return False, self.log_exception(
