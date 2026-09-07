@@ -715,7 +715,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
                                     gr_voice_file = gr.File(show_label=False, label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                     with gr.Row(elem_id='gr_row_voice_player') as gr_row_voice_player:
-                                        gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
+                                        gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
                                         gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                         gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                         gr_voice_selected_filename = gr.Markdown(value='', elem_id='gr_voice_selected_filename', elem_classes=['gr-markdown'], visible=False)
@@ -767,7 +767,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
                             gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
                             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
-                            gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
+                            gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_share_button=False, container=True, visible=True)
                             with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
                                 gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
