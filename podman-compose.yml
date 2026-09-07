@@ -49,7 +49,7 @@ x-common: &common
     context: .
     dockerfile: Dockerfile
     args:
-      APP_VERSION: ${APP_VERSION:-26.8.20}
+      APP_VERSION: ${APP_VERSION:-26.9.7}
       DEVICE_TAG: ${DEVICE_TAG:-cpu}
       # A null value means "resolve from the environment at build time, and if
       # unset leave the Dockerfile default alone". These are exactly the vars
