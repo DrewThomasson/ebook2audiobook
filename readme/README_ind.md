@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Folder Notebook [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] Membuat pemisahan teks Tiongkok tidak memisahkan kata dan meningkatkan pengaturan waktu jeda [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
+- [x] Docker menyusun
+- [x] Komposisi podman
 - [x] Notebook Kaggle
 - [x] Notebook Google Colab
-- [ ] Integrasi Audiobookshelf
-- [ ] [Membuat aplikasi IOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Membuat aplikasi android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### Opsi Tambahan
+- [x] Integrasi Audiobookshelf
 - [x] Opsi Terjemahan eBook
 - [x] Pilihan format keluaran
-- [x] Folder eBook batch
 - [x] Konversi multiproses
 - [x] Konversi folder eBook batch
 - [x] Deteksi Perangkat GPU
-- [x] Menghilangkan derau dari audio referensi apa pun untuk unggah kloning suara,
-- [x] Unggah model kustom (hanya XTTSv2 untuk saat ini. lebih banyak atas permintaan)
+- [x] Denoise audio referensi latar belakang apa pun untuk unggahan kloning suara
+- [x] Unggahan model fine - tuned kustom
+- [ ] [Membuat aplikasi IOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Membuat aplikasi android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### Permintaan Pengguna
 - [ ] Menambahkan model bahasa Portugis Eropa setidaknya untuk xttsv2, fairseq, vits, piper (bantuan dipersilakan)
 - [ ] Menambahkan model bahasa Sindhi setidaknya untuk xttsv2, fairseq, vits, piper (bantuan dipersilakan)
 

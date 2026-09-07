@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] ノートブックフォルダ [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] 中国語のテキスト分割が単語を分割しないようにし、一時停止のタイミングを改善する [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
+- [x] Docker作成
+- [x] ポッドマン作曲
 - [x] Kaggleノートブック
 - [x] Google Colabノートブック
-- [ ] Audiobookshelf統合
-- [ ] [iOSアプリを作成](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [androidアプリを作成](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### 追加オプション
+- [x] Audiobookshelf統合
 - [x] 電子書籍翻訳オプション
 - [x] 出力形式の選択
-- [x] バッチ電子書籍フォルダ
 - [x] マルチプロセス変換
 - [x] バッチ電子書籍フォルダ変換
 - [x] GPUデバイス検出
-- [x] アップロードされた音声クローン用に任意の参照オーディオをノイズ除去、
-- [x] カスタムモデルのアップロード（今のところXTTSv2のみ。ご要望に応じて追加）
+- [x] 音声クローンアップロードのバックグラウンドリファレンス音声をノイズ除去する
+- [x] カスタム微調整されたモデルのアップロード
+- [ ] [iOSアプリを作成](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [androidアプリを作成](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### ユーザーリクエスト
 - [ ] 少なくともxttsv2、fairseq、vits、piper向けにヨーロッパポルトガル語の言語モデルを追加（支援歓迎）
 - [ ] 少なくともxttsv2、fairseq、vits、piper向けにシンド語の言語モデルを追加（支援歓迎）
 

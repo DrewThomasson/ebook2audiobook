@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Carpeta de notebooks [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] Hacer que la división de texto en chino no parta las palabras y mejorar la sincronización de las pausas [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
+- [x] Docker- Compose
+- [x] Podman componer
 - [x] Notebook de Kaggle
 - [x] Notebook de Google Colab
-- [ ] Integración con Audiobookshelf
-- [ ] [Crear una app para iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Crear una app para Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### Opciones adicionales
+- [x] Integración con Audiobookshelf
 - [x] Opción de traducción del libro electrónico
 - [x] Opciones de formato de salida
-- [x] Carpeta de libros electrónicos por lotes
 - [x] Conversión con multiprocesamiento
 - [x] Conversión por lotes de una carpeta de libros electrónicos
 - [x] Detección del dispositivo GPU
-- [x] Eliminar ruido de cualquier audio de referencia para clonación de voz subida,
-- [x] Subida de modelo personalizado (solo XTTSv2 por ahora. más bajo petición)
+- [x] Denoise cualquier audio de referencia de fondo para la carga de clonación de voz
+- [x] Carga de modelo personalizada y ajustada
+- [ ] [Crear una app para iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Crear una app para Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### Peticiones de usuario
 - [ ] Añadir un modelo de idioma portugués europeo para xttsv2, fairseq, vits, piper como mínimo (ayuda bienvenida)
 - [ ] Añadir un modelo de idioma sindhi para xttsv2, fairseq, vits, piper como mínimo (ayuda bienvenida)
 

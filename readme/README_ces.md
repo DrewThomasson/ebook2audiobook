@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Složka notebooků [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] Zajistit, aby dělení čínského textu nerozdělovalo slova, a zlepšit načasování pauz [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
+- [x] Docker kompozice
+- [x] Podman compose
 - [x] Notebook Kaggle
 - [x] Notebook Google Colab
-- [ ] Integrace s Audiobookshelf
-- [ ] [Vytvořit aplikaci pro iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Vytvořit aplikaci pro Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### Další možnosti
+- [x] Integrace s Audiobookshelf
 - [x] Možnost překladu e-knihy
 - [x] Možnosti výstupního formátu
-- [x] Dávková složka e-knih
 - [x] Převod s multiprocessingem
 - [x] Dávkový převod složky e-knih
 - [x] Detekce zařízení GPU
-- [x] Odšumění libovolného referenčního zvuku pro nahrané klonování hlasu,
-- [x] Nahrání vlastního modelu (zatím pouze XTTSv2. více na vyžádání)
+- [x] Odšumte jakýkoli referenční zvuk na pozadí pro nahrání hlasového klonování
+- [x] Vlastní doladěné nahrávání modelu
+- [ ] [Vytvořit aplikaci pro iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Vytvořit aplikaci pro Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### Žádosti uživatelů
 - [ ] Přidat jazykový model evropské portugalštiny alespoň pro xttsv2, fairseq, vits, piper (pomoc vítána)
 - [ ] Přidat jazykový model sindhštiny alespoň pro xttsv2, fairseq, vits, piper (pomoc vítána)
 

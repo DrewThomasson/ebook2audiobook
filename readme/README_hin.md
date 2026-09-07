@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -480,24 +485,23 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] PDF / JPG / BMP / PNG / TIFF के लिए OCR स्कैनिंग
 - [x] Notebooks फ़ोल्डर [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] चीनी पाठ विभाजन को शब्दों को न तोड़ने योग्य बनाना और विराम की समयबद्धता में सुधार करना [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
-- [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
-- [x] Kaggle Notebook
-- [x] Google Colab Notebook
-- [ ] Audiobookshelf एकीकरण
-- [ ] [एक iOS ऐप बनाना](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [एक android ऐप बनाना](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### अतिरिक्त विकल्प
+- [x] डॉकरफ़ाइल
+- [x] डॉकर कंपोज़
+- [x] पॉडमैन कंपोज़
+- [x] कैगल नोटबुक
+- [x] Google Colab नोटबुक
+- [x] Audiobookshelf एकीकरण
 - [x] ई-बुक अनुवाद विकल्प
 - [x] आउटपुट प्रारूप विकल्प
-- [x] बैच ई-बुक फ़ोल्डर
 - [x] मल्टीप्रोसेसिंग रूपांतरण
 - [x] बैच ई-बुक फ़ोल्डर रूपांतरण
 - [x] GPU डिवाइस पहचान
-- [x] अपलोड की गई वॉयस क्लोनिंग के लिए किसी भी संदर्भ ऑडियो का शोर हटाएं,
-- [x] कस्टम मॉडल अपलोड (अभी के लिए केवल XTTSv2। मांग पर और)
+- [x] वॉयस क्लोनिंग अपलोड के लिए किसी भी बैकग्राउंड रेफ़रेंस ऑडियो को डीनोइज़ करें
+- [x] कस्टम फ़ाइन - ट्यून मॉडल अपलोड
+- [ ] [एक iOS ऐप बनाना](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [एक android ऐप बनाना](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### यूज़र के अनुरोध
 - [ ] कम से कम xttsv2, fairseq, vits, piper के लिए यूरोपीय पुर्तगाली भाषा मॉडल जोड़ें (सहायता का स्वागत है)
 - [ ] कम से कम xttsv2, fairseq, vits, piper के लिए सिंधी भाषा मॉडल जोड़ें (सहायता का स्वागत है)
 

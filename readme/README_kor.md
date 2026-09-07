@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 노트북 폴더 [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] 중국어 텍스트 분할이 단어를 분리하지 않도록 하고 멈춤 타이밍 개선 [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
+- [x] Docker 작성
+- [x] Podman compose
 - [x] Kaggle 노트북
 - [x] Google Colab 노트북
-- [ ] Audiobookshelf 통합
-- [ ] [iOS 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [android 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### 추가 옵션
+- [x] Audiobookshelf 통합
 - [x] 전자책 번역 옵션
 - [x] 출력 형식 선택
-- [x] 일괄 전자책 폴더
 - [x] 멀티프로세싱 변환
 - [x] 일괄 전자책 폴더 변환
 - [x] GPU 장치 감지
-- [x] 업로드된 음성 복제를 위해 모든 참조 오디오의 노이즈 제거,
-- [x] 커스텀 모델 업로드(현재로서는 XTTSv2만. 요청 시 추가)
+- [x] 음성 복제 업로드를 위한 모든 배경 참조 오디오 잡음 제거
+- [x] 맞춤형 미세 조정 모델 업로드
+- [ ] [iOS 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [android 앱 만들기](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### 사용자 요청
 - [ ] 최소한 xttsv2, fairseq, vits, piper용 유럽 포르투갈어 언어 모델 추가(도움 환영)
 - [ ] 최소한 xttsv2, fairseq, vits, piper용 신디어 언어 모델 추가(도움 환영)
 

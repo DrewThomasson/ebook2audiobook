@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Notebooklar Klasörü [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] Çince metin bölmenin kelimeleri bölmemesini sağlamak ve duraklama zamanlamasını iyileştirmek [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
-- [x] Kaggle Notebook
-- [x] Google Colab Notebook
-- [ ] Audiobookshelf entegrasyonu
-- [ ] [Bir iOS uygulaması yapmak](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Bir android uygulaması yapmak](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### Ekstra Seçenekler
+- [x] Docker oluşturma
+- [x] Podman beste
+- [x] Kaggle Defter
+- [x] Google Colab Not Defteri
+- [x] Audiobookshelf entegrasyonu
 - [x] E-kitap Çeviri seçeneği
 - [x] Çıktı biçimi seçenekleri
-- [x] Toplu e-kitap klasörü
 - [x] Çoklu işlemeyle dönüştürme
 - [x] Toplu e-kitap klasörü dönüştürme
 - [x] GPU Aygıt algılama
-- [x] Yüklenen ses klonlama için herhangi bir referans sesin gürültüsünü gider,
-- [x] Özel model yükleme (şimdilik yalnızca XTTSv2. istek üzerine daha fazlası)
+- [x] Ses klonlama yüklemesi için herhangi bir arka plan referans sesini gürültüden arındırın
+- [x] Özel ince ayarlı model yükleme
+- [ ] [Bir iOS uygulaması yapmak](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Bir android uygulaması yapmak](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### Kullanıcı İstekleri
 - [ ] En azından xttsv2, fairseq, vits, piper için Avrupa Portekizcesi dil modeli ekleme (yardım memnuniyetle karşılanır)
 - [ ] En azından xttsv2, fairseq, vits, piper için Sindhi dil modeli ekleme (yardım memnuniyetle karşılanır)
 

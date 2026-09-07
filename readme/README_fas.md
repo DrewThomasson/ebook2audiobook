@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -480,24 +485,23 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] اسکن OCR برای PDF / JPG / BMP / PNG / TIFF
 - [x] پوشه Notebooks [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] اطمینان از اینکه تقسیم متن چینی کلمات را تقسیم نکند و بهبود زمان‌بندی مکث‌ها [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
-- [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
+- [x] داکرفایل
+- [x] آهنگسازی داکر
+- [x] پودمن آهنگسازی
 - [x] دفترچه Kaggle
 - [x] دفترچه Google Colab
-- [ ] یکپارچه‌سازی Audiobookshelf
-- [ ] [ساخت یک اپلیکیشن iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [ساخت یک اپلیکیشن android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### گزینه‌های اضافی
+- [x] یکپارچه‌سازی Audiobookshelf
 - [x] گزینه ترجمه کتاب الکترونیکی
 - [x] انتخاب‌های قالب خروجی
-- [x] پوشه دسته‌ای کتاب الکترونیکی
 - [x] تبدیل چندپردازشی
 - [x] تبدیل دسته‌ای پوشه کتاب الکترونیکی
 - [x] تشخیص دستگاه GPU
-- [x] حذف نویز از هر صدای مرجع برای بارگذاری شبیه‌سازی صدا،
-- [x] بارگذاری مدل سفارشی (فعلاً فقط XTTSv2. موارد بیشتر بنا به درخواست)
+- [x] حذف نویز هرگونه صدای مرجع پس‌زمینه برای آپلود شبیه‌سازی صدا
+- [x] آپلود مدل سفارشی و تنظیم‌شده
+- [ ] [ساخت یک اپلیکیشن iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [ساخت یک اپلیکیشن android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### درخواست های کاربر
 - [ ] افزودن مدل زبانی پرتغالی اروپایی حداقل برای xttsv2، fairseq، vits، piper (از کمک استقبال می‌شود)
 - [ ] افزودن مدل زبانی سندی حداقل برای xttsv2، fairseq، vits، piper (از کمک استقبال می‌شود)
 

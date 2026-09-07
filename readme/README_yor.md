@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -480,24 +485,23 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Àyẹ̀wò OCR fún PDF / JPG / BMP / PNG / TIFF
 - [x] Fódà Notebooks [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] Mú kí pípín ọ̀rọ̀ Ṣáínà má pín àwọn ọ̀rọ̀ kí a sì mú àkókò ìdúró dára síi [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
-- [x] Dockerfile
+- [x] Àkọsílẹ Docker
 - [x] Docker compose
-- [x] Podman compose   
+- [x] Podman kọ
 - [x] Notebook Kaggle
 - [x] Notebook Google Colab
-- [ ] Ìṣọ̀kan Audiobookshelf
-- [ ] [Ṣe ohun-èlò IOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Ṣe ohun-èlò android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### Àwọn Àṣàyàn Àfikún
+- [x] Ìṣọ̀kan Audiobookshelf
 - [x] Àṣàyàn Ìtumọ̀ eBook
 - [x] Àwọn àṣàyàn ọ̀nà ìjáde
-- [x] Fódà eBook ìpapọ̀
 - [x] Ìyípadà oníṣíṣẹ́-púpọ̀
 - [x] Ìyípadà fódà eBook ìpapọ̀
 - [x] Ìdánimọ̀ Ẹ̀rọ GPU
-- [x] Yọ ariwo kúrò nínú ohùn ìtọ́kasí èyíkéyìí fún ìgbéga ẹ̀dà ohùn,
-- [x] Ìgbéga àwòṣe àdáni (XTTSv2 nìkan fún ìsinsìnyí. púpọ̀ síi lórí ìbéèrè)
+- [x] Yọ eyikeyi ohun afetigbọ itọkasi abẹlẹ fun gbigbasilẹ ohun afetigbọ
+- [x] Awoṣe aṣa ti o dara-tuned gbe soke
+- [ ] [Ṣe ohun-èlò IOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Ṣe ohun-èlò android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### Àwọn ìbéèrè oníṣe
 - [ ] Ṣàfikún àwòṣe èdè Portuguese Yúróòpù fún ó kéré tán xttsv2, fairseq, vits, piper (a kí ìrànlọ́wọ́ káàbọ̀)
 - [ ] Ṣàfikún àwòṣe èdè Sindhi fún ó kéré tán xttsv2, fairseq, vits, piper (a kí ìrànlọ́wọ́ káàbọ̀)
 

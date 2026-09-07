@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -485,19 +490,18 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Подман сочиняет
 - [x] Ноутбук Kaggle
 - [x] Записная книжка Google Colab
-- [ ] Интеграция с аудиокнижной полкой
+- [x] Интеграция с аудиокнижной полкой
+- [x] Вариант перевода электронной книги
+- [x] Выбор формата вывода
+- [x] Многопроцессорное преобразование
+- [x] Пакетное преобразование папок электронных книг
+- [x] Обнаружение устройства
+- [x] Удалите шум из любого фонового эталонного аудио для загрузки голосового клонирования
+- [x] Загрузка индивидуально настроенной модели
 - [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 - [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 
-#### Дополнительные параметры
-- [x] Опция перевода электронной книги
-- [x] Варианты формата вывода
-- [x] Папка для пакетной обработки электронных книг
-- [x] Преобразование с многопроцессорной обработкой
-- [x] Пакетное преобразование папки электронных книг
-- [x] Обнаружение устройства GPU
-- [x] Шумоподавление любого референсного аудио для загруженного клонирования голоса,
-- [x] Загрузка пользовательской модели (пока только XTTSv2. больше по запросу)
+#### Запрос предложений
 - [ ] Добавить языковую модель европейского португальского хотя бы для xttsv2, fairseq, vits, piper (помощь приветствуется)
 - [ ] Добавить языковую модель синдхи хотя бы для xttsv2, fairseq, vits, piper (помощь приветствуется)
 

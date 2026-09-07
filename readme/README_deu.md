@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -470,7 +475,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - „Ich habe ein Problem mit abgeschnittenem Audio!“ - BITTE ERSTELLEN SIE DAZU EIN ISSUE,
    wir sprechen nicht jede Sprache und benötigen den Rat der Nutzer, um die Logik der Satztrennung zu verfeinern.😊
 
-## ***** ROADMAP *****
+## Fahrplan
 - Alle Funktionen offen für öffentliche Beiträge ⭐
 - Jede Hilfe von Personen, die eine der unterstützten Sprachen sprechen, um uns bei der Verbesserung der Modelle zu helfen ⭐
 - [x] Blöcke/Kapitel vor dem Start der Konvertierung in der Vorschau anzeigen
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Notebooks-Ordner [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] Die chinesische Textaufteilung so gestalten, dass keine Wörter getrennt werden, und das Pausen-Timing verbessern [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
+- [x] Docker komponieren
+- [x] Podman komponieren
 - [x] Kaggle-Notebook
 - [x] Google-Colab-Notebook
-- [ ] Audiobookshelf-Integration
-- [ ] [Eine iOS-App erstellen](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Eine Android-App erstellen](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### Zusätzliche Optionen
+- [x] Audiobookshelf-Integration
 - [x] Option zur E-Book-Übersetzung
 - [x] Auswahl des Ausgabeformats
-- [x] Stapelverarbeitung eines E-Book-Ordners
 - [x] Konvertierung mit Multiprocessing
 - [x] Stapelkonvertierung eines E-Book-Ordners
 - [x] GPU-Geräteerkennung
-- [x] Beliebiges Referenz-Audio für das Stimmenklonen beim Upload entrauschen,
-- [x] Upload eines benutzerdefinierten Modells (vorerst nur XTTSv2. mehr auf Anfrage)
+- [x] Hintergrundreferenzaudio für das Hochladen von Sprachklonen entrauschen
+- [x] Benutzerdefinierter, fein abgestimmter Modell-Upload
+- [ ] [Eine iOS-App erstellen](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Eine Android-App erstellen](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### Benutzer Anfragen
 - [ ] Ein europäisch-portugiesisches Sprachmodell für mindestens xttsv2, fairseq, vits, piper hinzufügen (Hilfe willkommen)
 - [ ] Ein Sindhi-Sprachmodell für mindestens xttsv2, fairseq, vits, piper hinzufügen (Hilfe willkommen)
 

@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Notebooks ফোল্ডার [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] চীনা টেক্সট বিভাজন যাতে শব্দ ভাগ না করে তা নিশ্চিত করা এবং বিরতির সময় উন্নত করা [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
-- [x] Kaggle Notebook
-- [x] Google Colab Notebook
-- [ ] Audiobookshelf ইন্টিগ্রেশন
-- [ ] [একটি iOS অ্যাপ তৈরি করা](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [একটি android অ্যাপ তৈরি করা](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### অতিরিক্ত বিকল্প
+- [x] ডকার রচনা
+- [x] পডম্যান রচনা
+- [x] Kaggle নোটবুক
+- [x] Google Colab নোটবুক
+- [x] Audiobookshelf ইন্টিগ্রেশন
 - [x] ই-বুক অনুবাদ বিকল্প
 - [x] আউটপুট ফরম্যাট পছন্দ
-- [x] ব্যাচ ই-বুক ফোল্ডার
 - [x] মাল্টিপ্রসেসিং রূপান্তর
 - [x] ব্যাচ ই-বুক ফোল্ডার রূপান্তর
 - [x] GPU ডিভাইস শনাক্তকরণ
-- [x] আপলোড করা ভয়েস ক্লোনিংয়ের জন্য যেকোনো রেফারেন্স অডিওর শব্দ অপসারণ,
-- [x] কাস্টম মডেল আপলোড (আপাতত শুধু XTTSv2। চাহিদা অনুযায়ী আরও)
+- [x] ভয়েস ক্লোনিং আপলোডের জন্য কোনও ব্যাকগ্রাউন্ড রেফারেন্স অডিওকে অস্বীকার করুন
+- [x] কাস্টম সূক্ষ্ম সুরযুক্ত মডেল আপলোড
+- [ ] [একটি iOS অ্যাপ তৈরি করা](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [একটি android অ্যাপ তৈরি করা](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### ব্যবহারকারীর অনুরোধ
 - [ ] অন্তত xttsv2, fairseq, vits, piper-এর জন্য ইউরোপীয় পর্তুগিজ ভাষা মডেল যোগ করা (সাহায্য স্বাগত)
 - [ ] অন্তত xttsv2, fairseq, vits, piper-এর জন্য সিন্ধি ভাষা মডেল যোগ করা (সাহায্য স্বাগত)
 

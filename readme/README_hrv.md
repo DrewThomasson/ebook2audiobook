@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -480,24 +485,23 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] OCR skeniranje za PDF / JPG / BMP / PNG / TIFF
 - [x] Mapa bilježnica [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] Učiniti da dijeljenje kineskog teksta ne razdvaja riječi i poboljšati vremensko usklađivanje pauza [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
-- [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
+- [x] Datoteka Docker
+- [x] Docker Compose
+- [x] Podman Compose
 - [x] Kaggle bilježnica
 - [x] Google Colab bilježnica
-- [ ] Integracija s Audiobookshelf
-- [ ] [Napraviti iOS aplikaciju](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Napraviti Android aplikaciju](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### Dodatne opcije
+- [x] Integracija s Audiobookshelf
 - [x] Opcija prijevoda e-knjige
 - [x] Izbori izlaznog formata
-- [x] Skupna mapa e-knjiga
 - [x] Pretvaranje s višeprocesnom obradom
 - [x] Skupno pretvaranje mape e-knjiga
 - [x] Otkrivanje GPU uređaja
-- [x] Uklanjanje šuma iz bilo kojeg referentnog zvuka za učitano kloniranje glasa,
-- [x] Učitavanje prilagođenog modela (zasad samo XTTSv2. više na zahtjev)
+- [x] Denoizirati bilo koji pozadinski referentni zvuk za prijenos glasovnog kloniranja
+- [x] Prijenos prilagođenog precizno podešenog modela
+- [ ] [Napraviti iOS aplikaciju](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Napraviti Android aplikaciju](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### Korisnički zahtjevi
 - [ ] Dodati jezični model europskog portugalskog barem za xttsv2, fairseq, vits, piper (pomoć dobrodošla)
 - [ ] Dodati jezični model sindhi barem za xttsv2, fairseq, vits, piper (pomoć dobrodošla)
 

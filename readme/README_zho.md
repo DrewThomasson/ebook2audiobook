@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Notebooks 文件夹 [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] 使中文文本拆分不拆分单词并改善停顿时间 [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
-- [x] Kaggle Notebook
-- [x] Google Colab Notebook
-- [ ] Audiobookshelf 集成
-- [ ] [制作 iOS 应用](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [制作 android 应用](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### 额外选项
+- [x] Docker撰写
+- [x] Podman撰写
+- [x] Kaggle笔记本
+- [x] Google Colab笔记本
+- [x] Audiobookshelf 集成
 - [x] 电子书翻译选项
 - [x] 输出格式选择
-- [x] 批量电子书文件夹
 - [x] 多进程转换
 - [x] 批量电子书文件夹转换
 - [x] GPU 设备检测
-- [x] 为上传的语音克隆对任何参考音频进行降噪，
-- [x] 自定义模型上传（目前仅 XTTSv2。更多应需求提供）
+- [x] 对语音克隆上传的任何背景参考音频进行降噪
+- [x] 自定义微调模型上传
+- [ ] [制作 iOS 应用](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [制作 android 应用](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### 用户请求
 - [ ] 至少为 xttsv2、fairseq、vits、piper 添加欧洲葡萄牙语语言模型（欢迎帮助）
 - [ ] 至少为 xttsv2、fairseq、vits、piper 添加信德语语言模型（欢迎帮助）
 

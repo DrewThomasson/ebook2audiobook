@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -480,24 +485,23 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] OCR-beolvasás PDF / JPG / BMP / PNG / TIFF formátumokhoz
 - [x] Notebookok mappa [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] A kínai szövegfelosztás úgy alakítása, hogy ne vágjon szét szavakat, és a szünetek időzítésének javítása [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
-- [x] Dockerfile
+- [x] Dokkolófájl
 - [x] Docker compose
-- [x] Podman compose   
+- [x] Podman zeneszerző
 - [x] Kaggle notebook
 - [x] Google Colab notebook
-- [ ] Audiobookshelf integráció
-- [ ] [iOS alkalmazás készítése](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Android alkalmazás készítése](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### További opciók
+- [x] Audiobookshelf integráció
 - [x] E-könyv fordítási opció
 - [x] Kimeneti formátum választása
-- [x] Kötegelt e-könyv mappa
 - [x] Átalakítás többszálú feldolgozással
 - [x] E-könyv mappa kötegelt átalakítása
 - [x] GPU-eszköz észlelése
-- [x] Bármilyen referencia hang zajszűrése a feltöltött hangklónozáshoz,
-- [x] Egyéni modell feltöltése (egyelőre csak XTTSv2. több kérésre)
+- [x] Bármilyen háttér-referenciahang denoise a hangklónozás feltöltéséhez
+- [x] Egyedi, finomhangolt modellfeltöltés
+- [ ] [iOS alkalmazás készítése](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Android alkalmazás készítése](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### Felhasználói igények
 - [ ] Európai portugál nyelvi modell hozzáadása legalább xttsv2, fairseq, vits, piper számára (segítség szívesen látott)
 - [ ] Szindhi nyelvi modell hozzáadása legalább xttsv2, fairseq, vits, piper számára (segítség szívesen látott)
 

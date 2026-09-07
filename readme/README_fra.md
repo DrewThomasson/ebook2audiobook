@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -481,23 +486,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Dossier de notebooks [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
 - [x] Faire en sorte que le découpage du texte chinois ne coupe pas les mots et améliorer le timing des pauses [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
-- [x] Docker compose
-- [x] Podman compose   
+- [x] Docker Compose
+- [x] Podman compose
 - [x] Notebook Kaggle
 - [x] Notebook Google Colab
-- [ ] Intégration Audiobookshelf
-- [ ] [Créer une application iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Créer une application Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### Options supplémentaires
+- [x] Intégration Audiobookshelf
 - [x] Option de traduction de l'e-book
 - [x] Choix du format de sortie
-- [x] Traitement par lot d'un dossier d'e-books
 - [x] Conversion en multitraitement
 - [x] Conversion par lot d'un dossier d'e-books
 - [x] Détection du périphérique GPU
-- [x] Débruiter n'importe quel audio de référence pour le clonage de voix envoyé,
-- [x] Envoi de modèle personnalisé (XTTSv2 uniquement pour l'instant. plus sur demande)
+- [x] Dénoisez tout son de référence d'arrière-plan pour le téléchargement de clonage vocal
+- [x] Téléchargement personnalisé du modèle affiné
+- [ ] [Créer une application iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Créer une application Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### Demandes utilisateur
 - [ ] Ajouter un modèle de langue portugais européen pour xttsv2, fairseq, vits, piper au minimum (aide bienvenue)
 - [ ] Ajouter un modèle de langue sindhi pour xttsv2, fairseq, vits, piper au minimum (aide bienvenue)
 

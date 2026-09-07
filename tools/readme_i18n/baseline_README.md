@@ -338,6 +338,11 @@ optional parameters:
                             Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
+  --abs_url ABS_URL     Audiobookshelf server URL (e.g. http://localhost:13378).
+  --abs_api_token ABS_API_TOKEN
+                        Audiobookshelf API token.
+  --abs_library ABS_LIBRARY
+                        Audiobookshelf library ID.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -485,19 +490,18 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Podman compose   
 - [x] Kaggle Notebook
 - [x] Google Colab Notebook
-- [ ] Audiobookshelf integration
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-
-#### Extra Options
+- [x] Audiobookshelf integration
 - [x] Ebook Translation option
 - [x] Output format choices
-- [x] Batch ebook folder
 - [x] Multiprocessing conversion
 - [x] Batch ebook folder conversion
 - [x] GPU Device detection
-- [x] Denoise any reference audio for upload voice cloning,
-- [x] Custom model upload (XTTSv2 only for now. more on request)
+- [x] Denoise any background reference audio for voice cloning upload
+- [x] Custom fine-tuned model upload
+- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+
+#### User Requests
 - [ ] Add European Portuguese language model for xttsv2, fairseq, vits, piper at least (help welcome)
 - [ ] Add Sindhi language model for xttsv2, fairseq, vits, piper at least (help welcome)
 
