@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import stat
 import tempfile
 import zipfile
 from pathlib import Path
@@ -23,6 +24,9 @@ def _safe_extract(archive: Path, destination: Path) -> None:
     destination = destination.resolve()
     with zipfile.ZipFile(archive) as bundle:
         for member in bundle.infolist():
+            mode = member.external_attr >> 16
+            if stat.S_ISLNK(mode):
+                raise ValueError(f"Unsafe symlink in voice archive: {member.filename}")
             member_path = (destination / member.filename).resolve()
             if member_path != destination and destination not in member_path.parents:
                 raise ValueError(f"Unsafe path in voice archive: {member.filename}")
