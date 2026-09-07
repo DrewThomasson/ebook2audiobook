@@ -74,7 +74,7 @@ default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
 default_pytorch_url = 'https://download.pytorch.org/whl'
 default_pytorch_amd_url = 'https://repo.radeon.com/rocm/windows'
-default_torchcodec_arm_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download'
+default_torchcodec_arm_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download'
 
 torch_matrix = {
@@ -85,9 +85,9 @@ torch_matrix = {
     "cu121":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.5.1", "last": "2.5.1",  "codec": ""},
     "cu124":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.6.0", "last": "2.6.0",  "codec": ""},
     "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
-    "cu128":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.15.0"},
+    "cu128":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
     "win-cu128":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.9.1", "codec": "0.9.0"},
-    "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.15.0"},
+    "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
     "win-cu129":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.8.0", "codec": "0.8.0"},
     "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
     "cu132":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},

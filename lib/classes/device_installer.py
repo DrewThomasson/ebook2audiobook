@@ -444,6 +444,16 @@ class DeviceInstaller():
                     return 'gpu' in out
                 return False
             return False
+            
+        def _normalize_version(v:str)->tuple:
+            '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
+            m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
+            if not m:
+                return ()
+            major = int(m.group(1))
+            minor = int(m.group(2))
+            patch = int(m.group(3)) if m.group(3) else 0
+            return (major, minor, patch)
 
         name = None
         tag = None
@@ -494,16 +504,6 @@ class DeviceInstaller():
             # ROCm
             # ============================================================
             elif has_rocm() and has_amd_gpu_pci():
-
-                def _normalize_version(v:str)->tuple:
-                    '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
-                    m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
-                    if not m:
-                        return ()
-                    major = int(m.group(1))
-                    minor = int(m.group(2))
-                    patch = int(m.group(3)) if m.group(3) else 0
-                    return (major, minor, patch)
 
                 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
                 os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
@@ -1879,7 +1879,7 @@ class DeviceInstaller():
                             #### torchcodec installation
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and torchcodec_version_matrix:
                                 if is_cpu_aarch64_linux:
-                                    torchcodec_index_url = f"{default_torchcodec_arm_url}/torchcodec-{arch}-{tag_py}/torchcodec-{torchcodec_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
+                                    torchcodec_index_url = f"{default_torchcodec_arm_url}/torchcodec/torchcodec-{torchcodec_version_matrix}%2B{tag}-{tag_py}-{tag_py}-manylinux_2_27_{arch}.{os_env}_{arch}.whl"
                                     rc = subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torchcodec_index_url])
                                 else:
                                     if device_info['name'] == devices['XPU']['proc']:

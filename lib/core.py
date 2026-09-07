@@ -3773,7 +3773,8 @@ def convert_ebook(args:dict)->tuple:
                 session['abs_api_token'] = str(args.get('abs_api_token', ''))
                 session['abs_library'] = str(args.get('abs_library', ''))
                 os.makedirs(session['voice_dir'], exist_ok=True)
-                audio_pre_final_exist = os.path.exists(os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format))
+                audio_pre_final_file = os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format)
+                audio_pre_final_exist = os.path.exists(audio_pre_final_file)
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
                 if audio_pre_final_exist or audio_sentences_exist:
                     msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists!"
@@ -3790,7 +3791,7 @@ def convert_ebook(args:dict)->tuple:
                         print("Please enter 's', 'r' or 'd'.")
                     if choice == 'r':
                         if audio_pre_final_exist:
-                            os.unlink(audio_pre_final_exist)
+                            os.unlink(audio_pre_final_file)
                         if os.path.exists(session['final_name']):
                             os.unlink(session['final_name'])
                     elif choice == 'd':
