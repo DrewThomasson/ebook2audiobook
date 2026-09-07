@@ -444,7 +444,7 @@ class DeviceInstaller():
                     return 'gpu' in out
                 return False
             return False
-            
+
         def _normalize_version(v:str)->tuple:
             '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
             m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
