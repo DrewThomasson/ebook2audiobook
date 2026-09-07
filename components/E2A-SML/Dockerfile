@@ -23,5 +23,6 @@ RUN mkdir -p /ebook2audiobook
 # Expose Gradio default port
 EXPOSE 7861
 
-# Default: launch the web GUI accessible from outside the container
-CMD ["python", "cli.py", "--gui", "--host", "0.0.0.0"]
+# Download the shared voice library when the mounted repository does not have it,
+# then launch the web GUI accessible from outside the container.
+CMD ["python", "-m", "sml_extractor.docker_entrypoint"]

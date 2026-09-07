@@ -197,6 +197,11 @@ Options:
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
 - [ebook2audiobook](https://github.com/DrewThomasson/ebook2audiobook) cloned locally (for the voice library)
 
+The standalone Docker image automatically downloads `voices.zip` from the
+[E2A-Voices dataset](https://huggingface.co/datasets/ebook2audiobook/E2A-Voices)
+when the mounted `voices/` directory has no WAV files. Existing voices are
+reused. Set `E2A_VOICES_REPO_ID` to use a different Hugging Face dataset.
+
 ### Local installation
 - Python 3.10+
 - [BookNLP-plus](https://github.com/DrewThomasson/booknlp) (installed via requirements.txt)
