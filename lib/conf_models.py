@@ -75,7 +75,7 @@ max_custom_voices = 1000
 default_engine_settings = {
     TTS_ENGINES['XTTS']: {
         "repo": "coqui/XTTS-v2",
-        "languages": {"ara": "ar", "ces": "cs", "deu": "de", "eng": "en", "fra": "fr", "hin": "hi", "hun": "hu", "ita": "it", "jpn": "ja", "kor": "ko", "nld": "nl", "pol": "pl", "por": "pt", "rus": "ru", "spa": "es", "tur": "tr", "zho": "zh-cn"},
+        "languages": {"ara": "ar", "ces": "cs", "deu": "de", "eng": "en", "fra": "fr", "hin": "hi", "hun": "hu", "ita": "it", "jpn": "ja", "kor": "ko", "nld": "nl", "pol": "pl", "por": "pt", "rus": "ru", "spa": "es", "tur": "tr", "vie": "vi", "zho": "zh-cn"},
         "samplerate": 24000,
         "temperature": 0.75,
         #"codec_temperature": 0.3,

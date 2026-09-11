@@ -11,6 +11,15 @@ models = {
         "files": default_engine_settings[TTS_ENGINES['XTTS']]['files'],
         "samplerate": default_engine_settings[TTS_ENGINES['XTTS']]['samplerate']
     },
+    "VietXTTS": {
+        "lang": "vie",
+        "repo": "drewThomasson/fineTunedTTSModels",
+        "sub": "Viet-xtts-v2/",
+        "voice": None,
+        "voice_sub": "Viet-xtts-v2/samples/vi_sample.wav",
+        "files": default_engine_settings[TTS_ENGINES['XTTS']]['files'],
+        "samplerate": default_engine_settings[TTS_ENGINES['XTTS']]['samplerate']
+    },
     "AiExplained": {
         "lang": "eng",
         "repo": "drewThomasson/fineTunedTTSModels",

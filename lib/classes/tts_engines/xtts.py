@@ -99,6 +99,12 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][0]}', cache_dir=self.cache_dir)
                         checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][1]}', cache_dir=self.cache_dir)
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][2]}', cache_dir=self.cache_dir)
+                        voice_sub = self.models[self.session['fine_tuned']].get('voice_sub')
+                        if voice_sub:
+                            preset_voice = hf_hub_download(repo_id=hf_repo, filename=voice_sub, cache_dir=self.cache_dir)
+                            self.models[self.session['fine_tuned']]['voice'] = preset_voice
+                            if self.session.get('voice') is None:
+                                self.session['voice'] = preset_voice
                         engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
                     except Exception as e:
                         error = f'load_engine(): HuggingFace checkpoint loading failed: {e}'
