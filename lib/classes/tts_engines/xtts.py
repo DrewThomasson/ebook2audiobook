@@ -132,6 +132,9 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
         if 'vi' not in extra_languages:
             return
         tokenizer = engine.tokenizer
+        enabled_languages = getattr(tokenizer, '_e2a_extra_languages', set())
+        if 'vi' in enabled_languages:
+            return
         tokenizer.char_limits['vi'] = 250
         original_preprocess = tokenizer.preprocess_text
 
@@ -142,6 +145,7 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
             return original_preprocess(text, language)
 
         tokenizer.preprocess_text = MethodType(preprocess_text, tokenizer)
+        tokenizer._e2a_extra_languages = enabled_languages | {'vi'}
 
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:

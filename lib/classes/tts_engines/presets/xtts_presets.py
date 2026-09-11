@@ -5,22 +5,22 @@ from lib.conf_models import TTS_ENGINES, default_engine_settings
 models = {
     "internal": {
         "lang": "multi",
-        "exclude_langs": ("vie",),
+        'exclude_langs': ('vie',),
         "repo": "coqui/XTTS-v2",
         "sub": "tts_models/multilingual/multi-dataset/xtts_v2/",
         "voice": default_engine_settings[TTS_ENGINES['XTTS']]['voice'],
         "files": default_engine_settings[TTS_ENGINES['XTTS']]['files'],
         "samplerate": default_engine_settings[TTS_ENGINES['XTTS']]['samplerate']
     },
-    "VietXTTS": {
-        "lang": "vie",
-        "repo": "drewThomasson/fineTunedTTSModels",
-        "sub": "Viet-xtts-v2/",
-        "voice": None,
-        "voice_sub": "Viet-xtts-v2/samples/vi_sample.wav",
-        "extra_languages": ("vi",),
-        "files": default_engine_settings[TTS_ENGINES['XTTS']]['files'],
-        "samplerate": default_engine_settings[TTS_ENGINES['XTTS']]['samplerate']
+    'VietXTTS': {
+        'lang': 'vie',
+        'repo': 'drewThomasson/fineTunedTTSModels',
+        'sub': 'Viet-xtts-v2/',
+        'voice': None,
+        'voice_sub': 'Viet-xtts-v2/samples/vi_sample.wav',
+        'extra_languages': ('vi',),
+        'files': default_engine_settings[TTS_ENGINES['XTTS']]['files'],
+        'samplerate': default_engine_settings[TTS_ENGINES['XTTS']]['samplerate']
     },
     "AiExplained": {
         "lang": "eng",
