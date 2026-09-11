@@ -1,5 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
-from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.classes.tts_engines.common.preset_loader import get_compatible_presets, load_engine_presets
+from types import MethodType
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
@@ -11,13 +12,17 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
             self.cache_dir = tts_dir
             self.speakers_path = None
             self.speaker = None
-            self.tts_key = self.session['model_cache']
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
             self.pth_voice_file = None
             self.resampler_cache = {}
             self.resampled_wav_cache = {}
             self.audio_segments = []
             self.models = load_engine_presets(self.session['tts_engine'])
+            compatible_presets = get_compatible_presets(self.models, self.session.get('language'))
+            if self.session.get('fine_tuned') not in compatible_presets and compatible_presets:
+                self.session['fine_tuned'] = compatible_presets[0]
+            self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
+            self.session['model_cache'] = self.tts_key
             self.params = {"latent_embedding":{}}
             # effective language for TTS (target when translating, else source)
             self.language = self.session.get('language')
@@ -99,11 +104,20 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][0]}', cache_dir=self.cache_dir)
                         checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][1]}', cache_dir=self.cache_dir)
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][2]}', cache_dir=self.cache_dir)
+                        voice_sub = self.models[self.session['fine_tuned']].get('voice_sub')
+                        if voice_sub:
+                            preset_voice = hf_hub_download(repo_id=hf_repo, filename=voice_sub, cache_dir=self.cache_dir)
+                            self.models[self.session['fine_tuned']]['voice'] = preset_voice
+                            current_voice = self.session.get('voice')
+                            current_speaker = Path(current_voice).stem if isinstance(current_voice, str) else None
+                            if current_voice is None or current_speaker in default_engine_settings[TTS_ENGINES['XTTS']]['voices']:
+                                self.session['voice'] = preset_voice
                         engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
                     except Exception as e:
                         error = f'load_engine(): HuggingFace checkpoint loading failed: {e}'
                         raise RuntimeError(error) from e
             if engine:
+                self._enable_extra_languages(engine, self.models[self.session['fine_tuned']])
                 msg = f'TTS {self.tts_key} Loaded!'
                 print(msg)
                 return engine
@@ -112,6 +126,26 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
         except Exception as e:
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
+
+    def _enable_extra_languages(self, engine:Any, model_cfg:dict)->None:
+        extra_languages = model_cfg.get('extra_languages', ())
+        if 'vi' not in extra_languages:
+            return
+        tokenizer = engine.tokenizer
+        enabled_languages = getattr(tokenizer, '_e2a_extra_languages', set())
+        if 'vi' in enabled_languages:
+            return
+        tokenizer.char_limits['vi'] = 250
+        original_preprocess = tokenizer.preprocess_text
+
+        def preprocess_text(tokenizer_self, text:str, language:str)->str:
+            language = language.split('-')[0]
+            if language == 'vi':
+                return ' '.join(text.lower().split())
+            return original_preprocess(text, language)
+
+        tokenizer.preprocess_text = MethodType(preprocess_text, tokenizer)
+        tokenizer._e2a_extra_languages = enabled_languages | {'vi'}
 
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:

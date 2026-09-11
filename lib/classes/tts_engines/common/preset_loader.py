@@ -5,6 +5,14 @@ from typing import Dict, Any
 _lock = threading.Lock()
 _presets_cache:Dict[str, Dict[str, Any]] = {}
 
+def get_compatible_presets(models:Dict[str, Dict[str, Any]], language:str)->list[str]:
+    return [
+        name
+        for name, details in models.items()
+        if details.get('lang') in ('multi', language)
+        and language not in details.get('exclude_langs', ())
+    ]
+
 def load_engine_presets(engine:str)->Dict[str, Any]:
     with _lock:
         if engine in _presets_cache:

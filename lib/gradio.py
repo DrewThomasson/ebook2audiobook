@@ -1,7 +1,7 @@
 from lib.core import *
 
 def build_interface(args:dict)->gr.Blocks:
-    from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+    from lib.classes.tts_engines.common.preset_loader import get_compatible_presets, load_engine_presets
     try:
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
@@ -1986,15 +1986,11 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         models = load_engine_presets(session['tts_engine'])
-                        fine_tuned_options = [
-                            name
-                            for name, details in models.items()
-                            if details.get("lang") in ("multi", session['language'])
-                        ]
+                        fine_tuned_options = get_compatible_presets(models, session['language'])
                         if session['fine_tuned'] in fine_tuned_options:
                             fine_tuned = session['fine_tuned']
                         else:
-                            fine_tuned = default_fine_tuned
+                            fine_tuned = fine_tuned_options[0] if fine_tuned_options else default_fine_tuned
                         session['fine_tuned'] = fine_tuned
                         return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
                 except Exception as e:
