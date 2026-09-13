@@ -5,7 +5,7 @@ After the first run, you are free to use your command line with:
 # go into ebook2audiobook folder then:
 ----------------------------------
 # Linux/Mac
-e2a.sh [options]
+./e2a.sh [options]
 # Windows
 e2a.cmd [options]
 ----------------------------------
