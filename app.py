@@ -74,11 +74,6 @@ Then re-run the installer.
         return True
     error=f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
-NOTE: If you are running a Docker so you are probably using an old version of ebook2audiobook.
-To solve this issue go to download the new version at https://github.com/DrewThomasson/ebook2audiobook
-If the directory python_env does not exist in the ebook2audiobook root directory,
-run your command with "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
-to install it all automatically.
 {install_info}
 ***********'''
     print(error)
