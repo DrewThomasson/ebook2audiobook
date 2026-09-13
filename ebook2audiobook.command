@@ -36,6 +36,7 @@ export TMPDIR="$SCRIPT_DIR/run"
 export APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 export DEVICE_TAG="${DEVICE_TAG:-}"
 export UV_INSTALL_DIR="$HOME/.local/bin"
+export UV_LINK_MODE="copy"
 export PATH="$UV_INSTALL_DIR:${PATH-}"
 export PODMAN_DESKTOP="0"
 export DOCKER_DESKTOP="0"

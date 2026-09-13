@@ -87,6 +87,7 @@ if not exist "%TMP%" mkdir "%TMP%" >nul 2>&1
 
 set "UV_INSTALL_DIR=%SAFE_USERPROFILE%\.local\bin"
 set "UV_INSTALLER_PS1=https://astral.sh/uv/install.ps1"
+set "UV_LINK_MODE=copy"
 set "SCOOP_HOME=%SAFE_USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
