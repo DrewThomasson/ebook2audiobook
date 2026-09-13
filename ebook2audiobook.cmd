@@ -1063,10 +1063,10 @@ if defined arguments.help (
 		if errorlevel 1 goto :install_scoop_buckets
 		call :check_programs
 		if errorlevel 1 goto :install_programs
-		::call :check_uv
-		::if errorlevel 3 goto :failed
-		::if errorlevel 2 goto :eof
-		::if errorlevel 1 goto :install_uv
+		call :check_uv
+		if errorlevel 3 goto :failed
+		if errorlevel 2 goto :eof
+		if errorlevel 1 goto :install_uv
 
 		set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 		set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
