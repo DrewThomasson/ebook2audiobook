@@ -49,6 +49,6 @@ indic-nlp-library
 pytesseract
 torchvggish
 pyannote-audio
+demucs-simple
 huggingface-hub
 gradio
-git+https://github.com/ROBERT-MCDOWELL/demucs.git
