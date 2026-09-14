@@ -51,4 +51,4 @@ torchvggish
 pyannote-audio
 huggingface-hub
 gradio
-./ext/py/demucs
+git+https://github.com/ROBERT-MCDOWELL/demucs.git

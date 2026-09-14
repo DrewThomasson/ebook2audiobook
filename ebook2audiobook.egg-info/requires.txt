@@ -2,8 +2,8 @@ transformers>=5.0.0,<5.1
 pandas>=1.0,<3.0
 coqui-tts[languages]==0.27.5
 piper-tts==1.4.2
-stanza
 argostranslate
+stanza
 cryptography
 requests
 py-cpuinfo
@@ -51,3 +51,4 @@ torchvggish
 pyannote-audio
 huggingface-hub
 gradio
+git+https://github.com/ROBERT-MCDOWELL/demucs.git
