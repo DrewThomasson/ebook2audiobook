@@ -1266,11 +1266,9 @@ class DeviceInstaller():
             error = f'Warning: File {requirements_file} not found. Skipping package check.'
             print(error)
             return 1
-
         self.remove_obsolete_packages()
         overrides = {}
         packages = []
-
         # device-dependent requirements, resolved in the same pip pass as
         # requirements.txt so every floor is visible to one resolver run.
         # ORDER MATTERS: select_pkg('pyannote-audio') reads the installed torch
@@ -1281,7 +1279,6 @@ class DeviceInstaller():
         packages.append(onnx_pkg)
         if onnx_pkg == 'onnxruntime-directml':
             packages.append('protobuf<7')
-
         if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
             # last llvmlite/numba with macOS x86_64 wheels. Newer llvmlite has no
             # wheel and needs LLVM 22 to build from source, which fails against the
@@ -1292,7 +1289,6 @@ class DeviceInstaller():
             overrides['numba'] = 'numba==0.61.0'
             packages.append(overrides['llvmlite'])
             packages.append(overrides['numba'])
-
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
@@ -1330,11 +1326,9 @@ class DeviceInstaller():
                         error = f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}'
                         print(error)
                     raw_pkg = pkg_part.strip()
-
                 clean_pkg = re.sub(r'\[.*?\]', '', raw_pkg)
                 local_path = None
                 pkg_name = None
-
                 if os.path.isdir(clean_pkg):
                     local_path = os.path.abspath(clean_pkg)
                 else:
@@ -1344,7 +1338,6 @@ class DeviceInstaller():
                     else:
                         pkg_base = re.split(r'[<>=!]', clean_pkg, maxsplit=1)[0].strip()
                         pkg_name = pkg_base
-
                 if 'git+' in raw_pkg or '://' in raw_pkg:
                     spec = importlib.util.find_spec(pkg_name)
                     if spec is None:
@@ -1352,7 +1345,6 @@ class DeviceInstaller():
                         print(msg)
                         missing_packages.append(raw_pkg)
                     continue
-
                 if local_path:
                     pkg_name = os.path.basename(local_path)
                     vendor_version = self.version_pkg(None, local_path)
@@ -1373,7 +1365,6 @@ class DeviceInstaller():
                         print(msg)
                         missing_packages.append(raw_pkg)
                     continue
-
                 installed_version = self.version_pkg(pkg_name, None)
                 if installed_version is None:
                     msg = f'{pkg_name} is not installed.'
@@ -1384,7 +1375,6 @@ class DeviceInstaller():
                     continue
                 if '+' in installed_version:
                     installed_version = installed_version.split('+', 1)[0]
-
                 pkg_spec_part = re.split(r'[<>=!]', clean_pkg, maxsplit=1)
                 spec_str = clean_pkg[len(pkg_spec_part[0]):].strip()
                 if spec_str:
@@ -1427,7 +1417,6 @@ class DeviceInstaller():
                             break
                     if violated and raw_pkg not in missing_packages:
                         missing_packages.append(raw_pkg)
-
             if missing_packages:
                 msg = '\nInstalling missing or upgrade packages…\n'
                 print(msg)
@@ -1474,7 +1463,6 @@ class DeviceInstaller():
 
                 msg = '\nAll required packages are installed.'
                 print(msg)
-
             self.finalize_exclusive_packages()
             self.drop_pip_cache()
             return self.check_voices()
