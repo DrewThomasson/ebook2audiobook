@@ -79,7 +79,7 @@ Wrong launch! ebook2audiobook must run in its own virtual environment!
     return False
 
 def check_python_version(script_mode:str)->bool:
-    if script_mode == BUILD_DOCKER:
+    if script_mode == BUILD_DOCKER or script_mode == NATIVE:
         return True
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
