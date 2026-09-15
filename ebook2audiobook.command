@@ -1,24 +1,16 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
-
 : "${HOME:=$PWD}"
 CURRENT_PYVENV=""
 SWITCHED_TO_ZSH="${SWITCHED_TO_ZSH:-0}"
-
 if [[ "${OSTYPE:-}" == darwin* && "$SWITCHED_TO_ZSH" -eq 0 && "$(ps -p $$ -o comm= 2>/dev/null || true)" != "zsh" ]]; then
 	export SWITCHED_TO_ZSH=1
 	exec env zsh "$0" "$@"
 fi
-
-if [[ -n "${BASH_SOURCE:-}" ]]; then
-	script_path="${BASH_SOURCE[0]}"
-elif [[ -n "${ZSH_VERSION:-}" ]]; then
-	script_path="${(%):-%x}"
-else
-	script_path="$0"
+if [[ -n "${BASH_SOURCE:-}" ]]; then script_path="${BASH_SOURCE[0]}"
+elif [[ -n "${ZSH_VERSION:-}" ]]; then script_path="${(%):-%x}"
+else script_path="$0"
 fi
-
 case "$(uname -m)" in
 	x86_64|amd64)  ARCH="amd64" ;;
 	aarch64|arm64) ARCH="arm64" ;;
@@ -36,7 +28,6 @@ export TMPDIR="$SCRIPT_DIR/run"
 export APP_VERSION=$(<"$SCRIPT_DIR/VERSION.txt")
 export DEVICE_TAG="${DEVICE_TAG:-}"
 export UV_INSTALL_DIR="$HOME/.local/bin"
-export UV_LINK_MODE="copy"
 export PATH="$UV_INSTALL_DIR:${PATH-}"
 export PODMAN_DESKTOP="0"
 export DOCKER_DESKTOP="0"
@@ -57,11 +48,12 @@ MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.12"
 PYTHON_VERSION="$MAX_PYTHON_VERSION"
 PYTHON_ENV="python_env"
+PY_CMD="python3"
 SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
 OS_LANG=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
 HOST_PROGRAMS=("cmake" "curl" "pkg-config" "xcb-util-cursor" "calibre" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "cargo" "rust" "sox" "tesseract")
-DOCKER_PROGRAMS=("curl" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr") # tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
+DOCKER_PROGRAMS=("curl" "ffmpeg" "mediainfo" "nodejs" "espeak-ng" "sox" "tesseract-ocr")
 DOCKER_MODE=""
 DOCKER_IMG_NAME="athomasson2/$APP_NAME"
 CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
@@ -71,14 +63,13 @@ RUST_INSTALLER_URL="https://sh.rustup.rs"
 INSTALLED_LOG="$SCRIPT_DIR/.installed"
 UNINSTALLER="$SCRIPT_DIR/uninstall.sh"
 WGET="$(command -v wget 2>/dev/null || true)"
-typeset -A arguments=() # associative array
-typeset -a programs_missing=() # indexed array
+typeset -A arguments=()
+typeset -a programs_missing=()
 PACK_MGR=""
 PACK_MGR_OPTIONS=""
 BUILD_NAME=""
 ISO3_LANG="eng"
 
-# Validate command arguments against conf.py
 if [ $# -gt 0 ]; then
 	VALID_ARGS=$(python3 -c 'from lib.conf import cli_options; print(" ".join(cli_options))')
 	for arg in "$@"; do
@@ -93,109 +84,68 @@ fi
 
 ARGS=("$@")
 
-# Parse arguments
 while (( $# > 0 )); do
 	case "$1" in
 		--*)
 			key="${1#--}"
-			if (( $# > 1 )) && [[ "$2" != --* ]]; then
-				arguments[$key]=$2
-				shift 2
-				continue
-			else
-				arguments[$key]=true
-				shift
-				continue
-			fi
-			;;
-		*)
-			echo "Unknown option: $1"
-			exit 1
-			;;
+			if (( $# > 1 )) && [[ "$2" != --* ]]; then arguments[$key]=$2; shift 2; continue
+			else arguments[$key]=true; shift; continue; fi ;;
+		*) echo "Unknown option: $1"; exit 1 ;;
 	esac
 done
 
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
-	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" || "${arguments[script_mode]}" == "$FULL_DOCKER" || "${arguments[script_mode]}" == "$NATIVE" ]]; then
-		SCRIPT_MODE="${arguments[script_mode]}"
-	else
-		echo "Error: Invalid script mode argument: ${arguments[script_mode]}"
-		exit 1
-	fi
+	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" || "${arguments[script_mode]}" == "$FULL_DOCKER" || "${arguments[script_mode]}" == "$NATIVE" ]]; then SCRIPT_MODE="${arguments[script_mode]}"
+	else echo "Error: Invalid script mode argument: ${arguments[script_mode]}"; exit 1; fi
 fi
 
 if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 	if [[ -n "${ZSH_VERSION:-}" ]]; then
 		for key in ${(k)arguments}; do
 			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-				echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
-				exit 1
+				echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"; exit 1
 			fi
 		done
 	else
 		for key in "${!arguments[@]}"; do
 			if [[ "$key" != "script_mode" && "$key" != "docker_device" && "$key" != "docker_mode" ]]; then
-				echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"
-				exit 1
+				echo "Error: when --script_mode is $BUILD_DOCKER, only --docker_device or --docker_mode are allowed. Invalid: --$key"; exit 1
 			fi
 		done
 	fi
 	if [[ -n "${arguments[docker_mode]+exists}" ]]; then
 		DOCKER_MODE="${arguments[docker_mode]}"
 		if [[ "$DOCKER_MODE" != "podman" && "$DOCKER_MODE" != "compose" ]]; then
-			if [[ "$DOCKER_MODE" == "" ]]; then
-				echo "Error: --docker_mode has no value!"
-			else
-				echo "Error: --docker_mode accepts only podman or compose as value"
-			fi
+			if [[ "$DOCKER_MODE" == "" ]]; then echo "Error: --docker_mode has no value!"
+			else echo "Error: --docker_mode accepts only podman or compose as value"; fi
 			exit 1
 		fi
 	fi
 	if [[ -n "${arguments[docker_device]+exists}" ]]; then
 		DOCKER_DEVICE_STR="${arguments[docker_device]}"
-		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
-			echo "Error: --docker_device has no value!"
-			exit 1
-		fi
+		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then echo "Error: --docker_device has no value!"; exit 1; fi
 	fi
 fi
 
 [[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
 [[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
-
 cd "$SCRIPT_DIR"
+if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then USER="${USER:-root}"; HOME="${HOME:-/root}"; SUDO=""; fi
+if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then touch "$INSTALLED_LOG"; fi
 
-if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
-	USER="${USER:-root}"
-	HOME="${HOME:-/root}"
-	SUDO=""
-fi
-
-if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then
-	touch "$INSTALLED_LOG"
-fi
-
-######## check if the user is part of the read/write group
 if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exists}" ]]; then
 	PUBLIC_DIRS=("$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" "$SCRIPT_DIR/audiobooks")
-	if [[ "$OSTYPE" == "darwin"* ]]; then
-		APP_GROUP=$(stat -f '%Sg' "$SCRIPT_DIR")
-	else
-		APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR")
-	fi
+	if [[ "$OSTYPE" == "darwin"* ]]; then APP_GROUP=$(stat -f '%Sg' "$SCRIPT_DIR")
+	else APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR"); fi
 	user_in_group() {
-		if [[ -n "${USER:-}" ]]; then
-			id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
-		else
-			return 1
-		fi
+		if [[ -n "${USER:-}" ]]; then id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
+		else return 1; fi
 	}
 	if [[ -n "${USER:-}" ]] && ! user_in_group "$APP_GROUP"; then
 		echo "Adding $USER to group $APP_GROUP (requires sudo)..."
 		if [[ "$OSTYPE" == "darwin"* ]]; then
 			sudo dseditgroup -o edit -a "$USER" -t user "$APP_GROUP"
-			echo "Group added. Please restart your terminal and re-run:"
-			echo "  $0 $*"
+			echo "Group added. Please restart your terminal and re-run: $0 $*"
 			exit 0
 		else
 			sudo usermod -aG "$APP_GROUP" "$USER"
@@ -204,81 +154,34 @@ if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exist
 	fi
 fi
 
-if [[ -n "${arguments[version]+exists}" ]]; then
-	echo "v${APP_VERSION}"
-	exit 0
-fi
+if [[ -n "${arguments[version]+exists}" ]]; then echo "v${APP_VERSION}"; exit 0; fi
 
-############### FUNCTIONS ##############
-
-###### DESKTOP APP
 has_no_display() {
 	if [[ "${OSTYPE:-}" == darwin* ]]; then
-		if pgrep -x WindowServer >/dev/null 2>&1 &&
-		   [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then
-			return 0   # macOS GUI
-		else
-			return 1   # SSH or console mode
-		fi
+		if pgrep -x WindowServer >/dev/null 2>&1 && [[ "$(launchctl managername 2>/dev/null)" == "Aqua" ]]; then return 0
+		else return 1; fi
 	else
-		if [[ -n "${SSH_CONNECTION-}" || -n "${SSH_CLIENT-}" || -n "${SSH_TTY-}" ]]; then
-			return 1
-		fi
-		if [[ -z "${DISPLAY-}" && -z "${WAYLAND_DISPLAY-}" ]]; then
-			return 1   # No display server → headless
-		fi
-		if pgrep -x vncserver	>/dev/null 2>&1 || \
-		   pgrep -x Xvnc		 >/dev/null 2>&1 || \
-		   pgrep -x x11vnc	   >/dev/null 2>&1 || \
-		   pgrep -x Xtightvnc	>/dev/null 2>&1 || \
-		   pgrep -x Xtigervnc	>/dev/null 2>&1 || \
-		   pgrep -x Xrealvnc	 >/dev/null 2>&1; then
-			return 0
-		fi
-		if pgrep -x gnome-shell	   >/dev/null 2>&1 || \
-		   pgrep -x plasmashell	   >/dev/null 2>&1 || \
-		   pgrep -x xfce4-session	 >/dev/null 2>&1 || \
-		   pgrep -x cinnamon		  >/dev/null 2>&1 || \
-		   pgrep -x mate-session	  >/dev/null 2>&1 || \
-		   pgrep -x lxsession		 >/dev/null 2>&1 || \
-		   pgrep -x openbox		   >/dev/null 2>&1 || \
-		   pgrep -x i3				>/dev/null 2>&1 || \
-		   pgrep -x sway			  >/dev/null 2>&1 || \
-		   pgrep -x hyprland		  >/dev/null 2>&1 || \
-		   pgrep -x wayfire		   >/dev/null 2>&1 || \
-		   pgrep -x river			 >/dev/null 2>&1 || \
-		   pgrep -x fluxbox		   >/dev/null 2>&1; then
-			return 0   # Desktop environment detected
-		fi
+		if [[ -n "${SSH_CONNECTION-}" || -n "${SSH_CLIENT-}" || -n "${SSH_TTY-}" ]]; then return 1; fi
+		if [[ -z "${DISPLAY-}" && -z "${WAYLAND_DISPLAY-}" ]]; then return 1; fi
+		if pgrep -x vncserver >/dev/null 2>&1 || pgrep -x Xvnc >/dev/null 2>&1 || pgrep -x x11vnc >/dev/null 2>&1 || pgrep -x Xtightvnc >/dev/null 2>&1 || pgrep -x Xtigervnc >/dev/null 2>&1 || pgrep -x Xrealvnc >/dev/null 2>&1; then return 0; fi
+		if pgrep -x gnome-shell >/dev/null 2>&1 || pgrep -x plasmashell >/dev/null 2>&1 || pgrep -x xfce4-session >/dev/null 2>&1 || pgrep -x cinnamon >/dev/null 2>&1 || pgrep -x mate-session >/dev/null 2>&1 || pgrep -x lxsession >/dev/null 2>&1 || pgrep -x openbox >/dev/null 2>&1 || pgrep -x i3 >/dev/null 2>&1 || pgrep -x sway >/dev/null 2>&1 || pgrep -x hyprland >/dev/null 2>&1 || pgrep -x wayfire >/dev/null 2>&1 || pgrep -x river >/dev/null 2>&1 || pgrep -x fluxbox >/dev/null 2>&1; then return 0; fi
 		return 1
 	fi
 }
 
 open_desktop_app() {
 	(
-		host=127.0.0.1
-		port=7860
-		url="http://$host:$port/"
-		timeout=120
+		host=127.0.0.1; port=7860; url="http://$host:$port/"; timeout=120
 		start_time=$(date +%s)
 		while ! nc -z "$host" "$port" >/dev/null 2>&1; do
-			sleep 1
-			elapsed=$(( $(date +%s) - start_time ))
-			if [[ "$elapsed" -ge "$timeout" ]]; then
-				exit 0
-			fi
+			sleep 1; elapsed=$(( $(date +%s) - start_time ))
+			if [[ "$elapsed" -ge "$timeout" ]]; then exit 0; fi
 		done
-		if [[ "${OSTYPE-}" == darwin* ]]; then
-			open "$url" >/dev/null 2>&1 &
-		elif command -v xdg-open >/dev/null 2>&1; then
-			xdg-open "$url" >/dev/null 2>&1 &
-		elif command -v gio >/dev/null 2>&1; then
-			gio open "$url" >/dev/null 2>&1 &
-		elif command -v x-www-browser >/dev/null 2>&1; then
-			x-www-browser "$url" >/dev/null 2>&1 &
-		else
-			echo "No method found to open the default web browser." >&2
-		fi
+		if [[ "${OSTYPE-}" == darwin* ]]; then open "$url" >/dev/null 2>&1 &
+		elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$url" >/dev/null 2>&1 &
+		elif command -v gio >/dev/null 2>&1; then gio open "$url" >/dev/null 2>&1 &
+		elif command -v x-www-browser >/dev/null 2>&1; then x-www-browser "$url" >/dev/null 2>&1 &
+		else echo "No method found to open the default web browser." >&2; fi
 		exit 0
 	) &
 }
@@ -292,26 +195,14 @@ mac_app() {
 	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME"
 	local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
 	local OPEN_DESKTOP_APP_DEF=$(typeset -f open_desktop_app)
-	local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR") # Escape SCRIPT_DIR safely for AppleScript
-
-	if [[ -d "$APP_BUNDLE" ]]; then
-		open_desktop_app
-		return 0
-	fi
-
+	local ESCAPED_APP_ROOT=$(printf '%q' "$SCRIPT_DIR")
+	if [[ -d "$APP_BUNDLE" ]]; then open_desktop_app; return 0; fi
 	[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
-	if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then
-		mkdir -p "$MACOS" "$RESOURCES"
-	fi
-
+	if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then mkdir -p "$MACOS" "$RESOURCES"; fi
 	cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/zsh
 $OPEN_DESKTOP_APP_DEF
 open_desktop_app
-# TODO: replace osascript when log will be available in gradio with
-#
-# cd "$SCRIPT_DIR"
-# ./ebook2audiobook.sh
 osascript -e '
 tell application "Terminal"
 	do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
@@ -321,38 +212,25 @@ end tell
 EOF
 	chmod +x "$MACOS/$APP_NAME"
 	cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
-
 	cat > "$CONTENTS/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
-	<key>CFBundleExecutable</key>
-	<string>ebook2audiobook</string>
-	<key>CFBundleIdentifier</key>
-	<string>com.local.ebook2audiobook</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>ebook2audiobook</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
-	<key>CFBundleVersion</key>
-	<string>1</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>10.9</string>
-	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
-	<key>CFBundleIconFile</key>
-	<string>AppIcon</string>
+	<key>CFBundleDevelopmentRegion</key><string>en</string>
+	<key>CFBundleExecutable</key><string>ebook2audiobook</string>
+	<key>CFBundleIdentifier</key><string>com.local.ebook2audiobook</string>
+	<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+	<key>CFBundleName</key><string>ebook2audiobook</string>
+	<key>CFBundlePackageType</key><string>APPL</string>
+	<key>CFBundleShortVersionString</key><string>1.0</string>
+	<key>CFBundleVersion</key><string>1</string>
+	<key>LSMinimumSystemVersion</key><string>10.9</string>
+	<key>NSPrincipalClass</key><string>NSApplication</string>
+	<key>CFBundleIconFile</key><string>AppIcon</string>
 </dict>
 </plist>
 PLIST
-
 	ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
 	echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to the launchpad and click on ebook2audiobook icon."
 	open_desktop_app
@@ -363,12 +241,7 @@ linux_app() {
 	local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
 	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
 	local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
-
-	if [[ -f "$MENU_ENTRY" ]]; then
-		open_desktop_app
-		return 0
-	fi
-
+	if [[ -f "$MENU_ENTRY" ]]; then open_desktop_app; return 0; fi
 	mkdir -p "$HOME/.local/share/applications"
 	cat > "$MENU_ENTRY" <<EOF
 [Desktop Entry]
@@ -383,71 +256,34 @@ EOF
 	mkdir -p "$HOME/Desktop" 2>&1 > /dev/null
 	cp "$MENU_ENTRY" "$DESKTOP_SHORTCUT"
 	chmod +x "$DESKTOP_SHORTCUT"
-	if command -v update-desktop-database >/dev/null 2>&1; then
-		update-desktop-database ~/.local/share/applications >/dev/null 2>&1
-	fi
+	if command -v update-desktop-database >/dev/null 2>&1; then update-desktop-database ~/.local/share/applications >/dev/null 2>&1; fi
 	echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to menu entry and click on ebook2audiobook icon."
 	open_desktop_app
 }
 
 check_desktop_app() {
-	if [[ " ${ARGS[*]} " == *" --headless "* ]] || ! has_no_display; then
-		return 0
-	fi
-	if [[ "${OSTYPE-}" == darwin* ]]; then
-		mac_app
-	elif [[ "${OSTYPE-}" == linux* ]]; then
-		linux_app
-	fi
+	if [[ " ${ARGS[*]} " == *" --headless "* ]] || ! has_no_display; then return 0; fi
+	if [[ "${OSTYPE-}" == darwin* ]]; then mac_app
+	elif [[ "${OSTYPE-}" == linux* ]]; then linux_app; fi
 	return 0
 }
-#################
 
 get_iso3_lang() {
 	case "$1" in
-		en) echo "eng" ;;
-		fr) echo "fra" ;;
-		de) echo "deu" ;;
-		it) echo "ita" ;;
-		es) echo "spa" ;;
-		pt) echo "por" ;;
-		ar) echo "ara" ;;
-		tr) echo "tur" ;;
-		ru) echo "rus" ;;
-		bn) echo "ben" ;;
-		zh) echo "chi_sim" ;;
-		fa) echo "fas" ;;
-		hi) echo "hin" ;;
-		hu) echo "hun" ;;
-		id) echo "ind" ;;
-		jv) echo "jav" ;;
-		ja) echo "jpn" ;;
-		ko) echo "kor" ;;
-		pl) echo "pol" ;;
-		ta) echo "tam" ;;
-		te) echo "tel" ;;
-		yo) echo "yor" ;;
-		*)  echo "eng" ;;
+		en) echo "eng" ;; fr) echo "fra" ;; de) echo "deu" ;; it) echo "ita" ;; es) echo "spa" ;; pt) echo "por" ;; ar) echo "ara" ;; tr) echo "tur" ;; ru) echo "rus" ;; bn) echo "ben" ;; zh) echo "chi_sim" ;; fa) echo "fas" ;; hi) echo "hin" ;; hu) echo "hun" ;; id) echo "ind" ;; jv) echo "jav" ;; ja) echo "jpn" ;; ko) echo "kor" ;; pl) echo "pol" ;; ta) echo "tam" ;; te) echo "tel" ;; yo) echo "yor" ;; *)  echo "eng" ;;
 	esac
 }
 
 check_python() {
-	if ! command -v python3 &>/dev/null; then
-		echo 'Python is not installed.'
-		return 1
-	fi
+	if ! command -v python3 &>/dev/null; then echo 'Python is not installed.'; return 1; fi
 	local installed_version
 	installed_version=$(python3 --version 2>&1 | awk '{print $2}')
 	local IFS='.'
 	read -r ins_major ins_minor ins_patch <<< "$installed_version"
 	read -r req_major req_minor req_patch <<< "$MIN_PYTHON_VERSION"
-	ins_patch="${ins_patch%%[!0-9]*}"
-	ins_patch="${ins_patch:-0}"
-	req_patch="${req_patch%%[!0-9]*}"
-	req_patch="${req_patch:-0}"
-	if [ "$ins_major" -lt "$req_major" ] ||
-	   [ "$ins_major" -eq "$req_major" -a "$ins_minor" -lt "$req_minor" ] ||
-	   [ "$ins_major" -eq "$req_major" -a "$ins_minor" -eq "$req_minor" -a "$ins_patch" -lt "$req_patch" ]; then
+	ins_patch="${ins_patch%%[!0-9]*}"; ins_patch="${ins_patch:-0}"
+	req_patch="${req_patch%%[!0-9]*}"; req_patch="${req_patch:-0}"
+	if [ "$ins_major" -lt "$req_major" ] || [ "$ins_major" -eq "$req_major" -a "$ins_minor" -lt "$req_minor" ] || [ "$ins_major" -eq "$req_major" -a "$ins_minor" -eq "$req_minor" -a "$ins_patch" -lt "$req_patch" ]; then
 		echo "Python $installed_version found but $MIN_PYTHON_VERSION or higher is required."
 		return 1
 	fi
@@ -460,38 +296,24 @@ check_required_programs() {
 	for program in "${programs[@]}"; do
 		local pkg="$program"
 		local bin="$program"
-		# Normalize special binaries
 		[[ "$program" == "nodejs" ]] && bin="node"
 		[[ "$program" == "rust" ]]   && bin="rustc"
-		# Special case: tesseract OCR
 		if [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			bin="tesseract"
-			if command -v zypper >/dev/null 2>&1 || command -v apt-get >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then
-				pkg="tesseract-ocr"
-			else
-				pkg="$program"
-			fi
+			if command -v zypper >/dev/null 2>&1 || command -v apt-get >/dev/null 2>&1 || command -v apk >/dev/null 2>&1; then pkg="tesseract-ocr"
+			else pkg="$program"; fi
 		elif [[ "$program" == "xcb-util-cursor" ]]; then
 			bin=""
 			if [[ "${OSTYPE-}" != darwin* ]]; then
-				if command -v apt-get >/dev/null 2>&1 || command -v zypper >/dev/null 2>&1; then
-					pkg="libxcb-cursor0"
-				elif command -v apk >/dev/null 2>&1; then
-					pkg="xcb-util-cursor"
-				else
-					pkg="$program"
-				fi
+				if command -v apt-get >/dev/null 2>&1 || command -v zypper >/dev/null 2>&1; then pkg="libxcb-cursor0"
+				elif command -v apk >/dev/null 2>&1; then pkg="xcb-util-cursor"
+				else pkg="$program"; fi
 				check_xcb=$(ldconfig -p 2>/dev/null | grep libxcb-cursor)
-				if [[ "$check_xcb" == "" ]]; then
-					programs_missing+=("$pkg")
-				fi
+				if [[ "$check_xcb" == "" ]]; then programs_missing+=("$pkg"); fi
 			fi
 		fi
 		if [[ "$bin" != "" ]]; then
-			if ! command -v "$bin" &>/dev/null; then
-				echo -e "\e[33m$pkg is not installed.\e[0m"
-				programs_missing+=("$pkg")
-			fi
+			if ! command -v "$bin" &>/dev/null; then echo -e "\e[33m$pkg is not installed.\e[0m"; programs_missing+=("$pkg"); fi
 		fi
 	done
 	(( ${#programs_missing[@]} == 0 ))
@@ -507,9 +329,7 @@ install_programs() {
 			echo >> $HOME/.zprofile
 			echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
 			eval "$(/usr/local/bin/brew shellenv)"
-			if ! grep -iqFx "homebrew" "$INSTALLED_LOG"; then
-				echo "homebrew" >> "$INSTALLED_LOG"
-			fi
+			if ! grep -iqFx "homebrew" "$INSTALLED_LOG"; then echo "homebrew" >> "$INSTALLED_LOG"; fi
 		fi
 		if ! brew list --versions llvm@15 >/dev/null 2>&1; then
 			echo "Installing llvm@15 (required for numba/llvmlite on macOS)"
@@ -518,32 +338,18 @@ install_programs() {
 			export PATH="$(brew --prefix llvm@15)/bin:$PATH"
 		fi
 	else
-		if [[ "$SUDO" == "sudo" ]]; then
-			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
-		fi
+		if [[ "$SUDO" == "sudo" ]]; then echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"; fi
 		local PACK_MGR_OPTIONS=""
-		if command -v emerge &> /dev/null; then
-			PACK_MGR="emerge"
-		elif command -v dnf &> /dev/null; then
-			PACK_MGR="dnf install"
-			PACK_MGR_OPTIONS="-y"
-		elif command -v yum &> /dev/null; then
-			PACK_MGR="yum install"
-			PACK_MGR_OPTIONS="-y"
-		elif command -v zypper &> /dev/null; then
-			PACK_MGR="zypper install"
-			PACK_MGR_OPTIONS="-y"
-		elif command -v pacman &> /dev/null; then
-			PACK_MGR="pacman -Sy --noconfirm"
-		elif command -v apt-get &> /dev/null; then
-			$SUDO apt-get update
-			PACK_MGR="apt-get install"
-			PACK_MGR_OPTIONS="-y"
+		if command -v emerge &> /dev/null; then PACK_MGR="emerge"
+		elif command -v dnf &> /dev/null; then PACK_MGR="dnf install"; PACK_MGR_OPTIONS="-y"
+		elif command -v yum &> /dev/null; then PACK_MGR="yum install"; PACK_MGR_OPTIONS="-y"
+		elif command -v zypper &> /dev/null; then PACK_MGR="zypper install"; PACK_MGR_OPTIONS="-y"
+		elif command -v pacman &> /dev/null; then PACK_MGR="pacman -Sy --noconfirm"
+		elif command -v apt-get &> /dev/null; then $SUDO apt-get update; PACK_MGR="apt-get install"; PACK_MGR_OPTIONS="-y"
 		elif [[ -f /etc/unraid-version ]] || command -v installplg &>/dev/null; then
 			if ! command -v un-get &>/dev/null; then
 				echo "  → Installing un-get plugin…"
 				installplg ./ext/app/un-get.plg
-				# Add the two best repos for Unraid 7 (current as of Dec 2025)
 				mkdir -p /boot/config/plugins/un-get
 				cat > /boot/config/plugins/un-get/sources.list <<EOF
 https://slackware.uk/slackware/slackware64-current/
@@ -552,64 +358,41 @@ EOF
 				sleep 8
 			fi
 			PACK_MGR="un-get install"
-		elif command -v apk &>/dev/null; then
-			PACK_MGR="apk add"
-		else
-			echo "Cannot recognize your applications package manager. Please install the required applications manually."
-			return 1
-		fi
+		elif command -v apk &>/dev/null; then PACK_MGR="apk add"
+		else echo "Cannot recognize your applications package manager. Please install the required applications manually."; return 1; fi
 	fi
 	if [[ -z "$WGET" ]]; then
 		echo -e "\e[33m wget is missing! trying to install it… \e[0m"
 		result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
 		result_code=$?
-		if [[ $result_code -eq 0 ]]; then
-			WGET="$(command -v wget 2>/dev/null || true)"
-		else
-			echo "Cannot 'wget'. Please install 'wget'  manually."
-			return 1
-		fi
+		if [[ $result_code -eq 0 ]]; then WGET="$(command -v wget 2>/dev/null || true)"
+		else echo "Cannot 'wget'. Please install 'wget'  manually."; return 1; fi
 	fi
 	for program in "${programs_missing[@]}"; do
 		if [[ "$program" == "calibre" ]]; then
-			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m=============== Calibre OK! ===============\e[0m"
+			if command -v $program >/dev/null 2>&1; then echo -e "\e[32m=============== Calibre OK! ===============\e[0m"
 			else
-				# avoid conflict with calibre builtin lxml
 				python3 -m pip uninstall -y lxml 2>/dev/null || true
 				echo -e "\e[33mInstalling Calibre…\e[0m"
-				if [[ "${OSTYPE-}" == darwin* ]]; then
-					eval "$PACK_MGR --cask calibre"
+				if [[ "${OSTYPE-}" == darwin* ]]; then eval "$PACK_MGR --cask calibre"
 				else
 					tmp="$(mktemp)"
 					$WGET -nv -O "$tmp" "$CALIBRE_INSTALLER_URL" || return 1
-					if [[ "$SUDO" == "sudo" ]]; then
-						$SUDO sh "$tmp"
-					else
-						sh "$tmp"
-					fi
+					if [[ "$SUDO" == "sudo" ]]; then $SUDO sh "$tmp"; else sh "$tmp"; fi
 					rm -f "$tmp"
 				fi
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
-				if command -v $program >/dev/null 2>&1; then
-					echo -e "\e[32m=============== $program OK! ===============\e[0m"
-				else
-					echo -e "\e[31m=============== $program failed.\e[0m"
-				fi
+				if command -v $program >/dev/null 2>&1; then echo -e "\e[32m=============== $program OK! ===============\e[0m"
+				else echo -e "\e[31m=============== $program failed.\e[0m"; fi
 			fi
 		elif [[ "$program" == "rust" || "$program" == "rustc" ]]; then
 			RUSTUP_TMP="$(mktemp)"
 			curl -fL "$RUST_INSTALLER_URL" -o "$RUSTUP_TMP" || return 1
 			sh "$RUSTUP_TMP" -y
 			rm -f "$RUSTUP_TMP"
-			if [[ -f "$HOME/.cargo/env" ]]; then
-				source "$HOME/.cargo/env"
-			fi
-			if command -v $program &>/dev/null; then
-				echo -e "\e[32m=============== $program OK! ===============\e[0m"
-			else
-				echo -e "\e[31m=============== $program failed.\e[0m"
-			fi
+			if [[ -f "$HOME/.cargo/env" ]]; then source "$HOME/.cargo/env"; fi
+			if command -v $program &>/dev/null; then echo -e "\e[32m=============== $program OK! ===============\e[0m"
+			else echo -e "\e[31m=============== $program failed.\e[0m"; fi
 		elif [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v $program >/dev/null 2>&1; then
@@ -617,60 +400,36 @@ EOF
 				ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $ISO3_LANG"
 				langpack=""
-				if command -v brew &> /dev/null; then
-					langpack="tesseract-lang-$ISO3_LANG"
-				elif command -v apt-get &>/dev/null; then
-					langpack="tesseract-ocr-$ISO3_LANG"
-				elif command -v dnf &>/dev/null || command -v yum &>/dev/null; then
-					langpack="tesseract-langpack-$ISO3_LANG"
-				elif command -v zypper &>/dev/null; then
-					langpack="tesseract-ocr-$ISO3_LANG"
-				elif command -v pacman &>/dev/null; then
-					langpack="tesseract-data-$ISO3_LANG"
-				elif command -v apk &>/dev/null; then
-					langpack="tesseract-ocr-$ISO3_LANG"
-				else
-					echo "Cannot recognize your applications package manager. Please install the required applications manually."
-					return 1
-				fi
+				if command -v brew &> /dev/null; then langpack="tesseract-lang-$ISO3_LANG"
+				elif command -v apt-get &>/dev/null; then langpack="tesseract-ocr-$ISO3_LANG"
+				elif command -v dnf &>/dev/null || command -v yum &>/dev/null; then langpack="tesseract-langpack-$ISO3_LANG"
+				elif command -v zypper &>/dev/null; then langpack="tesseract-ocr-$ISO3_LANG"
+				elif command -v pacman &>/dev/null; then langpack="tesseract-data-$ISO3_LANG"
+				elif command -v apk &>/dev/null; then langpack="tesseract-ocr-$ISO3_LANG"
+				else echo "Cannot recognize your applications package manager. Please install the required applications manually."; return 1; fi
 				if [[ -n "$langpack" ]]; then
 					eval "$SUDO $PACK_MGR $langpack $PACK_MGR_OPTIONS"
-					if tesseract --list-langs | grep -q "$ISO3_LANG"; then
-						echo "Tesseract OCR language '$ISO3_LANG' successfully installed."
-					else
-						echo "Tesseract OCR language '$ISO3_LANG' not installed properly."
-					fi
+					if tesseract --list-langs | grep -q "$ISO3_LANG"; then echo "Tesseract OCR language '$ISO3_LANG' successfully installed."
+					else echo "Tesseract OCR language '$ISO3_LANG' not installed properly."; fi
 				fi
-			else
-				echo -e "\e[31m=============== $program failed.\e[0m"
-			fi
+			else echo -e "\e[31m=============== $program failed.\e[0m"; fi
 		elif [[ "$program" == "nodejs" ]]; then
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
-			if command -v node >/dev/null 2>&1; then
-				echo -e "\e[32m=============== $program OK! ===============\e[0m"
-			else
-				echo -e "\e[31m=============== $program failed.\e[0m"
-			fi
+			if command -v node >/dev/null 2>&1; then echo -e "\e[32m=============== $program OK! ===============\e[0m"
+			else echo -e "\e[31m=============== $program failed.\e[0m"; fi
 		else
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
-			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[32m=============== $program OK! ===============\e[0m"
-			else
-				echo -e "\e[31m=============== $program failed.\e[0m"
-			fi
+			if command -v $program >/dev/null 2>&1; then echo -e "\e[32m=============== $program OK! ===============\e[0m"
+			else echo -e "\e[31m=============== $program failed.\e[0m"; fi
 		fi
 	done
-	if check_required_programs "${HOST_PROGRAMS[@]}"; then
-		return 0
-	else
-		echo "Some programs didn't install successfuly, please report the log to the support"
-	fi
+	if check_required_programs "${HOST_PROGRAMS[@]}"; then return 0
+	else echo "Some programs didn't install successfuly, please report the log to the support"; fi
 }
 
 check_uv() {
 	compare_versions() {
-		local ver1=$1
-		local ver2=$2
+		local ver1=$1; local ver2=$2
 		IFS='.' read -r v1_major v1_minor <<<"$ver1"
 		IFS='.' read -r v2_major v2_minor <<<"$ver2"
 		((v1_major < v2_major)) && return 1
@@ -683,24 +442,16 @@ check_uv() {
 		echo -e "\e[33mDownloading uv installer…\e[0m"
 		curl -LsSf "$UV_INSTALLER_URL" | sh
 		export PATH="$UV_INSTALL_DIR:$PATH"
-		if ! command -v uv &>/dev/null; then
-			echo -e "\e[31m=============== uv installation failed.\e[0m"
-			return 1
-		fi
+		if ! command -v uv &>/dev/null; then echo -e "\e[31m=============== uv installation failed.\e[0m"; return 1; fi
 		echo -e "\e[32m=============== uv OK! ===============\e[0m"
-		if ! grep -iqFx "uv" "$INSTALLED_LOG"; then
-			echo "uv" >> "$INSTALLED_LOG"
-		fi
+		if ! grep -iqFx "uv" "$INSTALLED_LOG"; then echo "uv" >> "$INSTALLED_LOG"; fi
 	fi
 	local model="other"
-	if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then
-		PYTHON_VERSION="3.11"
+	if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then PYTHON_VERSION="3.11"
 	else
 		if [[ -r /proc/device-tree/model ]]; then
 			model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
-			if [[ "$model" == *jetson* ]]; then
-				PYTHON_VERSION="$MIN_PYTHON_VERSION"
-			fi
+			if [[ "$model" == *jetson* ]]; then PYTHON_VERSION="$MIN_PYTHON_VERSION"; fi
 		else
 			compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
 			case $? in 1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;; esac
@@ -708,6 +459,8 @@ check_uv() {
 			case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
 		fi
 	fi
+	
+	# Migration detection
 	if [[ -d "$SCRIPT_DIR/$PYTHON_ENV/conda-meta" ]]; then
 		echo -e "\e[33mDetected conda-based $PYTHON_ENV — removing and recreating with uv…\e[0m"
 		rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
@@ -715,6 +468,7 @@ check_uv() {
 		echo -e "\e[33mDetected non-uv venv in $PYTHON_ENV — removing and recreating with uv…\e[0m"
 		rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
 	fi
+
 	if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/.provisioned" ]]; then
 		if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
 			echo -e "\e[33mDetected incomplete $PYTHON_ENV — removing and recreating…\e[0m"
@@ -724,18 +478,18 @@ check_uv() {
 		chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
 		chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
 		uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" || return 1
+		
+		# Update PY_CMD to point to the new venv
+		PY_CMD="$SCRIPT_DIR/$PYTHON_ENV/bin/python3"
+
 		set +u
 		source "$SCRIPT_DIR/$PYTHON_ENV/bin/activate" || return 1
 		set -u
 		if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
-			# gfortran needed to compile scipy from pip on Jetson
 			uv pip install --python "$SCRIPT_DIR/$PYTHON_ENV/bin/python" gfortran 2>/dev/null || true
 		fi
 		DEVICE_INFO_STR="$(check_device_info "$SCRIPT_MODE")"
-		if [[ -z "$DEVICE_INFO_STR" ]]; then
-			echo "check_device_info() error: result is empty"
-			return 1
-		fi
+		if [[ -z "$DEVICE_INFO_STR" ]]; then echo "check_device_info() error: result is empty"; return 1; fi
 		install_device_packages "$DEVICE_INFO_STR" || return 1
 		install_python_packages || return 1
 		echo "$APP_VERSION" > "$SCRIPT_DIR/$PYTHON_ENV/.provisioned"
@@ -746,36 +500,28 @@ check_uv() {
 
 check_docker() {
 	if [[ "$DOCKER_MODE" == "podman" ]]; then
-		if command -v podman-compose &> /dev/null; then
-			PODMAN_DESKTOP="1"
-			return 0
-		fi
-		echo -e "\e[31m=============== Podman is not installed.\e[0m"
-		return 1
+		if command -v podman-compose &> /dev/null; then PODMAN_DESKTOP="1"; return 0; fi
+		echo -e "\e[31m=============== Podman is not installed.\e[0m"; return 1
 	fi
-	if command -v docker &> /dev/null; then
-		DOCKER_DESKTOP="1"
-		return 0
-	fi
-	echo -e "\e[31m=============== Docker is not installed.\e[0m"
-	return 1
+	if command -v docker &> /dev/null; then DOCKER_DESKTOP="1"; return 0; fi
+	echo -e "\e[31m=============== Docker is not installed.\e[0m"; return 1
 }
 
 install_python_packages() {
 	echo "Installing python dependencies…"
-	PYTHONPATH="$SCRIPT_DIR" python3 -c "import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())"
+	PYTHONPATH="$SCRIPT_DIR" "$PY_CMD" -c "import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())"
 	return $?
 }
 
 check_device_info() {
-    local ARG="$1"
-    python3 - << EOF
+	local ARG="$1"
+	python3 - << EOF
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 result = device.check_device_info("$ARG")
 if result:
-    print(result)
-    raise SystemExit(0)
+	print(result)
+	raise SystemExit(0)
 raise SystemExit(1)
 EOF
 }
@@ -791,7 +537,7 @@ print(data['$key'])
 
 install_device_packages() {
 	local ARG="$1"
-	python3 - "$ARG" << 'EOF'
+	"$PY_CMD" - "$ARG" << 'EOF'
 import sys,json
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
@@ -803,180 +549,89 @@ EOF
 
 check_sitecustomized() {
 	local src_pyfile="$SCRIPT_DIR/components/sitecustomize.py"
-	local site_packages_path=$(python3 -c "import sysconfig;print(sysconfig.get_paths()['purelib'])")
+	local site_packages_path=$("$PY_CMD" -c "import sysconfig;print(sysconfig.get_paths()['purelib'])")
 	local dst_pyfile="$site_packages_path/sitecustomize.py"
 	if [ ! -f "$dst_pyfile" ] || [ "$src_pyfile" -nt "$dst_pyfile" ]; then
-		if cp -p "$src_pyfile" "$dst_pyfile"; then
-			echo "Installed sitecustomize.py hook in $dst_pyfile"
-		else
-			echo -e "\e[31m=============== sitecustomize.py hook error: copy failed.\e[0m" >&2
-			exit 1
-		fi
+		if cp -p "$src_pyfile" "$dst_pyfile"; then echo "Installed sitecustomize.py hook in $dst_pyfile"
+		else echo -e "\e[31m=============== sitecustomize.py hook error: copy failed.\e[0m" >&2; exit 1; fi
 	fi
 	return 0
 }
 
 get_dri_gids() {
-	local node
-	RENDER_GID=""
-	VIDEO_GID=""
+	local node; RENDER_GID=""; VIDEO_GID=""
 	if [[ "${OSTYPE-}" == linux* ]]; then
 		for node in /dev/dri/renderD*; do
-			if [[ ! -c "$node" ]]; then
-				continue
-			fi
+			if [[ ! -c "$node" ]]; then continue; fi
 			RENDER_GID="$(stat -c '%g' "$node" 2>/dev/null || true)"
-			if [[ -n "$RENDER_GID" ]]; then
-				break
-			fi
+			if [[ -n "$RENDER_GID" ]]; then break; fi
 		done
 		for node in /dev/dri/card*; do
-			if [[ ! -c "$node" ]]; then
-				continue
-			fi
+			if [[ ! -c "$node" ]]; then continue; fi
 			VIDEO_GID="$(stat -c '%g' "$node" 2>/dev/null || true)"
-			if [[ -n "$VIDEO_GID" ]]; then
-				break
-			fi
+			if [[ -n "$VIDEO_GID" ]]; then break; fi
 		done
 	fi
 	export RENDER_GID VIDEO_GID
 	{
-		if [[ -n "$RENDER_GID" ]]; then
-			printf 'RENDER_GID=%s\n' "$RENDER_GID"
-		fi
-		if [[ -n "$VIDEO_GID" ]]; then
-			printf 'VIDEO_GID=%s\n' "$VIDEO_GID"
-		fi
+		if [[ -n "$RENDER_GID" ]]; then printf 'RENDER_GID=%s\n' "$RENDER_GID"; fi
+		if [[ -n "$VIDEO_GID" ]]; then printf 'VIDEO_GID=%s\n' "$VIDEO_GID"; fi
 	} > "$SCRIPT_DIR/.env"
 	return 0
 }
 
 build_docker_image() {
 	local ARG="$1"
-	if [[ -z "$ARG" ]]; then
-		echo "build_docker_image() error: ARG is empty" >&2
-		return 1
-	fi
+	if [[ -z "$ARG" ]]; then echo "build_docker_image() error: ARG is empty" >&2; return 1; fi
 	local cmd_options=""
 	local py_vers
-	# Base-image Python MUST match the wheel ABI in the device profile: derive it from
-	# pyvenv in $ARG (the single source of truth), not from $DEVICE_TAG.
 	py_vers="$(printf '%s' "$ARG" | python3 -c 'import json,sys; v=json.load(sys.stdin).get("pyvenv"); print(f"{v[0]}.{v[1]}" if v else "")' 2>/dev/null)"
 	[[ -z "$py_vers" ]] && py_vers="$PYTHON_VERSION"
 	ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
-	# Compose reads build args ONLY from the compose file build.args, resolved from the
-	# environment -- it ignores PODMAN_BUILD_ARGS and loose --build-arg flags. Export every
-	# value the Dockerfile ARGs consume so the device profile + matching Python reach the
-	# image instead of the Dockerfile defaults (a generic cu130 / python3.12).
 	export PYTHON_VERSION="$py_vers"
 	export DOCKER_DEVICE_STR="$ARG"
 	export DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}"
 	export CALIBRE_INSTALLER_URL
 	export ISO3_LANG
 	case "$DEVICE_TAG" in
-		cpu)		cmd_options="";;
-		cu*)		cmd_options="--gpus all" ;;
-		rocm*)		cmd_options="--device=/dev/kfd --device=/dev/dri" ;;
-		jetson*)	cmd_options="--runtime nvidia --gpus all" ;;
-		xpu)		cmd_options="--device=/dev/dri" ;;
+		cpu) cmd_options="";; cu*) cmd_options="--gpus all";; rocm*) cmd_options="--device=/dev/kfd --device=/dev/dri";; jetson*) cmd_options="--runtime nvidia --gpus all";; xpu) cmd_options="--device=/dev/dri";;
 	esac
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${DEVICE_TAG}"
 	case "$DEVICE_TAG" in
-		cpu|mps)	COMPOSE_PROFILES=cpu ;;
-		cu*)		COMPOSE_PROFILES=cuda ;;
-		rocm*)		COMPOSE_PROFILES=rocm ;;
-		jetson*)	COMPOSE_PROFILES=jetson ;;
-		xpu)		COMPOSE_PROFILES=xpu ;;
-		*)		COMPOSE_PROFILES=cpu ;;
+		cpu|mps) COMPOSE_PROFILES=cpu;; cu*) COMPOSE_PROFILES=cuda;; rocm*) COMPOSE_PROFILES=rocm;; jetson*) COMPOSE_PROFILES=jetson;; xpu) COMPOSE_PROFILES=xpu;; *) COMPOSE_PROFILES=cpu;;
 	esac
 	export COMPOSE_PROFILES
 	get_dri_gids
 	SERVICE="ebook2audiobook-${COMPOSE_PROFILES}"
 	if [[ "$DOCKER_MODE" == "podman" ]]; then
-		if ! command -v podman >/dev/null 2>&1; then
-			echo "ERROR: podman is not installed" >&2
-			return 1
-		fi
-		# podman-compose is only needed to RUN the image, not to build it
-		if ! command -v podman-compose >/dev/null 2>&1 || ! podman-compose -f podman-compose.yml config >/dev/null 2>&1; then
-			echo "WARNING: podman-compose is missing or podman-compose.yml is not valid -- the image will still build, but you will not be able to run it with podman-compose" >&2
-		fi
+		if ! command -v podman >/dev/null 2>&1; then echo "ERROR: podman is not installed" >&2; return 1; fi
+		if ! command -v podman-compose >/dev/null 2>&1 || ! podman-compose -f podman-compose.yml config >/dev/null 2>&1; then echo "WARNING: podman-compose is missing or podman-compose.yml is not valid" >&2; fi
 	elif [[ "$DOCKER_MODE" == "compose" ]]; then
-		if ! docker compose config --services 2>/dev/null | grep -q .; then
-			echo "ERROR: docker compose found no services or yml file is not valid." >&2
-			return 1
-		fi
+		if ! docker compose config --services 2>/dev/null | grep -q .; then echo "ERROR: docker compose found no services or yml file is not valid." >&2; return 1; fi
 	fi
 	if [[ "$DOCKER_MODE" == "podman" ]]; then
 		echo "--> Using podman build"
-		podman \
-			build \
-			--network=host \
-			--no-cache \
-			-t "$DOCKER_IMG_NAME" \
-			-f Dockerfile \
-			--build-arg PYTHON_VERSION="$py_vers" \
-			--build-arg APP_VERSION="$APP_VERSION" \
-			--build-arg DEVICE_TAG="$DEVICE_TAG" \
-			--build-arg DOCKER_DEVICE_STR="$ARG" \
-			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
-			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
-			--build-arg ISO3_LANG="$ISO3_LANG" \
-			. || return 1
+		podman build --network=host --no-cache -t "$DOCKER_IMG_NAME" -f Dockerfile --build-arg PYTHON_VERSION="$py_vers" --build-arg APP_VERSION="$APP_VERSION" --build-arg DEVICE_TAG="$DEVICE_TAG" --build-arg DOCKER_DEVICE_STR="$ARG" --build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" --build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" --build-arg ISO3_LANG="$ISO3_LANG" . || return 1
 		echo "Docker image ready! to run your docker: "
 		echo "Podman Compose:"
-		echo "	GUI mode:"
-		echo "	DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES up"
-		echo "	Headless mode:"
-		echo "  DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" $SERVICE --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+		echo "	GUI mode: DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES up"
+		echo "	Headless mode: DEVICE_TAG=$DEVICE_TAG podman-compose -f podman-compose.yml --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" $SERVICE --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	elif [[ "$DOCKER_MODE" == "compose" ]]; then
 		echo "--> Using docker compose"
-		BUILD_NAME="$DOCKER_IMG_NAME" docker compose \
-			-f docker-compose.yml \
-			build \
-			--no-cache \
-			--build-arg PYTHON_VERSION="$py_vers" \
-			--build-arg APP_VERSION="$APP_VERSION" \
-			--build-arg DEVICE_TAG="$DEVICE_TAG" \
-			--build-arg DOCKER_DEVICE_STR="$ARG" \
-			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
-			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
-			--build-arg ISO3_LANG="$ISO3_LANG" \
-			|| return 1
+		BUILD_NAME="$DOCKER_IMG_NAME" docker compose -f docker-compose.yml build --no-cache --build-arg PYTHON_VERSION="$py_vers" --build-arg APP_VERSION="$APP_VERSION" --build-arg DEVICE_TAG="$DEVICE_TAG" --build-arg DOCKER_DEVICE_STR="$ARG" --build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" --build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" --build-arg ISO3_LANG="$ISO3_LANG" || return 1
 		echo "Docker image ready! to run your docker: "
 		echo "Docker Compose:"
-		echo "	GUI mode:"
-		echo "	DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
-		echo "	Headless mode:"
-		echo "  DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" $SERVICE --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
+		echo "	GUI mode: DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES up --no-log-prefix"
+		echo "	Headless mode: DEVICE_TAG=$DEVICE_TAG docker compose --profile $COMPOSE_PROFILES run --rm -v \"/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice\" $SERVICE --headless --ebook \"/app/ebooks/tests/test_eng.txt\" --tts_engine yourtts --language eng --voice \"/app/Desktop/myvoice.wav\" [etc.]"
 	else
-		# echo "--> Using docker buildx"
-		# docker buildx use default
-		# docker buildx build \
 		echo "--> Using docker build"
-		docker build \
-			--no-cache \
-			--progress plain \
-			--build-arg PYTHON_VERSION="$py_vers" \
-			--build-arg APP_VERSION="$APP_VERSION" \
-			--build-arg DEVICE_TAG="$DEVICE_TAG" \
-			--build-arg DOCKER_DEVICE_STR="$ARG" \
-			--build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" \
-			--build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" \
-			--build-arg ISO3_LANG="$ISO3_LANG" \
-			-t "$DOCKER_IMG_NAME" \
-			. || return 1
+		docker build --no-cache --progress plain --build-arg PYTHON_VERSION="$py_vers" --build-arg APP_VERSION="$APP_VERSION" --build-arg DEVICE_TAG="$DEVICE_TAG" --build-arg DOCKER_DEVICE_STR="$ARG" --build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" --build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" --build-arg ISO3_LANG="$ISO3_LANG" -t "$DOCKER_IMG_NAME" . || return 1
 		docker image prune --force
 		echo "Docker image ready! to run your docker: "
-		echo "	GUI mode:"
-		echo "	docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME"
-		echo "	Headless mode:"
-		echo "	docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
+		echo "	GUI mode: docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME"
+		echo "	Headless mode: docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	fi
 }
-
-######################################## END of functions
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 	check_python || exit 1
@@ -987,13 +642,8 @@ else
 			check_python || exit 1
 			check_docker || exit 1
 			DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
-			if [[ "$DEVICE_INFO_STR" == "" ]]; then
-				echo "check_device_info() error: result is empty"
-				exit 1
-			fi
-			if [[ "$DEVICE_TAG" == "" ]]; then
-				DEVICE_TAG=$(json_get "tag")
-			fi
+			if [[ "$DEVICE_INFO_STR" == "" ]]; then echo "check_device_info() error: result is empty"; exit 1; fi
+			if [[ "$DEVICE_TAG" == "" ]]; then DEVICE_TAG=$(json_get "tag"); fi
 			if [[ "$PODMAN_DESKTOP" == "1" ]]; then
 				if podman image exists "localhost/${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
 					echo "[STOP] Podman image 'localhost/${DOCKER_IMG_NAME}:${DEVICE_TAG}' already exists. Aborting build."
@@ -1014,10 +664,7 @@ import json
 import sys
 json.loads(sys.argv[1])
 EOF
-			then
-				echo "Invalid DOCKER_DEVICE_STR: expected valid JSON"
-				exit 1
-			fi
+			then echo "Invalid DOCKER_DEVICE_STR: expected valid JSON"; exit 1; fi
 			printf '%s' "$DOCKER_DEVICE_STR" > .device_info.json
 			install_device_packages "$DOCKER_DEVICE_STR" || exit 1
 			install_python_packages || exit 1
@@ -1025,10 +672,7 @@ EOF
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 		chmod 777 "$TMPDIR"
-		# Check if running in a foreign Python virtual environment
-		if [[ -n "${VIRTUAL_ENV:-}" && "$VIRTUAL_ENV" != "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
-			CURRENT_PYVENV="$VIRTUAL_ENV"
-		fi
+		if [[ -n "${VIRTUAL_ENV:-}" && "$VIRTUAL_ENV" != "$SCRIPT_DIR/$PYTHON_ENV" ]]; then CURRENT_PYVENV="$VIRTUAL_ENV"; fi
 		if [[ -n "$CURRENT_PYVENV" ]]; then
 			echo -e "\e[31m=============== Error: Current python virtual environment detected: $CURRENT_PYVENV.\e[0m"
 			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
@@ -1037,19 +681,19 @@ EOF
 		fi
 		check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
 		check_uv || { echo -e "\e[31m=============== check_uv() failed.\e[0m"; exit 1; }
+		
 		set +u
 		source "$SCRIPT_DIR/$PYTHON_ENV/bin/activate" || { echo -e "\e[31m=============== venv activate failed.\e[0m"; exit 1; }
 		set -u
 		check_sitecustomized || exit 1
 		check_desktop_app || exit 1
-		python3 -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
+		"$PY_CMD" -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 		deactivate > /dev/null 2>&1
 	elif [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then
 		check_sitecustomized || exit 1
-		python3 -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
+		"$PY_CMD" -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
 	else
 		echo -e "\e[31m=============== ebook2audiobook is not correctly installed.\e[0m"
 	fi
 fi
-
 exit 0
