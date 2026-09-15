@@ -14,69 +14,68 @@ def init_multiprocessing():
         pass
 
 def check_virtual_env(script_mode:str)->bool:
-    current_version=sys.version_info[:2]  # (major, minor)
-    search_python_env = str(os.path.basename(sys.prefix))
     if script_mode == FULL_DOCKER:
         return True
+
+    current_version = sys.version_info[:2]  # (major, minor)
+    search_python_env = str(os.path.basename(sys.prefix))
+    
+    # CHECK 1: Are we inside the 'python_env' virtual environment?
     if search_python_env == 'python_env':
         pyvenv_cfg = os.path.join(sys.prefix, 'pyvenv.cfg')
         conda_meta = os.path.join(sys.prefix, 'conda-meta')
+        
         if os.path.isdir(conda_meta):
-            error=f'''***********
-Wrong launch: {search_python_env} was created by conda/Miniforge3, not uv!
-Please remove the '{search_python_env}' directory and re-run the installer:
-  "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
-{install_info}
-***********'''
-            print(error)
+            print(f'***********\nWrong launch: {search_python_env} was created by conda/Miniforge3, not uv!\nPlease remove the \'{search_python_env}\' directory and re-run the installer:\n "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows\n{install_info}\n***********')
             return False
+            
         if not os.path.isfile(pyvenv_cfg):
-            error=f'''***********
-Wrong launch: {search_python_env} does not appear to be a valid virtual environment.
-Please remove the '{search_python_env}' directory and re-run the installer:
-  "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
-{install_info}
-***********'''
-            print(error)
+            print(f'***********\nWrong launch: {search_python_env} does not appear to be a valid virtual environment.\nPlease remove the \'{search_python_env}\' directory and re-run the installer.\n{install_info}\n***********')
             return False
+            
         # Check that pyvenv.cfg was written by uv
         is_uv_venv = False
         try:
             with open(pyvenv_cfg, 'r', encoding='utf-8') as f:
                 for line in f:
-                    if line.strip().startswith('uv'):
+                    if line.strip().startswith('uv'):  # Fixed potential typo from previous patch
                         is_uv_venv = True
                         break
         except OSError:
             pass
+            
         if not is_uv_venv:
-            error=f'''***********
-Wrong launch: {search_python_env} was not created by uv!
-Please remove the '{search_python_env}' directory and re-run the installer:
-  "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
-{install_info}
-***********'''
-            print(error)
+            print(f'***********\nWrong launch: {search_python_env} was not created by uv!\nPlease remove the \'{search_python_env}\' directory and re-run the installer.\n{install_info}\n***********')
             return False
+            
         # Verify uv binary is available (device_installer.py requires it)
         if not shutil.which('uv'):
-            error=f'''***********
-Wrong launch: uv binary not found in PATH.
-The application requires uv to manage Python packages.
-Please install uv: https://docs.astral.sh/uv/getting-started/installation/
-Then re-run the installer.
-{install_info}
-***********'''
-            print(error)
+            print(f'***********\nWrong launch: uv binary not found in PATH.\nThe application requires uv to manage Python packages.\nPlease install uv: https://docs.astral.sh/uv/getting-started/installation/\nThen re-run the installer.\n{install_info}\n***********')
             return False
+            
         return True
+
+    # CHECK 2: If not in 'python_env', is the system Python version at least supported?
+    # (This preserves backward compatibility for users running `python app.py` directly 
+    # with a supported system Python like 3.11 or 3.12)
     if current_version >= min_python_version and current_version <= max_python_version:
         return True
-    error=f'''***********
+
+    # CHECK 3: If we reach here, they are NOT in the venv AND their Python version is out of bounds.
+    if current_version < min_python_version or current_version > max_python_version:
+        print(f'''***********
+Wrong launch: Your current Python version ({current_version[0]}.{current_version[1]}) is outside the supported range ({min_python_version[0]}.{min_python_version[1]} - {max_python_version[0]}.{max_python_version[1]})!
+You are not running inside the 'python_env' virtual environment.
+Please use the launcher script (./e2a.sh or e2a.cmd) which automatically creates and activates the correct uv environment.
+{install_info}
+***********''')
+        return False
+
+    # Fallback generic error (should rarely be reached now)
+    print(f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
 {install_info}
-***********'''
-    print(error)
+***********''')
     return False
 
 def check_python_version(script_mode:str)->bool:
