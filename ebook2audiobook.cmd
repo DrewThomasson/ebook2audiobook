@@ -5,27 +5,40 @@ set "SAFE_USERPROFILE=%USERPROFILE%"
 set "SAFE_SCRIPT_DIR=%~dp0"
 if "%SAFE_SCRIPT_DIR:~-1%"=="\" set "SAFE_SCRIPT_DIR=%SAFE_SCRIPT_DIR:~0,-1%"
 
+:: Force UTF-8 for CMD
 chcp 65001 >nul
+
+:: Prefer PowerShell 7, fallback to Windows PowerShell 5.1
 set "PS_EXE=pwsh"
 where.exe /Q pwsh >nul 2>&1 || set "PS_EXE=powershell"
+
+:: One canonical set of flags for every PowerShell call in this script
 set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass"
 
+:: Detect Constrained Language Mode (corporate lockdown)
 "%PS_EXE%" %PS_ARGS% -Command "if ($ExecutionContext.SessionState.LanguageMode -ne 'FullLanguage') { exit 99 }"
 if errorlevel 99 (
 	echo ERROR: PowerShell Constrained Language Mode detected. This environment is not supported.
 	goto :failed
 )
 
+:: Ensure PS output encoding is UTF-8 for this session (non-persistent)
 "%PS_EXE%" %PS_ARGS% -Command "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8" >nul 2>&1
 
+:: Enable ANSI VT mode
 reg query HKCU\Console /v VirtualTerminalLevel >nul 2>&1
 if errorlevel 1 (
 	reg add HKCU\Console /v VirtualTerminalLevel /t REG_DWORD /d 1 /f >nul
 )
 
-for /f "delims=" %%e in ('cmd /c ""%PS_EXE%" %PS_ARGS% -Command "[char]27""') do set "ESC=%%e"
+:: Real ESC byte via PowerShell (RELIABLE)
+for /f "delims=" %%e in ('
+	cmd /c ""%PS_EXE%" %PS_ARGS% -Command "[char]27""
+') do set "ESC=%%e"
 
+:: Capture all arguments into ARGS
 set "ARGS=%*"
+
 set "NATIVE=native"
 set "BUILD_DOCKER=build_docker"
 set "FULL_DOCKER=full_docker"
@@ -54,12 +67,12 @@ set "MAX_PYTHON_VERSION=3.12"
 set "PYTHON_VERSION=3.12"
 set "PYTHON_SCOOP=python%PYTHON_VERSION:.=%"
 set "PYTHON_ENV=python_env"
-set "PY_CMD=python"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 
 set "HOST_PROGRAMS=cmake rustup calibre ffmpeg-shared mediainfo nodejs espeak-ng sox tesseract"
+:: tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_PROGRAMS=curl ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
 set "DOCKER_WSL_CONTAINER=Debian"
@@ -74,6 +87,7 @@ if not exist "%TMP%" mkdir "%TMP%" >nul 2>&1
 
 set "UV_INSTALL_DIR=%SAFE_USERPROFILE%\.local\bin"
 set "UV_INSTALLER_PS1=https://astral.sh/uv/install.ps1"
+set "UV_LINK_MODE=copy"
 set "SCOOP_HOME=%SAFE_USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
@@ -95,6 +109,7 @@ set "PODMAN_DESKTOP=0"
 IF NOT DEFINED DEVICE_TAG SET "DEVICE_TAG="
 set "missing_prog_array="
 
+:: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
 	set "PATH=%%B;%PATH%"
 )
@@ -106,7 +121,10 @@ if "%ARCH%"=="X86" (
 
 cd /d "%SAFE_SCRIPT_DIR%"
 
+:: Clear previous associative values
 for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
+
+::::::::::::::::::::::::::::::: CORE FUNCTIONS
 
 if not "%~1"=="" (
 	setlocal EnableDelayedExpansion
@@ -128,6 +146,8 @@ if not "%~1"=="" (
 )
 
 :parse_args
+rem No setlocal here: arguments.* are set in the current scope so they reach :main
+rem without an endlocal tunnel. Indirect names are set via call set "...%%key%%...".
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
 if "%arg:~0,2%"=="--" (
@@ -211,6 +231,7 @@ if defined arguments.script_mode (
 	)
 )
 
+rem .installed must not be created in build_docker mode; check after SCRIPT_MODE is resolved
 if not exist "%INSTALLED_LOG%" if /i not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	type nul > "%INSTALLED_LOG%"
 )
@@ -252,6 +273,8 @@ if defined arguments.version (
 
 goto :main
 
+::::::::::::::: DESKTOP APP
+
 :make_shortcut
 set "shortcut=%~1"
 "%PS_EXE%" %PS_ARGS% -Command "$s=New-Object -ComObject WScript.Shell; $sc=$s.CreateShortcut('%shortcut%'); $sc.TargetPath='cmd.exe'; $sc.Arguments='/k ""cd /d """"%SAFE_SCRIPT_DIR%"""" && """"%APP_FILE%""""""'; $sc.WorkingDirectory='%SAFE_SCRIPT_DIR%'; $sc.IconLocation='%ICON_PATH%'; $sc.Save()"
@@ -282,6 +305,8 @@ if /i not "%HEADLESS_FOUND%"=="%ARGS%" (
 	start "%APP_NAME%" /min "%PS_EXE%" %PS_ARGS% -File "%BROWSER_HELPER%" -HostName "%TEST_HOST%" -Port %TEST_PORT%
 )
 exit /b 0
+
+:::::: END OF DESKTOP APP
 
 :get_iso3_lang
 set "ISO3_LANG=eng"
@@ -619,7 +644,6 @@ if errorlevel 1 (
 	echo uv is not installed.
 	exit /b 1
 )
-
 set "CURRENT_ENV="
 if defined VIRTUAL_ENV (
 	set "CURRENT_ENV=%VIRTUAL_ENV%"
@@ -631,8 +655,6 @@ if defined CURRENT_ENV (
 		exit /b 2
 	)
 )
-
-:: Migration detection
 if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\conda-meta" (
 	echo Detected conda-based %PYTHON_ENV% — removing and recreating with uv...
 	rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
@@ -643,31 +665,24 @@ if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\conda-meta" (
 		rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 	)
 )
-
 if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
 		echo Detected incomplete %PYTHON_ENV% — removing and recreating...
 		rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 	)
 	echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION% via uv...
-
 	uv python find %PYTHON_VERSION% >nul 2>&1
 	if errorlevel 1 (
 		echo Installing Python %PYTHON_VERSION% via uv...
 		uv python install %PYTHON_VERSION%
 		if errorlevel 1 exit /b 3
 	)
-
 	uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION%
 	if errorlevel 1 exit /b 3
-
 	set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 	set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
-	set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
-
 	call :provision_env
 	if errorlevel 1 exit /b 3
-
 	> "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" echo %APP_VERSION%
 )
 exit /b 0
@@ -690,6 +705,7 @@ if errorlevel 1 (
 	set "RC=1"
 	goto :provision_env_end
 )
+
 :provision_env_end
 endlocal & exit /b %RC%
 
@@ -778,8 +794,8 @@ set "ARG=%~1"
 set "DEVICE_INFO_STR="
 for /f "delims=" %%I in ('python -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; print(D().check_device_info(sys.argv[1]))" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
 if not defined DEVICE_INFO_STR (
-	echo DEVICE_INFO_STR is empty
-	exit /b 1
+    echo DEVICE_INFO_STR is empty
+    exit /b 1
 )
 exit /b 0
 
@@ -797,18 +813,18 @@ exit /b 0
 
 :install_device_packages
 "%PS_EXE%" %PS_ARGS% -Command ^
-	"& '%PY_CMD%' -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
+	"python -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
 exit /b %errorlevel%
 
 :install_python_packages
 echo Installing python dependencies…
 "%PS_EXE%" %PS_ARGS% -Command ^
-	"& '%PY_CMD%' -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
+	"python -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
 exit /b %errorlevel%
 
 :check_sitecustomized
 set "src_pyfile=%SAFE_SCRIPT_DIR%\components\sitecustomize.py"
-for /f "delims=" %%a in ('"%PY_CMD%" -c "import sysconfig;print(sysconfig.get_paths()[\"purelib\"])"') do (
+for /f "delims=" %%a in ('python -c "import sysconfig;print(sysconfig.get_paths()[\"purelib\"])"') do (
 	set "site_packages_path=%%a"
 )
 if "%site_packages_path%"=="" (
@@ -824,6 +840,8 @@ if not exist "%dst_pyfile%" (
 	)
 	exit /b 0
 )
+:: xcopy /d only overwrites when source is newer than destination
+:: destination ends with '\' so xcopy treats it as a directory, no F/D prompt, no wildcard target
 xcopy /d /y "%src_pyfile%" "%site_packages_path%\" >nul
 if errorlevel 1 (
 	echo %ESC%[31m=============== sitecustomize.py hook update failed.%ESC%[0m
@@ -855,6 +873,7 @@ if "%DOCKER_MODE%"=="podman" (
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
 set "py_vers=%PYTHON_VERSION%"
+rem py_vers must follow the prebuilt-wheel ABI, so derive it from the profile pyvenv [major, minor]
 set "ARG_NQ=%ARG:"=%"
 for /f "tokens=2 delims=[]" %%a in ("!ARG_NQ!") do for /f "tokens=1,2 delims=, " %%b in ("%%a") do set "py_vers=%%b.%%c"
 if /i "%DEVICE_TAG:~0,2%"=="cu" (
@@ -936,6 +955,9 @@ if "%DOCKER_MODE%"=="podman" (
 	echo   		!env_prefix! docker compose --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else (
 	if "%DOCKER_DESKTOP%"=="1" (
+		:: echo Using docker buildx
+		:: docker buildx use default
+		:: docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
 		echo Using docker build
 		docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
 		docker image prune --force
@@ -943,6 +965,13 @@ if "%DOCKER_MODE%"=="podman" (
 		echo Using docker build into WSL2 %DOCKER_WSL_CONTAINER%
 		%wsl_cmd% bash -c "service docker status >/dev/null 2>&1 || service docker start"
 		timeout /t 3 /nobreak >nul
+		:: buildx builder setup no longer needed with docker build
+		:: %wsl_cmd% bash -c "cd '%WSL_DIR%' && docker buildx use wslbuilder 2>/dev/null || docker buildx create --name wslbuilder --use"
+		:: if errorlevel 1 (
+		:: 	echo Failed to setup buildx builder
+		:: 	endlocal
+		:: 	exit /b 1
+		:: )
 		%wsl_cmd% bash -c "cd '%WSL_DIR%' && docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
 		if errorlevel 1 (
 			echo Build failed
@@ -962,6 +991,8 @@ if "%DOCKER_DESKTOP%"=="1" (
 )
 endlocal
 exit /b 0
+
+:::::::::::: END CORE FUNCTIONS
 
 :main
 if defined arguments.help (
@@ -1045,11 +1076,11 @@ if defined arguments.help (
 		call :check_sitecustomized
 		if errorlevel 1 goto :failed
 		call :build_gui
-		call "%PY_CMD%" -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+		call python.exe -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 	) else if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		call :check_sitecustomized
 		if errorlevel 1 goto :failed
-		call "%PY_CMD%" -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+		call python.exe -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 	)
 )
 goto :eof
