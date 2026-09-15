@@ -13,7 +13,7 @@ def init_multiprocessing():
     except RuntimeError:
         pass
 
-def def check_virtual_env(script_mode:str)->bool:
+def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
     search_python_env = str(os.path.basename(sys.prefix))
     if script_mode == FULL_DOCKER:
