@@ -28,8 +28,7 @@ class DeviceInstaller():
     torchaudio_max = '2.11.0'
 
     exclusive_pkgs = {
-        'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'],
-        'demucs-simple': ['demucs', 'demucs-simple']
+        'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }
 
     # scoped wheel cache shared by the requirements pass and
@@ -1379,6 +1378,8 @@ class DeviceInstaller():
                 if installed_version is None:
                     msg = f'{pkg_name} is not installed.'
                     print(msg)
+                    if pkg_name == 'demucs-simple':
+                        subprocess.run([self.uv_bin, 'pip', 'uninstall', '-y', 'demucs'], check=False)
                     missing_packages.append(raw_pkg)
                     continue
                 if '+' in installed_version:
@@ -1445,7 +1446,6 @@ class DeviceInstaller():
                             pins.append(pin)
                     except Exception:
                         pass
-
                 try:
                     # batch install: one resolution over all pins at once instead of
                     # one pip subprocess per package. Avoids install/downgrade churn
