@@ -768,14 +768,14 @@ install_python_packages() {
 }
 
 check_device_info() {
-	local ARG="$1"
-	python3 - << EOF
+    local ARG="$1"
+    python3 - << EOF
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 result = device.check_device_info("$ARG")
 if result:
-	print(result)
-	raise SystemExit(0)
+    print(result)
+    raise SystemExit(0)
 raise SystemExit(1)
 EOF
 }
