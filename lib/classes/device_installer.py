@@ -29,6 +29,7 @@ class DeviceInstaller():
 
     exclusive_pkgs = {
         'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'],
+        'demucs-simple': ['demucs', 'demucs-simple']
     }
 
     # scoped wheel cache shared by the requirements pass and
@@ -1281,10 +1282,6 @@ class DeviceInstaller():
         packages.append(onnx_pkg)
         if onnx_pkg == 'onnxruntime-directml':
             packages.append('protobuf<7')
-        #packages.append(self.select_pkg('pyannote-audio'))
-        #packages.append(self.select_pkg('huggingface-hub'))
-        #packages.append(self.select_pkg('transformers'))
-        #packages.append(self.select_pkg('gradio'))
 
         if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
             # last llvmlite/numba with macOS x86_64 wheels. Newer llvmlite has no
@@ -1360,7 +1357,7 @@ class DeviceInstaller():
                 if local_path:
                     pkg_name = os.path.basename(local_path)
                     vendor_version = self.version_pkg(None, local_path)
-                    if not vendor_version:
+                    if vendor_version is None:
                         msg = f'{local_path} has no detectable version.'
                         print(msg)
                         missing_packages.append(raw_pkg)
@@ -1379,7 +1376,7 @@ class DeviceInstaller():
                     continue
 
                 installed_version = self.version_pkg(pkg_name, None)
-                if not installed_version:
+                if installed_version is None:
                     msg = f'{pkg_name} is not installed.'
                     print(msg)
                     missing_packages.append(raw_pkg)
@@ -1651,24 +1648,6 @@ class DeviceInstaller():
                 if not self.has_directml_gpu():
                     return 'onnxruntime'
                 return 'onnxruntime-directml'
-            #case 'pyannote-audio':
-                # pyannote 4 dropped the torchaudio/sox/soundfile backends and
-                # requires torchcodec>=0.7, which only exists from torch 2.8 on.
-                #return 'pyannote-audio>=4.0.0' if self.has_torchcodec_stack() else 'pyannote-audio==3.4.0'
-            #case 'huggingface-hub':
-                # pyannote 3.4.0 predates hub 1.0 and calls APIs it removed, but
-                # only declares a floor (huggingface-hub>=0.13.0) — a floor cannot
-                # pull a version down, so the cap has to come from here.
-                #return 'huggingface-hub>=1.16.0,<2.0' if self.has_torchcodec_stack() else 'huggingface-hub>=0.36.2,<1.0'
-                #return 'huggingface-hub>=1.16.0,<2.0'
-            #case 'transformers':
-                # not a pyannote dependency (it arrives via sentence-transformers /
-                # coqui-tts) but transformers 5 requires hub>=1.0, so it is pinned
-                # by the same decision.
-                #return 'transformers>=5.0.0,<5.1' if self.has_torchcodec_stack() else 'transformers==4.57.6'
-            #case 'gradio':
-                #return 'gradio==6.26.0' if self.has_torchcodec_stack() else 'gradio==5.49.1'
-                #return 'gradio==6.26.0'
             case _:
                 raise ValueError(f'select_pkg(): no rule for {pkg}')
 
