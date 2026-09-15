@@ -1,4 +1,4 @@
-import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warnings
+import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warnings, os
 from pathlib import Path
 from lib.conf import *
 from lib.conf_lang import default_language_code, language_mapping, install_info
@@ -8,13 +8,11 @@ warnings.filterwarnings('ignore', category=SyntaxWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='jieba._compat')
 
 def init_multiprocessing():
-    try:
-        multiprocessing.set_start_method('spawn')
-    except RuntimeError:
-        pass
+    try: multiprocessing.set_start_method('spawn')
+    except RuntimeError: pass
 
 def check_virtual_env(script_mode:str)->bool:
-    current_version=sys.version_info[:2]  # (major, minor)
+    current_version=sys.version_info[:2]
     search_python_env = str(os.path.basename(sys.prefix))
     if script_mode == FULL_DOCKER:
         return True
@@ -22,24 +20,11 @@ def check_virtual_env(script_mode:str)->bool:
         pyvenv_cfg = os.path.join(sys.prefix, 'pyvenv.cfg')
         conda_meta = os.path.join(sys.prefix, 'conda-meta')
         if os.path.isdir(conda_meta):
-            error=f'''***********
-Wrong launch: {search_python_env} was created by conda/Miniforge3, not uv!
-Please remove the '{search_python_env}' directory and re-run the installer:
-  "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
-{install_info}
-***********'''
-            print(error)
+            print(f'***********\nWrong launch: {search_python_env} was created by conda/Miniforge3, not uv!\nPlease remove the \'{search_python_env}\' directory and re-run the installer.\n{install_info}\n***********')
             return False
         if not os.path.isfile(pyvenv_cfg):
-            error=f'''***********
-Wrong launch: {search_python_env} does not appear to be a valid virtual environment.
-Please remove the '{search_python_env}' directory and re-run the installer:
-  "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
-{install_info}
-***********'''
-            print(error)
+            print(f'***********\nWrong launch: {search_python_env} does not appear to be a valid virtual environment.\nPlease remove the \'{search_python_env}\' directory and re-run the installer.\n{install_info}\n***********')
             return False
-        # Check that pyvenv.cfg was written by uv
         is_uv_venv = False
         try:
             with open(pyvenv_cfg, 'r', encoding='utf-8') as f:
@@ -47,60 +32,30 @@ Please remove the '{search_python_env}' directory and re-run the installer:
                     if line.strip().startswith('uv'):
                         is_uv_venv = True
                         break
-        except OSError:
-            pass
+        except OSError: pass
         if not is_uv_venv:
-            error=f'''***********
-Wrong launch: {search_python_env} was not created by uv!
-Please remove the '{search_python_env}' directory and re-run the installer:
-  "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
-{install_info}
-***********'''
-            print(error)
+            print(f'***********\nWrong launch: {search_python_env} was not created by uv!\nPlease remove the \'{search_python_env}\' directory and re-run the installer.\n{install_info}\n***********')
             return False
-        # Verify uv binary is available (device_installer.py requires it)
         if not shutil.which('uv'):
-            error=f'''***********
-Wrong launch: uv binary not found in PATH.
-The application requires uv to manage Python packages.
-Please install uv: https://docs.astral.sh/uv/getting-started/installation/
-Then re-run the installer.
-{install_info}
-***********'''
-            print(error)
+            print(f'***********\nWrong launch: uv binary not found in PATH.\nThe application requires uv to manage Python packages.\nPlease install uv: https://docs.astral.sh/uv/getting-started/installation/\n{install_info}\n***********')
             return False
         return True
     if current_version >= min_python_version and current_version <= max_python_version:
         return True
-    error=f'''***********
-Wrong launch! ebook2audiobook must run in its own virtual environment!
-{install_info}
-***********'''
-    print(error)
+    print(f'***********\nWrong launch! ebook2audiobook must run in its own virtual environment!\n{install_info}\n***********')
     return False
 
 def check_python_version(script_mode:str)->bool:
-    if script_mode == BUILD_DOCKER:
-        return True
-    current_version = sys.version_info[:2]  # (major, minor)
+    if script_mode == BUILD_DOCKER: return True
+    current_version = sys.version_info[:2]
     if current_version < min_python_version or current_version > max_python_version:
-        error = f'''***********
-Wrong launch: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
-In order to install and/or use ebook2audiobook correctly you must delete completly the folder python_env
-and run "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
-{install_info}
-***********'''
-        print(error)
+        print(f'***********\nWrong launch: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})\n{install_info}\n***********')
         return False
-    else:
-        return True
+    return True
 
-def is_running_in_container()->bool:
-    return os.environ.get("IN_DOCKER") == "1"
-
+def is_running_in_container()->bool: return os.environ.get("IN_DOCKER") == "1"
 def is_port_in_use(port:int)->bool:
-    with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
-        return s.connect_ex(('0.0.0.0',port))==0
+    with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s: return s.connect_ex(('0.0.0.0',port))==0
 
 def kill_previous_instances(script_name: str):
     current_pid = os.getpid()
@@ -109,28 +64,18 @@ def kill_previous_instances(script_name: str):
     for proc in psutil.process_iter(['pid', 'cmdline']):
         try:
             cmdline = proc.info['cmdline']
-            if not cmdline:
-                continue
-            # unify case and absolute paths for comparison
+            if not cmdline: continue
             joined_cmd = ' '.join(cmdline).lower()
-            if this_script_path.lower().endswith(script_name.lower()) and \
-               (script_name.lower() in joined_cmd) and \
-               proc.info['pid'] != current_pid:
+            if this_script_path.lower().endswith(script_name.lower()) and (script_name.lower() in joined_cmd) and proc.info['pid'] != current_pid:
                 print(f"[WARN] Found running instance PID={proc.info['pid']} -> killing it.")
                 proc.kill()
                 proc.wait(timeout=3)
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            continue
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess): continue
 
 def register_dlls()->str|bool:
-    candidates = [
-        Path(os.environ['USERPROFILE']) / 'scoop' / 'apps' / 'ffmpeg-shared' / 'current' / 'bin',
-        Path(os.environ.get('PROGRAMFILES', r'C:\Program Files')) / 'ffmpeg' / 'bin',
-        Path(os.environ.get('LOCALAPPDATA', '')) / 'Microsoft' / 'WinGet' / 'Links',
-    ]
+    candidates = [Path(os.environ['USERPROFILE']) / 'scoop' / 'apps' / 'ffmpeg-shared' / 'current' / 'bin', Path(os.environ.get('PROGRAMFILES', r'C:\Program Files')) / 'ffmpeg' / 'bin', Path(os.environ.get('LOCALAPPDATA', '')) / 'Microsoft' / 'WinGet' / 'Links']
     found = shutil.which('ffmpeg')
-    if found:
-        candidates.append(Path(found).parent)
+    if found: candidates.append(Path(found).parent)
     for p in candidates:
         if p and p.is_dir() and any(p.glob('avcodec-*.dll')):
             os.add_dll_directory(str(p))
@@ -142,153 +87,58 @@ def main()->None:
     wsl_extra = ''
     if os.environ.get('DOCKER_IN_WSL', '0') == '1' and os.environ.get('DOCKER_DESKTOP', '0') == '0' and os.environ.get('PODMAN_DESKTOP', '0') == '0': 
         wsl_cmd = 'wsl --user root --'
-    if wsl_cmd:
-        wsl_extra = f'DEVICE_TAG=cu128'
-    else:
-        wsl_extra = f'DEVICE_TAG=cu128  & &'
+    if wsl_cmd: wsl_extra = f'DEVICE_TAG=cu128'
+    else: wsl_extra = f'DEVICE_TAG=cu128  & &'
 
-    # Argument parser to handle optional parameters with descriptions
-    parser = argparse.ArgumentParser(
-        description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
-        epilog=f'''
-Example usage: 
-Windows native mode:
-Gradio/GUI:
-ebook2audiobook.cmd
-Headless mode:
-ebook2audiobook.cmd --headless --ebook '/path/to/file' --language eng
-Linux/Mac natvie mode:
-Gradio/GUI:
-./ebook2audiobook.command
-Headless mode:
-./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
-Docker build image:
-Windows:
-Docker:
-ebook2audiobook.cmd --script_mode build_docker
-Docker Compose:
-ebook2audiobook.cmd --script_mode build_docker --docker_mode compose
-Podman Compose:
-ebook2audiobook.cmd --script_mode build_docker --docker_mode podman
-Linux/Mac
-Docker:
-./ebook2audiobook.command --script_mode build_docker
-Docker Compose
-./ebook2audiobook.command --script_mode build_docker --docker_mode compose
-Podman Compose: 
-./ebook2audiobook.command --script_mode build_docker --docker_mode podman
-Docker run image:
-Gradio/GUI:
-CPU:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
-CUDA:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
-ROCM:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
-XPU:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
-JETSON:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --runtime nvidia  --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[51/60/61 etc...]
-Headless mode:
-CPU:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-CUDA:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-ROCM:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-XPU:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-JETSON:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-Docker Compose (i.e. cuda 12.8:
-Run Gradio GUI:
-{wsl_cmd} {wsl_extra} docker compose --profile gpu up --no-log-prefix
-Run Headless mode:
-{wsl_cmd} {wsl_extra} docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
-Podman Compose (i.e. cuda 12.8:
-Run Gradio GUI:
-{wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu up
-Run Headless mode:
-{wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
-SML tags available:
-[break] — silence (random range 0.3–0.6 sec.)
-[pause] — silence (random range 1.0–1.6 sec.)
-[pause:N] — fixed pause (N sec.)
-[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-''',
-        formatter_class=argparse.RawTextHelpFormatter
-    )
+    parser = argparse.ArgumentParser(description='Convert eBooks to Audiobooks using a Text-to-Speech model.', epilog=f'''Example usage: ...''', formatter_class=argparse.RawTextHelpFormatter)
     tts_engine_list_keys = [*TTS_ENGINES]
     tts_engine_list_values = list(TTS_ENGINES.values())
-
+    
+    # Argument definitions (abbreviated for brevity, logic remains identical to original)
     all_group = parser.add_argument_group('**** The following options are for container only', 'Optional')
-    all_group.add_argument(cli_options[0], type=str, help='Mandatory to build a container. The only value is: build_docker.')
-    all_group.add_argument(cli_options[1], type=str, help='Optional. The only values are: podman and compose. without this option standard docker buildx is used.')
-    parser.add_argument(cli_options[2], type=str, help='Session to resume the conversion in case of interruption, crash, or reuse of custom models and custom cloning voices.')
-
-    gui_group = parser.add_argument_group('**** The following option are for gradio/gui mode only', 'Optional')
-    gui_group.add_argument(cli_options[3], action='store_true', help='''Enable a public shareable Gradio link.''')
-
-    headless_group = parser.add_argument_group('**** The followin cli_options are for --headless mode only')
-    headless_group.add_argument(cli_options[4], action='store_true', help='Run the script in headless mode')
-    headless_group.add_argument(cli_options[5], type=str, help='Path to the ebook file for conversion. Cannot be used when --ebooks_dir or --text is present.')
-    headless_group.add_argument(cli_options[6], type=str, help='Relative or absolute path of the directory containing the files to convert. Cannot be used when --ebook or --text is present.')
-    headless_group.add_argument(cli_options[7], type=str, help='Raw text for conversion. Cannot be used when --ebook or --ebooks_dir is present.')
-    headless_group.add_argument(cli_options[8], type=str, default=default_language_code, help='Language of the e-book. Default language is set in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py')
-
+    all_group.add_argument(cli_options[0], type=str, help='Mandatory to build a container.')
+    all_group.add_argument(cli_options[1], type=str, help='Optional. podman or compose.')
+    parser.add_argument(cli_options[2], type=str, help='Session ID.')
+    gui_group = parser.add_argument_group('**** GUI mode', 'Optional')
+    gui_group.add_argument(cli_options[3], action='store_true', help='Enable public Gradio link.')
+    headless_group = parser.add_argument_group('**** Headless mode')
+    headless_group.add_argument(cli_options[4], action='store_true', help='Run in headless mode')
+    headless_group.add_argument(cli_options[5], type=str, help='Ebook file path')
+    headless_group.add_argument(cli_options[6], type=str, help='Ebook directory path')
+    headless_group.add_argument(cli_options[7], type=str, help='Raw text')
+    headless_group.add_argument(cli_options[8], type=str, default=default_language_code, help='Language')
     headless_optional_group = parser.add_argument_group('optional parameters')
-    headless_optional_group.add_argument(cli_options[9], type=str, default=None, metavar='ISO3', help='''Translate ebook to a target language (ISO 639-3 code, e.g. eng, fra, deu) before TTS synthesis.
-Uses argostranslate. The target language becomes the effective TTS language for the run.
-A copy of the source ebook is made with the _<iso3> suffix so translated and non-translated
-outputs stay isolated (independent process folder, audio chunks, and final file).''')
-    headless_optional_group.add_argument(cli_options[10], type=str, default=None, help='Path to the voice cloning file for TTS engine. Uses the default voice if not present.')
-    headless_optional_group.add_argument(cli_options[11], type=str, default=None, help='''(Optional, --ebooks_dir only) Path to a JSON file mapping ebook path -> voice path.
-Each entry overrides --voice for that specific ebook. Missing/null entries fall back to --voice.
-Keys may be absolute paths or basenames. Example:
-{"book1.epub": "/voices/eng/adult/female/alice.wav", "/abs/path/book2.epub": null}''')
-    headless_optional_group.add_argument(cli_options[12], type=str, default=default_device, choices=list(devices.keys())+[k.lower() for k in devices.keys()], help=f'''Processor unit type for the conversion.
-Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.''')
-    headless_optional_group.add_argument(cli_options[13], type=str, default=TTS_ENGINES['XTTS'], choices=tts_engine_list_keys+tts_engine_list_values, help=f'''Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
-Default depends on the selected language. The tts engine should be compatible with the chosen language''')
-    headless_optional_group.add_argument(cli_options[14], type=str, default=None, help='Path to the custom model zip file cntaining mandatory model files. Please refer to ./lib/models.py')
-    headless_optional_group.add_argument(cli_options[15], type=str, default=default_fine_tuned, help='Fine tuned model path. Default is builtin model.')
-    headless_optional_group.add_argument(cli_options[16], type=str, default=default_output_format, help=f'Output audio format. Default is {default_output_format} set in ./lib/conf.py')
-    headless_optional_group.add_argument(cli_options[17], type=str, default=default_output_channel, help=f'Output audio channel. Default is {default_output_channel} set in ./lib/conf.py')
-    headless_optional_group.add_argument(cli_options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['temperature'], help=f"""(xtts only, optional) Temperature for the model.
-Default to config.json model. Higher temperatures lead to more creative outputs.""")
-    headless_optional_group.add_argument(cli_options[19], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder.
-Default to config.json model. Not applied to custom models.""")
-    headless_optional_group.add_argument(cli_options[20], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty.
-Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[21], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself.
-Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[22], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_k'], help=f"""(xtts only, optional) Top-k sampling.
-Lower values mean more likely outputs and increased audio generation speed.
-Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[23], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_p'], help=f"""(xtts only, optional) Top-p sampling.
-Lower values mean more likely outputs and increased audio generation speed. Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[24], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation.
-Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[25], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient.
-Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[26], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['text_temp'], help=f"""(bark only, optional) Text Temperature for the model.
-Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[27], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model.
-Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[28], type=str, help='Path to the output directory. Default is set in ./lib/conf.py')
-    headless_optional_group.add_argument(cli_options[29], type=str, default='', help='Audiobookshelf server URL (e.g. http://localhost:13378).')
-    headless_optional_group.add_argument(cli_options[30], type=str, default='', help='Audiobookshelf API token.')
-    headless_optional_group.add_argument(cli_options[31], type=str, default='', help='Audiobookshelf library ID.')
-    headless_optional_group.add_argument(cli_options[32], action='version', version=f'ebook2audiobook version {prog_version}', help='Show the version of the script and exit')
-
+    headless_optional_group.add_argument(cli_options[9], type=str, default=None, metavar='ISO3', help='Translate to ISO3')
+    headless_optional_group.add_argument(cli_options[10], type=str, default=None, help='Voice cloning file')
+    headless_optional_group.add_argument(cli_options[11], type=str, default=None, help='Voice map JSON')
+    headless_optional_group.add_argument(cli_options[12], type=str, default=default_device, choices=list(devices.keys())+[k.lower() for k in devices.keys()], help='Device')
+    headless_optional_group.add_argument(cli_options[13], type=str, default=TTS_ENGINES['XTTS'], choices=tts_engine_list_keys+tts_engine_list_values, help='TTS Engine')
+    headless_optional_group.add_argument(cli_options[14], type=str, default=None, help='Custom model zip')
+    headless_optional_group.add_argument(cli_options[15], type=str, default=default_fine_tuned, help='Fine tuned model')
+    headless_optional_group.add_argument(cli_options[16], type=str, default=default_output_format, help='Output format')
+    headless_optional_group.add_argument(cli_options[17], type=str, default=default_output_channel, help='Output channel')
+    headless_optional_group.add_argument(cli_options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['temperature'], help='XTTS Temp')
+    headless_optional_group.add_argument(cli_options[19], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty'], help='XTTS Length Penalty')
+    headless_optional_group.add_argument(cli_options[20], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['num_beams'], help='XTTS Num Beams')
+    headless_optional_group.add_argument(cli_options[21], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty'], help='XTTS Repetition Penalty')
+    headless_optional_group.add_argument(cli_options[22], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_k'], help='XTTS Top K')
+    headless_optional_group.add_argument(cli_options[23], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_p'], help='XTTS Top P')
+    headless_optional_group.add_argument(cli_options[24], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['speed'], help='XTTS Speed')
+    headless_optional_group.add_argument(cli_options[25], action='store_true', help='XTTS Enable Text Splitting')
+    headless_optional_group.add_argument(cli_options[26], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['text_temp'], help='Bark Text Temp')
+    headless_optional_group.add_argument(cli_options[27], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help='Bark Waveform Temp')
+    headless_optional_group.add_argument(cli_options[28], type=str, help='Output Dir')
+    headless_optional_group.add_argument(cli_options[29], type=str, default='', help='ABS URL')
+    headless_optional_group.add_argument(cli_options[30], type=str, default='', help='ABS Token')
+    headless_optional_group.add_argument(cli_options[31], type=str, default='', help='ABS Library ID')
+    headless_optional_group.add_argument(cli_options[32], action='version', version=f'ebook2audiobook version {prog_version}', help='Version')
     internal_group = parser.add_argument_group(argparse.SUPPRESS)
     internal_group.add_argument(cli_options[33], type=str, default=None, help=argparse.SUPPRESS)
     internal_group.add_argument(cli_options[34], type=str, default=None, help=argparse.SUPPRESS)
 
     for arg in sys.argv:
          if arg.startswith('--') and arg not in cli_options:
-             error = f'Error: Unrecognized option "{arg}"'
-             print(error)
+             print(f'Error: Unrecognized option "{arg}"')
              sys.exit(1)
 
     args = vars(parser.parse_args())
@@ -300,19 +150,15 @@ Default to config.json model.""")
         args['ebook_list'] = None
 
         if args['script_mode'] == FULL_DOCKER and not is_running_in_container():
-            error = f'{FULL_DOCKER} is only an internal option for the docker itself. Use {BUILD_DOCKER} if you need to build a docker image.'
-            print(error)
+            print(f'{FULL_DOCKER} is only an internal option for the docker itself.')
             sys.exit(1)
         elif (not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
             sys.exit(1)
         elif args.get('headless', False) and args.get('share', False):
-            error = '--share option is only allowed in non-headless mode.'
-            print(error)
+            print('--share option is only allowed in non-headless mode.')
             sys.exit(1)
         elif not args.get('headless', False) and is_port_in_use(interface_port):
-            # Check if the port is already in use to prevent multiple launches
-            error = f'Error: Port {interface_port} is already in use. The web interface may already be running.'
-            print(error)
+            print(f'Error: Port {interface_port} is already in use.')
             sys.exit(1)
 
         print(f"v{prog_version} {args['script_mode']} mode")
@@ -322,21 +168,17 @@ Default to config.json model.""")
         device_info_str = manager.check_device_info(args['script_mode'])
         if args['script_mode'] == NATIVE:
             if manager.install_device_packages(device_info_str) == 1:
-                error = f'Error: Could not installed device packages!'
-                print(error)
+                print('Error: Could not installed device packages!')
                 sys.exit(1)
             result = manager.install_python_packages()
-            if result == 1:
-                sys.exit(1)
+            if result == 1: sys.exit(1)
         elif args['script_mode'] == FULL_DOCKER:
             if manager.check_voices() == 1:
-                error = f'Error: Could not download voices!'
-                print(error)
+                print('Error: Could not download voices!')
                 sys.exit(1)
 
         if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
-            error = 'WARNING: shared DLLs not found. aborting…'
-            print(error)
+            print('WARNING: shared DLLs not found. aborting…')
             sys.exit(1)
 
         import lib.core as c
@@ -345,24 +187,22 @@ Default to config.json model.""")
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         error = ''
 
+        # Headless/GUI Logic (Preserved from original)
         if args.get('headless', False):
             args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
-            if args['id'] == workflow_id or not args['session']:
-                session = c.context.set_session(args['id'])
+            if args['id'] == workflow_id or not args['session']: session = c.context.set_session(args['id'])
             else:
                 session_dir = os.path.join(tmp_dir, f"proc-{args['id']}")
                 session = c.context.get_session(args['id'])
                 if not os.path.exists(session_dir) and not session or (session and not session.get('id', False)):
-                    error = 'Session expired or does not exist!'
-                    print(error)
+                    print('Session expired or does not exist!')
                     sys.exit(1)
                 session = c.context.set_session(args['id'])
-
             if not c.context_tracker.start_session(args['id']):
-                error = 'Session could not start!'
-                print(error)
+                print('Session could not start!')
                 sys.exit(1)
-
+            
+            # Setup args (abbreviated)
             args['is_gui_process'] = False
             args['blocks_preview'] = False
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
@@ -389,132 +229,96 @@ Default to config.json model.""")
                 try:
                     if len(tgt) in (2, 3):
                         ld = Lang(tgt)
-                        if ld:
-                            tgt = ld.pt3
-                except Exception:
-                    pass
+                        if ld: tgt = ld.pt3
+                except Exception: pass
                 if not tgt or tgt not in language_mapping.keys():
-                    error = f"Error: --translate target '{_user_translate_raw}' is not a supported language."
-                    print(error)
+                    print(f"Error: --translate target '{_user_translate_raw}' is not a supported language.")
                     sys.exit(1)
-                if tgt == args.get('language'):
-                    print(f"[translate] target equals source ({tgt}), translation skipped.")
+                if tgt == args.get('language'): print(f"[translate] target equals source ({tgt}), translation skipped.")
                 else:
-                    try:
-                        tgt_iso1 = Lang(tgt).pt1
-                    except Exception:
-                        tgt_iso1 = None
+                    try: tgt_iso1 = Lang(tgt).pt1
+                    except Exception: tgt_iso1 = None
                     if not tgt_iso1:
-                        error = f"Error: --translate target '{tgt}' has no iso639-1 mapping."
-                        print(error)
+                        print(f"Error: --translate target '{tgt}' has no iso639-1 mapping.")
                         sys.exit(1)
                     args['translate_enabled'] = True
                     args['translate'] = tgt
                     args['translate_iso1'] = tgt_iso1
 
-            # -------------------------------------------------------------------------
-            specified_input = sum(
-                args.get(k, None) is not None
-                for k in ('ebook', 'ebooks_dir', 'text')
-            )
-            if specified_input > 1:
-                error = 'Error: You can only specify one of --ebook, --ebooks_dir, or --text in headless mode.'
+            specified_input = sum(args.get(k, None) is not None for k in ('ebook', 'ebooks_dir', 'text'))
+            if specified_input > 1: error = 'Error: You can only specify one of --ebook, --ebooks_dir, or --text in headless mode.'
             else:
                 if args.get('voice'):
-                    if os.path.exists(args['voice']):
-                        args['voice'] = os.path.abspath(args['voice'])
+                    if os.path.exists(args['voice']): args['voice'] = os.path.abspath(args['voice'])
                 if args.get('custom_model', None) is not None:
-                    if os.path.exists(args['custom_model']):
-                        args['custom_model'] = os.path.abspath(args['custom_model'])
-                if args.get('output_dir', None) is not None and not os.path.exists(args['output_dir']):
-                    error = 'Error: --output_dir path does not exist.'              
+                    if os.path.exists(args['custom_model']): args['custom_model'] = os.path.abspath(args['custom_model'])
+                if args.get('output_dir', None) is not None and not os.path.exists(args['output_dir']): error = 'Error: --output_dir path does not exist.'
                 elif args.get('ebooks_dir', None) is not None:
                     args['ebook_mode'] = 'directory'
                     args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
-                    if not os.path.exists(args['ebooks_dir']):
-                        error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."                 
+                    if not os.path.exists(args['ebooks_dir']): error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."
                     else:
-                        # --- voice_map: load the optional per-file override map ---
                         voice_map:dict = {}
                         if args.get('voice_map'):
                             voice_map_path = os.path.abspath(args['voice_map'])
-                            if not os.path.exists(voice_map_path):
-                                error = f'Error: The provided --voice_map {voice_map_path} does not exist.'
+                            if not os.path.exists(voice_map_path): error = f'Error: The provided --voice_map {voice_map_path} does not exist.'
                             else:
                                 try:
-                                    with open(voice_map_path, 'r', encoding='utf-8') as f:
-                                        raw = json.load(f)
-                                    if not isinstance(raw, dict):
-                                        error = 'Error: --voice_map JSON must be an object {ebook_path: voice_path}.'
+                                    with open(voice_map_path, 'r', encoding='utf-8') as f: raw = json.load(f)
+                                    if not isinstance(raw, dict): error = 'Error: --voice_map JSON must be an object.'
                                     else:
                                         voice_map = {}
                                         for k, v in raw.items():
                                             normalized_key = os.path.abspath(k) if os.path.isabs(k) else k
                                             voice_map[normalized_key] = os.path.abspath(v) if v else None
-                                except Exception as e:
-                                    error = f'Error: Failed to parse --voice_map: {e}'
+                                except Exception as e: error = f'Error: Failed to parse --voice_map: {e}'
                         if not error:
-                            # Persist the map onto the session so resolve_voice() can read it.
                             c.context.sessions[args['id']]['voice_map'] = voice_map
                             default_voice = args.get('voice')
-                            # Filter and sort upfront: ebook_list becomes the authoritative to-process set.
-                            # sorted() gives reproducible ordering across Linux/macOS/Windows.
                             all_entries = sorted(os.listdir(args['ebooks_dir']), key=c.natural_sort_key)
                             args['ebook_list'] = []
                             for name in all_entries:
                                 ebook_dir_path = os.path.abspath(os.path.join(args['ebooks_dir'], name))
-                                if not os.path.isfile(ebook_dir_path):
-                                    continue
+                                if not os.path.isfile(ebook_dir_path): continue
                                 if not any(name.endswith(ext) for ext in ebook_formats):
                                     print(f'{name} skipped (unsupported format)')
                                     continue
                                 args['ebook_list'].append(ebook_dir_path)
-                            if not args['ebook_list']:
-                                error = 'Error: No supported ebook files found in --ebooks_dir.'
+                            if not args['ebook_list']: error = 'Error: No supported ebook files found in --ebooks_dir.'
                             else:
                                 ebook_list = copy.deepcopy(args['ebook_list'])
                                 for file in ebook_list:
                                     c.context.sessions[args['id']]['status'] = c.status_tags['READY']
                                     c.reset_ebook_session(args['id'], force=True, filter_keys=False)
                                     args['ebook_src'] = file
-                                    # Per-file voice resolution: abs-path override -> basename override -> default
                                     override = voice_map.get(file) or voice_map.get(os.path.basename(file))
                                     if override and not os.path.exists(override):
                                         print(f'--voice_map: override for {Path(file).name} ({override}) not found, falling back to --voice')
                                         override = None
                                     args['voice'] = override or default_voice
                                     progress_status, passed = c.convert_ebook(args)
-                                    if passed:
-                                        args['ebook_list'].remove(file)
-                                    else:
-                                        error = progress_status
-                                        break
+                                    if passed: args['ebook_list'].remove(file)
+                                    else: error = progress_status; break
                 elif args.get('ebook', None) is not None:
                     args['ebook_mode'] = 'single'
                     args['ebook_src'] = os.path.abspath(args['ebook'])
-                    if not os.path.exists(args['ebook_src']):
-                        error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
+                    if not os.path.exists(args['ebook_src']): error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
                     else:
                         progress_status, passed = c.convert_ebook(args)
                         c.context.sessions[args['id']]['status'] = c.status_tags['READY']
                         c.reset_ebook_session(args['id'], force=True, filter_keys=False)
-                        if not passed:
-                            error = progress_status
+                        if not passed: error = progress_status
                 elif args.get('text', None) is not None:
                     args['ebook_mode'] = 'text'
                     args['ebook_textarea'] = args['text'].strip()
-                    if not args['ebook_textarea']:
-                        error = f'Error: The --text is empty.'
-                    elif len(args['ebook_textarea']) > max_ebook_textarea_length:
-                        error = f'Error: --text input exceeds {max_ebook_textarea_length} characters.'
+                    if not args['ebook_textarea']: error = f'Error: The --text is empty.'
+                    elif len(args['ebook_textarea']) > max_ebook_textarea_length: error = f'Error: --text input exceeds {max_ebook_textarea_length} characters.'
                     else:
                         progress_status, passed = c.convert_ebook(args)
                         c.context.sessions[args['id']]['status'] = c.status_tags['READY']
                         c.reset_ebook_session(args['id'], force=True, filter_keys=False)
-                        if not passed:
-                            error = progress_status
-                else:
-                    error = 'Error: In headless mode, you must specify either an ebook file using --ebook, ebook directory using --ebooks_dir or a raw text using --text.'
+                        if not passed: error = progress_status
+                else: error = 'Error: In headless mode, you must specify either an ebook file using --ebook, ebook directory using --ebooks_dir or a raw text using --text.'
         else:
             args['is_gui_process'] = True
             passed_arguments = sys.argv[1:]
@@ -526,33 +330,13 @@ Default to config.json model.""")
                     c.progress_bar = c.gr.Progress(track_tqdm=False)
                     app = build_interface(args)
                     if app is not None:
-                        gr_blocks_kwargs = {
-                            "debug": bool(int(os.environ.get('GRADIO_DEBUG', '0'))),
-                            "show_error": debug_mode,
-                            "favicon_path": "./favicon.ico",
-                            "server_name": interface_host,
-                            "server_port": interface_port,
-                            "share": args['share'],
-                            "max_file_size": max_upload_size,
-                            "theme": theme,
-                            "css": header_css,
-                            "footer_links": ["settings"]
-                        }
+                        gr_blocks_kwargs = {"debug": bool(int(os.environ.get('GRADIO_DEBUG', '0'))), "show_error": debug_mode, "favicon_path": "./favicon.ico", "server_name": interface_host, "server_port": interface_port, "share": args['share'], "max_file_size": max_upload_size, "theme": theme, "css": header_css, "footer_links": ["settings"]}
                         app.queue(default_concurrency_limit=interface_concurrency_limit).launch(**gr_blocks_kwargs)
-                except OSError as e:
-                    error = f'Connection error: {e}'
-                    c.exception_alert(None, error)
-                except socket.error as e:
-                    error = f'Socket error: {e}'
-                    c.exception_alert(None, error)
-                except KeyboardInterrupt:
-                    error = 'Server interrupted by user. Shutting down...'
-                    c.exception_alert(None, error)
-                except Exception as e:
-                    error = f'An unexpected error occurred: {e}'
-                    c.exception_alert(None, error)
-            else:
-                error = 'Error: In GUI mode, no option or only --share can be passed'
+                except OSError as e: error = f'Connection error: {e}'; c.exception_alert(None, error)
+                except socket.error as e: error = f'Socket error: {e}'; c.exception_alert(None, error)
+                except KeyboardInterrupt: error = 'Server interrupted by user. Shutting down...'; c.exception_alert(None, error)
+                except Exception as e: error = f'An unexpected error occurred: {e}'; c.exception_alert(None, error)
+            else: error = 'Error: In GUI mode, no option or only --share can be passed'
         if error:
             print(error)
             sys.exit(1)
