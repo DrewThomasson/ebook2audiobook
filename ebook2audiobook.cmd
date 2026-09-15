@@ -644,7 +644,6 @@ if errorlevel 1 (
     echo uv is not installed.
     exit /b 1
 )
-
 set "CURRENT_ENV="
 if defined VIRTUAL_ENV (
     set "CURRENT_ENV=%VIRTUAL_ENV%"
@@ -656,7 +655,6 @@ if defined CURRENT_ENV (
         exit /b 2
     )
 )
-
 :: ── migrate: detect a conda/Miniforge3 env or a non-uv venv and replace it ──
 if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\conda-meta" (
     echo Detected conda-based %PYTHON_ENV% — removing and recreating with uv...
@@ -668,31 +666,25 @@ if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\conda-meta" (
         rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
     )
 )
-
 if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
     if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
         echo Detected incomplete %PYTHON_ENV% — removing and recreating...
         rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
     )
     echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION% via uv...
-
     uv python find %PYTHON_VERSION% >nul 2>&1
     if errorlevel 1 (
         echo Installing Python %PYTHON_VERSION% via uv...
         uv python install %PYTHON_VERSION%
         if errorlevel 1 exit /b 3
     )
-
-    uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION%
+	uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION%
+	if errorlevel 1 exit /b 3
+	set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+	set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
+	set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
+	call :provision_env
     if errorlevel 1 exit /b 3
-
-    set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-    set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
-    set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
-
-    call :provision_env
-    if errorlevel 1 exit /b 3
-
     > "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" echo %APP_VERSION%
 )
 exit /b 0
@@ -822,13 +814,13 @@ exit /b 0
 
 :install_device_packages
 "%PS_EXE%" %PS_ARGS% -Command ^
-    "& '%PY_CMD%' -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
+"& '%PY_CMD%' -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
 exit /b %errorlevel%
 
 :install_python_packages
 echo Installing python dependencies…
 "%PS_EXE%" %PS_ARGS% -Command ^
-    "& '%PY_CMD%' -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
+"& '%PY_CMD%' -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
 exit /b %errorlevel%
 
 :check_sitecustomized
@@ -1008,7 +1000,7 @@ if defined arguments.help (
                 )
             )
         )
-        call python -u "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
+		call "%PY_CMD%" -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
         goto :eof
     )
 ) else (

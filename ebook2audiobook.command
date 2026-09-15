@@ -558,7 +558,6 @@ EOF
             return 1
         fi
     fi
-
     if [[ -z "$WGET" ]]; then
         echo -e "\e[33m wget is missing! trying to install it… \e[0m"
         result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
@@ -570,7 +569,6 @@ EOF
             return 1
         fi
     fi
-
     for program in "${programs_missing[@]}"; do
         if [[ "$program" == "calibre" ]]; then
             if command -v $program >/dev/null 2>&1; then
@@ -680,7 +678,6 @@ check_uv() {
         ((v1_minor > v2_minor)) && return 2
         return 0
     }
-
     if ! command -v uv &>/dev/null; then
         echo -e "\e[33mDownloading uv installer…\e[0m"
         curl -LsSf "$UV_INSTALLER_URL" | sh
@@ -694,7 +691,6 @@ check_uv() {
             echo "uv" >> "$INSTALLED_LOG"
         fi
     fi
-
     local model="other"
     if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then
         PYTHON_VERSION="3.11"
@@ -711,8 +707,6 @@ check_uv() {
             case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
         fi
     fi
-
-    # ── migrate: detect a conda/Miniforge3 env or a non-uv venv and replace it ──
     if [[ -d "$SCRIPT_DIR/$PYTHON_ENV/conda-meta" ]]; then
         echo -e "\e[33mDetected conda-based $PYTHON_ENV — removing and recreating with uv…\e[0m"
         rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
@@ -720,31 +714,23 @@ check_uv() {
         echo -e "\e[33mDetected non-uv venv in $PYTHON_ENV — removing and recreating with uv…\e[0m"
         rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
     fi
-
     if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/.provisioned" ]]; then
         if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
             echo -e "\e[33mDetected incomplete $PYTHON_ENV — removing and recreating…\e[0m"
             rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
         fi
-
         echo -e "\e[33mCreating ./$PYTHON_ENV with python $PYTHON_VERSION…\e[0m"
         chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
         chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
-
         uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" || return 1
-
-        # Update PY_CMD to point to the new venv
         PY_CMD="$SCRIPT_DIR/$PYTHON_ENV/bin/python3"
-
         set +u
         source "$SCRIPT_DIR/$PYTHON_ENV/bin/activate" || return 1
         set -u
-
         if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
             # gfortran needed to compile scipy from pip on Jetson
             uv pip install --python "$SCRIPT_DIR/$PYTHON_ENV/bin/python" gfortran 2>/dev/null || true
         fi
-
         DEVICE_INFO_STR="$(check_device_info "$SCRIPT_MODE")"
         if [[ -z "$DEVICE_INFO_STR" ]]; then
             echo "check_device_info() error: result is empty"
