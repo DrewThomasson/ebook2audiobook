@@ -631,53 +631,48 @@ goto :main
 :check_uv
 where.exe /Q uv
 if errorlevel 1 (
-	echo uv is not installed.
-	exit /b 1
+    echo uv is not installed.
+    exit /b 1
 )
 set "CURRENT_ENV="
 if defined VIRTUAL_ENV (
-	set "CURRENT_ENV=%VIRTUAL_ENV%"
+    set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
 if defined CURRENT_ENV (
-	if /i not "%CURRENT_ENV%"=="%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-		echo Current python virtual environment detected: %CURRENT_ENV%.
-		echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-		exit /b 2
-	)
+    if /i not "%CURRENT_ENV%"=="%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+        echo Current python virtual environment detected: %CURRENT_ENV%.
+        echo =============== This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+        exit /b 2
+    )
 )
-
-:: ── migrate: detect a conda/Miniforge3 env or a non-uv venv and replace it ──
-if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\conda-meta" (
-	echo Detected conda-based %PYTHON_ENV% — removing and recreating with uv...
-	rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-) else if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\pyvenv.cfg" (
-	findstr /b "uv" "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\pyvenv.cfg" >nul 2>&1
-	if errorlevel 1 (
-		echo Detected non-uv venv in %PYTHON_ENV% — removing and recreating with uv...
-		rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-	)
+if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+    if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\pyvenv.cfg" (
+        echo %PYTHON_ENV% is not a virtualenv — removing...
+        rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+    ) else (
+        uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION% --allow-existing >nul 2>&1
+        if errorlevel 1 (
+            echo %PYTHON_ENV% is inconsistent — removing and recreating...
+            rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+        )
+    )
 )
-
-if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
-	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-		echo Detected incomplete %PYTHON_ENV% — removing and recreating...
-		rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-	)
-	echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION% via uv...
-	uv python find %PYTHON_VERSION% >nul 2>&1
-	if errorlevel 1 (
-		echo Installing Python %PYTHON_VERSION% via uv...
-		uv python install %PYTHON_VERSION%
-		if errorlevel 1 exit /b 3
-	)
-	uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION%
-	if errorlevel 1 exit /b 3
-	set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-	set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
-	set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
-	call :provision_env
-	if errorlevel 1 exit /b 3
-	> "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" echo %APP_VERSION%
+if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+    echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION% via uv...
+    uv python find %PYTHON_VERSION% >nul 2>&1
+    if errorlevel 1 (
+        echo Installing Python %PYTHON_VERSION% via uv...
+        uv python install %PYTHON_VERSION%
+        if errorlevel 1 exit /b 3
+    )
+    uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION%
+    if errorlevel 1 exit /b 3
+    set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+    set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
+    set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
+    call :provision_env
+    if errorlevel 1 exit /b 3
+    > "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" echo %APP_VERSION%
 )
 exit /b 0
 

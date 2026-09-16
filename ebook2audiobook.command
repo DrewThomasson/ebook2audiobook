@@ -437,74 +437,81 @@ EOF
 }
 
 check_uv() {
-	compare_versions() {
-		local ver1=$1; local ver2=$2
-		IFS='.' read -r v1_major v1_minor <<<"$ver1"
-		IFS='.' read -r v2_major v2_minor <<<"$ver2"
-		((v1_major < v2_major)) && return 1
-		((v1_major > v2_major)) && return 2
-		((v1_minor < v2_minor)) && return 1
-		((v1_minor > v2_minor)) && return 2
-		return 0
-	}
-	if ! command -v uv &>/dev/null; then
-		echo -e "\e[33mDownloading uv installer…\e[0m"
-		curl -LsSf "$UV_INSTALLER_URL" | sh
-		export PATH="$UV_INSTALL_DIR:$PATH"
-		if ! command -v uv &>/dev/null; then echo -e "\e[31m=============== uv installation failed.\e[0m"; return 1; fi
-		echo -e "\e[32m=============== uv OK! ===============\e[0m"
-		if ! grep -iqFx "uv" "$INSTALLED_LOG"; then echo "uv" >> "$INSTALLED_LOG"; fi
-	fi
-	local model="other"
-	if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then PYTHON_VERSION="3.11"
-	else
-		if [[ -r /proc/device-tree/model ]]; then
-			model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
-			if [[ "$model" == *jetson* ]]; then PYTHON_VERSION="$MIN_PYTHON_VERSION"; fi
-		else
-			compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
-			case $? in 1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;; esac
-			compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
-			case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
-		fi
-	fi
+    compare_versions() {
+        local ver1=$1; local ver2=$2
+        IFS='.' read -r v1_major v1_minor <<<"$ver1"
+        IFS='.' read -r v2_major v2_minor <<<"$ver2"
+        ((v1_major < v2_major)) && return 1
+        ((v1_major > v2_major)) && return 2
+        ((v1_minor < v2_minor)) && return 1
+        ((v1_minor > v2_minor)) && return 2
+        return 0
+    }
+    if ! command -v uv &>/dev/null; then
+        echo -e "\e[33mDownloading uv installer…\e[0m"
+        curl -LsSf "$UV_INSTALLER_URL" | sh
+        export PATH="$UV_INSTALL_DIR:$PATH"
+        if ! command -v uv &>/dev/null; then
+            echo -e "\e[31m=============== uv installation failed.\e[0m"
+            return 1
+        fi
+        echo -e "\e[32m=============== uv OK! ===============\e[0m"
+        if ! grep -iqFx "uv" "$INSTALLED_LOG"; then
+            echo "uv" >> "$INSTALLED_LOG"
+        fi
+    fi
+    local model="other"
+    if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then
+        PYTHON_VERSION="3.11"
+    else
+        if [[ -r /proc/device-tree/model ]]; then
+            model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
+            if [[ "$model" == *jetson* ]]; then
+                PYTHON_VERSION="$MIN_PYTHON_VERSION"
+            fi
+        else
+            compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
+            case $? in 1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;; esac
+            compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
+            case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
+        fi
+    fi
+    if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+        if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/pyvenv.cfg" ]]; then
+            echo -e "\e[33m$PYTHON_ENV is not a virtualenv — removing…\e[0m"
+            rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
+        elif ! uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" --allow-existing >/dev/null 2>&1; then
+            echo -e "\e[33m$PYTHON_ENV is inconsistent — removing and recreating…\e[0m"
+            rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
+        fi
+    fi
+    if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+        echo -e "\e[33mCreating ./$PYTHON_ENV with python $PYTHON_VERSION…\e[0m"
+        chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
+        chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
 
-	# Migration detection: Automatically delete tainted or incorrect environments
-	if [[ -d "$SCRIPT_DIR/$PYTHON_ENV/conda-meta" ]]; then
-		echo -e "\e[33mDetected conda-based $PYTHON_ENV — removing and recreating with uv…\e[0m"
-		rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
-	elif [[ -f "$SCRIPT_DIR/$PYTHON_ENV/pyvenv.cfg" ]] && ! grep -q '^uv' "$SCRIPT_DIR/$PYTHON_ENV/pyvenv.cfg" 2>/dev/null; then
-		echo -e "\e[33mDetected non-uv venv in $PYTHON_ENV — removing and recreating with uv…\e[0m"
-		rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
-	fi
+        uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" || return 1
+        PY_CMD="$SCRIPT_DIR/$PYTHON_ENV/bin/python3"
 
-	if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/.provisioned" ]]; then
-		if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
-			echo -e "\e[33mDetected incomplete $PYTHON_ENV — removing and recreating…\e[0m"
-			rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
-		fi
-		echo -e "\e[33mCreating ./$PYTHON_ENV with python $PYTHON_VERSION…\e[0m"
-		chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
-		chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
-		uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" || return 1
-		
-		# Update PY_CMD to point strictly to the new isolated venv
-		PY_CMD="$SCRIPT_DIR/$PYTHON_ENV/bin/python3"
-		
-		set +u
-		source "$SCRIPT_DIR/$PYTHON_ENV/bin/activate" || return 1
-		set -u
-		if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
-			uv pip install --python "$SCRIPT_DIR/$PYTHON_ENV/bin/python" gfortran 2>/dev/null || true
-		fi
-		DEVICE_INFO_STR="$(check_device_info "$SCRIPT_MODE")"
-		if [[ -z "$DEVICE_INFO_STR" ]]; then echo "check_device_info() error: result is empty"; return 1; fi
-		install_device_packages "$DEVICE_INFO_STR" || return 1
-		install_python_packages || return 1
-		echo "$APP_VERSION" > "$SCRIPT_DIR/$PYTHON_ENV/.provisioned"
-		deactivate &>/dev/null || true
-	fi
-	return 0
+        set +u
+        source "$SCRIPT_DIR/$PYTHON_ENV/bin/activate" || return 1
+        set -u
+
+        if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
+            uv pip install --python "$SCRIPT_DIR/$PYTHON_ENV/bin/python" gfortran 2>/dev/null || true
+        fi
+
+        DEVICE_INFO_STR="$(check_device_info "$SCRIPT_MODE")"
+        if [[ -z "$DEVICE_INFO_STR" ]]; then
+            echo "check_device_info() error: result is empty"
+            return 1
+        fi
+        install_device_packages "$DEVICE_INFO_STR" || return 1
+        install_python_packages || return 1
+        echo "$APP_VERSION" > "$SCRIPT_DIR/$PYTHON_ENV/.provisioned"
+        deactivate &>/dev/null || true
+    fi
+    return 0
 }
 
 check_docker() {
