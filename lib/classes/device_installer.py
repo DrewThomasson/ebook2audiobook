@@ -67,7 +67,7 @@ class DeviceInstaller():
         raise FileNotFoundError('uv binary not found. Install: https://docs.astral.sh/uv/getting-started/installation/')
 
     def _uv_pip(self, subcommand:str, *args)->list:
-        return [self.uv_bin, 'pip', subcommand, '--python', sys.executable, *args]
+        return [self.uv_bin, 'pip', subcommand, '--python', python_exec, *args]
 
     @cached_property
     def check_platform(self)->str:
@@ -1768,10 +1768,7 @@ class DeviceInstaller():
         def _probe_gpus()->dict:
             script = os.path.abspath('./detect_gpus.py')
             try:
-                proc = subprocess.run(
-                    [sys.executable, script],
-                    capture_output=True, text=True, timeout=30,
-                )
+                proc = subprocess.run([python_exec, script], capture_output=True, text=True, timeout=30)
                 if proc.returncode != 0:
                     return {'count': 0, 'backend': None, 'error': proc.stderr.strip() or 'non-zero exit'}
                 return json.loads(proc.stdout.strip() or '{}')
@@ -1881,7 +1878,7 @@ class DeviceInstaller():
                                         rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url))
                                 if rc == 0:
                                     try:
-                                        subprocess.check_call([sys.executable, '-c', 'from torchcodec.decoders import AudioDecoder'])
+                                        subprocess.check_call([python_exec, '-c', 'from torchcodec.decoders import AudioDecoder'])
                                     except subprocess.CalledProcessError:
                                         error = 'torchcodec is installed but cannot be imported. Please check the log and check if ffmpeg is installed as shared and its path registered in your OS lib path.'
                                         print(error)

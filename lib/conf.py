@@ -51,6 +51,7 @@ BUILD_DOCKER = 'build_docker'
 min_python_version = (3,10)
 max_python_version = (3,12)
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
+python_exec = os.environ.get('PY_CMD') or sys.executable
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 
 # ---------------------------------------------------------------------
