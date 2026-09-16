@@ -1397,7 +1397,6 @@ class DeviceInstaller():
                                 msg = f'Failed to install {raw_pkg}: {e}'
                                 print(msg)
                                 return 1
-                import importlib
                 importlib.invalidate_caches()
                 still_missing = []
                 for raw_pkg in missing_packages:
@@ -1408,11 +1407,34 @@ class DeviceInstaller():
                         version(pkg_name)
                     except PackageNotFoundError:
                         still_missing.append(raw_pkg)
-                    msg = '\nAll required packages are installed.'
+                if still_missing:
+                    msg = f'\n{len(still_missing)} package(s) still invisible after install. Forcing --reinstall…\n'
                     print(msg)
-                self.finalize_exclusive_packages()
-                self.drop_pip_cache()
-                return self.check_voices()
+                    try:
+                        subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins(still_missing, pins))
+                    except subprocess.CalledProcessError:
+                        for raw_pkg in still_missing:
+                            try:
+                                subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins([raw_pkg], pins))
+                            except subprocess.CalledProcessError as e:
+                                msg = f'Failed to reinstall {raw_pkg}: {e}'
+                                print(msg)
+                                return 1
+                    importlib.invalidate_caches()
+                    # Final verification
+                    for raw_pkg in still_missing:
+                        pkg_name = re.split(r'[<>=!\[;]', re.sub(r'\[.*?\]', '', raw_pkg.strip()), maxsplit=1)[0].strip()
+                        if not pkg_name: continue
+                        try:
+                            version(pkg_name)
+                        except PackageNotFoundError:
+                            msg = f'CRITICAL: {pkg_name} is still not installed after --reinstall.'
+                            print(msg)
+                            print(f'DEBUG: sys.executable = {sys.executable}')
+                            print(f'DEBUG: sys.prefix = {sys.prefix}')
+                            return 1
+            msg = '\nAll required packages are installed.'
+            print(msg)
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)
