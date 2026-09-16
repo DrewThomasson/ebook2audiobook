@@ -1397,7 +1397,29 @@ class DeviceInstaller():
                                 msg = f'Failed to install {raw_pkg}: {e}'
                                 print(msg)
                                 return 1
-
+                still_missing = []
+                for raw_pkg in missing_packages:
+                    pkg_name = re.split(r'[<>=!\[;]', re.sub(r'\[.*?\]', '', raw_pkg.strip()), maxsplit=1)[0].strip()
+                    if not pkg_name:
+                        continue
+                    try:
+                        version(pkg_name)
+                    except PackageNotFoundError:
+                        still_missing.append(raw_pkg)
+                if still_missing:
+                    msg = f'{len(still_missing)} package(s) have corrupted metadata — forcing reinstall…'
+                    print(msg)
+                    try:
+                        subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins(still_missing, pins))
+                    except subprocess.CalledProcessError:
+                        # last resort: per-package reinstall
+                        for raw_pkg in still_missing:
+                            try:
+                                subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins([raw_pkg], pins))
+                            except subprocess.CalledProcessError as e:
+                                msg = f'Failed to reinstall {raw_pkg}: {e}'
+                                print(msg)
+                                return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
             self.finalize_exclusive_packages()
