@@ -1413,11 +1413,11 @@ class DeviceInstaller():
                 self.finalize_exclusive_packages()
                 self.drop_pip_cache()
                 return self.check_voices()
-            except Exception as e:
-                error = f'install_python_packages() error: {e}'
-                print(error)
-                self.drop_pip_cache()
-                return 1
+        except Exception as e:
+            error = f'install_python_packages() error: {e}'
+            print(error)
+            self.drop_pip_cache()
+            return 1
 
     def remove_obsolete_packages(self)->int:
         # packages removed from requirements.txt that must also be uninstalled
