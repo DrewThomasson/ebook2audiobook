@@ -1370,7 +1370,12 @@ class DeviceInstaller():
                     msg = f'{pkg_name} is not installed.'
                     print(msg)
                     if pkg_name == 'demucs-simple':
-                        subprocess.run([self.uv_bin, 'pip', 'uninstall', 'demucs'],check=False)
+                        subprocess.run(
+                            [self.uv_bin, 'pip', 'uninstall', 'demucs'],
+                            check=False,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL
+                        )
                     missing_packages.append(raw_pkg)
                     continue
                 if '+' in installed_version:
