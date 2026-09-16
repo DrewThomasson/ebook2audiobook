@@ -6,39 +6,11 @@ from importlib.metadata import version, PackageNotFoundError
 from lib.conf import *
 
 class DeviceInstaller():
-    # packages whose version/variant depends on the device, not on the interpreter.
-    # kept out of requirements.txt and resolved by select_pkg().
-    # names are PEP 503 normalized (hyphens) to match the head parsed from
-    # requirements.txt, which writes 'huggingface_hub' with an underscore.
-    #device_pkgs = ['onnxruntime', 'pyannote-audio', 'huggingface-hub', 'transformers', 'gradio']
     device_pkgs = ['onnxruntime']
-
-    # mutually exclusive distributions: only one of each list may end up installed.
-    # select_pkg() decides which, finalize_exclusive_packages() removes the others
-    # AFTER the requirements pass (a transitive requirement can reintroduce a loser).
-
-    # torchaudio's final release. Its I/O moved into torchcodec and PyPI stops at
-    # 2.11.0 while torch has gone on to 2.13.0, so any torch_matrix row above 2.11
-    # would ask pip for a 'torchaudio==<torch version>' that was never published
-    # and abort the whole device install with 'No matching distribution found'.
-    # 2.11.0 is also the first torchaudio with no 'torch==' pin of its own
-    # (2.10.0 still declared torch==2.10.0), which is what makes capping safe:
-    # the dependency-resolving pass cannot drag torch back down to match it.
-    # Bump this single value if torchaudio ever resumes releases.
     torchaudio_max = '2.11.0'
-
     exclusive_pkgs = {
         'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }
-
-    # scoped wheel cache shared by the requirements pass and
-    # finalize_exclusive_packages(), wiped by drop_pip_cache() before
-    # install_python_packages() returns. With --no-cache on both, the keeper
-    # of an exclusive group is downloaded twice — onnxruntime-gpu alone is a
-    # 250 MB wheel. This keeps it once. It lives under the system temp dir and is
-    # created and removed inside the same docker RUN, so it never reaches a layer.
-    # Trade-off: a transient disk spike the size of the wheels resolved in that
-    # one pass. Set E2A_PIP_CACHE_DIR to move it off a small /tmp.
     pip_cache_dir = os.environ.get('E2A_PIP_CACHE_DIR') or os.path.join(tempfile.gettempdir(), 'e2a_pip_cache')
 
     def __init__(self):
@@ -1247,14 +1219,6 @@ class DeviceInstaller():
         return re.sub(r'[-_.]+', '-', re.split(r'[<>=!\[;]', requirement, 1)[0].strip().lower())
 
     def apply_pins(self, requirements:list, pins:list)->list:
-        # the overrides dict only rewrites lines that came from requirements.txt, so
-        # a package pulling one of them indirectly (torchvggish -> resampy -> numba
-        # -> llvmlite) resolves it unpinned. On macOS Intel that means the newest
-        # llvmlite, which has no x86_64 wheel and needs LLVM 22 to build from
-        # source. Passing the pins as command-line requirements on every pip call
-        # constrains the resolver instead of hoping the line-level substitution is
-        # enough. pip rejects the same distribution twice on one command line, so
-        # anything a pin already covers is dropped from the requirement list.
         if not pins:
             return list(requirements)
         heads = {self.pkg_head(spec) for spec in pins}
@@ -1269,10 +1233,6 @@ class DeviceInstaller():
         self.remove_obsolete_packages()
         overrides = {}
         packages = []
-        # device-dependent requirements, resolved in the same pip pass as
-        # requirements.txt so every floor is visible to one resolver run.
-        # ORDER MATTERS: select_pkg('pyannote-audio') reads the installed torch
-        # version, so this must run after install_device_packages().
         onnx_pkg = 'onnxruntime'
         if self.system != systems['MACOS']:
             onnx_pkg = self.select_pkg('onnxruntime')
@@ -1280,11 +1240,6 @@ class DeviceInstaller():
         if onnx_pkg == 'onnxruntime-directml':
             packages.append('protobuf<7')
         if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
-            # last llvmlite/numba with macOS x86_64 wheels. Newer llvmlite has no
-            # wheel and needs LLVM 22 to build from source, which fails against the
-            # llvm@15 brew ships. Appended to packages as well as registered in
-            # overrides, so the pin survives even if the requirements.txt lines go
-            # away; apply_pins() then forces it onto every pip invocation.
             overrides['llvmlite'] = 'llvmlite==0.44.0'
             overrides['numba'] = 'numba==0.61.0'
             packages.append(overrides['llvmlite'])
@@ -1301,10 +1256,6 @@ class DeviceInstaller():
                         if not pkg:
                             continue
                     head = re.sub(r'[-_.]+', '-', re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower())
-                    # torch/torchaudio: installed by install_device_packages().
-                    # device_pkgs: decided by select_pkg() above. Skipping them here
-                    # keeps a stale requirements.txt line from overriding the
-                    # device-specific choice.
                     if head in {'torch', 'torchaudio'} or head in self.device_pkgs:
                         continue
                     if head in overrides:
@@ -1312,7 +1263,6 @@ class DeviceInstaller():
                             continue
                         pkg = overrides[head]
                     packages.append(pkg)
-
             missing_packages = []
             for package in packages:
                 raw_pkg = package.strip()
@@ -1425,14 +1375,8 @@ class DeviceInstaller():
             if missing_packages:
                 msg = '\nInstalling missing or upgrade packages…\n'
                 print(msg)
-
                 base_cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir)
-
-                # empty on every platform except macOS Intel, where apply_pins() is
-                # a no-op, so nothing else changes behaviour.
                 pins = [spec for spec in overrides.values() if spec]
-                # FIX: Force device pins into the pip resolver so transitive
-                # dependencies cannot override bounds like huggingface-hub<1.0
                 for dpkg in self.device_pkgs:
                     try:
                         pin = self.select_pkg(dpkg)
@@ -1441,20 +1385,8 @@ class DeviceInstaller():
                     except Exception:
                         pass
                 try:
-                    # batch install: one resolution over all pins at once instead of
-                    # one pip subprocess per package. Avoids install/downgrade churn
-                    # (an unpinned package pulling a newer transformers, later undone
-                    # by the pinned version) and collapses the resolver's post-install
-                    # conflict summary from N near-identical dumps down to one.
                     subprocess.check_call(base_cmd + self.apply_pins(missing_packages, pins))
                 except subprocess.CalledProcessError:
-                    # fallback: per-package to isolate failures. This base image ships
-                    # some packages with no RECORD (and dirty dist-info under
-                    # overlayfs), so the implicit uninstall during an upgrade can fail
-                    # with uninstall-no-record-file / Errno 39. Retry without touching
-                    # the existing install so pip just overwrites it.
-                    # The pins ride along on every call: an isolated resolve is where
-                    # a transitive dependency is most free to pick its own version.
                     for raw_pkg in missing_packages:
                         try:
                             subprocess.check_call(base_cmd + self.apply_pins([raw_pkg], pins))
