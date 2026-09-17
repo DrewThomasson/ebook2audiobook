@@ -1,112 +1,165 @@
 ARG PYTHON_VERSION=3.12
 
 # ============================================================
-# HF SPACES — SINGLE STAGE BUILD + RUNTIME
+# HUGGING FACE SPACE — BUILD + RUNTIME
 # ============================================================
+# trixie, not bookworm:
+# Intel's NEO/IGC debs are built on Ubuntu 24.04 and need
+# glibc >= 2.38 / libstdc++ >= 13.1. bookworm is 2.36 / 12.2
+# and cannot host them, and its Level Zero loader (libze1 1.8.12)
+# predates zesInit.
 FROM python:${PYTHON_VERSION}-slim-trixie
 
-ARG APP_VERSION=26.9.7
+ARG APP_VERSION=26.9.17
 ARG DEVICE_TAG=cpu
-ARG DOCKER_DEVICE_STR='{"name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "HF Spaces CPU"}'
+ARG DOCKER_DEVICE_STR='{ "name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "default Hugging Face CPU device" }'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
 ARG INSTALL_RUST=1
 
-LABEL org.opencontainers.image.title="ebook2audiobook" \
-	org.opencontainers.image.description="Generate audiobooks from e-books, voice cloning & 1158 languages!" \
-	org.opencontainers.image.version="${APP_VERSION}" \
-	org.opencontainers.image.authors="Drew Thomasson / Rob McDowell" \
-	org.opencontainers.image.licenses="MIT" \
-	org.opencontainers.image.source="https://github.com/DrewThomasson/ebook2audiobook"
-
 ENV DEBIAN_FRONTEND=noninteractive \
-	PYTHONDONTWRITEBYTECODE=1 \
-	PYTHONUNBUFFERED=1 \
-	PIP_NO_CACHE_DIR=1 \
-	DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR} \
-	PIP_BREAK_SYSTEM_PACKAGES=1 \
-	PATH="/root/.cargo/bin:${PATH}" \
-	DEVICE_TAG=${DEVICE_TAG} \
-	IN_DOCKER=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONUTF8=1 \
+    PYTHONIOENCODING=utf-8 \
+    UV_SYSTEM_PYTHON=1 \
+    UV_LINK_MODE=copy \
+    DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR} \
+    DEVICE_TAG=${DEVICE_TAG} \
+    TTS_CACHE=/app/models \
+    TESSDATA_PREFIX=/app/models/tessdata \
+    TMPDIR=/app/run \
+    GRADIO_SERVER_NAME=0.0.0.0 \
+    GRADIO_SERVER_PORT=7860 \
+    PATH="/root/.local/bin:/root/.cargo/bin:${PATH}" \
+    IN_DOCKER=1
+
+# uv is required because device_installer.py now calls `uv pip ...`.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-# Enable Debian contrib, non-free, and non-free-firmware repositories, then install system packages
+# System packages.
+#
+# DOCKER_PROGRAMS_STR is passed by the build script when available.
+# tesseract-ocr-[lang] and calibre are handled below.
 RUN set -eux; \
-	if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
-		sed -i 's/Components: main/Components: main contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources; \
-	else \
-		sed -i 's/main/main contrib non-free non-free-firmware/g' /etc/apt/sources.list; \
-	fi; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		gcc g++ make pkg-config cmake curl wget git bash xz-utils python3-dev \
-		fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
-		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 \
-		libxcb-xfixes0 libxcb-cursor0 libgomp1 libsndfile1 libnss3 \
-		${DOCKER_PROGRAMS_STR} tesseract-ocr tesseract-ocr-eng; \
+		ca-certificates \
+		wget \
+		git \
+		xz-utils \
+		build-essential \
+		gcc \
+		g++ \
+		make \
+		pkg-config \
+		cmake \
+		python3-dev \
+		libgomp1 \
+		libglib2.0-0 \
+		libgl1 \
+		libsndfile1 \
+		libstdc++6 \
+		libgcc-s1 \
+		libegl1 \
+		libopengl0 \
+		libxcb-cursor0 \
+		libxcb-xinerama0 \
+		libxkbcommon-x11-0 \
+		${DOCKER_PROGRAMS_STR}; \
+	if [ -n "${ISO3_LANG}" ]; then \
+		apt-get install -y --no-install-recommends "tesseract-ocr-${ISO3_LANG}" || true; \
+	fi; \
 	rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip 'setuptools<82' wheel
-
-# Rust toolchain
+# Runtime directories.
 RUN set -eux; \
-	if [ "${INSTALL_RUST}" = "1" ]; then \
-		curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable; \
-	else \
-		echo "Skipping Rust toolchain"; \
-	fi
+    mkdir -p \
+        /app/ebooks \
+        /app/audiobooks \
+        /app/models \
+        /app/models/tessdata \
+        /app/voices \
+        /app/run \
+        /app/tmp; \
+    chmod -R 777 /app/ebooks /app/audiobooks /app/models /app/voices /app/run /app/tmp
 
-# Calibre (CLI)
+# Calibre.
+#
+# calibre is intentionally installed from upstream because distro packages are
+# often outdated.
 RUN set -eux; \
-	wget -nv "${CALIBRE_INSTALLER_URL}" -O /tmp/calibre.sh; \
-	bash /tmp/calibre.sh; \
-	rm -f /tmp/calibre.sh
+    if ! command -v ebook-convert >/dev/null 2>&1; then \
+        wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin; \
+    fi; \
+    ebook-convert --version
 
-# Debian-compatible Calibre library aliases
+# Rust / cargo.
+#
+# Some Python dependencies may still require Rust at build time.
 RUN set -eux; \
-	ln -sf /usr/lib/*-linux-gnu/libfreetype.so.6   /usr/lib/libfreetype.so.6; \
-	ln -sf /usr/lib/*-linux-gnu/libfontconfig.so.1 /usr/lib/libfontconfig.so.1; \
-	ln -sf /usr/lib/*-linux-gnu/libpng16.so.16     /usr/lib/libpng16.so.16; \
-	ln -sf /usr/lib/*-linux-gnu/libX11.so.6        /usr/lib/libX11.so.6; \
-	ln -sf /usr/lib/*-linux-gnu/libXext.so.6       /usr/lib/libXext.so.6; \
-	ln -sf /usr/lib/*-linux-gnu/libXrender.so.1    /usr/lib/libXrender.so.1
+    if [ "${INSTALL_RUST}" = "1" ]; then \
+        curl -fsSL https://sh.rustup.rs | sh -s -- -y; \
+    fi
+
+# Bootstrap minimal Python build tooling with uv.
+#
+# Do not upgrade pip here. The application now uses uv for Python package installs.
+RUN set -eux; \
+    uv pip install --system --no-cache 'setuptools<82' wheel
 
 COPY . /app
 
-# Ensure Unix line endings
-RUN find /app -type f \( -name "*.sh" -o -name "*.command" \) -exec sed -i 's/\r$//' {} \;
-
-ENV QT_QPA_PLATFORM=offscreen
-
-# Build Python dependencies
+# Make sure the launcher exists.
+#
+# Historical builds use ebook2audiobook.command. Some checkouts may have e2a.sh
+# or ebook2audiobook.sh only, so create a compatible launcher if needed.
 RUN set -eux; \
-	./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"
+    if [ -f ./ebook2audiobook.command ]; then \
+        chmod +x ./ebook2audiobook.command; \
+    elif [ -f ./e2a.sh ]; then \
+        chmod +x ./e2a.sh; \
+        ln -sf ./e2a.sh ./ebook2audiobook.command; \
+    elif [ -f ./ebook2audiobook.sh ]; then \
+        chmod +x ./ebook2audiobook.sh; \
+        ln -sf ./ebook2audiobook.sh ./ebook2audiobook.command; \
+    else \
+        echo "No launcher found: expected ebook2audiobook.command, e2a.sh, or ebook2audiobook.sh"; \
+        exit 1; \
+    fi
 
-# Cleanup build-only packages and Rust toolchain
+# Build the Python stack selected by DOCKER_DEVICE_STR.
+#
+# This calls device_installer.py, which now uses uv internally:
+#   uv pip install --python <interpreter> ...
 RUN set -eux; \
-	rustup self uninstall -y 2>/dev/null || true; \
-	apt-get update; \
-	apt-get purge -y --auto-remove gcc g++ make pkg-config cmake wget git xz-utils python3-dev; \
-	rm -rf /var/lib/apt/lists/* /root/.cargo /root/.rustup /tmp/* || true
+    ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"; \
+    rustup self uninstall -y 2>/dev/null || true; \
+    apt-get update; \
+    apt-get purge -y --auto-remove \
+        gcc \
+        g++ \
+        make \
+        pkg-config \
+        cmake \
+        wget \
+        git \
+        xz-utils \
+        python3-dev \
+        build-essential || true; \
+    rm -rf \
+        /var/lib/apt/lists/* \
+        /root/.cargo \
+        /root/.rustup \
+        /tmp/* \
+        /app/tmp/* \
+        /app/run/* || true
 
-VOLUME \
-	/app/ebooks \
-	/app/audiobooks \
-	/app/models \
-	/app/voices \
-	/app/run \
-	/app/tmp
-
-# HF SPACES: create unprivileged user 1000 and fix permissions
-RUN useradd -m -u 1000 appuser && \
-	mkdir -p /app/ebooks /app/audiobooks /app/models /app/voices /app/run /app/tmp && \
-	chown -R appuser:appuser /app && \
-	chmod -R 777 /app/tmp /app/run /app/audiobooks /app/models /app/voices
-
-USER 1000
+VOLUME ["/app/ebooks", "/app/audiobooks", "/app/models", "/app/voices", "/app/run", "/app/tmp"]
 
 EXPOSE 7860
 
-ENTRYPOINT ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]
+CMD ["bash", "ebook2audiobook.command", "--script_mode", "full_docker"]

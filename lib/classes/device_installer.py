@@ -1,5 +1,4 @@
 import os, re, sys, platform, shutil, subprocess, importlib, json, tempfile
-
 from functools import cached_property
 from typing import Union
 from glob import glob
@@ -7,38 +6,11 @@ from importlib.metadata import version, PackageNotFoundError
 from lib.conf import *
 
 class DeviceInstaller():
-
-    # packages whose version/variant depends on the device, not on the interpreter.
-    # kept out of requirements.txt and resolved by select_pkg().
-    # names are PEP 503 normalized (hyphens) to match the head parsed from
-    # requirements.txt, which writes 'huggingface_hub' with an underscore.
-    device_pkgs = ['onnxruntime', 'pyannote-audio', 'huggingface-hub', 'transformers']
-
-    # mutually exclusive distributions: only one of each list may end up installed.
-    # select_pkg() decides which, finalize_exclusive_packages() removes the others
-    # AFTER the requirements pass (a transitive requirement can reintroduce a loser).
-    # torchaudio's final release. Its I/O moved into torchcodec and PyPI stops at
-    # 2.11.0 while torch has gone on to 2.13.0, so any torch_matrix row above 2.11
-    # would ask pip for a 'torchaudio==<torch version>' that was never published
-    # and abort the whole device install with 'No matching distribution found'.
-    # 2.11.0 is also the first torchaudio with no 'torch==' pin of its own
-    # (2.10.0 still declared torch==2.10.0), which is what makes capping safe:
-    # the dependency-resolving pass cannot drag torch back down to match it.
-    # Bump this single value if torchaudio ever resumes releases.
+    device_pkgs = ['onnxruntime']
     torchaudio_max = '2.11.0'
-
     exclusive_pkgs = {
-        'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml'],
+        'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }
-
-    # scoped wheel cache shared by the requirements pass and
-    # finalize_exclusive_packages(), wiped by drop_pip_cache() before
-    # install_python_packages() returns. With --no-cache-dir on both, the keeper
-    # of an exclusive group is downloaded twice — onnxruntime-gpu alone is a
-    # 250 MB wheel. This keeps it once. It lives under the system temp dir and is
-    # created and removed inside the same docker RUN, so it never reaches a layer.
-    # Trade-off: a transient disk spike the size of the wheels resolved in that
-    # one pass. Set E2A_PIP_CACHE_DIR to move it off a small /tmp.
     pip_cache_dir = os.environ.get('E2A_PIP_CACHE_DIR') or os.path.join(tempfile.gettempdir(), 'e2a_pip_cache')
 
     def __init__(self):
@@ -46,6 +18,28 @@ class DeviceInstaller():
         self.arch = self.check_arch
         self.python_version = sys.version_info[:2]
         self.python_version_tuple = sys.version_info
+        self.uv_bin = self._find_uv()
+
+    def _find_uv(self)->str:
+        p = shutil.which('uv')
+        if p:
+            return p
+        candidates = [
+            os.path.expanduser('~/.local/bin/uv'),
+            os.path.expanduser('~/.cargo/bin/uv'),
+        ]
+        if os.name == 'nt':
+            candidates.append(os.path.expanduser(r'~\.local\bin\uv.exe'))
+            candidates.append(os.path.expanduser(r'~\.cargo\bin\uv.exe'))
+        else:
+            candidates.append(os.path.expanduser('~/Library/Application Support/uv/bin/uv'))
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
+        raise FileNotFoundError('uv binary not found. Install: https://docs.astral.sh/uv/getting-started/installation/')
+
+    def _uv_pip(self, subcommand:str, *args)->list:
+        return [self.uv_bin, 'pip', subcommand, '--python', python_exec, *args]
 
     @cached_property
     def check_platform(self)->str:
@@ -66,7 +60,7 @@ class DeviceInstaller():
             return True
         cpuinfo_version = self.get_package_version('py-cpuinfo')
         if not cpuinfo_version:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'py-cpuinfo'])
+            subprocess.check_call(self._uv_pip('install', '--no-cache', 'py-cpuinfo'))
         from cpuinfo import get_cpu_info
         flags = set(get_cpu_info().get('flags', []))
         return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
@@ -153,7 +147,7 @@ class DeviceInstaller():
                 devices[device_info['name'].upper()]['found'] = True
                 return json.dumps(device_info)
         return ''
-        
+
     def get_package_version(self, pkg:str)->Union[str, bool]:
         try:
             return version(pkg)
@@ -174,7 +168,6 @@ class DeviceInstaller():
         return archs.get(m, 'unknown')
 
     def detect_device(self)->str:
-
         def has_cmd(cmd:str)->bool:
             return shutil.which(cmd) is not None
 
@@ -460,7 +453,6 @@ class DeviceInstaller():
         msg = ''
         arch = platform.machine().lower()
         forced_tag = os.environ.get('DEVICE_TAG')
-
         if forced_tag:
             tag_letters = re.match(r'[a-zA-Z]+', forced_tag)
             if tag_letters:
@@ -499,18 +491,15 @@ class DeviceInstaller():
                     os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
                     os.environ['TORCH_CUDA_ENABLE_CUDA_GRAPH'] = '0'
                     os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128,garbage_collection_threshold:0.6,expandable_segments:False'
-
             # ============================================================
             # ROCm
             # ============================================================
             elif has_rocm() and has_amd_gpu_pci():
-
                 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
                 os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
                 version = ()
                 msg = ''
                 hip_device_count = 0
-
                 # 1) HIP runtime detection via ctypes (primary)
                 try:
                     import ctypes
@@ -554,7 +543,6 @@ class DeviceInstaller():
                                 break
                             except OSError:
                                 continue
-
                     if libhip:
                         device_count = ctypes.c_int()
                         if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
@@ -579,7 +567,6 @@ class DeviceInstaller():
                                 msg = f'HIP runtime present ({ver_disp}) but no devices.'
                 except (OSError, AttributeError):
                     pass
-
                 # 2) hipcc fallback
                 if not version:
                     if os.name == 'posix' and has_cmd('hipcc'):
@@ -603,7 +590,6 @@ class DeviceInstaller():
                                 m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
                                 if m:
                                     version = _normalize_version(m.group(1))
-
                 # 3) torch.version.hip fallback
                 if not version:
                     try:
@@ -612,7 +598,6 @@ class DeviceInstaller():
                             version = _normalize_version(torch.version.hip)
                     except Exception:
                         pass
-
                 # 4) ROCm install dir fallback
                 if not version:
                     if os.name == 'posix':
@@ -692,7 +677,6 @@ class DeviceInstaller():
                             msg = f'ROCm {version_str} detected but no compatible torch build for this OS.'
                 else:
                     msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
-
                 # 5) Last-resort torch fallback
                 if not devices['ROCM']['found']:
                     try:
@@ -727,19 +711,16 @@ class DeviceInstaller():
                             msg = ''
                     except Exception:
                         pass
-
             # ============================================================
             # CUDA
             # ============================================================
             elif has_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
                 version = ''
                 msg = ''
-
                 # 1) CUDA runtime detection via ctypes (primary)
                 try:
                     import ctypes
                     libcudart = None
-
                     if os.name == 'nt':
                         # CUDA 12+ filename dropped the minor: 'cudart64_12.dll'
                         # CUDA 11.x still has minor suffix:   'cudart64_11{minor}.dll'
@@ -802,7 +783,6 @@ class DeviceInstaller():
                                 msg = f'CUDA runtime present ({major}.{minor}) but cudaGetDeviceCount failed.'
                 except (OSError, AttributeError):
                     pass
-
                 # 2) CUDA toolkit version file (fallback)
                 if not version:
                     if os.name == 'posix':
@@ -822,7 +802,6 @@ class DeviceInstaller():
                                     with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                                         version = lib_version_parse(f.read()) or ''
                                     break
-
                 # 3) Version comparison + tag assignment
                 # Tolerant: CUDA > max is accepted (driver is backward-compatible),
                 # but torch build tag clamps at cuda_version_range['max'] so we install a real wheel.
@@ -862,7 +841,6 @@ class DeviceInstaller():
                             tag = f'cu{current[0]}{current[1]}'  # still index 0/1, ignore patch
                 else:
                     msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
-
                 # 4) PyTorch fallback (only helps if a CUDA-enabled torch is already installed)
                 if not devices['CUDA']['found']:
                     try:
@@ -904,7 +882,6 @@ class DeviceInstaller():
                                 tag = f'cu{current[0]}{current[1]}'  # still index 0/1, ignore patch
                     except Exception:
                         pass
-
                 # 5) nvidia-smi header parsing — last-resort rescue
                 # Works driver-only; useful on fresh installs with no toolkit
                 # and CPU-only torch (where step 4 can't help).
@@ -927,7 +904,6 @@ class DeviceInstaller():
                             else:
                                 tag = f'cu{current[0]}{current[1]}'
                                 msg = f'CUDA {smi_version} detected via nvidia-smi (driver-only).'
-
             # ============================================================
             # INTEL XPU
             # ============================================================
@@ -941,12 +917,10 @@ class DeviceInstaller():
                 msg = ''
                 xpu_device_count = 0
                 ze_status = 'no-loader'
-
                 # 1) Level Zero / SYCL runtime detection via ctypes (primary)
                 try:
                     import ctypes
                     libze = None
-
                     if os.name == 'nt':
                         candidates = ['ze_loader.dll']
                         oneapi_root = os.environ.get('ONEAPI_ROOT', '')
@@ -974,7 +948,6 @@ class DeviceInstaller():
                                             candidates.append(os.path.join(d, f))
                                 except OSError:
                                     pass
-
                     # a loader that dlopens is not a loader that works. Only zeInit
                     # returning success ends the search — otherwise fall through to the
                     # next candidate and keep the last failure for the note.
@@ -987,10 +960,10 @@ class DeviceInstaller():
                             # argtypes are mandatory here: without them ctypes marshals a
                             # handle taken out of the array as a C int and truncates the
                             # top 32 bits of the pointer.
-                            libze.zeDriverGet.argtypes = [ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_void_p)]
-                            libze.zeDeviceGet.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_void_p)]
-                            libze.zeDeviceGetProperties.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-                            rc = libze.zeInit(ctypes.c_uint(0))
+                            lib_ze.zeDriverGet.argtypes = [ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_void_p)]
+                            lib_ze.zeDeviceGet.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint), ctypes.POINTER(ctypes.c_void_p)]
+                            lib_ze.zeDeviceGetProperties.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+                            rc = lib_ze.zeInit(ctypes.c_uint(0))
                         except (AttributeError, ValueError):
                             ze_status = 'not-a-loader'
                             continue
@@ -999,9 +972,9 @@ class DeviceInstaller():
                             continue
                         ze_status = 'no-driver'
                         driver_count = ctypes.c_uint(0)
-                        if libze.zeDriverGet(ctypes.byref(driver_count), None) == 0 and driver_count.value > 0:
+                        if lib_ze.zeDriverGet(ctypes.byref(driver_count), None) == 0 and driver_count.value > 0:
                             drivers = (ctypes.c_void_p * driver_count.value)()
-                            if libze.zeDriverGet(ctypes.byref(driver_count), drivers) == 0:
+                            if lib_ze.zeDriverGet(ctypes.byref(driver_count), drivers) == 0:
                                 ze_status = 'no-device'
                                 # ze_device_properties_t starts with {stype, pNext, type}.
                                 # stype is 4 bytes padded up to pointer alignment, so
@@ -1011,12 +984,12 @@ class DeviceInstaller():
                                     if not drv:
                                         continue
                                     device_count = ctypes.c_uint(0)
-                                    if libze.zeDeviceGet(ctypes.c_void_p(drv), ctypes.byref(device_count), None) != 0:
+                                    if lib_ze.zeDeviceGet(ctypes.c_void_p(drv), ctypes.byref(device_count), None) != 0:
                                         continue
                                     if device_count.value == 0:
                                         continue
                                     ze_devices = (ctypes.c_void_p * device_count.value)()
-                                    if libze.zeDeviceGet(ctypes.c_void_p(drv), ctypes.byref(device_count), ze_devices) != 0:
+                                    if lib_ze.zeDeviceGet(ctypes.c_void_p(drv), ctypes.byref(device_count), ze_devices) != 0:
                                         continue
                                     for dev in ze_devices:
                                         if not dev:
@@ -1034,7 +1007,7 @@ class DeviceInstaller():
                                         # Intel driver rejects the call outright when it is
                                         # passed here.
                                         ctypes.c_uint.from_buffer(props, 0).value = 0x3
-                                        if libze.zeDeviceGetProperties(ctypes.c_void_p(dev), ctypes.byref(props)) != 0:
+                                        if lib_ze.zeDeviceGetProperties(ctypes.c_void_p(dev), ctypes.byref(props)) != 0:
                                             xpu_device_count += 1
                                             ze_status = 'ok-unverified'
                                             continue
@@ -1045,7 +1018,6 @@ class DeviceInstaller():
                         break
                 except (OSError, AttributeError, ValueError):
                     pass
-
                 # 2) sycl-ls detection — only reached when the loader itself could not be
                 # dlopen'd. torch xpu runs on Level Zero, so an OpenCL-only line is not a
                 # usable device: both the underscore ('level_zero:gpu', 2024+) and the
@@ -1065,7 +1037,6 @@ class DeviceInstaller():
                         gpu_lines = [l for l in sycl_out.splitlines() if 'gpu' in l.lower() and ('level_zero' in l.lower() or 'level-zero' in l.lower())]
                         if gpu_lines:
                             xpu_device_count = len(gpu_lines)
-
                 # 3) oneAPI version file
                 if not version:
                     if os.name == 'posix':
@@ -1090,7 +1061,6 @@ class DeviceInstaller():
                                     with open(p, 'r', encoding='utf-8', errors='ignore') as f:
                                         version = lib_version_parse(f.read()) or ''
                                     break
-
                 # Tag assignment. The device count decides — it is the same condition
                 # torch.xpu.is_available() answers at runtime. The oneAPI version file
                 # only annotates the note: a stale or absent toolkit must never veto a
@@ -1145,7 +1115,6 @@ class DeviceInstaller():
                         msg = f'Intel GPU bound to {kmd} and visible to SYCL/OpenCL but Level Zero reports no device. Install or update intel-level-zero-gpu, then re-run. Falling back to CPU.'
                     else:
                         msg = f'Intel GPU bound to {kmd} but Level Zero reports no device ({ze_status}). Install intel-level-zero-gpu and intel-opencl-icd, then re-run. Falling back to CPU.'
-
                 # 4) PyTorch last-resort fallback
                 if not devices['XPU']['found']:
                     try:
@@ -1158,7 +1127,6 @@ class DeviceInstaller():
                             msg = 'XPU detected via PyTorch fallback.'
                     except Exception:
                         pass
-
             # ============================================================
             # APPLE MPS
             # ============================================================
@@ -1166,7 +1134,6 @@ class DeviceInstaller():
                 devices['MPS']['found'] = True
                 name = devices['MPS']['proc']
                 tag = devices['MPS']['proc']
-
             # ============================================================
             # CPU
             # ============================================================
@@ -1188,7 +1155,6 @@ class DeviceInstaller():
                         msg = f"No GPU backend matched. {' + '.join(seen)} GPU on PCI but its runtime did not answer. Falling back to CPU."
                     else:
                         msg = 'No GPU found on the PCI bus. Falling back to CPU.'
-
         name, tag, msg = (v.strip() if isinstance(v, str) else v for v in (name, tag, msg))
         return (name, tag, msg)
 
@@ -1253,14 +1219,6 @@ class DeviceInstaller():
         return re.sub(r'[-_.]+', '-', re.split(r'[<>=!\[;]', requirement, 1)[0].strip().lower())
 
     def apply_pins(self, requirements:list, pins:list)->list:
-        # the overrides dict only rewrites lines that came from requirements.txt, so
-        # a package pulling one of them indirectly (torchvggish -> resampy -> numba
-        # -> llvmlite) resolves it unpinned. On macOS Intel that means the newest
-        # llvmlite, which has no x86_64 wheel and needs LLVM 22 to build from
-        # source. Passing the pins as command-line requirements on every pip call
-        # constrains the resolver instead of hoping the line-level substitution is
-        # enough. pip rejects the same distribution twice on one command line, so
-        # anything a pin already covers is dropped from the requirement list.
         if not pins:
             return list(requirements)
         heads = {self.pkg_head(spec) for spec in pins}
@@ -1275,25 +1233,13 @@ class DeviceInstaller():
         self.remove_obsolete_packages()
         overrides = {}
         packages = []
-        # device-dependent requirements, resolved in the same pip pass as
-        # requirements.txt so every floor is visible to one resolver run.
-        # ORDER MATTERS: select_pkg('pyannote-audio') reads the installed torch
-        # version, so this must run after install_device_packages().
         onnx_pkg = 'onnxruntime'
         if self.system != systems['MACOS']:
             onnx_pkg = self.select_pkg('onnxruntime')
         packages.append(onnx_pkg)
         if onnx_pkg == 'onnxruntime-directml':
             packages.append('protobuf<7')
-        packages.append(self.select_pkg('pyannote-audio'))
-        packages.append(self.select_pkg('huggingface-hub'))
-        packages.append(self.select_pkg('transformers'))
         if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
-            # last llvmlite/numba with macOS x86_64 wheels. Newer llvmlite has no
-            # wheel and needs LLVM 22 to build from source, which fails against the
-            # llvm@15 brew ships. Appended to packages as well as registered in
-            # overrides, so the pin survives even if the requirements.txt lines go
-            # away; apply_pins() then forces it onto every pip invocation.
             overrides['llvmlite'] = 'llvmlite==0.44.0'
             overrides['numba'] = 'numba==0.61.0'
             packages.append(overrides['llvmlite'])
@@ -1310,10 +1256,6 @@ class DeviceInstaller():
                         if not pkg:
                             continue
                     head = re.sub(r'[-_.]+', '-', re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower())
-                    # torch/torchaudio: installed by install_device_packages().
-                    # device_pkgs: decided by select_pkg() above. Skipping them here
-                    # keeps a stale requirements.txt line from overriding the
-                    # device-specific choice.
                     if head in {'torch', 'torchaudio'} or head in self.device_pkgs:
                         continue
                     if head in overrides:
@@ -1356,7 +1298,7 @@ class DeviceInstaller():
                 if local_path:
                     pkg_name = os.path.basename(local_path)
                     vendor_version = self.version_pkg(None, local_path)
-                    if not vendor_version:
+                    if vendor_version is None:
                         msg = f'{local_path} has no detectable version.'
                         print(msg)
                         missing_packages.append(raw_pkg)
@@ -1374,9 +1316,16 @@ class DeviceInstaller():
                         missing_packages.append(raw_pkg)
                     continue
                 installed_version = self.version_pkg(pkg_name, None)
-                if not installed_version:
+                if installed_version is None:
                     msg = f'{pkg_name} is not installed.'
                     print(msg)
+                    if pkg_name == 'demucs-simple':
+                        subprocess.run(
+                            [self.uv_bin, 'pip', 'uninstall', 'demucs'],
+                            check=False,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL
+                        )
                     missing_packages.append(raw_pkg)
                     continue
                 if '+' in installed_version:
@@ -1384,86 +1333,107 @@ class DeviceInstaller():
                 pkg_spec_part = re.split(r'[<>=!]', clean_pkg, maxsplit=1)
                 spec_str = clean_pkg[len(pkg_spec_part[0]):].strip()
                 if spec_str:
-                    req_match = re.search(r'(==|!=|>=|<=|>|<)\s*(\d+\.\d+(?:\.\d+)?)', spec_str)
-                    if req_match:
-                        op, req_ver = req_match.groups()
+                    norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
+                    short_version = norm_match.group(1) if norm_match else installed_version
+                    installed_v = self.version_tuple(short_version, 3)
+                    # FIX: Evaluate ALL specifiers (e.g. both >=0.36.2 and <1.0)
+                    violated = False
+                    for op, req_ver in re.findall(r'(==|!=|>=|<=|>|<)\s*(\d+\.\d+(?:\.\d+)?)', spec_str):
                         req_v = self.version_tuple(req_ver, 3)
-                        norm_match = re.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
-                        short_version = norm_match.group(1) if norm_match else installed_version
-                        installed_v = self.version_tuple(short_version, 3)
                         if op == '==' and installed_v != req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) != required {req_ver}.'
+                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
                             print(msg)
-                            missing_packages.append(raw_pkg)
+                            violated = True
+                            break
                         elif op == '>=' and installed_v < req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) < required {req_ver}.'
+                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
                             print(msg)
-                            missing_packages.append(raw_pkg)
+                            violated = True
+                            break
                         elif op == '<=' and installed_v > req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) > allowed {req_ver}.'
+                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
                             print(msg)
-                            missing_packages.append(raw_pkg)
+                            violated = True
+                            break
                         elif op == '>' and installed_v <= req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) <= required {req_ver}.'
+                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
                             print(msg)
-                            missing_packages.append(raw_pkg)
+                            violated = True
+                            break
                         elif op == '<' and installed_v >= req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) >= restricted {req_ver}.'
+                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
                             print(msg)
-                            missing_packages.append(raw_pkg)
+                            violated = True
+                            break
                         elif op == '!=' and installed_v == req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) == excluded {req_ver}.'
+                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
                             print(msg)
-                            missing_packages.append(raw_pkg)
+                            violated = True
+                            break
+                    if violated and raw_pkg not in missing_packages:
+                        missing_packages.append(raw_pkg)
             if missing_packages:
                 msg = '\nInstalling missing or upgrade packages…\n'
                 print(msg)
-                subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                try:
-                    # no --ignore-installed here. It skips the uninstall, so the new
-                    # pip is unpacked over the old one and BOTH dist-info dirs stay in
-                    # site-packages. pip then reports whichever sorts first: the build
-                    # log showed 'Downloading pip-26.2.1' followed by 'Successfully
-                    # installed pip-25.0.1', and every later notice still offered the
-                    # same upgrade. Let pip uninstall itself properly.
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', '--no-deps', '--root-user-action=ignore', 'pip'])
-                except subprocess.CalledProcessError as e:
-                    msg = f'pip self-upgrade skipped (continuing with current pip): {e}'
-                    print(msg)
-                base_cmd = [sys.executable, '-m', 'pip', 'install', '--cache-dir', self.pip_cache_dir, '--root-user-action=ignore']
-                # empty on every platform except macOS Intel, where apply_pins() is
-                # a no-op, so nothing else changes behaviour.
+                base_cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir)
                 pins = [spec for spec in overrides.values() if spec]
+                for dpkg in self.device_pkgs:
+                    try:
+                        pin = self.select_pkg(dpkg)
+                        if pin not in pins:
+                            pins.append(pin)
+                    except Exception:
+                        pass
                 try:
-                    # batch install: one resolution over all pins at once instead of
-                    # one pip subprocess per package. Avoids install/downgrade churn
-                    # (an unpinned package pulling a newer transformers, later undone
-                    # by the pinned version) and collapses the resolver's post-install
-                    # conflict summary from N near-identical dumps down to one.
                     subprocess.check_call(base_cmd + self.apply_pins(missing_packages, pins))
                 except subprocess.CalledProcessError:
-                    # fallback: per-package to isolate failures. This base image ships
-                    # some packages with no RECORD (and dirty dist-info under
-                    # overlayfs), so the implicit uninstall during an upgrade can fail
-                    # with uninstall-no-record-file / Errno 39. Retry without touching
-                    # the existing install so pip just overwrites it.
-                    # The pins ride along on every call: an isolated resolve is where
-                    # a transitive dependency is most free to pick its own version.
                     for raw_pkg in missing_packages:
                         try:
                             subprocess.check_call(base_cmd + self.apply_pins([raw_pkg], pins))
                         except subprocess.CalledProcessError:
                             try:
-                                subprocess.check_call(base_cmd + ['--ignore-installed'] + self.apply_pins([raw_pkg], pins))
+                                subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins([raw_pkg], pins))
                             except subprocess.CalledProcessError as e:
                                 msg = f'Failed to install {raw_pkg}: {e}'
                                 print(msg)
                                 return 1
+                importlib.invalidate_caches()
+                still_missing = []
+                for raw_pkg in missing_packages:
+                    pkg_name = re.split(r'[<>=!\[;]', re.sub(r'\[.*?\]', '', raw_pkg.strip()), maxsplit=1)[0].strip()
+                    if not pkg_name:
+                        continue
+                    try:
+                        version(pkg_name)
+                    except PackageNotFoundError:
+                        still_missing.append(raw_pkg)
+                if still_missing:
+                    msg = f'\n{len(still_missing)} package(s) still invisible after install. Forcing --reinstall…\n'
+                    print(msg)
+                    try:
+                        subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins(still_missing, pins))
+                    except subprocess.CalledProcessError:
+                        for raw_pkg in still_missing:
+                            try:
+                                subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins([raw_pkg], pins))
+                            except subprocess.CalledProcessError as e:
+                                msg = f'Failed to reinstall {raw_pkg}: {e}'
+                                print(msg)
+                                return 1
+                    importlib.invalidate_caches()
+                    for raw_pkg in still_missing:
+                        pkg_name = re.split(r'[<>=!\[;]', re.sub(r'\[.*?\]', '', raw_pkg.strip()), maxsplit=1)[0].strip()
+                        if not pkg_name: continue
+                        try:
+                            version(pkg_name)
+                        except PackageNotFoundError:
+                            msg = f'CRITICAL: {pkg_name} is still not installed after --reinstall.'
+                            print(msg)
+                            print(f'DEBUG: sys.executable = {sys.executable}')
+                            print(f'DEBUG: sys.prefix = {sys.prefix}')
+                            return 1
                 msg = '\nAll required packages are installed.'
                 print(msg)
-            self.finalize_exclusive_packages()
-            self.drop_pip_cache()
-            return self.check_voices()
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)
@@ -1493,7 +1463,7 @@ class DeviceInstaller():
                 msg = f'Removing obsolete package {pkg_name}…'
                 print(msg)
                 try:
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'uninstall', '-y', '--root-user-action=ignore', pkg_name])
+                    subprocess.check_call(self._uv_pip('uninstall', pkg_name))
                     if pkg_name == 'unidic' and dicdir:
                         dicdir = os.path.abspath(str(dicdir))
                         if os.path.isdir(dicdir) and dicdir != os.path.abspath(os.sep):
@@ -1531,7 +1501,7 @@ class DeviceInstaller():
                 elif not min_cpu_baseline and numpy_version_base >= self.version_tuple('2.4.0'):
                     numpy_pkg = 'numpy<2.4.0'
             if numpy_pkg is not None:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', numpy_pkg])
+                subprocess.check_call(self._uv_pip('install', '--no-cache', numpy_pkg))
             return True
         except subprocess.CalledProcessError as e:
             error = f'Failed to install numpy package: {e}'
@@ -1634,20 +1604,6 @@ class DeviceInstaller():
                 if not self.has_directml_gpu():
                     return 'onnxruntime'
                 return 'onnxruntime-directml'
-            case 'pyannote-audio':
-                # pyannote 4 dropped the torchaudio/sox/soundfile backends and
-                # requires torchcodec>=0.7, which only exists from torch 2.8 on.
-                return 'pyannote-audio>=4.0.0' if self.has_torchcodec_stack() else 'pyannote-audio==3.4.0'
-            case 'huggingface-hub':
-                # pyannote 3.4.0 predates hub 1.0 and calls APIs it removed, but
-                # only declares a floor (huggingface-hub>=0.13.0) — a floor cannot
-                # pull a version down, so the cap has to come from here.
-                return 'huggingface-hub>=1.0' if self.has_torchcodec_stack() else 'huggingface-hub>=0.36.2,<1.0'
-            case 'transformers':
-                # not a pyannote dependency (it arrives via sentence-transformers /
-                # coqui-tts) but transformers 5 requires hub>=1.0, so it is pinned
-                # by the same decision.
-                return 'transformers>=5.0.0,<5.1' if self.has_torchcodec_stack() else 'transformers==4.57.6'
             case _:
                 raise ValueError(f'select_pkg(): no rule for {pkg}')
 
@@ -1716,22 +1672,20 @@ class DeviceInstaller():
                 # 'cannot import name InferenceSession ... (unknown location)'.
                 msg = f"Resolving {pkg}: keeping {keep}, removing {', '.join(losers) if losers else 'a broken install'}…"
                 print(msg)
-                # --cache-dir, not --no-cache-dir: the requirements pass already
+                # --cache-dir, not --no-cache: the requirements pass already
                 # fetched this exact wheel into pip_cache_dir, so the reinstall is
                 # served from disk instead of pulling 250 MB off PyPI a second time.
                 if installed:
-                    subprocess.call([sys.executable, '-m', 'pip', 'uninstall', '-y', '--root-user-action=ignore', *installed])
+                    subprocess.call(self._uv_pip('uninstall', *installed))
                 self.clean_pkg_dir(pkg)
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--cache-dir', self.pip_cache_dir, '--root-user-action=ignore', keep])
+                subprocess.check_call(self._uv_pip('install', '--cache-dir', self.pip_cache_dir, keep))
             return 0
         except Exception as e:
             error = f'finalize_exclusive_packages() error: {e}'
             print(error)
             return 0
 
-
     def install_device_packages(self, device_info_str:str)->int:
-
         def _tag_ok(installed_tag):
             # CPU index: '/whl/cpu' -> bare on macOS, '+cpu' on linux/windows; both are fine
             if tag == devices['CPU']['proc']:
@@ -1782,10 +1736,7 @@ class DeviceInstaller():
         def _probe_gpus()->dict:
             script = os.path.abspath('./detect_gpus.py')
             try:
-                proc = subprocess.run(
-                    [sys.executable, script],
-                    capture_output=True, text=True, timeout=30,
-                )
+                proc = subprocess.run([python_exec, script], capture_output=True, text=True, timeout=30)
                 if proc.returncode != 0:
                     return {'count': 0, 'backend': None, 'error': proc.stderr.strip() or 'non-zero exit'}
                 return json.loads(proc.stdout.strip() or '{}')
@@ -1839,15 +1790,15 @@ class DeviceInstaller():
                                 and device_info['arch'] == archs['AARCH64']
                             )
                             #### torch/torchaudio installation
-                            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'filelock', 'typing-extensions', 'jinja2', 'fsspec', 'networkx', 'sympy'])
+                            subprocess.check_call(self._uv_pip('install', '--no-cache', 'filelock', 'typing-extensions', 'jinja2', 'fsspec', 'networkx', 'sympy'))
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
                                 torch_pkg = f"{url}/torch-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
                                 torchaudio_pkg = f"{url}/torchaudio-v{toolkit_version}/torchaudio-{self.torchaudio_version(torchaudio_version_matrix)}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torch_pkg])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torchaudio_pkg])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'scikit-learn'])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'scipy'])
+                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torch_pkg))
+                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torchaudio_pkg))
+                                subprocess.check_call(self._uv_pip('install', '--no-cache', 'scikit-learn'))
+                                subprocess.check_call(self._uv_pip('install', '--no-cache', 'scipy'))
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
                                 url = default_pytorch_amd_url
                                 real_tag = tag.replace('win-', '')
@@ -1864,34 +1815,36 @@ class DeviceInstaller():
                                     ]
                                     msg = f'Installing ROCm SDK {rocm_ver}…'
                                     print(msg)
-                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', *sdk_pkgs])
+                                    subprocess.check_call(self._uv_pip('install', '--no-cache', *sdk_pkgs))
                                 torch_pkg = f'{url}/{url_tag}/torch-{torch_version_matrix}%2B{real_tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl'
                                 torchaudio_pkg = f'{url}/{url_tag}/torchaudio-{self.torchaudio_version(torchaudio_version_matrix)}%2B{real_tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl'
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torch_pkg, torchaudio_pkg])
+                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torch_pkg, torchaudio_pkg))
                             else:
                                 url = default_pytorch_url
                                 torch_url_tag = tag_dir
                                 torchaudio_url_tag = 'cu130' if tag_dir.startswith('cu') and tag_dir[2:].isdigit() and int(tag_dir[2:]) > 130 else tag_dir
                                 if self.system == systems['WINDOWS'] and tag.startswith('win-cu'):
                                     torch_url_tag = tag.replace('win-', '')
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}'])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', f'torchaudio=={torchaudio_version_matrix}', '--index-url', f'{url}/{torchaudio_url_tag}'])
+                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}'))
+                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchaudio=={torchaudio_version_matrix}', '--index-url', f'{url}/{torchaudio_url_tag}'))
+                            if not self.check_numpy():
+                                return 1
                             #### torchcodec installation
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and torchcodec_version_matrix:
                                 if is_cpu_aarch64_linux:
                                     torchcodec_wheel_url = f"{default_torchcodec_arm_url}/{tag}/torchcodec-{torchcodec_version_matrix}%2B{tag}-{tag_py}-{tag_py}-manylinux_2_27_{arch}.{os_env}_{arch}.whl"
-                                    rc = subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', torchcodec_wheel_url])
+                                    rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torchcodec_wheel_url))
                                 else:
                                     if device_info['name'] == devices['XPU']['proc']:
                                         msg = 'Installing torchcodec and the Intel XPU plugin…'
                                         print(msg)
-                                        rc = subprocess.call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', f'torchcodec-xpu', 'torchlib-xpu', '--extra-index-url', f'{default_pytorch_url}/xpu'])
+                                        rc = subprocess.call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', f'torchcodec-xpu', 'torchlib-xpu', '--extra-index-url', f'{default_pytorch_url}/xpu'))
                                     else:
                                         torchcodec_index_url = f'{default_pytorch_url}/cpu' if device_info['name'] == devices['ROCM']['proc'] else f'{default_pytorch_url}/{tag_dir}'
-                                        rc = subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url])
+                                        rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url))
                                 if rc == 0:
                                     try:
-                                        subprocess.check_call([sys.executable, '-c', 'from torchcodec.decoders import AudioDecoder'])
+                                        subprocess.check_call([python_exec, '-c', 'from torchcodec.decoders import AudioDecoder'])
                                     except subprocess.CalledProcessError:
                                         error = 'torchcodec is installed but cannot be imported. Please check the log and check if ffmpeg is installed as shared and its path registered in your OS lib path.'
                                         print(error)
@@ -1926,8 +1879,6 @@ class DeviceInstaller():
                                         msg = 'Create symlink to use OS libgomp.'
                                         print(msg)
                                         os.symlink(libgomp_src, libgomp_dst)
-                    if not self.check_numpy():
-                        return 1
                     gpu_info = _probe_gpus()
                     device_info_dict['gpu_count'] = gpu_info['count']
                     device_info_dict['gpu_backend'] = gpu_info['backend']
@@ -1960,20 +1911,37 @@ class DeviceInstaller():
         from pathlib import Path, PurePosixPath
         from urllib.parse import urlparse, unquote
         import zipfile
-        from huggingface_hub import hf_hub_download
+        import json
+        from typing import Optional
+        from huggingface_hub import hf_hub_download, get_hf_file_metadata, hf_hub_url
         from tqdm import tqdm
         voices_dir:Path = Path('./voices')
+        version_file:Path = voices_dir / '.version.json'
         def has_wav()->bool:
             return any(voices_dir.rglob('*.wav'))
         try:
             voices_dir.mkdir(parents=True, exist_ok=True)
-            if has_wav():
-                return 0
             parts:tuple = PurePosixPath(unquote(urlparse(voices_url).path)).parts
             i:int = parts.index('datasets')
-            repo_id:str = f"{parts[i+1]}/{parts[i+2]}"
+            repo_id:str = f'{parts[i+1]}/{parts[i+2]}'
             r:int = parts.index('resolve')
             filename:str = '/'.join(parts[r+2:])
+            remote_etag:Optional[str] = None
+            try:
+                url:str = hf_hub_url(repo_id, filename, repo_type='dataset')
+                metadata = get_hf_file_metadata(url)
+                remote_etag = metadata.etag
+            except Exception:
+                pass
+            local_etag:Optional[str] = None
+            if version_file.exists():
+                try:
+                    with open(version_file, 'r') as f:
+                        local_etag = json.load(f).get('etag')
+                except Exception:
+                    pass
+            if has_wav() and (remote_etag is None or local_etag == remote_etag):
+                return 0
             zip_path:Path = Path(hf_hub_download(repo_id=repo_id, filename=filename, repo_type='dataset', local_dir='.'))
             print(f'Downloaded {zip_path.stat().st_size / (1024*1024):.1f} MB to {zip_path}')
             with zipfile.ZipFile(zip_path, 'r') as zf:
@@ -1981,7 +1949,11 @@ class DeviceInstaller():
                 desc:str = 'Extracting voices'
                 for member in tqdm(members, desc=desc, unit='file'):
                     zf.extract(member, './')
-            zip_path.unlink()
+            if remote_etag:
+                with open(version_file, 'w') as f:
+                    json.dump({"etag": remote_etag}, f)
+            if zip_path.exists():
+                zip_path.unlink()
             return 0 if has_wav() else 1
         except Exception as e:
             error:str = f'check_voices() error: {e}'

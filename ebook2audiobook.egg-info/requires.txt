@@ -1,3 +1,10 @@
+gradio==6.27.0
+transformers<5.1,>=5.0.0
+pandas<3.0,>=1.0
+coqui-tts[languages]==0.27.5
+piper-tts==1.4.2
+argostranslate
+stanza
 cryptography
 requests
 py-cpuinfo
@@ -42,10 +49,6 @@ phonemizer
 indic-nlp-library
 pytesseract
 torchvggish
-sentence-transformers
-stanza==1.10.1
-argostranslate==1.11.0
-pandas<3.0,>=1.0
-gradio==5.49.1
-coqui-tts[languages]==0.27.5
-piper-tts==1.4.2
+pyannote-audio
+demucs-simple
+huggingface-hub

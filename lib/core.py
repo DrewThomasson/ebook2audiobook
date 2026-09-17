@@ -5,9 +5,9 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, csv, difflib, fnmatch, sqlite3, hashlib, io, json, math, os, pytesseract, gc
+import argparse, asyncio, csv, difflib, fnmatch, sqlite3, hashlib, io, json, math, os, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64
-import traceback, socket, unicodedata, urllib.request, uuid, zipfile, pymupdf, multiprocessing
+import traceback, socket, unicodedata, urllib.request, uuid, zipfile, multiprocessing
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
 
@@ -514,6 +514,7 @@ def compare_dict_keys(d1, d2):
 
 def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
     try:
+        import pytesseract
         debug = True
         try:
             data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
@@ -987,6 +988,7 @@ def convert2epub(session_id:str)->bool:
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
+                import pymupdf
                 msg = 'File input is a PDF. flatten it in XHTML…'
                 print(msg)
                 doc = pymupdf.open(file_input)
