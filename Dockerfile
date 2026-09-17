@@ -38,6 +38,18 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
+# Runtime directories.
+RUN set -eux; \
+    mkdir -p \
+        /app/ebooks \
+        /app/audiobooks \
+        /app/models \
+        /app/models/tessdata \
+        /app/voices \
+        /app/run \
+        /app/tmp; \
+    chmod -R 777 /app/ebooks /app/audiobooks /app/models /app/voices /app/run /app/tmp
+
 # System packages.
 #
 # DOCKER_PROGRAMS_STR is passed by the build script when available.
@@ -117,18 +129,6 @@ RUN set -eux; \
         echo "No launcher found: expected ebook2audiobook.command, e2a.sh, or ebook2audiobook.sh"; \
         exit 1; \
     fi
-
-# Runtime directories.
-RUN set -eux; \
-    mkdir -p \
-        /app/ebooks \
-        /app/audiobooks \
-        /app/models \
-        /app/models/tessdata \
-        /app/voices \
-        /app/run \
-        /app/tmp; \
-    chmod -R 777 /app/ebooks /app/audiobooks /app/models /app/voices /app/run /app/tmp
 
 # Build the Python stack selected by DOCKER_DEVICE_STR.
 #
