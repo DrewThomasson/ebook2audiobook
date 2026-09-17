@@ -1421,7 +1421,6 @@ class DeviceInstaller():
                                 print(msg)
                                 return 1
                     importlib.invalidate_caches()
-                    # Final verification
                     for raw_pkg in still_missing:
                         pkg_name = re.split(r'[<>=!\[;]', re.sub(r'\[.*?\]', '', raw_pkg.strip()), maxsplit=1)[0].strip()
                         if not pkg_name: continue
@@ -1433,8 +1432,8 @@ class DeviceInstaller():
                             print(f'DEBUG: sys.executable = {sys.executable}')
                             print(f'DEBUG: sys.prefix = {sys.prefix}')
                             return 1
-            msg = '\nAll required packages are installed.'
-            print(msg)
+                msg = '\nAll required packages are installed.'
+                print(msg)
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)

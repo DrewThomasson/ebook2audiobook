@@ -325,6 +325,7 @@ Default to config.json model.""")
                 error = f'Error: Could not installed device packages!'
                 print(error)
                 sys.exit(1)
+            importlib.invalidate_caches()
             result = manager.install_python_packages()
             if result == 1:
                 sys.exit(1)
