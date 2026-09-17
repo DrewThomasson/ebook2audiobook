@@ -1,5 +1,6 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
+
 set "SAFE_USERPROFILE=%USERPROFILE%"
 set "SAFE_SCRIPT_DIR=%~dp0"
 if "%SAFE_SCRIPT_DIR:~-1%"=="\" set "SAFE_SCRIPT_DIR=%SAFE_SCRIPT_DIR:~0,-1%"
@@ -54,15 +55,15 @@ if /i "%ARCH%"=="ARM64" (set "PYTHON_ARCH=arm64") else if /i "%ARCH%"=="AMD64" (
 set "MIN_PYTHON_VERSION=3.10"
 set "MAX_PYTHON_VERSION=3.12"
 set "PYTHON_VERSION=3.12"
-set "PYTHON_ENV=.venv"
+set "PYTHON_ENV=python_env"
 
 :: Default PY_CMD to system python. NATIVE mode will override this in :check_uv.
 :: BUILD_DOCKER and FULL_DOCKER will keep this default to use host/container python.
 set "PY_CMD=python"
+
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-
 set "HOST_PROGRAMS=cmake rustup calibre ffmpeg-shared mediainfo nodejs espeak-ng sox tesseract"
 set "DOCKER_PROGRAMS=curl ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
@@ -85,7 +86,6 @@ set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
 set "TESSDATA_BASE_URL=https://github.com/tesseract-ocr/tessdata_best/raw/main"
 set "FFMPEG_BIN=%USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
 set "PATH=%UV_INSTALL_DIR%;%SCOOP_SHIMS%;%SCOOP_APPS%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
-
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
@@ -106,7 +106,6 @@ if "%ARCH%"=="X86" (
 )
 
 cd /d "%SAFE_SCRIPT_DIR%"
-
 for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 
 if not "%~1"=="" (
@@ -150,6 +149,7 @@ shift
 goto parse_args
 
 :parse_args_done
+
 if defined arguments.script_mode (
 	set "script_mode_valid=0"
 	if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" set "script_mode_valid=1"
@@ -163,10 +163,12 @@ if defined arguments.script_mode if "%script_mode_valid%"=="0" (
 	echo Error: Invalid script mode argument: %arguments.script_mode%
 	goto :failed
 )
+
 if defined arguments.docker_device (
 	if /i "%arguments.docker_device%"=="true" ( echo Error: --docker_device has no value & goto :failed )
 	set "DOCKER_DEVICE_STR=%arguments.docker_device%"
 )
+
 if defined arguments.docker_mode (
 	if not "%arguments.docker_mode%"=="podman" (
 		if not "%arguments.docker_mode%"=="compose" (
@@ -176,6 +178,7 @@ if defined arguments.docker_mode (
 	)
 	set "DOCKER_MODE=%arguments.docker_mode%"
 )
+
 if defined arguments.script_mode (
 	if /i "%arguments.script_mode%"=="true" ( echo Error: --script_mode requires a value & goto :failed )
 	if /i not "%arguments.script_mode%"=="FULL_DOCKER" (
@@ -193,7 +196,9 @@ if defined arguments.script_mode (
 		endlocal
 	)
 )
+
 if not exist "%INSTALLED_LOG%" if /i not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" ( type nul > "%INSTALLED_LOG%" )
+
 if defined arguments.headless (
 	if /i "%arguments.headless%"=="false" (
 		setlocal enabledelayedexpansion
@@ -208,6 +213,7 @@ if defined arguments.headless (
 		endlocal
 	)
 )
+
 if defined arguments.share if defined arguments.headless if /i "%arguments.headless%"=="true" ( echo Error: --share option is only allowed in non-headless mode & goto :failed )
 if defined arguments.version ( echo v%APP_VERSION% & goto :eof )
 goto :main
@@ -266,17 +272,13 @@ if errorlevel 1 ( echo Scoop is not installed. & exit /b 1 )
 exit /b 0
 
 :check_scoop_buckets
-setlocal EnableDelayedExpansion
 call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket list" > "%TEMP%\scoop_buckets.txt" 2>&1
 set "_MISSING_BUCKETS="
 findstr /i "muggle" "%TEMP%\scoop_buckets.txt" >nul 2>&1 || set "_MISSING_BUCKETS=!_MISSING_BUCKETS! muggle"
 findstr /i "extras" "%TEMP%\scoop_buckets.txt" >nul 2>&1 || set "_MISSING_BUCKETS=!_MISSING_BUCKETS! extras"
 findstr /i "versions" "%TEMP%\scoop_buckets.txt" >nul 2>&1 || set "_MISSING_BUCKETS=!_MISSING_BUCKETS! versions"
 del "%TEMP%\scoop_buckets.txt" >nul 2>&1
-if defined _MISSING_BUCKETS (
-	endlocal & exit /b 1
-)
-endlocal
+if defined _MISSING_BUCKETS ( exit /b 1 )
 exit /b 0
 
 :check_programs
@@ -376,7 +378,12 @@ if defined CURRENT_ENV (
 	)
 )
 
-:: Let uv validate .venv
+:: Unconditionally lock PY_CMD to the venv for NATIVE mode
+set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
+set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
+
+:: Let uv validate python_env
 if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
 	if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\pyvenv.cfg" (
 		echo %PYTHON_ENV% is not a virtualenv — removing...
@@ -399,19 +406,10 @@ if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
 	)
 	uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION%
 	if errorlevel 1 exit /b 3
-)
-
-:: Unconditionally lock PY_CMD to the venv for NATIVE mode
-set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
-set "PY_CMD=uv run --active python"
-
-if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 	call :provision_env
 	if errorlevel 1 exit /b 3
 	> "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" echo %APP_VERSION%
 )
-
 exit /b 0
 
 :provision_env
@@ -423,7 +421,6 @@ call :install_device_packages
 if errorlevel 1 ( set "RC=1" & goto :provision_env_end )
 call :install_python_packages
 if errorlevel 1 ( set "RC=1" & goto :provision_env_end )
-
 :provision_env_end
 endlocal & exit /b %RC%
 
@@ -448,7 +445,7 @@ exit /b 0
 :check_device_info
 set "ARG=%~1"
 set "DEVICE_INFO_STR="
-for /f "delims=" %%I in ('%PY_CMD% -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; print(D().check_device_info(sys.argv[1]))" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
+for /f "delims=" %%I in ('"%PY_CMD%" -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; print(D().check_device_info(sys.argv[1]))" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
 if not defined DEVICE_INFO_STR exit /b 1
 exit /b 0
 
@@ -456,23 +453,23 @@ exit /b 0
 setlocal enabledelayedexpansion
 set "KEY=%~1"
 set "JSON_VALUE="
-for /f "delims=" %%i in ('"%PS_EXE%" %PS_ARGS% -Command "$env:DEVICE_INFO_STR | ConvertFrom-Json | Select-Object -ExpandProperty %KEY%"') do set "JSON_VALUE=%%i"
+for /f "delims=" %%i in ('powershell -Command "$env:DEVICE_INFO_STR | ConvertFrom-Json | Select-Object -ExpandProperty %KEY%"') do set "JSON_VALUE=%%i"
 endlocal & set "DEVICE_TAG=%JSON_VALUE%"
 exit /b 0
 
 :install_device_packages
-"%PS_EXE%" %PS_ARGS% -Command "& %PY_CMD% -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
+"%PS_EXE%" %PS_ARGS% -Command "& '%PY_CMD%' -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
 exit /b %errorlevel%
 
 :install_python_packages
 echo Installing python dependencies…
-"%PS_EXE%" %PS_ARGS% -Command "& %PY_CMD% -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
+"%PS_EXE%" %PS_ARGS% -Command "& '%PY_CMD%' -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
 exit /b %errorlevel%
 
 :check_sitecustomized
 set "src_pyfile=%SAFE_SCRIPT_DIR%\components\sitecustomize.py"
 set "site_packages_path="
-%PY_CMD% -c "import sysconfig;print(sysconfig.get_paths()['purelib'])" > "%TEMP%\purelib.txt" 2>nul
+"%PY_CMD%" -c "import sysconfig;print(sysconfig.get_paths()['purelib'])" > "%TEMP%\purelib.txt" 2>nul
 set /p site_packages_path=<"%TEMP%\purelib.txt"
 del "%TEMP%\purelib.txt" >nul 2>&1
 if not defined site_packages_path exit /b 1
@@ -488,10 +485,10 @@ set "ARG_ESCAPED=%ARG:"=\"%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
 set "py_vers=%PYTHON_VERSION%"
-
 if /i "%DEVICE_TAG:~0,2%"=="cu" set "cmd_options=--gpus all"
 if /i "%DEVICE_TAG:~0,4%"=="rocm" set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 if /i "%DEVICE_TAG%"=="xpu" set "cmd_options=--device=/dev/dri"
+
 if /i "%DEVICE_TAG%"=="cpu" set "COMPOSE_PROFILES=cpu"
 if /i "%DEVICE_TAG:~0,2%"=="cu" set "COMPOSE_PROFILES=cuda"
 if /i "%DEVICE_TAG:~0,4%"=="rocm" set "COMPOSE_PROFILES=rocm"
@@ -507,24 +504,11 @@ if "%DOCKER_MODE%"=="podman" (
 endlocal
 exit /b 0
 
-:build_docker_flow
-call :check_device_info %SCRIPT_MODE%
-if errorlevel 1 exit /b 1
-call :install_device_packages
-if errorlevel 1 exit /b 1
-if "%DEVICE_TAG%"=="" call :json_get tag
-call :build_docker_image %DEVICE_INFO_STR%
-exit /b 0
-
-:run_app
-call %PY_CMD% %*
-exit /b
-
 :main
 if defined arguments.help (
 	if /i "%arguments.help%"=="true" (
 		call :check_python
-		call :run_app -u "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
+		call "%PY_CMD%" -u "%SAFE_SCRIPT_DIR%\app.py" %ARGS%
 		goto :eof
 	)
 ) else (
@@ -534,7 +518,10 @@ if defined arguments.help (
 			call :check_wsl
 			call :check_docker
 			call :check_docker_daemon
-			call :build_docker_flow
+			call :check_device_info %SCRIPT_MODE%
+			call :install_device_packages
+			if "!DEVICE_TAG!"=="" call :json_get tag
+			call :build_docker_image "!DEVICE_INFO_STR!"
 		)
 	) else if "%SCRIPT_MODE%"=="%NATIVE%" (
 		call :check_scoop || goto :install_scoop
@@ -543,13 +530,12 @@ if defined arguments.help (
 		call :check_uv
 		call :check_sitecustomized
 		call :build_gui
-		call :run_app -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+		call uv run --no-project -- "%PY_CMD%" -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 	) else if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		call :check_sitecustomized
-		call :run_app -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+		call "%PY_CMD%" -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 	)
 )
-
 goto :eof
 
 :failed
