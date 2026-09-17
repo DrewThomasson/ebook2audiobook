@@ -1773,7 +1773,6 @@ class DeviceInstaller():
                         non_standard_match = re.fullmatch(r'[0-9a-f]{7,40}', current_tag) if current_tag is not None else None
                         non_standard_tag = non_standard_match.group(0) if non_standard_match else None
                         torch_version_current_base = torch_version_current_full.split('+',1)[0]
-
                     if _needs_reinstall():
                         try:
                             msg = f"Installing the right library packages for {device_info['name']}…"
@@ -1790,10 +1789,8 @@ class DeviceInstaller():
                                 and device_info['os'] in ('manylinux_2_28', 'linux')
                                 and device_info['arch'] == archs['AARCH64']
                             )
-
                             #### torch/torchaudio installation
                             subprocess.check_call(self._uv_pip('install', '--no-cache', 'filelock', 'typing-extensions', 'jinja2', 'fsspec', 'networkx', 'sympy'))
-
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
                                 torch_pkg = f"{url}/torch-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
@@ -1830,7 +1827,8 @@ class DeviceInstaller():
                                     torch_url_tag = tag.replace('win-', '')
                                 subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}'))
                                 subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchaudio=={torchaudio_version_matrix}', '--index-url', f'{url}/{torchaudio_url_tag}'))
-
+                            if not self.check_numpy():
+                                return 1
                             #### torchcodec installation
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and torchcodec_version_matrix:
                                 if is_cpu_aarch64_linux:
@@ -1863,7 +1861,6 @@ class DeviceInstaller():
                             error = f'Error while installing torch package: {e}'
                             print(error)
                             return 1
-
                     if device_info['os'] == 'linux' and ('jetpack' in device_info.get('note', '').lower() or device_info['name'] == devices['JETSON']['proc']):
                         libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
                         if os.path.exists(libgomp_src):
@@ -1882,10 +1879,6 @@ class DeviceInstaller():
                                         msg = 'Create symlink to use OS libgomp.'
                                         print(msg)
                                         os.symlink(libgomp_src, libgomp_dst)
-
-                    if not self.check_numpy():
-                        return 1
-
                     gpu_info = _probe_gpus()
                     device_info_dict['gpu_count'] = gpu_info['count']
                     device_info_dict['gpu_backend'] = gpu_info['backend']
