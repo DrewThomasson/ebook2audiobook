@@ -18,7 +18,7 @@ fi
 case "$(uname -m)" in
 	x86_64|amd64)  ARCH="amd64" ;;
 	aarch64|arm64) ARCH="arm64" ;;
-	*)			 ARCH="$(uname -m)" ;;
+	*)             ARCH="$(uname -m)" ;;
 esac
 
 export ARCH
@@ -52,7 +52,7 @@ FULL_DOCKER="full_docker"
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.12"
 PYTHON_VERSION="$MAX_PYTHON_VERSION"
-PYTHON_ENV="python_env"
+PYTHON_ENV=".venv"
 PY_CMD=(python3)
 SCRIPT_MODE="$NATIVE"
 APP_NAME="ebook2audiobook"
@@ -149,12 +149,18 @@ if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then touch 
 ######## check if the user is part of the read/write group
 if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exists}" ]]; then
 	PUBLIC_DIRS=("$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" "$SCRIPT_DIR/audiobooks")
-	if [[ "$OSTYPE" == "darwin"* ]]; then APP_GROUP=$(stat -f '%Sg' "$SCRIPT_DIR")
-	else APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR"); fi
+	if [[ "$OSTYPE" == "darwin"* ]]; then
+		APP_GROUP=$(stat -f '%Sg' "$SCRIPT_DIR")
+	else
+		APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR")
+	fi
 
 	user_in_group() {
-		if [[ -n "${USER:-}" ]]; then id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
-		else return 1; fi
+		if [[ -n "${USER:-}" ]]; then
+			id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$1"
+		else
+			return 1
+		fi
 	}
 
 	if [[ -n "${USER:-}" ]] && ! user_in_group "$APP_GROUP"; then
@@ -222,40 +228,40 @@ mac_app() {
 	[[ -d "$HOME/Applications" ]] || mkdir "$HOME/Applications"
 	if [[ ! -d "$MACOS" || ! -d "$RESOURCES" ]]; then mkdir -p "$MACOS" "$RESOURCES"; fi
 
-	cat > "$MACOS/$APP_NAME" << EOF
-#!/bin/zsh
-$OPEN_DESKTOP_APP_DEF
-open_desktop_app
-osascript -e '
-tell application "Terminal"
-	do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
-	activate
-end tell
-'
-EOF
+	cat > "$MACOS/$APP_NAME" <<-EOF
+	#!/bin/zsh
+	$OPEN_DESKTOP_APP_DEF
+	open_desktop_app
+	osascript -e '
+	tell application "Terminal"
+	    do script "cd \"${ESCAPED_APP_ROOT}\" && ./ebook2audiobook.sh"
+	    activate
+	end tell
+	'
+	EOF
 
 	chmod +x "$MACOS/$APP_NAME"
 	cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
 
-	cat > "$CONTENTS/Info.plist" << 'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>CFBundleDevelopmentRegion</key><string>en</string>
-	<key>CFBundleExecutable</key><string>ebook2audiobook</string>
-	<key>CFBundleIdentifier</key><string>com.local.ebook2audiobook</string>
-	<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
-	<key>CFBundleName</key><string>ebook2audiobook</string>
-	<key>CFBundlePackageType</key><string>APPL</string>
-	<key>CFBundleShortVersionString</key><string>1.0</string>
-	<key>CFBundleVersion</key><string>1</string>
-	<key>LSMinimumSystemVersion</key><string>10.9</string>
-	<key>NSPrincipalClass</key><string>NSApplication</string>
-	<key>CFBundleIconFile</key><string>AppIcon</string>
-</dict>
-</plist>
-PLIST
+	cat > "$CONTENTS/Info.plist" <<-PLIST
+	<?xml version="1.0" encoding="UTF-8"?>
+	<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+	<plist version="1.0">
+	<dict>
+	    <key>CFBundleDevelopmentRegion</key><string>en</string>
+	    <key>CFBundleExecutable</key><string>ebook2audiobook</string>
+	    <key>CFBundleIdentifier</key><string>com.local.ebook2audiobook</string>
+	    <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+	    <key>CFBundleName</key><string>ebook2audiobook</string>
+	    <key>CFBundlePackageType</key><string>APPL</string>
+	    <key>CFBundleShortVersionString</key><string>1.0</string>
+	    <key>CFBundleVersion</key><string>1</string>
+	    <key>LSMinimumSystemVersion</key><string>10.9</string>
+	    <key>NSPrincipalClass</key><string>NSApplication</string>
+	    <key>CFBundleIconFile</key><string>AppIcon</string>
+	</dict>
+	</plist>
+	PLIST
 
 	ln -sf "$APP_BUNDLE" "$DESKTOP_SHORTCUT"
 	echo -e "Next launch in GUI mode you just need to double click on the desktop shortcut or go to the launchpad and click on ebook2audiobook icon."
@@ -271,15 +277,15 @@ linux_app() {
 	if [[ -f "$MENU_ENTRY" ]]; then open_desktop_app; return 0; fi
 
 	mkdir -p "$HOME/.local/share/applications"
-	cat > "$MENU_ENTRY" <<EOF
-[Desktop Entry]
-Type=Application
-Name=ebook2audiobook
-Exec=$SCRIPT_DIR/ebook2audiobook.sh
-Icon=$ICON_PATH
-Terminal=true
-Categories=Utility;
-EOF
+	cat > "$MENU_ENTRY" <<-EOF
+	[Desktop Entry]
+	Type=Application
+	Name=ebook2audiobook
+	Exec=$SCRIPT_DIR/ebook2audiobook.sh
+	Icon=$ICON_PATH
+	Terminal=true
+	Categories=Utility;
+	EOF
 
 	chmod +x "$MENU_ENTRY"
 	mkdir -p "$HOME/Desktop" 2>&1 > /dev/null
@@ -386,10 +392,10 @@ install_programs() {
 				echo "  → Installing un-get plugin…"
 				installplg ./ext/app/un-get.plg
 				mkdir -p /boot/config/plugins/un-get
-				cat > /boot/config/plugins/un-get/sources.list <<EOF
-https://slackware.uk/slackware/slackware64-current/
-https://slackware.uk/people/shinji257/unraid7/
-EOF
+				cat > /boot/config/plugins/un-get/sources.list <<-EOF
+				https://slackware.uk/slackware/slackware64-current/
+				https://slackware.uk/people/shinji257/unraid7/
+				EOF
 				sleep 8
 			fi
 			PACK_MGR="un-get install"
@@ -563,8 +569,8 @@ from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 result = device.check_device_info("$ARG")
 if result:
-	print(result)
-	raise SystemExit(0)
+    print(result)
+    raise SystemExit(0)
 raise SystemExit(1)
 EOF
 }
@@ -741,7 +747,10 @@ import json
 import sys
 json.loads(sys.argv[1])
 EOF
-			then echo "Invalid DOCKER_DEVICE_STR: expected valid JSON"; exit 1; fi
+			then
+				echo "Invalid DOCKER_DEVICE_STR: expected valid JSON"
+				exit 1
+			fi
 
 			printf '%s' "$DOCKER_DEVICE_STR" > .device_info.json
 
