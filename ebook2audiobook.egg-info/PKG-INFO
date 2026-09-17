@@ -10,6 +10,13 @@ Classifier: Operating System :: OS Independent
 Requires-Python: <3.13,>3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: gradio==6.27.0
+Requires-Dist: transformers<5.1,>=5.0.0
+Requires-Dist: pandas<3.0,>=1.0
+Requires-Dist: coqui-tts[languages]==0.27.5
+Requires-Dist: piper-tts==1.4.2
+Requires-Dist: argostranslate
+Requires-Dist: stanza
 Requires-Dist: cryptography
 Requires-Dist: requests
 Requires-Dist: py-cpuinfo
@@ -54,16 +61,15 @@ Requires-Dist: phonemizer
 Requires-Dist: indic-nlp-library
 Requires-Dist: pytesseract
 Requires-Dist: torchvggish
-Requires-Dist: gradio
-Requires-Dist: stanza==1.10.1
-Requires-Dist: argostranslate==1.11.0
-Requires-Dist: pandas<3.0,>=1.0
-Requires-Dist: coqui-tts[languages]==0.27.5
-Requires-Dist: piper-tts==1.4.2
+Requires-Dist: pyannote-audio
+Requires-Dist: demucs-simple
+Requires-Dist: huggingface-hub
 Dynamic: license-file
 Dynamic: requires-dist
 
 # 📚 ebook2audiobook (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 CPU/GPU Converter from E-Book to audiobook with chapters and metadata<br/>
 using advanced TTS engines and much more.<br/>
 Supports voice cloning and 1158 languages!
