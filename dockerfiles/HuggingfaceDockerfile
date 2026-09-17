@@ -66,6 +66,9 @@ RUN set -eux; \
 		libgcc-s1 \
 		libegl1 \
 		libopengl0 \
+		libxcb-cursor0 \
+		libxcb-xinerama0 \
+		libxkbcommon-x11-0 \
 		${DOCKER_PROGRAMS_STR}; \
 	if [ -n "${ISO3_LANG}" ]; then \
 		apt-get install -y --no-install-recommends "tesseract-ocr-${ISO3_LANG}" || true; \
