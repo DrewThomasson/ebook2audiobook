@@ -10,7 +10,7 @@ ARG PYTHON_VERSION=3.12
 # predates zesInit.
 FROM python:${PYTHON_VERSION}-slim-trixie
 
-ARG APP_VERSION=26.9.12
+ARG APP_VERSION=26.9.17
 ARG DEVICE_TAG=cu130
 ARG DOCKER_DEVICE_STR='{ "name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu130", "note": "default device" }'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
