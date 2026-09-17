@@ -45,30 +45,32 @@ WORKDIR /app
 # DOCKER_PROGRAMS_STR is passed by the build script when available.
 # tesseract-ocr-[lang] and calibre are handled below.
 RUN set -eux; \
-    apt-get update; \
-    apt-get install -y --no-install-recommends \
-        ca-certificates \
-        wget \
-        git \
-        xz-utils \
-        build-essential \
-        gcc \
-        g++ \
-        make \
-        pkg-config \
-        cmake \
-        python3-dev \
-        libgomp1 \
-        libglib2.0-0 \
-        libgl1 \
-        libsndfile1 \
-        libstdc++6 \
-        libgcc-s1 \
-        ${DOCKER_PROGRAMS_STR}; \
-    if [ -n "${ISO3_LANG}" ]; then \
-        apt-get install -y --no-install-recommends "tesseract-ocr-${ISO3_LANG}" || true; \
-    fi; \
-    rm -rf /var/lib/apt/lists/*
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ca-certificates \
+		wget \
+		git \
+		xz-utils \
+		build-essential \
+		gcc \
+		g++ \
+		make \
+		pkg-config \
+		cmake \
+		python3-dev \
+		libgomp1 \
+		libglib2.0-0 \
+		libgl1 \
+		libsndfile1 \
+		libstdc++6 \
+		libgcc-s1 \
+		libegl1 \
+		libopengl0 \
+		${DOCKER_PROGRAMS_STR}; \
+	if [ -n "${ISO3_LANG}" ]; then \
+		apt-get install -y --no-install-recommends "tesseract-ocr-${ISO3_LANG}" || true; \
+	fi; \
+	rm -rf /var/lib/apt/lists/*
 
 # Calibre.
 #
