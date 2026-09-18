@@ -19,6 +19,11 @@ set "CONDA_PATH=%CONDA_HOME%\condabin"
 
 :: Honor SCOOP env var if set, otherwise default user-install location
 if defined SCOOP (set "SCOOP_HOME=%SCOOP%") else (set "SCOOP_HOME=%USERPROFILE%\scoop")
+
+set "PS_EXE=pwsh"
+where.exe /Q pwsh >nul 2>&1 || set "PS_EXE=powershell"
+set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass"
+
 :: ========================================================
 
 echo ========================================================
@@ -90,15 +95,8 @@ if defined REMOVE_UV (
 		echo Cleaning uv cache...
 		uv cache clean >nul 2>&1
 	)
-	set "UV_BIN_DIR=%USERPROFILE%\.local\bin"
-	if exist "%UV_BIN_DIR%\uv.exe" (
-		echo deleting  uv.exe
-		del /f /q "%UV_BIN_DIR%\uv.exe"
-	)
-	if exist "%UV_BIN_DIR%\uvx.exe" del /f /q "%UV_BIN_DIR%\uvx.exe"
-	if exist "%UV_BIN_DIR%\uvw.exe" del /f /q "%UV_BIN_DIR%\uvw.exe"
-	if exist "%APPDATA%\uv"      rmdir /s /q "%APPDATA%\uv"
-	if exist "%LOCALAPPDATA%\uv" rmdir /s /q "%LOCALAPPDATA%\uv"
+	"%PS_EXE%" %PS_ARGS% -Command "'uv.exe', 'uvx.exe', 'uvw.exe' | ForEach-Object { Remove-Item \"$HOME\.local\bin\$_\" -ErrorAction SilentlyContinue }"
+	"%PS_EXE%" %PS_ARGS% -Command "Remove-Item \"$env:APPDATA\uv\", \"$env:LOCALAPPDATA\uv\" -Recurse -Force -ErrorAction SilentlyContinue"
 	echo uv successfully uninstalled.
 )
 
