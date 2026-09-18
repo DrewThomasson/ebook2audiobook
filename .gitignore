@@ -10,6 +10,7 @@ python_env/
 audiobooks/cli/*
 audiobooks/gui/gradio/*
 audiobooks/gui/host/*
+voices/*
 run/*
 tmp/*
 models/*
@@ -19,5 +20,7 @@ models/*
 !audiobooks/cli/.gitkeep
 !audiobooks/gui/gradio/.gitkeep
 !audiobooks/gui/host/.gitkeep
+!voices/.gitkeep
 .installed
 .env
+.device_info.json

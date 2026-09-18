@@ -118,6 +118,16 @@ def patch_torchaudio(mod: ModuleType) -> None:
 # IMPORT HOOK (activates only when modules load)
 # ─────────────────────────────────────────────────────
 if patch_enabled:
+    try:
+        import unidic
+        if not hasattr(unidic, 'DICDIR'):
+            raise ImportError
+    except (ImportError, ModuleNotFoundError):
+        try:
+            import unidic_lite
+            sys.modules['unidic'] = unidic_lite
+        except ImportError:
+            pass
 
     class WrappedLoader:
         """Composition-based loader wrapper.

@@ -1216,6 +1216,10 @@ class DeviceInstaller():
         nums = [int(n) for n in m.group(0).split('.')[:max_parts]]
         return tuple(nums + [0] * (max_parts - len(nums)))
 
+    def nightly_date(self, v:str)->str|None:
+        match = re.search(r'\.dev(\d{8})', v or '')
+        return match.group(1) if match else None
+
     def torchaudio_version(self, torch_version:str)->str:
         # Single source of truth for "which torchaudio goes with this torch".
         # Below the ceiling torchaudio tracks torch exactly; above it, torchaudio
@@ -1489,6 +1493,15 @@ class DeviceInstaller():
                 try:
                     version(pkg_name)
                 except PackageNotFoundError:
+                    if pkg_name == 'unidic':
+                        import site
+                        for site_dir in site.getsitepackages():
+                            stale_dir = os.path.join(site_dir, pkg_name)
+                            if (
+                                os.path.isdir(stale_dir)
+                                and not os.path.exists(os.path.join(stale_dir, '__init__.py'))
+                            ):
+                                shutil.rmtree(stale_dir, ignore_errors=True)
                     continue
                 msg = f'Removing obsolete package {pkg_name}…'
                 print(msg)
@@ -1748,7 +1761,7 @@ class DeviceInstaller():
             # CUDA, XPU, ROCm Linux, Jetson: must be exactly '+<tag>'
             # (a pure hex local version means a custom/dev build -> reinstall)
             elif device_info['name'] == devices['CUDA']['proc'] and self.system == systems['WINDOWS']:
-                wheel_tag = tag.replace('win-', '')
+                wheel_tag = tag.replace('win-', '').replace('.', '')
                 return installed_tag == wheel_tag or (installed_tag is not None and installed_tag.startswith(f'{wheel_tag}-'))
             return installed_tag == tag
 
@@ -1756,7 +1769,10 @@ class DeviceInstaller():
             # torch: base version + local tag must match what we'd install for this device
             if not torch_version_current_full:
                 return True
-            if torch_version_current_base != torch_version_matrix:
+            if is_cu132_nightly:
+                if self.nightly_date(torch_version_current_base) is None:
+                    return True
+            elif torch_version_current_base != torch_version_matrix:
                 return True
             if not _tag_ok(current_tag):
                 return True
@@ -1768,12 +1784,19 @@ class DeviceInstaller():
             if not torchaudio_full:
                 return True
             torchaudio_base = torchaudio_full.split('+', 1)[0]
-            if torchaudio_base != self.torchaudio_version(torch_version_matrix):
+            if is_cu132_nightly:
+                if self.nightly_date(torchaudio_base) != self.nightly_date(torch_version_current_base):
+                    return True
+            elif torchaudio_base != self.torchaudio_version(torch_version_matrix):
                 return True
             m_ta = re.search(r'\+(.+)$', torchaudio_full)
             torchaudio_tag = m_ta.group(1) if m_ta else None
             if not _tag_ok(torchaudio_tag):
                 return True
+            if is_cu132_nightly:
+                torchvision_full = self.get_package_version('torchvision')
+                if not torchvision_full or self.nightly_date(torchvision_full) != self.nightly_date(torch_version_current_base):
+                    return True
             # torchcodec: presence only (when torch >= 2.9 needs it)
             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and not self.get_package_version('torchcodec'):
                 return True
@@ -1799,10 +1822,11 @@ class DeviceInstaller():
                     msg = f'---> Hardware detected: {device_info}'
                     print(msg)
                     tag = device_info.get('tag')
+                    is_cu132_nightly = tag in {'cu132', 'win-cu13.2', 'win-cu132'}
                     if tag in ['unknown','unsupported']:
                         return 0
                     key = 'last' if self.python_version >= (3, 12) else 'base'
-                    matrix_entry = torch_matrix.get(tag)
+                    matrix_entry = torch_matrix.get('cu132' if is_cu132_nightly else tag)
                     if not matrix_entry:
                         error = f'No torch_matrix entry for tag {tag}.'
                         print(error)
@@ -1830,6 +1854,8 @@ class DeviceInstaller():
                             arch = device_info['arch']
                             toolkit_version = ''.join(c for c in tag if c.isdigit())
                             tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
+                            if self.system == systems['WINDOWS'] and tag.startswith('win-cu'):
+                                tag_dir = tag.replace('win-', '').replace('.', '')
                             py_major, py_minor = device_info['pyvenv']
                             tag_py = f'cp{py_major}{py_minor}'
                             torchaudio_version_matrix = self.torchaudio_version(torch_version_matrix)
@@ -1873,9 +1899,14 @@ class DeviceInstaller():
                                 torch_url_tag = tag_dir
                                 torchaudio_url_tag = 'cu130' if tag_dir.startswith('cu') and tag_dir[2:].isdigit() and int(tag_dir[2:]) > 130 else tag_dir
                                 if self.system == systems['WINDOWS'] and tag.startswith('win-cu'):
-                                    torch_url_tag = tag.replace('win-', '')
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}'])
-                                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', f'torchaudio=={torchaudio_version_matrix}', '--index-url', f'{url}/{torchaudio_url_tag}'])
+                                    torch_url_tag = tag_dir
+                                if is_cu132_nightly:
+                                    nightly_url = f'{url}/nightly/cu132'
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--pre', '--force-reinstall', '--no-cache-dir', 'torch', 'torchaudio', '--index-url', nightly_url])
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--pre', '--force-reinstall', '--no-cache-dir', '--no-deps', 'torchvision', '--index-url', nightly_url])
+                                else:
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}'])
+                                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--force-reinstall', '--no-cache-dir', '--no-deps', f'torchaudio=={torchaudio_version_matrix}', '--index-url', f'{url}/{torchaudio_url_tag}'])
                             #### torchcodec installation
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and torchcodec_version_matrix:
                                 if is_cpu_aarch64_linux:
