@@ -392,7 +392,17 @@ goto :main
 
 :check_uv
 where.exe /Q uv
-if errorlevel 1 ( echo uv is not installed. & exit /b 1 )
+if %errorlevel% equ 0 exit /b 0
+echo uv is not installed. Installing...
+%PS_EXE% -ExecutionPolicy Bypass -Command "iwr -useb https://astral.sh/uv/install.ps1 | iex"
+set "PATH=%USERPROFILE%\.local\bin;%PATH%"
+where.exe /Q uv
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to install uv or locate executable.
+    exit /b 1
+)
+echo uv installed successfully.
+exit /b 0
 
 set "CURRENT_ENV="
 if defined VIRTUAL_ENV ( set "CURRENT_ENV=%VIRTUAL_ENV%" )
