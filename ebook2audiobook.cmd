@@ -222,7 +222,7 @@ goto :main
 
 :make_shortcut
 set "shortcut=%~1"
-"%PS_EXE%" %PS_ARGS% -Command "$s=New-Object -ComObject WScript.Shell; $sc=$s.CreateShortcut('%shortcut%'); $sc.TargetPath='cmd.exe'; $sc.Arguments="/k \"\"cd /d \"\"\"\"%SAFE_SCRIPT_DIR%\"\"\"\" && \"\"\"\"%APP_FILE%\"\"\"\"\"\""; $sc.WorkingDirectory='%SAFE_SCRIPT_DIR%'; $sc.IconLocation='%ICON_PATH%'; $sc.Save()"
+"%PS_EXE%" %PS_ARGS% -Command "$q=[char]34; $s=New-Object -ComObject WScript.Shell; $sc=$s.CreateShortcut('%shortcut%'); $sc.TargetPath='cmd.exe'; $sc.Arguments='/k '+$q+$q+'cd /d '+$q+$env:SAFE_SCRIPT_DIR+$q+' && '+$q+$env:APP_FILE+$q+$q; $sc.WorkingDirectory=$env:SAFE_SCRIPT_DIR; $sc.IconLocation=$env:ICON_PATH; $sc.Save()"
 exit /b
 
 :build_gui
