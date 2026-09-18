@@ -326,7 +326,7 @@ if /i "%~1"=="yo" set "ISO3_LANG=yor"
 exit /b
 
 :check_python
-where.exe python >nul 2>&1
+pymanager exec -V:%MAX_PYTHON_VERSION% --version >nul 2>&1
 if not errorlevel 1 exit /b 0
 echo Python is not installed. Detecting system architecture...
 set "ARCH=amd64"
@@ -346,17 +346,11 @@ if errorlevel 1 (
     echo Failed to install Python %MAX_PYTHON_VERSION%.
     exit /b 1
 )
-echo Configuring Python...
-pymanager install --configure -y
-if errorlevel 1 (
-    echo Failed to configure Python.
-    exit /b 1
-)
 set "PYTHON_BIN=%LocalAppData%\Python\bin"
 set "PATH=%PYTHON_BIN%;%PATH%"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=[Environment]::GetEnvironmentVariable('Path','User'); if (-not (($p -split ';') -contains '%PYTHON_BIN%')) { [Environment]::SetEnvironmentVariable('Path', (($p.TrimEnd(';') + ';' + '%PYTHON_BIN%').Trim(';')), 'User') }"
 echo Verifying Python %MAX_PYTHON_VERSION%
-python --version
+pymanager exec -V:%MAX_PYTHON_VERSION% --version
 if errorlevel 1 (
     echo Installation completed, but Python %MAX_PYTHON_VERSION% is not accessible.
     exit /b 1
