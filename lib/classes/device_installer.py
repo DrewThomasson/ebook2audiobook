@@ -18,7 +18,7 @@ class DeviceInstaller():
         self.arch = self.check_arch
         self.python_version = sys.version_info[:2]
         self.python_version_tuple = sys.version_info
-        self.uv_bin = None
+        self.uv_bin = sys.executable
 
     def _find_uv(self)->str:
         p = shutil.which('uv')
