@@ -33,7 +33,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/root/.local/bin:/root/.cargo/bin:${PATH}" \
     IN_DOCKER=1
 
-# uv is required because device_installer.py now calls `uv pip ...`.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
@@ -85,37 +84,22 @@ RUN set -eux; \
 	fi; \
 	rm -rf /var/lib/apt/lists/*
 
-# Calibre.
-#
-# calibre is intentionally not part of DOCKER_PROGRAMS_STR because the package
-# manager version is often too old; use the upstream installer.
 RUN set -eux; \
     if ! command -v ebook-convert >/dev/null 2>&1; then \
         wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin; \
     fi; \
     ebook-convert --version
 
-# Rust / cargo.
-#
-# Some Python packages still need a Rust toolchain at build time.
-# It is removed again after the Python dependency build.
 RUN set -eux; \
     if [ "${INSTALL_RUST}" = "1" ]; then \
         curl -fsSL https://sh.rustup.rs | sh -s -- -y; \
     fi
 
-# Bootstrap minimal Python build tooling with uv.
-#
-# Do not upgrade pip here. The application now uses uv for package installation.
 RUN set -eux; \
     uv pip install --system --no-cache 'setuptools<82' wheel
 
 COPY . /app
 
-# Make sure the launcher exists.
-#
-# Historical builds use ebook2audiobook.command. Some checkouts may have e2a.sh
-# or ebook2audiobook.sh only, so create a compatible launcher if needed.
 RUN set -eux; \
     if [ -f ./ebook2audiobook.command ]; then \
         chmod +x ./ebook2audiobook.command; \
@@ -130,10 +114,6 @@ RUN set -eux; \
         exit 1; \
     fi
 
-# Build the Python stack selected by DOCKER_DEVICE_STR.
-#
-# This calls device_installer.py, which now uses uv internally:
-#   uv pip install --python <interpreter> ...
 RUN set -eux; \
     ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"; \
     rustup self uninstall -y 2>/dev/null || true; \
