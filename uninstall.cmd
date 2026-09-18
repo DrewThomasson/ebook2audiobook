@@ -91,13 +91,15 @@ if defined REMOVE_UV (
 		uv cache clean >nul 2>&1
 	)
 	set "UV_BIN_DIR=%USERPROFILE%\.local\bin"
-	if exist "%UV_BIN_DIR%\uv.exe"  del /f /q "%UV_BIN_DIR%\uv.exe"
+	if exist "%UV_BIN_DIR%\uv.exe" (
+		echo deleting  uv.exe
+		del /f /q "%UV_BIN_DIR%\uv.exe"
+	)
 	if exist "%UV_BIN_DIR%\uvx.exe" del /f /q "%UV_BIN_DIR%\uvx.exe"
 	if exist "%UV_BIN_DIR%\uvw.exe" del /f /q "%UV_BIN_DIR%\uvw.exe"
 	if exist "%APPDATA%\uv"      rmdir /s /q "%APPDATA%\uv"
 	if exist "%LOCALAPPDATA%\uv" rmdir /s /q "%LOCALAPPDATA%\uv"
 	echo uv successfully uninstalled.
-	exit /b 0
 )
 
 :: ========================================================
