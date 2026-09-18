@@ -329,8 +329,11 @@ exit /b
 set "PYTHON_BIN=%LocalAppData%\Python\bin"
 set "PYTHON_MANAGER_DEFAULT=%MAX_PYTHON_VERSION%"
 set "PATH=%PYTHON_BIN%;%LocalAppData%\Microsoft\WindowsApps;%PATH%"
-python --version 2>nul | findstr /b /c:"Python %MAX_PYTHON_VERSION%." >nul
-if not errorlevel 1 exit /b 0
+pymanager exec -V:%MAX_PYTHON_VERSION% --version >nul 2>&1
+if not errorlevel 1 (
+    python --version 2>nul | findstr /b /c:"Python %MAX_PYTHON_VERSION%." >nul
+    if not errorlevel 1 exit /b 0
+)
 if defined E2A_PYTHON_RESTART (
     echo Python %MAX_PYTHON_VERSION% is installed, but the python command is still not accessible.
     exit /b 1
@@ -359,11 +362,12 @@ if errorlevel 1 (
     echo Failed to refresh Python commands.
     exit /b 1
 )
+set "PYTHON_MANAGER_DEFAULT=%MAX_PYTHON_VERSION%"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "[Environment]::SetEnvironmentVariable('PYTHON_MANAGER_DEFAULT', '%MAX_PYTHON_VERSION%', 'User')"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=[Environment]::GetEnvironmentVariable('Path','User'); if (-not (($p -split ';') -contains '%PYTHON_BIN%')) { [Environment]::SetEnvironmentVariable('Path', (($p.TrimEnd(';') + ';' + '%PYTHON_BIN%').Trim(';')), 'User') }"
 set "E2A_PYTHON_RESTART=1"
 echo Restarting script in a fresh command shell...
-"%ComSpec%" /d /c "call ""%~f0"" %*"
+"%ComSpec%" /d /c call "%~f0" %*
 exit /b %errorlevel%
 
 :check_scoop
