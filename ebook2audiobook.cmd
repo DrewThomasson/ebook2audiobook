@@ -491,11 +491,11 @@ if /i "%DEVICE_TAG:~0,4%"=="rocm" set "COMPOSE_PROFILES=rocm"
 if /i "%DEVICE_TAG%"=="xpu" set "COMPOSE_PROFILES=xpu"
 set "DOCKER_DEVICE_STR=%ARG%"
 if "%DOCKER_MODE%"=="podman" (
-	podman build --format docker --no-cache --network=host --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%" -t "%DOCKER_IMG_NAME%" -f Dockerfile .
+	podman build --format docker --network=host --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%" -t "%DOCKER_IMG_NAME%" -f Dockerfile .
 ) else if "%DOCKER_MODE%"=="compose" (
-	docker compose --profile "%COMPOSE_PROFILES%" build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%"
+	docker compose --profile "%COMPOSE_PROFILES%" build --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%"
 ) else (
-	docker build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%" -t "%DOCKER_IMG_NAME%" .
+	docker build --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%" -t "%DOCKER_IMG_NAME%" .
 )
 endlocal
 exit /b 0
