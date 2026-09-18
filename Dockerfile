@@ -113,6 +113,8 @@ RUN set -eux; \
         echo "No launcher found: expected ebook2audiobook.command, e2a.sh, or ebook2audiobook.sh"; \
         exit 1; \
     fi
+	
+RUN sed -i 's/\r$//' ./ebook2audiobook.command
 
 RUN set -eux; \
     ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"; \
