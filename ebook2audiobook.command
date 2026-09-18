@@ -466,8 +466,6 @@ check_uv() {
             case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
         fi
     fi
-
-    # ── migrate: detect a conda/Miniforge3 env or a non-uv venv and replace it ──
     if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
         if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/pyvenv.cfg" ]]; then
             echo -e "\e[33m$PYTHON_ENV is not a virtualenv — removing…\e[0m"
@@ -477,19 +475,15 @@ check_uv() {
             rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
         fi
     fi
-
     if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
         echo -e "\e[33mCreating ./$PYTHON_ENV with python $PYTHON_VERSION…\e[0m"
         chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
         chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
         uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" || return 1
     fi
-
-    # Always lock PY_CMD to the venv for NATIVE mode
     PY_CMD="$SCRIPT_DIR/$PYTHON_ENV/bin/python3"
     export VIRTUAL_ENV="$SCRIPT_DIR/$PYTHON_ENV"
     export PATH="$VIRTUAL_ENV/bin:$PATH"
-
     if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/.provisioned" ]]; then
         if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
             uv pip install --python "$SCRIPT_DIR/$PYTHON_ENV/bin/python" gfortran 2>/dev/null || true
