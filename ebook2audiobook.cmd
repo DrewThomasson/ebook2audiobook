@@ -123,9 +123,10 @@ for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 
 ::::::::::::::::::::::::::::::: CORE FUNCTIONS
 
+call :check_python
+
 if not "%~1"=="" (
     setlocal EnableDelayedExpansion
-	call :check_python
     for /f "delims=" %%V in ('%PY_CMD% -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
     for %%A in (%*) do (
         set "ARG=%%~A"
@@ -939,7 +940,6 @@ exit /b 0
 :main
 if defined arguments.help (
     if /i "%arguments.help%"=="true" (
-		call :check_python
 		if errorlevel 1 goto :install_python
 		call :check_docker
 		if "%DOCKER_DESKTOP%"=="0" (
@@ -957,7 +957,6 @@ if defined arguments.help (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "%DOCKER_DEVICE_STR%"=="" (
 			setlocal enabledelayedexpansion
-			call :check_python
 			if errorlevel 1 goto :install_python
 			call :check_wsl
 			if errorlevel 1 goto :install_wsl
