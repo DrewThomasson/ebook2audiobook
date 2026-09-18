@@ -18,6 +18,7 @@ class DeviceInstaller():
         self.arch = self.check_arch
         self.python_version = sys.version_info[:2]
         self.python_version_tuple = sys.version_info
+        print(f"SCRIPT_MODE: {os.environ('SCRIPT_MODE')}")
         self.uv_bin = self._find_uv()
 
     def _find_uv(self)->str:
