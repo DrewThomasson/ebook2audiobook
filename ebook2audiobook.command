@@ -644,7 +644,6 @@ else
             check_docker || exit 1
             DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
             if [[ "$DEVICE_INFO_STR" == "" ]]; then echo "check_device_info() error: result is empty"; exit 1; fi
-			echo "DEVICE_INFO_STR: $DEVICE_INFO_STR"
             if [[ "$DEVICE_TAG" == "" ]]; then DEVICE_TAG=$(json_get "tag"); fi
             if [[ "$PODMAN_DESKTOP" == "1" ]]; then
                 if podman image exists "localhost/${DOCKER_IMG_NAME}:${DEVICE_TAG}" >/dev/null 2>&1; then
