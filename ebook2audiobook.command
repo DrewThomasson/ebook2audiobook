@@ -529,6 +529,7 @@ EOF
 
 json_get() {
     local key="$1"
+	echo "DEVICE_INFO_STR: $DEVICE_INFO_STR"
     echo "$DEVICE_INFO_STR" | $PY_CMD -c "
 import sys, json
 data = json.load(sys.stdin)
