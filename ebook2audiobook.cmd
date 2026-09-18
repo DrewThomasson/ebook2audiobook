@@ -687,7 +687,7 @@ exit /b 0
 :check_device_info
 set "ARG=%~1"
 set "DEVICE_INFO_STR="
-for /f "delims=" %%I in ('"%PY_CMD%" -c "script_mode='%SCRIPT_MODE%'; import sys; from lib.classes.device_installer import DeviceInstaller as D; print(D().check_device_info(sys.argv[1]))" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
+for /f "delims=" %%I in ('call "%PY_CMD%" -c "script_mode='%SCRIPT_MODE%'; import sys; from lib.classes.device_installer import DeviceInstaller as D; print(D().check_device_info(sys.argv[1]))" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
 if not defined DEVICE_INFO_STR (
 	echo DEVICE_INFO_STR is empty
 	exit /b 1
