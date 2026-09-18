@@ -368,6 +368,15 @@ SML tags available:
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
 TIP: if it needs some more pause, add '[pause:3]' for 3 sec. etc.
 
+### Easypanel
+
+If you'd rather not manage the container yourself, [Easypanel](https://easypanel.io) is a self-hosted deployment platform with a one-click ebook2audiobook template (CPU build):
+
+[![Deploy on Easypanel][easypanel-btn]][easypanel-deploy]
+
+[easypanel-btn]: https://easypanel.io/img/deploy-on-easypanel-40.svg
+[easypanel-deploy]: https://easypanel.io/templates/ebook2audiobook
+
 ### Docker
 1. **Clone the Repository**:
 ```bash
