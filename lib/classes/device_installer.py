@@ -18,8 +18,7 @@ class DeviceInstaller():
         self.arch = self.check_arch
         self.python_version = sys.version_info[:2]
         self.python_version_tuple = sys.version_info
-        print(f"SCRIPT_MODE: {os.environ.get('SCRIPT_MODE')}")
-        self.uv_bin = self._find_uv()
+        self.uv_bin = None
 
     def _find_uv(self)->str:
         p = shutil.which('uv')
@@ -99,6 +98,7 @@ class DeviceInstaller():
 
     def check_device_info(self, mode:str)->str:
         if mode == NATIVE:
+            self._uv_bin = self._find_uv()
             previous = self.load_device_info()
             name, tag, msg = self.check_hardware
             pyvenv = self.check_pyvenv(tag)
@@ -1653,11 +1653,6 @@ class DeviceInstaller():
             print(error)
 
     def finalize_exclusive_packages(self)->int:
-        # runs AFTER the requirements pass. transitive requirements reintroduce
-        # packages that were removed before it: piper-tts declares
-        # 'onnxruntime<2,>=1', which lands plain onnxruntime alongside
-        # onnxruntime-gpu. Both ship the same module, so import order decides
-        # which one the process actually gets.
         try:
             for pkg, choices in self.exclusive_pkgs.items():
                 keep = re.split(r'[<>=!\[;]', self.select_pkg(pkg), 1)[0].strip()
@@ -1667,15 +1662,8 @@ class DeviceInstaller():
                 broken = bool(installed) and not self.is_pkg_importable(pkg)
                 if not losers and not broken:
                     continue
-                # uninstall every distribution first, then delete what they shared,
-                # then install the keeper into a clean directory. Removing only the
-                # losers leaves the keeper gutted, which is what produced
-                # 'cannot import name InferenceSession ... (unknown location)'.
                 msg = f"Resolving {pkg}: keeping {keep}, removing {', '.join(losers) if losers else 'a broken install'}…"
                 print(msg)
-                # --cache-dir, not --no-cache: the requirements pass already
-                # fetched this exact wheel into pip_cache_dir, so the reinstall is
-                # served from disk instead of pulling 250 MB off PyPI a second time.
                 if installed:
                     subprocess.call(self._uv_pip('uninstall', *installed))
                 self.clean_pkg_dir(pkg)
