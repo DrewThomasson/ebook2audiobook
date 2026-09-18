@@ -132,26 +132,26 @@ if not "%~1"=="" (
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
 if "%arg:~0,2%"=="--" (
-	set "key=%arg:~2%"
-	if not "%~2"=="" (
-		echo %~2 | findstr "^--" >nul
-		if errorlevel 1 (
-			set "temp_val=%~2"
-			call set "arguments.%%key%%=!temp_val!"
-			shift
-			shift
-			goto parse_args
-		)
-	)
-	call set "arguments.%%key%%=true"
-	shift
-	goto parse_args
+    set "key=%arg:~2%"
+    if not "%~2"=="" (
+        echo %~2 | findstr "^--" >nul
+        if errorlevel 1 (
+            set "temp_val=%~2"
+            :: Use %%temp_val%% instead of !temp_val!
+            call set "arguments.%%key%%=%%temp_val%%"
+            shift
+            shift
+            goto parse_args
+        )
+    )
+    call set "arguments.%%key%%=true"
+    shift
+    goto parse_args
 )
 shift
 goto parse_args
 
 :parse_args_done
-
 if defined arguments.script_mode (
 	set "script_mode_valid=0"
 	if /i "%arguments.script_mode%"=="%BUILD_DOCKER%" set "script_mode_valid=1"
@@ -165,12 +165,10 @@ if defined arguments.script_mode if "%script_mode_valid%"=="0" (
 	echo Error: Invalid script mode argument: %arguments.script_mode%
 	goto :failed
 )
-
 if defined arguments.docker_device (
 	if /i "%arguments.docker_device%"=="true" ( echo Error: --docker_device has no value & goto :failed )
 	set "DOCKER_DEVICE_STR=%arguments.docker_device%"
 )
-
 if defined arguments.docker_mode (
 	if not "%arguments.docker_mode%"=="podman" (
 		if not "%arguments.docker_mode%"=="compose" (
@@ -180,7 +178,6 @@ if defined arguments.docker_mode (
 	)
 	set "DOCKER_MODE=%arguments.docker_mode%"
 )
-
 if defined arguments.script_mode (
 	if /i "%arguments.script_mode%"=="true" ( echo Error: --script_mode requires a value & goto :failed )
 	if /i not "%arguments.script_mode%"=="FULL_DOCKER" (
@@ -198,9 +195,7 @@ if defined arguments.script_mode (
 		endlocal
 	)
 )
-
 if not exist "%INSTALLED_LOG%" if /i not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" ( type nul > "%INSTALLED_LOG%" )
-
 if defined arguments.headless (
 	if /i "%arguments.headless%"=="false" (
 		setlocal enabledelayedexpansion
@@ -215,7 +210,6 @@ if defined arguments.headless (
 		endlocal
 	)
 )
-
 if defined arguments.share if defined arguments.headless if /i "%arguments.headless%"=="true" ( echo Error: --share option is only allowed in non-headless mode & goto :failed )
 if defined arguments.version ( echo v%APP_VERSION% & goto :eof )
 goto :main
