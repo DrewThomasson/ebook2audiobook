@@ -334,7 +334,7 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
 if /i "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "ARCH=arm64"
 echo Detected Architecture: %ARCH%
 echo Locating latest Python 3.12 release...
-for /f "usebackq tokens=*" %%A in (`powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $c = (Invoke-WebRequest 'https://www.python.org/ftp/python/' -UseBasicParsing).Content; $m = [regex]::Matches($c, 'href=\"3\.12\.(\d+)/\"') | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Maximum; Write-Output ('3.12.' + $m.Maximum)"`) do set "PY_VER=%%A"
+for /f "usebackq tokens=*" %%A in (`powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $c=(Invoke-WebRequest 'https://www.python.org/ftp/python/' -UseBasicParsing).Content; $m=[regex]::Matches($c,'href=.3\.12\.(\d+)/.'); $max=0; foreach($x in $m){ $v=[int]$x.Groups[1].Value; if($v -gt $max){$max=$v} }; '3.12.'+$max"`) do set "PY_VER=%%A"
 if "%PY_VER%"=="" (
     echo Failed to determine the latest Python 3.12 version.
     exit /b 1
@@ -358,6 +358,14 @@ if errorlevel 1 (
     exit /b 1
 )
 echo Python %PY_VER% (%ARCH%) installed successfully!
+exit /b 0
+
+:check_scoop
+where.exe /Q scoop >nul 2>&1
+if errorlevel 1 (
+    echo Scoop is not installed.
+    exit /b 1
+)
 exit /b 0
 
 :check_scoop
