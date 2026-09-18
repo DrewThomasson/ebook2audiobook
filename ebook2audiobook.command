@@ -71,7 +71,7 @@ ISO3_LANG="eng"
 
 # Validate command arguments against conf.py
 if [ $# -gt 0 ]; then
-    VALID_ARGS=$(python3 -c 'from lib.conf import cli_options; print(" ".join(cli_options))')
+    VALID_ARGS=$($PY_CMD -c 'from lib.conf import cli_options; print(" ".join(cli_options))')
     for arg in "$@"; do
         if [ "${arg:0:2}" = "--" ]; then
             if ! echo " $VALID_ARGS " | grep -q " $arg "; then
@@ -282,9 +282,9 @@ get_iso3_lang() {
 }
 
 check_python() {
-    if ! command -v python3 &>/dev/null; then echo 'Python is not installed.'; return 1; fi
+    if ! command -v $PY_CMD &>/dev/null; then echo 'Python is not installed.'; return 1; fi
     local installed_version
-    installed_version=$(python3 --version 2>&1 | awk '{print $2}')
+    installed_version=$($PY_CMD --version 2>&1 | awk '{print $2}')
     local IFS='.'
     read -r ins_major ins_minor ins_patch <<< "$installed_version"
     read -r req_major req_minor req_patch <<< "$MIN_PYTHON_VERSION"
@@ -379,7 +379,7 @@ EOF
         if [[ "$program" == "calibre" ]]; then
             if command -v $program >/dev/null 2>&1; then echo -e "\e[32m=============== Calibre OK! ===============\e[0m"
             else
-                python3 -m pip uninstall -y lxml 2>/dev/null || true
+                $PY_CMD -m pip uninstall -y lxml 2>/dev/null || true
                 echo -e "\e[33mInstalling Calibre…\e[0m"
                 if [[ "${OSTYPE-}" == darwin* ]]; then eval "$PACK_MGR --cask calibre"
                 else
@@ -514,7 +514,7 @@ install_python_packages() {
 
 check_device_info() {
     local ARG="$1"
-    python3 - << EOF
+    $PY_CMD - << EOF
 from lib.classes.device_installer import DeviceInstaller
 device = DeviceInstaller()
 result = device.check_device_info("$ARG")
@@ -527,7 +527,7 @@ EOF
 
 json_get() {
     local key="$1"
-    echo "$DEVICE_INFO_STR" | python3 -c "
+    echo "$DEVICE_INFO_STR" | $PY_CMD -c "
 import sys, json
 data = json.load(sys.stdin)
 print(data['$key'])
@@ -584,7 +584,7 @@ build_docker_image() {
     if [[ -z "$ARG" ]]; then echo "build_docker_image() error: ARG is empty" >&2; return 1; fi
     local cmd_options=""
     local py_vers
-    py_vers="$(printf '%s' "$ARG" | python3 -c 'import json,sys; v=json.load(sys.stdin).get("pyvenv"); print(f"{v[0]}.{v[1]}" if v else "")' 2>/dev/null)"
+    py_vers="$(printf '%s' "$ARG" | $PY_CMD -c 'import json,sys; v=json.load(sys.stdin).get("pyvenv"); print(f"{v[0]}.{v[1]}" if v else "")' 2>/dev/null)"
     [[ -z "$py_vers" ]] && py_vers="$PYTHON_VERSION"
     ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
     export PYTHON_VERSION="$py_vers"
@@ -631,13 +631,13 @@ build_docker_image() {
 
 ######################################## END of functions
 
+check_python || exit 1
+
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
-    check_python || exit 1
     "$PY_CMD" -u "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
     if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
         if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
-            check_python || exit 1
             check_docker || exit 1
             DEVICE_INFO_STR="$(check_device_info "${SCRIPT_MODE}")"
             if [[ "$DEVICE_INFO_STR" == "" ]]; then echo "check_device_info() error: result is empty"; exit 1; fi
@@ -657,7 +657,7 @@ else
             fi
             build_docker_image "$DEVICE_INFO_STR" || exit 1
         else
-            if ! python3 - "$DOCKER_DEVICE_STR" <<'EOF'
+            if ! $PY_CMD - "$DOCKER_DEVICE_STR" <<'EOF'
 import json
 import sys
 json.loads(sys.argv[1])
@@ -678,7 +678,7 @@ EOF
             exit 1
         fi
         check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
-        check_uv || { echo -e "\e[31m=============== check_uv() failed.\e[0m"; exit 1; }
+        check_uv || exit 1
         check_sitecustomized || exit 1
         check_desktop_app || exit 1
         uv run --no-project -- "$PY_CMD" -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1
