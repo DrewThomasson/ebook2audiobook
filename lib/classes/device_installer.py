@@ -18,7 +18,7 @@ class DeviceInstaller():
         self.arch = self.check_arch
         self.python_version = sys.version_info[:2]
         self.python_version_tuple = sys.version_info
-        self.uv_bin = sys.executable
+        self.uv_bin = None
 
     def _find_uv(self)->str:
         p = shutil.which('uv')
@@ -97,8 +97,8 @@ class DeviceInstaller():
         return list(os_version)
 
     def check_device_info(self, mode:str)->str:
+        self._uv_bin = self._find_uv()
         if mode == NATIVE:
-            self._uv_bin = self._find_uv()
             previous = self.load_device_info()
             name, tag, msg = self.check_hardware
             pyvenv = self.check_pyvenv(tag)
@@ -1642,9 +1642,6 @@ class DeviceInstaller():
             print(error)
 
     def drop_pip_cache(self)->None:
-        # the scoped cache exists only to bridge the requirements pass and
-        # finalize_exclusive_packages(). Once both have run it is dead weight,
-        # and inside a docker RUN it must be gone before the layer is committed.
         try:
             if os.path.isdir(self.pip_cache_dir):
                 shutil.rmtree(self.pip_cache_dir, ignore_errors=True)
