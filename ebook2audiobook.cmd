@@ -62,8 +62,6 @@ set "MAX_PYTHON_VERSION=3.12"
 set "PYTHON_VERSION=3.12"
 set "PYTHON_SCOOP=python%PYTHON_VERSION:.=%"
 set "PYTHON_ENV=python_env"
-:: Default PY_CMD to system python. NATIVE mode will override this in :check_uv.
-:: BUILD_DOCKER and FULL_DOCKER will keep this default to use host/container python.
 set "PY_CMD=python"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
@@ -77,12 +75,14 @@ set "DOCKER_FIX_SCRIPT=dpf.ps1"
 set "DOCKER_MODE="
 set "DOCKER_IMG_NAME=athomasson2/%APP_NAME%"
 set "DOCKER_DEVICE_STR="
+set "DOCKER_RETRIES=0"
 set "DEVICE_INFO_STR="
 set "TMP=%SAFE_SCRIPT_DIR%\run"
 set "TEMP=%SAFE_SCRIPT_DIR%\run"
 if not exist "%TMP%" mkdir "%TMP%" >nul 2>&1
 set "UV_INSTALL_DIR=%SAFE_USERPROFILE%\.local\bin"
 set "UV_INSTALLER_PS1=https://astral.sh/uv/install.ps1"
+set "SCOOP_BUCKETS_URL=https://github.com/hu3rror/scoop-muggle.git"
 set "SCOOP_HOME=%SAFE_USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
@@ -146,7 +146,7 @@ if not "%~1"=="" (
 
 :parse_args
 rem No setlocal here: arguments.* are set in the current scope so they reach :main
-rem without an endlocal tunnel. Indirect names are set via call set "...%%key%%...".
+rem without an endlocal tunnel. Indirect names are set via call set "…%%key%%…".
 if "%~1"=="" goto :parse_args_done
 set "arg=%~1"
 if "%arg:~0,2%"=="--" (
@@ -228,7 +228,6 @@ if defined arguments.script_mode (
         endlocal
     )
 )
-rem .installed must not be created in build_docker mode; check after SCRIPT_MODE is resolved
 if not exist "%INSTALLED_LOG%" if /i not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
     type nul > "%INSTALLED_LOG%"
 )
@@ -331,13 +330,13 @@ set "PYTHON_MANAGER_DEFAULT=%MAX_PYTHON_VERSION%"
 set "PATH=%PYTHON_BIN%;%LocalAppData%\Microsoft\WindowsApps;%PATH%"
 pymanager exec -V:%MAX_PYTHON_VERSION% --version >nul 2>&1
 if not errorlevel 1 exit /b 0
-echo Python is not installed. Detecting system architecture...
+echo Python is not installed. Detecting system architecture…
 set "ARCH=amd64"
 if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
 if /i "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "ARCH=arm64"
 echo Detected Architecture: %ARCH%
-echo Installing official Python Install Manager...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-AppxPackage -AppInstallerFile 'https://www.python.org/ftp/python/pymanager/pymanager.appinstaller'"
+echo Installing official Python Install Manager…
+"%PS_EXE%" %PS_ARGS% -Command "Add-AppxPackage -AppInstallerFile 'https://www.python.org/ftp/python/pymanager/pymanager.appinstaller'"
 if errorlevel 1 (
     echo Failed to install Python Install Manager.
     exit /b 1
@@ -349,26 +348,52 @@ if errorlevel 1 (
     echo Failed to install Python %MAX_PYTHON_VERSION%.
     exit /b 1
 )
-echo Python %MAX_PYTHON_VERSION% (%ARCH%) installed successfully! relaunching %APP_NAME%...
+findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
+if errorlevel 1 echo python>>"%INSTALLED_LOG%"
+echo Python %MAX_PYTHON_VERSION% (%ARCH%) installed successfully! relaunching %APP_NAME%…
 goto :restart_script
 
 :check_scoop
 where.exe /Q scoop >nul 2>&1
 if errorlevel 1 (
     echo Scoop is not installed.
-    exit /b 1
+	echo Installing Scoop…
+	"%PS_EXE%" %PS_ARGS% -Command "irm get.scoop.sh -OutFile '%TEMP%\install_scoop.ps1'"
+	"%PS_EXE%" %PS_ARGS% -File "%TEMP%\install_scoop.ps1" -RunAsAdmin
+	del "%TEMP%\install_scoop.ps1" >nul 2>&1
+	if errorlevel 1 (
+		net session >nul 2>&1
+		if not errorlevel 1 (
+			goto :restart_script
+		)
+		exit /b 1
+	)
+	findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
+	if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
+	"%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
+	"%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
+	"%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
+	echo %ESC%[33m=============== scoop OK ===============%ESC%[0m
+	type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
+	goto :restart_script
 )
+call :check_scoop_buckets
 exit /b 0
 
 :check_scoop_buckets
-call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket list" > "%TEMP%\scoop_buckets.txt" 2>&1
+"%PS_EXE%" %PS_ARGS% -Command "scoop bucket list" > "%TEMP%\scoop_buckets.txt" 2>&1
 set "_MISSING_BUCKETS="
 findstr /i "muggle" "%TEMP%\scoop_buckets.txt" >nul 2>&1 || set "_MISSING_BUCKETS=!_MISSING_BUCKETS! muggle"
 findstr /i "extras" "%TEMP%\scoop_buckets.txt" >nul 2>&1 || set "_MISSING_BUCKETS=!_MISSING_BUCKETS! extras"
 findstr /i "versions" "%TEMP%\scoop_buckets.txt" >nul 2>&1 || set "_MISSING_BUCKETS=!_MISSING_BUCKETS! versions"
 del "%TEMP%\scoop_buckets.txt" >nul 2>&1
 if defined _MISSING_BUCKETS (
-    exit /b 1
+    echo Scoop Buckets are not installed.
+	echo Installing Scoop Buckets…
+	"%PS_EXE%" %PS_ARGS% -Command "$WarningPreference='SilentlyContinue'; scoop install git; scoop bucket add muggle %SCOOP_BUCKETS_URL%; scoop bucket add extras; scoop bucket add versions"
+	call git config --global credential.helper
+	del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
+	echo %ESC%[32m=============== Scoop Buckets OK ===============%ESC%[0m
 )
 exit /b 0
 
@@ -395,7 +420,75 @@ for %%p in (%HOST_PROGRAMS%) do (
     )
 )
 endlocal & set "missing_prog_array=%missing_prog_array%"
-if not "%missing_prog_array%"=="" exit /b 1
+if not "%missing_prog_array%"=="" (
+	echo Installing missing programs…
+	setlocal EnableDelayedExpansion
+	for %%p in (%missing_prog_array%) do (
+		set "prog=%%p"
+		"%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
+		if "%%p"=="tesseract" (
+			where.exe /Q !prog!
+			if not errorlevel 1 (
+				call :get_iso3_lang "%OS_LANG%"
+				echo Detected system language: %OS_LANG% → downloading OCR language: !ISO3_LANG!
+				set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
+				if not exist "!tessdata!" mkdir "!tessdata!"
+				if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
+					call :download_tessdata "!ISO3_LANG!" "!tessdata!" || exit /b 1
+				)
+				if exist "!tessdata!\!ISO3_LANG!.traineddata" (
+					echo Tesseract OCR language !ISO3_LANG! installed in !tessdata!
+				) else (
+					echo Failed to install OCR language !ISO3_LANG!
+				)
+			)
+		)
+		if "%%p"=="python" (
+			set "PY_FOUND="
+			where.exe /Q python  && set PY_FOUND=1
+			where.exe /Q python3 && set PY_FOUND=1
+			where.exe /Q py      && set PY_FOUND=1
+			if not defined PY_FOUND (
+				echo %ESC%[31m=============== %%p failed.%ESC%[0m
+				exit /b 1
+			)
+		)
+		if "%%p"=="nodejs" (
+			set "prog=node"
+		)
+		if "%%p"=="ffmpeg-shared" (
+			set "prog=ffmpeg"
+			if exist "%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin\ffmpeg.exe" (
+				set "_FFMPEG_PATH=%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
+				echo !PATH! | findstr /i /c:"!_FFMPEG_PATH!" >nul 2>&1 || (
+					set "PATH=!_FFMPEG_PATH!;!PATH!"
+				)
+			)
+		)
+		if "%%p"=="rustup" (
+			if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
+				set "_RUSTUP_PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin"
+				echo !PATH! | findstr /i /c:"!_RUSTUP_PATH!" >nul 2>&1 || (
+					set "PATH=!_RUSTUP_PATH!;!PATH!"
+				)
+			)
+		)
+		where.exe /Q !prog!
+		if not errorlevel 1 (
+			echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
+			findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
+			if errorlevel 1 (
+				echo %%p>>"%INSTALLED_LOG%"
+			)
+		) else (
+			echo %ESC%[31m=============== %%p failed.%ESC%[0m
+			exit /b 1
+		)
+	)
+	endlocal & set "PATH=%PATH%"
+	"%PS_EXE%" %PS_ARGS% -Command "$cp=[System.Environment]::GetEnvironmentVariable('Path','User'); $np=$cp; @('%SCOOP_SHIMS%','%SCOOP_APPS%','%UV_INSTALL_DIR%','%NODE_PATH%') | Where-Object {$_ -and $cp -notlike ('*'+$_+'*')} | ForEach-Object {$np+=(';'+$_)}; [System.Environment]::SetEnvironmentVariable('Path',$np,'User')"
+	set "missing_prog_array="
+)
 exit /b 0
 
 :check_ffmpeg_shared
@@ -425,57 +518,6 @@ if "%ffmpeg_pkg%"=="static" (
 endlocal
 exit /b 0
 
-:install_python
-echo Installing Python %PYTHON_VERSION%…
-set "PYTHON_INSTALLER=python-%PYTHON_VERSION%-%PYTHON_ARCH%.exe"
-set "PYTHON_URL=https://www.python.org/ftp/python/%PYTHON_VERSION%.0/python-%PYTHON_VERSION%.0-%PYTHON_ARCH%.exe"
-echo Downloading Python installer for %PYTHON_ARCH%…
-powershell -NoProfile -Command "Invoke-WebRequest -Uri '%PYTHON_URL%' -OutFile '%TEMP%\%PYTHON_INSTALLER%'"
-if errorlevel 1 (
-    echo %ESC%[31m=============== Failed to download Python installer.%ESC%[0m
-    goto :failed
-)
-echo Installing Python silently…
-"%TEMP%\%PYTHON_INSTALLER%" /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
-if errorlevel 1 (
-    echo %ESC%[31m=============== Python installation failed.%ESC%[0m
-    del "%TEMP%\%PYTHON_INSTALLER%"
-    goto :failed
-)
-del "%TEMP%\%PYTHON_INSTALLER%"
-del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python.exe"
-del "%USERPROFILE%\AppData\Local\Microsoft\WindowsApps\python3.exe"
-echo %ESC%[33m=============== Python OK ===============%ESC%[0m
-goto :restart_script
-
-:install_scoop
-echo Installing Scoop…
-call "%PS_EXE%" %PS_ARGS% -Command "irm get.scoop.sh -OutFile '%TEMP%\install_scoop.ps1'"
-call "%PS_EXE%" %PS_ARGS% -File "%TEMP%\install_scoop.ps1" -RunAsAdmin
-del "%TEMP%\install_scoop.ps1" >nul 2>&1
-if errorlevel 1 (
-    net session >nul 2>&1
-    if not errorlevel 1 (
-        goto :restart_script
-    )
-    goto :failed
-)
-findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
-if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
-call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
-call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add extras"
-call "%PS_EXE%" %PS_ARGS% -Command "scoop bucket add versions"
-echo %ESC%[33m=============== Scoop OK ===============%ESC%[0m
-type nul > "%SAFE_SCRIPT_DIR%\.after-scoop"
-goto :restart_script
-
-:install_scoop_buckets
-call "%PS_EXE%" %PS_ARGS% -Command "$WarningPreference='SilentlyContinue'; scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions"
-call git config --global credential.helper
-del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
-echo %ESC%[32m=============== Scoop components OK ===============%ESC%[0m
-exit /b 0
-
 :install_wsl
 if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	echo WSL2 is required to build Linux containers.
@@ -488,7 +530,7 @@ if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 	wsl --update
 	wsl --install -d %DOCKER_WSL_CONTAINER% --no-launch
 	echo.
-	echo %DOCKER_WSL_CONTAINER% setup complete. Configuring for Docker...
+	echo %DOCKER_WSL_CONTAINER% setup complete. Configuring for Docker…
 	wsl --shutdown
 	timeout /t 3 /nobreak >nul
 	wsl --user root -- echo "%DOCKER_WSL_CONTAINER% OK" >nul 2>&1
@@ -532,25 +574,6 @@ if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 )
 goto :restart_script
 
-:install_uv
-if not "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
-	echo Installing uv…
-	call "%PS_EXE%" %PS_ARGS% -Command "irm %UV_INSTALLER_PS1% | iex"
-	set "PATH=%UV_INSTALL_DIR%;%PATH%"
-	where.exe /Q uv
-	if not errorlevel 1 (
-		echo %ESC%[32m=============== uv OK ===============%ESC%[0m
-		findstr /i /x "uv" "%INSTALLED_LOG%" >nul 2>&1
-		if errorlevel 1 (
-			echo uv>>"%INSTALLED_LOG%"
-		)
-	) else (
-		echo %ESC%[31m=============== uv failed.%ESC%[0m
-		goto :failed
-	)
-)
-goto :restart_script
-
 :download_tessdata
 setlocal
 set "_LANG=%~1"
@@ -559,88 +582,23 @@ set "_DEST=%~2"
 set "RC=%errorlevel%"
 endlocal & exit /b %RC%
 
-:install_programs
-echo Installing missing programs…
-setlocal EnableDelayedExpansion
-for %%p in (%missing_prog_array%) do (
-	set "prog=%%p"
-	call "%PS_EXE%" %PS_ARGS% -Command "scoop install %%p"
-	if "%%p"=="tesseract" (
-		where.exe /Q !prog!
-		if not errorlevel 1 (
-			call :get_iso3_lang "%OS_LANG%"
-			echo Detected system language: %OS_LANG% → downloading OCR language: !ISO3_LANG!
-			set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
-			if not exist "!tessdata!" mkdir "!tessdata!"
-			if not exist "!tessdata!\!ISO3_LANG!.traineddata" (
-				call :download_tessdata "!ISO3_LANG!" "!tessdata!" || goto :failed
-			)
-			if exist "!tessdata!\!ISO3_LANG!.traineddata" (
-				echo Tesseract OCR language !ISO3_LANG! installed in !tessdata!
-			) else (
-				echo Failed to install OCR language !ISO3_LANG!
-			)
-		)
-	)
-	if "%%p"=="python" (
-		set "PY_FOUND="
-		where.exe /Q python  && set PY_FOUND=1
-		where.exe /Q python3 && set PY_FOUND=1
-		where.exe /Q py      && set PY_FOUND=1
-		if not defined PY_FOUND (
-			echo %ESC%[31m=============== %%p failed.%ESC%[0m
-			goto :failed
-		)
-	)
-	if "%%p"=="nodejs" (
-		set "prog=node"
-	)
-	if "%%p"=="ffmpeg-shared" (
-		set "prog=ffmpeg"
-		if exist "%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin\ffmpeg.exe" (
-			set "_FFMPEG_PATH=%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
-			echo !PATH! | findstr /i /c:"!_FFMPEG_PATH!" >nul 2>&1 || (
-				set "PATH=!_FFMPEG_PATH!;!PATH!"
-			)
-		)
-	)
-	if "%%p"=="rustup" (
-		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" (
-			set "_RUSTUP_PATH=%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin"
-			echo !PATH! | findstr /i /c:"!_RUSTUP_PATH!" >nul 2>&1 || (
-				set "PATH=!_RUSTUP_PATH!;!PATH!"
-			)
-		)
-	)
-	where.exe /Q !prog!
-	if not errorlevel 1 (
-		echo %ESC%[32m=============== %%p OK! ===============%ESC%[0m
-		findstr /i /x "%%p" "%INSTALLED_LOG%" >nul 2>&1
-		if errorlevel 1 (
-			echo %%p>>"%INSTALLED_LOG%"
-		)
-	) else (
-		echo %ESC%[31m=============== %%p failed.%ESC%[0m
-		goto :failed
-	)
-)
-endlocal & set "PATH=%PATH%"
-call "%PS_EXE%" %PS_ARGS% -Command "$cp=[System.Environment]::GetEnvironmentVariable('Path','User'); $np=$cp; @('%SCOOP_SHIMS%','%SCOOP_APPS%','%UV_INSTALL_DIR%','%NODE_PATH%') | Where-Object {$_ -and $cp -notlike ('*'+$_+'*')} | ForEach-Object {$np+=(';'+$_)}; [System.Environment]::SetEnvironmentVariable('Path',$np,'User')"
-set "missing_prog_array="
-goto :main
-
 :check_uv
 where.exe /Q uv
-if %errorlevel% equ 0 exit /b 0
-echo uv is not installed. Installing...
-%PS_EXE% -ExecutionPolicy Bypass -Command "iwr -useb https://astral.sh/uv/install.ps1 | iex"
+if errorlevel 0 exit /b 0
+echo Uv is not installed.
+echo Installing Uv…
+"%PS_EXE%" %PS_ARGS% -Command "iwr -useb %UV_INSTALLER_PS1% | iex"
 set "PATH=%USERPROFILE%\.local\bin;%PATH%"
 where.exe /Q uv
-if %errorlevel% neq 0 (
-    echo [ERROR] Failed to install uv or locate executable.
+if errorlevel 1 (
+	echo %ESC%[31m=============== uv failed.%ESC%[0m
     exit /b 1
 )
-echo uv installed successfully.
+echo %ESC%[32m=============== uv OK ===============%ESC%[0m
+findstr /i /x "uv" "%INSTALLED_LOG%" >nul 2>&1
+if errorlevel 1 (
+	echo uv>>"%INSTALLED_LOG%"
+)
 exit /b 0
 
 :check_wsl
@@ -710,7 +668,7 @@ if errorlevel 1 (
     echo Docker failed to start
     exit /b 1
 )
-set "DOCKER_RETRIES=0"
+
 :wait_docker
 timeout /t 3 /nobreak >nul
 set /a DOCKER_RETRIES+=1
@@ -932,7 +890,6 @@ exit /b 0
 :main
 if defined arguments.help (
     if /i "%arguments.help%"=="true" (
-		if errorlevel 1 goto :install_python
 		call :check_docker
 		if "%DOCKER_DESKTOP%"=="0" (
 			if "%PODMAN_DESKTOP%"=="0" (
@@ -949,7 +906,6 @@ if defined arguments.help (
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "%DOCKER_DEVICE_STR%"=="" (
 			setlocal enabledelayedexpansion
-			if errorlevel 1 goto :install_python
 			call :check_wsl
 			if errorlevel 1 goto :install_wsl
             call :check_docker
@@ -993,15 +949,11 @@ if defined arguments.help (
         )
     ) else if "%SCRIPT_MODE%"=="%NATIVE%" (
 		call :check_scoop
-		if errorlevel 1 goto :install_scoop
-		call :check_scoop_buckets
-		if errorlevel 1 goto :install_scoop_buckets
+		if errorlevel 1 goto :failed
 		call :check_programs
-		if errorlevel 1 goto :install_programs
+		if errorlevel 1 goto :failed
 		call :check_uv
-		if errorlevel 3 goto :failed
-		if errorlevel 2 goto :eof
-		if errorlevel 1 goto :install_uv
+		if errorlevel 1 goto :failed
         call :check_sitecustomized
         if errorlevel 1 goto :failed
         call :build_gui
@@ -1038,7 +990,7 @@ exit 0
 
 :restart_script_admin
 echo Restarting script as Administrator…
-call "%PS_EXE%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%SAFE_SCRIPT_DIR%\%APP_FILE%' -ArgumentList '%ARGS%' -Verb RunAs"
+call "%PS_EXE%" %PS_ARGS% -Command "Start-Process -FilePath '%SAFE_SCRIPT_DIR%\%APP_FILE%' -ArgumentList '%ARGS%' -Verb RunAs"
 exit
 
 endlocal

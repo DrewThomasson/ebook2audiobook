@@ -144,7 +144,7 @@ if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exist
         else return 1; fi
     }
     if [[ -n "${USER:-}" ]] && ! user_in_group "$APP_GROUP"; then
-        echo "Adding $USER to group $APP_GROUP (requires sudo)..."
+        echo "Adding $USER to group $APP_GROUP (requires sudo)…"
         if [[ "$OSTYPE" == "darwin"* ]]; then
             sudo dseditgroup -o edit -a "$USER" -t user "$APP_GROUP"
             echo "Group added. Please restart your terminal and re-run:"
