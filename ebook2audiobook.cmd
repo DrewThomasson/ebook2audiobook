@@ -584,20 +584,22 @@ endlocal & exit /b %RC%
 
 :check_uv
 where.exe /Q uv
-if errorlevel 0 exit /b 0
-echo Uv is not installed.
-echo Installing Uv…
-"%PS_EXE%" %PS_ARGS% -Command "iwr -useb %UV_INSTALLER_PS1% | iex"
-set "PATH=%USERPROFILE%\.local\bin;%PATH%"
-where.exe /Q uv
 if errorlevel 1 (
-	echo %ESC%[31m=============== uv failed.%ESC%[0m
-    exit /b 1
-)
-echo %ESC%[32m=============== uv OK ===============%ESC%[0m
-findstr /i /x "uv" "%INSTALLED_LOG%" >nul 2>&1
-if errorlevel 1 (
-	echo uv>>"%INSTALLED_LOG%"
+	echo Uv is not installed.
+	echo Installing Uv…
+	"%PS_EXE%" %PS_ARGS% -Command "iwr -useb %UV_INSTALLER_PS1% | iex"
+	set "PATH=%USERPROFILE%\.local\bin;%PATH%"
+	where.exe /Q uv
+	if errorlevel 1 (
+		echo %ESC%[31m=============== uv failed.%ESC%[0m
+		exit /b 1
+	)
+	echo %ESC%[32m=============== uv OK ===============%ESC%[0m
+	findstr /i /x "uv" "%INSTALLED_LOG%" >nul 2>&1
+	if errorlevel 1 (
+		echo uv>>"%INSTALLED_LOG%"
+	)
+	goto :restart_script
 )
 exit /b 0
 
