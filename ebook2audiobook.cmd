@@ -479,25 +479,23 @@ exit /b 0
 :build_docker_image
 setlocal enabledelayedexpansion
 set "ARG=%~1"
-set "ARG_ESCAPED=%ARG:"=\"%"
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
 set "py_vers=%PYTHON_VERSION%"
 if /i "%DEVICE_TAG:~0,2%"=="cu" set "cmd_options=--gpus all"
 if /i "%DEVICE_TAG:~0,4%"=="rocm" set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 if /i "%DEVICE_TAG%"=="xpu" set "cmd_options=--device=/dev/dri"
-
 if /i "%DEVICE_TAG%"=="cpu" set "COMPOSE_PROFILES=cpu"
 if /i "%DEVICE_TAG:~0,2%"=="cu" set "COMPOSE_PROFILES=cuda"
 if /i "%DEVICE_TAG:~0,4%"=="rocm" set "COMPOSE_PROFILES=rocm"
 if /i "%DEVICE_TAG%"=="xpu" set "COMPOSE_PROFILES=xpu"
-
+set "DOCKER_DEVICE_STR=%ARG%"
 if "%DOCKER_MODE%"=="podman" (
-	podman build --format docker --no-cache --network=host --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" -t "%DOCKER_IMG_NAME%" -f Dockerfile .
+	podman build --format docker --no-cache --network=host --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%" -t "%DOCKER_IMG_NAME%" -f Dockerfile .
 ) else if "%DOCKER_MODE%"=="compose" (
-	docker compose --profile "%COMPOSE_PROFILES%" build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%"
+	docker compose --profile "%COMPOSE_PROFILES%" build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%"
 ) else (
-	docker build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" -t "%DOCKER_IMG_NAME%" .
+	docker build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg DEVICE_TAG="%DEVICE_TAG%" -t "%DOCKER_IMG_NAME%" .
 )
 endlocal
 exit /b 0
