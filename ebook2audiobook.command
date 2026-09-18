@@ -632,6 +632,7 @@ build_docker_image() {
 ######################################## END of functions
 
 check_python || exit 1
+check_uv || exit 1
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
     "$PY_CMD" -u "$SCRIPT_DIR/app.py" "${ARGS[@]}"
@@ -678,7 +679,6 @@ EOF
             exit 1
         fi
         check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
-        check_uv || exit 1
         check_sitecustomized || exit 1
         check_desktop_app || exit 1
         uv run --no-project -- "$PY_CMD" -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1

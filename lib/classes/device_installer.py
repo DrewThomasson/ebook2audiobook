@@ -18,7 +18,7 @@ class DeviceInstaller():
         self.arch = self.check_arch
         self.python_version = sys.version_info[:2]
         self.python_version_tuple = sys.version_info
-        self.uv_bin = None
+        self._uv_bin = self._find_uv()
 
     def _find_uv(self)->str:
         p = shutil.which('uv')
@@ -97,7 +97,6 @@ class DeviceInstaller():
         return list(os_version)
 
     def check_device_info(self, mode:str)->str:
-        self._uv_bin = self._find_uv()
         if mode == NATIVE:
             previous = self.load_device_info()
             name, tag, msg = self.check_hardware

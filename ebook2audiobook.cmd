@@ -124,6 +124,7 @@ for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 ::::::::::::::::::::::::::::::: CORE FUNCTIONS
 
 call :check_python
+call :check_uv
 
 if not "%~1"=="" (
     setlocal EnableDelayedExpansion
@@ -339,14 +340,14 @@ echo Installing official Python Install Manager…
 "%PS_EXE%" %PS_ARGS% -Command "Add-AppxPackage -AppInstallerFile 'https://www.python.org/ftp/python/pymanager/pymanager.appinstaller'"
 if errorlevel 1 (
     echo Failed to install Python Install Manager.
-    exit /b 1
+    goto :failed
 )
 set "PATH=%PYTHON_BIN%;%LocalAppData%\Microsoft\WindowsApps;%PATH%"
 echo Installing Python %MAX_PYTHON_VERSION%
 pymanager install %MAX_PYTHON_VERSION%
 if errorlevel 1 (
     echo Failed to install Python %MAX_PYTHON_VERSION%.
-    exit /b 1
+    goto :failed
 )
 findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
 if errorlevel 1 echo python>>"%INSTALLED_LOG%"
@@ -592,7 +593,7 @@ if errorlevel 1 (
 	where.exe /Q uv
 	if errorlevel 1 (
 		echo %ESC%[31m=============== uv failed.%ESC%[0m
-		exit /b 1
+		goto :failed
 	)
 	echo %ESC%[32m=============== uv OK ===============%ESC%[0m
 	findstr /i /x "uv" "%INSTALLED_LOG%" >nul 2>&1
@@ -953,8 +954,6 @@ if defined arguments.help (
 		call :check_scoop
 		if errorlevel 1 goto :failed
 		call :check_programs
-		if errorlevel 1 goto :failed
-		call :check_uv
 		if errorlevel 1 goto :failed
         call :check_sitecustomized
         if errorlevel 1 goto :failed
