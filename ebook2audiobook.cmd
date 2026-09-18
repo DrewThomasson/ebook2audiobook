@@ -110,6 +110,7 @@ for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 
 if not "%~1"=="" (
 	setlocal EnableDelayedExpansion
+	call :check_python
 	for /f "delims=" %%V in ('%PY_CMD% -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
 	for %%A in (%*) do (
 		set "ARG=%%~A"
@@ -135,7 +136,8 @@ if "%arg:~0,2%"=="--" (
 	if not "%~2"=="" (
 		echo %~2 | findstr "^--" >nul
 		if errorlevel 1 (
-			call set "arguments.%%key%%=%~2"
+			set "temp_val=%~2"
+			call set "arguments.%%key%%=!temp_val!"
 			shift
 			shift
 			goto parse_args
@@ -220,7 +222,7 @@ goto :main
 
 :make_shortcut
 set "shortcut=%~1"
-"%PS_EXE%" %PS_ARGS% -Command "$s=New-Object -ComObject WScript.Shell; $sc=$s.CreateShortcut('%shortcut%'); $sc.TargetPath='cmd.exe'; $sc.Arguments='/k ""cd /d """"%SAFE_SCRIPT_DIR%"""" && """"%APP_FILE%""""""'; $sc.WorkingDirectory='%SAFE_SCRIPT_DIR%'; $sc.IconLocation='%ICON_PATH%'; $sc.Save()"
+"%PS_EXE%" %PS_ARGS% -Command "$s=New-Object -ComObject WScript.Shell; $sc=$s.CreateShortcut('%shortcut%'); $sc.TargetPath='cmd.exe'; $sc.Arguments="/k \"\"cd /d \"\"\"\"%SAFE_SCRIPT_DIR%\"\"\"\" && \"\"\"\"%APP_FILE%\"\"\"\"\"\""; $sc.WorkingDirectory='%SAFE_SCRIPT_DIR%'; $sc.IconLocation='%ICON_PATH%'; $sc.Save()"
 exit /b
 
 :build_gui
@@ -520,8 +522,8 @@ if defined arguments.help (
 			call :check_docker_daemon
 			call :check_device_info %SCRIPT_MODE%
 			call :install_device_packages
-			if "!DEVICE_TAG!"=="" call :json_get tag
-			call :build_docker_image "!DEVICE_INFO_STR!"
+			if "%DEVICE_TAG%"=="" call :json_get tag
+			call :build_docker_image "%DEVICE_INFO_STR%"
 		)
 	) else if "%SCRIPT_MODE%"=="%NATIVE%" (
 		call :check_scoop || goto :install_scoop
