@@ -346,8 +346,17 @@ if errorlevel 1 (
     echo Failed to install Python %MAX_PYTHON_VERSION%.
     exit /b 1
 )
+echo Configuring Python...
+pymanager install --configure -y
+if errorlevel 1 (
+    echo Failed to configure Python.
+    exit /b 1
+)
+set "PYTHON_BIN=%LocalAppData%\Python\bin"
+set "PATH=%PYTHON_BIN%;%PATH%"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=[Environment]::GetEnvironmentVariable('Path','User'); if (-not (($p -split ';') -contains '%PYTHON_BIN%')) { [Environment]::SetEnvironmentVariable('Path', (($p.TrimEnd(';') + ';' + '%PYTHON_BIN%').Trim(';')), 'User') }"
 echo Verifying Python %MAX_PYTHON_VERSION%
-pymanager exec -V:%MAX_PYTHON_VERSION% --version
+python --version
 if errorlevel 1 (
     echo Installation completed, but Python %MAX_PYTHON_VERSION% is not accessible.
     exit /b 1
