@@ -441,7 +441,9 @@ exit /b 0
 :check_device_info
 set "ARG=%~1"
 set "DEVICE_INFO_STR="
-for /f "delims=" %%I in ('"%PY_CMD%" -c "import sys; from lib.classes.device_installer import DeviceInstaller as D; print(D().check_device_info(sys.argv[1]))" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
+echo import sys; from lib.classes.device_installer import DeviceInstaller as D; print(D().check_device_info(sys.argv[1])) > "%TEMP%\check_device.py"
+for /f "delims=" %%I in ('%PY_CMD% "%TEMP%\check_device.py" "%ARG%"') do set "DEVICE_INFO_STR=%%I"
+del "%TEMP%\check_device.py" >nul 2>&1
 if not defined DEVICE_INFO_STR exit /b 1
 exit /b 0
 
@@ -515,7 +517,15 @@ if defined arguments.help (
 			call :check_docker
 			call :check_docker_daemon
 			call :check_device_info %SCRIPT_MODE%
+			if errorlevel 1 (
+				echo ERROR: Failed to get device info
+				goto :failed
+			)
 			call :install_device_packages
+			if errorlevel 1 (
+				echo ERROR: Failed to install device packages
+				goto :failed
+			)
 			if "%DEVICE_TAG%"=="" call :json_get tag
 			call :build_docker_image "%DEVICE_INFO_STR%"
 		)
