@@ -52,11 +52,13 @@ tasklist | find /i "%APP_NAME%.exe" >nul && (
 :: PROCESS .installed (CONTROLLED REMOVAL)
 :: ========================================================
 set "REMOVE_CONDA="
+set "REMOVE_UV="
 set "REMOVE_SCOOP="
 
 if exist "%INSTALLED_LOG%" (
 	for /f "usebackq delims=" %%A in ("%INSTALLED_LOG%") do (
 		if /i "%%A"=="Miniforge3" set "REMOVE_CONDA=1"
+		if /i "%%A"=="uv" set "REMOVE_UV=1"
 		if /i "%%A"=="Scoop"      set "REMOVE_SCOOP=1"
 	)
 )
@@ -77,6 +79,25 @@ if defined REMOVE_CONDA (
 if defined REMOVE_CONDA if exist "%CONDA_HOME%" (
 	echo %CONDA_HOME%
 	rd /s /q "%CONDA_HOME%" >nul 2>&1
+)
+
+:: ========================================================
+:: REMOVE UV
+:: ========================================================
+if defined REMOVE_UV (
+	where.exe /Q uv
+	if %errorlevel% equ 0 (
+		echo Cleaning uv cache...
+		uv cache clean >nul 2>&1
+	)
+	set "UV_BIN_DIR=%USERPROFILE%\.local\bin"
+	if exist "%UV_BIN_DIR%\uv.exe"  del /f /q "%UV_BIN_DIR%\uv.exe"
+	if exist "%UV_BIN_DIR%\uvx.exe" del /f /q "%UV_BIN_DIR%\uvx.exe"
+	if exist "%UV_BIN_DIR%\uvw.exe" del /f /q "%UV_BIN_DIR%\uvw.exe"
+	if exist "%APPDATA%\uv"      rmdir /s /q "%APPDATA%\uv"
+	if exist "%LOCALAPPDATA%\uv" rmdir /s /q "%LOCALAPPDATA%\uv"
+	echo uv successfully uninstalled.
+	exit /b 0
 )
 
 :: ========================================================
