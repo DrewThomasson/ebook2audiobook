@@ -333,39 +333,25 @@ set "ARCH=amd64"
 if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
 if /i "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "ARCH=arm64"
 echo Detected Architecture: %ARCH%
-echo Locating latest Python 3.12 release...
-for /f "usebackq tokens=*" %%A in (`powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; $c=(Invoke-WebRequest 'https://www.python.org/ftp/python/' -UseBasicParsing).Content; $m=[regex]::Matches($c,'href=.3\.12\.(\d+)/.'); $max=0; foreach($x in $m){ $v=[int]$x.Groups[1].Value; if($v -gt $max){$max=$v} }; '3.12.'+$max"`) do set "PY_VER=%%A"
-if "%PY_VER%"=="" (
-    echo Failed to determine the latest Python 3.12 version.
-    exit /b 1
-)
-echo Found latest version: %PY_VER%
-set "INSTALLER=%TEMP%\python_installer.exe"
-set "URL=https://www.python.org/ftp/python/%PY_VER%/python-%PY_VER%-%ARCH%.exe"
-echo Downloading Python %PY_VER% for %ARCH%...
-curl -sSL "%URL%" -o "%INSTALLER%"
+echo Installing official Python Install Manager...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-AppxPackage -AppInstallerFile 'https://www.python.org/ftp/python/pymanager/pymanager.appinstaller'"
 if errorlevel 1 (
-    echo Failed to download Python installer.
+    echo Failed to install Python Install Manager.
     exit /b 1
 )
-echo Installing Python silently...
-start /wait "" "%INSTALLER%" /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
-del "%INSTALLER%"
-set "PATH=%LocalAppData%\Programs\Python\Python312;%LocalAppData%\Programs\Python\Python312\Scripts;%PATH%"
-where.exe python >nul 2>&1
+echo Installing Python %MAX_PYTHON_VERSION%...
+pymanager install %MAX_PYTHON_VERSION%
 if errorlevel 1 (
-    echo Installation completed, but Python is not accessible.
+    echo Failed to install Python 3.12.
     exit /b 1
 )
-echo Python %PY_VER% (%ARCH%) installed successfully!
-exit /b 0
-
-:check_scoop
-where.exe /Q scoop >nul 2>&1
+echo Verifying Python 3.12...
+pymanager -V:3.12 --version
 if errorlevel 1 (
-    echo Scoop is not installed.
+    echo Installation completed, but Python 3.12 is not accessible.
     exit /b 1
 )
+echo Python 3.12 (%ARCH%) installed successfully!
 exit /b 0
 
 :check_scoop
