@@ -340,19 +340,19 @@ if errorlevel 1 (
     exit /b 1
 )
 set "PATH=%LocalAppData%\Microsoft\WindowsApps;%PATH%"
-echo Installing Python 3.12...
-pymanager install 3.12
+echo Installing Python %MAX_PYTHON_VERSION%
+pymanager install %MAX_PYTHON_VERSION%
 if errorlevel 1 (
-    echo Failed to install Python 3.12.
+    echo Failed to install Python %MAX_PYTHON_VERSION%.
     exit /b 1
 )
-echo Verifying Python 3.12...
-pymanager exec -V:3.12 --version
+echo Verifying Python %MAX_PYTHON_VERSION%
+pymanager exec -V:%MAX_PYTHON_VERSION% --version
 if errorlevel 1 (
-    echo Installation completed, but Python 3.12 is not accessible.
+    echo Installation completed, but Python %MAX_PYTHON_VERSION% is not accessible.
     exit /b 1
 )
-echo Python 3.12 (%ARCH%) installed successfully!
+echo Python %MAX_PYTHON_VERSION% (%ARCH%) installed successfully!
 exit /b 0
 
 :check_scoop
