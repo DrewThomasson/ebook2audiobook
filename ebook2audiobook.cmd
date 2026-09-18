@@ -259,7 +259,37 @@ exit /b
 
 :check_python
 where.exe python >nul 2>&1
-if errorlevel 1 ( echo Python is not installed. & exit /b 1 )
+if not errorlevel 1 exit /b 0
+echo Python is not installed. Detecting system architecture...
+set "ARCH=amd64"
+if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
+if /i "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "ARCH=arm64"
+echo Detected Architecture: %ARCH%
+echo Locating latest Python 3.12 release...
+for /f "usebackq tokens=*" %%A in (`powershell -NoProfile -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $c = (Invoke-WebRequest 'https://www.python.org/ftp/python/' -UseBasicParsing).Content; $m = [regex]::Matches($c, 'href=\"3\.12\.(\d+)/\"') | ForEach-Object { [int]$_.Groups[1].Value } | Measure-Object -Maximum; Write-Output ('3.12.' + $m.Maximum)"`) do set "PY_VER=%%A"
+if "%PY_VER%"=="" (
+    echo Failed to determine the latest Python 3.12 version.
+    exit /b 1
+)
+echo Found latest version: %PY_VER%
+set "INSTALLER=%TEMP%\python_installer.exe"
+set "URL=https://www.python.org/ftp/python/%PY_VER%/python-%PY_VER%-%ARCH%.exe"
+echo Downloading Python %PY_VER% for %ARCH%...
+curl -sSL "%URL%" -o "%INSTALLER%"
+if errorlevel 1 (
+    echo Failed to download Python installer.
+    exit /b 1
+)
+echo Installing Python silently...
+start /wait "" "%INSTALLER%" /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
+del "%INSTALLER%"
+set "PATH=%LocalAppData%\Programs\Python\Python312;%LocalAppData%\Programs\Python\Python312\Scripts;%PATH%"
+where.exe python >nul 2>&1
+if errorlevel 1 (
+    echo Installation completed, but Python is not accessible.
+    exit /b 1
+)
+echo Python %PY_VER% (%ARCH%) installed successfully!
 exit /b 0
 
 :check_scoop
