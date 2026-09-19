@@ -792,7 +792,7 @@ exit /b 0
 setlocal enabledelayedexpansion
 set "ARG=%~1"
 set "ARG_ESCAPED="
-if defined ARG set "ARG_ESCAPED=%ARG:"=\\"%"
+if defined ARG set "ARG_ESCAPED=%ARG:"=\"%"
 if "%DOCKER_MODE%"=="podman" (
 	if "%PODMAN_DESKTOP%"=="0" (
 		echo podman-compose is not running.
