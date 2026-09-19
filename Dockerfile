@@ -117,7 +117,7 @@ RUN set -eux; \
 RUN sed -i 's/\r$//' ./ebook2audiobook.command
 
 RUN set -eux; \
-    ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"; \
+    ./ebook2audiobook.command --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'; \
     rustup self uninstall -y 2>/dev/null || true; \
     apt-get update; \
     apt-get purge -y --auto-remove \
