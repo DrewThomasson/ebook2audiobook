@@ -75,7 +75,6 @@ RUN set -eux; \
 	fi; \
 	rm -rf /var/lib/apt/lists/*
 
-# Runtime directories.
 RUN set -eux; \
     mkdir -p \
         /app/ebooks \
@@ -87,36 +86,22 @@ RUN set -eux; \
         /app/tmp; \
     chmod -R 777 /app/ebooks /app/audiobooks /app/models /app/voices /app/run /app/tmp
 
-# Calibre.
-#
-# calibre is intentionally installed from upstream because distro packages are
-# often outdated.
 RUN set -eux; \
     if ! command -v ebook-convert >/dev/null 2>&1; then \
         wget -nv -O- "${CALIBRE_INSTALLER_URL}" | sh /dev/stdin; \
     fi; \
     ebook-convert --version
 
-# Rust / cargo.
-#
-# Some Python dependencies may still require Rust at build time.
 RUN set -eux; \
     if [ "${INSTALL_RUST}" = "1" ]; then \
         curl -fsSL https://sh.rustup.rs | sh -s -- -y; \
     fi
 
-# Bootstrap minimal Python build tooling with uv.
-#
-# Do not upgrade pip here. The application now uses uv for Python package installs.
 RUN set -eux; \
     uv pip install --system --no-cache 'setuptools<82' wheel
 
 COPY . /app
 
-# Make sure the launcher exists.
-#
-# Historical builds use ebook2audiobook.command. Some checkouts may have e2a.sh
-# or ebook2audiobook.sh only, so create a compatible launcher if needed.
 RUN set -eux; \
     if [ -f ./ebook2audiobook.command ]; then \
         chmod +x ./ebook2audiobook.command; \
@@ -131,10 +116,6 @@ RUN set -eux; \
         exit 1; \
     fi
 
-# Build the Python stack selected by DOCKER_DEVICE_STR.
-#
-# This calls device_installer.py, which now uses uv internally:
-#   uv pip install --python <interpreter> ...
 RUN set -eux; \
     ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"; \
     rustup self uninstall -y 2>/dev/null || true; \

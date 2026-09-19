@@ -3086,7 +3086,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         bar.close()
                     return False
                 filepath = os.path.join(session['chapters_dir'], filename)
-                duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
+                duration_ms = int(get_audio_duration(filepath) * 1000)
                 clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), sanitize_meta_chapter_title(chapter_title))
                 ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
                 ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
