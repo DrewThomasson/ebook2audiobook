@@ -124,7 +124,6 @@ for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 ::::::::::::::::::::::::::::::: CORE FUNCTIONS
 
 call :check_python
-call :check_uv
 
 if not "%~1"=="" (
     setlocal EnableDelayedExpansion
@@ -906,6 +905,7 @@ if defined arguments.help (
         goto :eof
     )
 ) else (
+	call :check_uv
     if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
         if "%DOCKER_DEVICE_STR%"=="" (
 			setlocal enabledelayedexpansion

@@ -455,47 +455,50 @@ check_uv() {
         echo -e "\e[32m=============== uv OK! ===============\e[0m"
         if ! grep -iqFx "uv" "$INSTALLED_LOG"; then echo "uv" >> "$INSTALLED_LOG"; fi
     fi
-    local model="other"
-    if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then PYTHON_VERSION="3.11"
-    else
-        if [[ -r /proc/device-tree/model ]]; then
-            model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
-            if [[ "$model" == *jetson* ]]; then PYTHON_VERSION="$MIN_PYTHON_VERSION"; fi
-        else
-            compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
-            case $? in 1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;; esac
-            compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
-            case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
-        fi
-    fi
-    if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
-        if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/pyvenv.cfg" ]]; then
-            echo -e "\e[33m$PYTHON_ENV is not a virtualenv — removing…\e[0m"
-            rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
-        elif ! uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" --allow-existing >/dev/null 2>&1; then
-            echo -e "\e[33m$PYTHON_ENV is inconsistent — removing and recreating…\e[0m"
-            rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
-        fi
-    fi
-    if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
-        echo -e "\e[33mCreating ./$PYTHON_ENV with python $PYTHON_VERSION…\e[0m"
-        chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
-        chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
-        uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" || return 1
-    fi
-    PY_CMD="$SCRIPT_DIR/$PYTHON_ENV/bin/python3"
-    export VIRTUAL_ENV="$SCRIPT_DIR/$PYTHON_ENV"
-    export PATH="$VIRTUAL_ENV/bin:$PATH"
-    if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/.provisioned" ]]; then
-        if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
-            uv pip install --python "$SCRIPT_DIR/$PYTHON_ENV/bin/python" gfortran 2>/dev/null || true
-        fi
-        DEVICE_INFO_STR="$(check_device_info "$SCRIPT_MODE")"
-        if [[ -z "$DEVICE_INFO_STR" ]]; then echo "check_device_info() error: result is empty"; return 1; fi
-        install_device_packages "$DEVICE_INFO_STR" || return 1
-        install_python_packages || return 1
-        echo "$APP_VERSION" > "$SCRIPT_DIR/$PYTHON_ENV/.provisioned"
-    fi
+	if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
+		local model="other"
+		if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then	
+			PYTHON_VERSION="3.11"
+		else
+			if [[ -r /proc/device-tree/model ]]; then
+				model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
+				if [[ "$model" == *jetson* ]]; then PYTHON_VERSION="$MIN_PYTHON_VERSION"; fi
+			else
+				compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
+				case $? in 1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;; esac
+				compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
+				case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
+			fi
+		fi
+		if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+			if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/pyvenv.cfg" ]]; then
+				echo -e "\e[33m$PYTHON_ENV is not a virtualenv — removing…\e[0m"
+				rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
+			elif ! uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" --allow-existing >/dev/null 2>&1; then
+				echo -e "\e[33m$PYTHON_ENV is inconsistent — removing and recreating…\e[0m"
+				rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
+			fi
+		fi
+		if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+			echo -e "\e[33mCreating ./$PYTHON_ENV with python $PYTHON_VERSION…\e[0m"
+			chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
+			chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
+			uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" || return 1
+		fi
+		PY_CMD="$SCRIPT_DIR/$PYTHON_ENV/bin/python3"
+		export VIRTUAL_ENV="$SCRIPT_DIR/$PYTHON_ENV"
+		export PATH="$VIRTUAL_ENV/bin:$PATH"
+		if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/.provisioned" ]]; then
+			if [[ "${OSTYPE-}" != darwin* && "$model" == *jetson* ]]; then
+				uv pip install --python "$SCRIPT_DIR/$PYTHON_ENV/bin/python" gfortran 2>/dev/null || true
+			fi
+			DEVICE_INFO_STR="$(check_device_info "$SCRIPT_MODE")"
+			if [[ -z "$DEVICE_INFO_STR" ]]; then echo "check_device_info() error: result is empty"; return 1; fi
+			install_device_packages "$DEVICE_INFO_STR" || return 1
+			install_python_packages || return 1
+			echo "$APP_VERSION" > "$SCRIPT_DIR/$PYTHON_ENV/.provisioned"
+		fi
+	fi
     return 0
 }
 
@@ -634,11 +637,11 @@ build_docker_image() {
 ######################################## END of functions
 
 check_python || exit 1
-check_uv || exit 1
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
     "$PY_CMD" -u "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
+	check_uv || exit 1
     if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
         if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
             check_docker || exit 1
