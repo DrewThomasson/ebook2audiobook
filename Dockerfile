@@ -39,6 +39,7 @@ WORKDIR /app
 
 # Runtime directories.
 RUN set -eux; \
+	printf '%s\n' "${DOCKER_DEVICE_STR}"; \
     mkdir -p \
         /app/ebooks \
         /app/audiobooks \
