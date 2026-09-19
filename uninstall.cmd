@@ -130,7 +130,7 @@ if defined REMOVE_PYTHON (
 :: - rd /s /q removes the junction, not the target
 :: ========================================================
 if defined REMOVE_SCOOP if exist "%SCOOP_HOME%" (
-	echo %SCOOP_HOME%
+	echo Uninstalling scoop at %SCOOP_HOME%...
 	rd /s /q "%SCOOP_HOME%" >nul 2>&1
 )
 
@@ -138,15 +138,16 @@ if defined REMOVE_SCOOP if exist "%SCOOP_HOME%" (
 :: REMOVE SHORTCUTS + REGISTRY
 :: ========================================================
 if exist "%STARTMENU_DIR%" (
-	echo %STARTMENU_DIR%
+	echo Removing %STARTMENU_DIR%...
 	rd /s /q "%STARTMENU_DIR%" >nul 2>&1
 )
 
 if exist "%DESKTOP_LNK%" (
-	echo %DESKTOP_LNK%
+	echo Removing %STARTMENU_DIR%...
 	del /q "%DESKTOP_LNK%" >nul 2>&1
 )
 
+echo Deleting registry HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook...
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
 :: ========================================================
