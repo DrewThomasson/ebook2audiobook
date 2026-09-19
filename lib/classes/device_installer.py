@@ -96,7 +96,7 @@ class DeviceInstaller():
             return list(min_python_version)
         return list(os_version)
 
-    def check_device_info(self, mode:str)->str:
+def check_device_info(self, mode:str)->str:
         if mode == NATIVE:
             previous = self.load_device_info()
             name, tag, msg = self.check_hardware
@@ -104,7 +104,7 @@ class DeviceInstaller():
             arch = archs['AARCH64'] if name in [devices['JETSON']['proc']] else self.arch
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
-                device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
+                device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": re.sub(r'[^\w\s-]', '', msg)}
                 if device_info != previous:
                     try:
                         with open(device_info_json, 'w', encoding='utf-8') as f:
@@ -120,7 +120,7 @@ class DeviceInstaller():
             arch = archs['AARCH64'] if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else self.arch
             if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
-            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
+            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": re.sub(r'[^\w\s-]', '', msg)}
             try:
                 with open(device_info_json, 'w', encoding='utf-8') as f:
                     json.dump(device_info, f)
