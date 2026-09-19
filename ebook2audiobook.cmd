@@ -791,8 +791,11 @@ exit /b 0
 :build_docker_image
 setlocal enabledelayedexpansion
 set "ARG=%~1"
-set "ARG_ESCAPED="
-if defined ARG set "ARG_ESCAPED=%ARG:"=\"%"
+if defined ARG (
+    set "ARG_ESCAPED=%ARG:"=\"%"
+) else (
+    set "ARG_ESCAPED="
+)
 if "%DOCKER_MODE%"=="podman" (
 	if "%PODMAN_DESKTOP%"=="0" (
 		echo podman-compose is not running.
@@ -813,47 +816,47 @@ rem py_vers must follow the prebuilt-wheel ABI, so derive it from the profile py
 set "ARG_NQ=%ARG:"=%"
 for /f "tokens=2 delims=[]" %%a in ("!ARG_NQ!") do for /f "tokens=1,2 delims=, " %%b in ("%%a") do set "py_vers=%%b.%%c"
 if /i "%DEVICE_TAG:~0,2%"=="cu" (
-	set "cmd_options=--gpus all"
+    set "cmd_options=--gpus all"
 ) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
-	set "cmd_options=--runtime nvidia --gpus all"
-) else if /i "%DEVICE_TAG:~0,4%"=="rocm" (
-	set "cmd_options=--device=/dev/kfd --device=/dev/dri"
+    set "cmd_options=--runtime nvidia --gpus all"
+) else if /i "%DEVICE_TAG:~0,8%"=="rocm" (
+    set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
-	set "cmd_options=--device=/dev/dri"
+    set "cmd_options=--device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="mps" (
-	set "cmd_options="
+    set "cmd_options="
 ) else if /i "%DEVICE_TAG%"=="cpu" (
-	set "cmd_options="
+    set "cmd_options="
 )
 if /i "%DEVICE_TAG%"=="cpu" (
-	set "COMPOSE_PROFILES=cpu"
+    set "COMPOSE_PROFILES=cpu"
 ) else if /i "%DEVICE_TAG%"=="mps" (
-	set "COMPOSE_PROFILES=cpu"
+    set "COMPOSE_PROFILES=cpu"
 ) else if /i "%DEVICE_TAG:~0,2%"=="cu" (
-	set "COMPOSE_PROFILES=cuda"
+    set "COMPOSE_PROFILES=cuda"
 ) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
-	set "COMPOSE_PROFILES=jetson"
+    set "COMPOSE_PROFILES=jetson"
 ) else if /i "%DEVICE_TAG:~0,4%"=="rocm" (
-	set "COMPOSE_PROFILES=rocm"
+    set "COMPOSE_PROFILES=rocm"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
-	set "COMPOSE_PROFILES=xpu"
+    set "COMPOSE_PROFILES=xpu"
 ) else (
-	set "COMPOSE_PROFILES=cpu"
+    set "COMPOSE_PROFILES=cpu"
 )
 set "SERVICE=ebook2audiobook-%COMPOSE_PROFILES%"
 if "%DOCKER_DESKTOP%"=="1" (
 	set "wsl_cmd="
-	set "WSL_DIR=%SAFE_SCRIPT_DIR%"
+    set "WSL_DIR=%SAFE_SCRIPT_DIR%"
 ) else (
 	set "wsl_cmd=wsl --user root -d %DOCKER_WSL_CONTAINER% --"
-	for /f "delims=" %%i in ('wsl --user root -d %DOCKER_WSL_CONTAINER% -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
+    for /f "delims=" %%i in ('wsl --user root -d %DOCKER_WSL_CONTAINER% -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
 )
 call :get_iso3_lang "%OS_LANG%"
 set "ISO3_LANG=!ISO3_LANG!"
 if "%DOCKER_MODE%"=="podman" (
-	echo Using podman build
-	cd /d "%SAFE_SCRIPT_DIR%"
-	podman build --format docker --no-cache --network=host --build-arg "PYTHON_VERSION=%py_vers%" --build-arg "APP_VERSION=%APP_VERSION%" --build-arg "DEVICE_TAG=%DEVICE_TAG%" --build-arg "DOCKER_DEVICE_STR=%ARG_ESCAPED%" --build-arg "DOCKER_PROGRAMS_STR=%DOCKER_PROGRAMS%" --build-arg "CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg "ISO3_LANG=%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" -f Dockerfile .
+    echo Using podman build
+    cd /d "%SAFE_SCRIPT_DIR%"
+    podman build --format docker --no-cache --network=host --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" -f Dockerfile .
 	if errorlevel 1 (
 		echo Build failed
 		endlocal 
@@ -866,13 +869,13 @@ if "%DOCKER_MODE%"=="podman" (
 	echo 	Headless mode:
 	echo   		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
-	if "%DOCKER_DESKTOP%"=="1" (
+    if "%DOCKER_DESKTOP%"=="1" (
 		echo Using docker compose
-		docker compose --profile "%COMPOSE_PROFILES%" build --no-cache --build-arg "PYTHON_VERSION=%py_vers%" --build-arg "APP_VERSION=%APP_VERSION%" --build-arg "DEVICE_TAG=%DEVICE_TAG%" --build-arg "DOCKER_DEVICE_STR=%ARG_ESCAPED%" --build-arg "DOCKER_PROGRAMS_STR=%DOCKER_PROGRAMS%" --build-arg "CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg "ISO3_LANG=%ISO3_LANG%"
-	) else (
+        docker compose --profile "%COMPOSE_PROFILES%" build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
+    ) else (
 		echo Using docker compose into WSL2 %DOCKER_WSL_CONTAINER%
-		%wsl_cmd% bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile '%COMPOSE_PROFILES%' build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR=\"%ARG_ESCAPED%\" --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
-	)
+        %wsl_cmd% bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile '%COMPOSE_PROFILES%' build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR=\"%ARG_ESCAPED%\" --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
+    )
 	if errorlevel 1 (
 		echo Build failed
 		endlocal 
@@ -893,9 +896,9 @@ if "%DOCKER_MODE%"=="podman" (
 	if "%DOCKER_DESKTOP%"=="1" (
 		:: echo Using docker buildx
 		:: docker buildx use default
-		:: docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
+        :: docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
 		echo Using docker build
-		docker build --shm-size=4g --progress=plain --no-cache --build-arg "PYTHON_VERSION=%py_vers%" --build-arg "APP_VERSION=%APP_VERSION%" --build-arg "DEVICE_TAG=%DEVICE_TAG%" --build-arg "DOCKER_DEVICE_STR=%ARG_ESCAPED%" --build-arg "DOCKER_PROGRAMS_STR=%DOCKER_PROGRAMS%" --build-arg "CALIBRE_INSTALLER_URL=%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg "ISO3_LANG=%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
+		docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
 		docker image prune --force
 	) else (
 		echo Using docker build into WSL2 %DOCKER_WSL_CONTAINER%
@@ -917,9 +920,9 @@ if "%DOCKER_MODE%"=="podman" (
 		%wsl_cmd% docker image prune --force
 		echo Docker image ready. To run your docker:
 		echo GUI mode:
-		echo	 %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+		echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 		echo Headless mode:
-		echo	 %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
+		echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice /app/custom_voice/voice.wav etc..]
 	)
 )
 if "%DOCKER_DESKTOP%"=="1" (
