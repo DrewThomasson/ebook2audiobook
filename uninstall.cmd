@@ -141,12 +141,10 @@ if exist "%STARTMENU_DIR%" (
 	echo Removing %STARTMENU_DIR%...
 	rd /s /q "%STARTMENU_DIR%" >nul 2>&1
 )
-
 if exist "%DESKTOP_LNK%" (
-	echo Removing %STARTMENU_DIR%...
+	echo Removing %DESKTOP_LNK%...
 	del /q "%DESKTOP_LNK%" >nul 2>&1
 )
-
 echo Deleting registry HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook...
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
@@ -157,21 +155,16 @@ reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audio
 :: - continue even if some items are already gone
 :: ========================================================
 echo Cleaning repository content...
-
-:: Delete files
 for %%I in ("%REAL_INSTALL_DIR%\*") do (
     if /i not "%%~nxI"=="%SCRIPT_NAME%" (
         echo %%~nxI
         del /f /q "%%~fI" >nul 2>&1
     )
 )
-
-:: Delete directories
 for /D %%I in ("%REAL_INSTALL_DIR%\*") do (
     echo %%~nxI
     rd /s /q "%%~fI" >nul 2>&1
 )
-
 if exist "%INSTALLED_LOG%" (
 	echo .installed
 	del /f /q "%INSTALLED_LOG%" >nul 2>&1
