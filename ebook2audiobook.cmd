@@ -601,6 +601,45 @@ if errorlevel 1 (
 	)
 	goto :restart_script
 )
+set "CURRENT_ENV="
+if defined VIRTUAL_ENV ( set "CURRENT_ENV=%VIRTUAL_ENV%" )
+if defined CURRENT_ENV (
+	if /i not "%CURRENT_ENV%"=="%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+		echo Current python virtual environment detected: %CURRENT_ENV%.
+		echo This script runs with its own virtual env and must be out of any other virtual environment.
+		goto :failed
+	)
+)
+if "%SCRIPT_MODE%"=="%NATIVE%" (
+	set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+	set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
+	set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
+	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+		if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\pyvenv.cfg" (
+			echo %PYTHON_ENV% is not a virtualenv — removing...
+			rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+		) else (
+			uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION% --allow-existing >nul 2>&1
+			if errorlevel 1 (
+				echo %PYTHON_ENV% is inconsistent — removing and recreating...
+				rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+			)
+		)
+	)
+	if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+		echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION% via uv...
+		uv python find %PYTHON_VERSION% >nul 2>&1
+		if errorlevel 1 (
+			uv python install %PYTHON_VERSION%
+			if errorlevel 1 goto :failed
+		)
+		uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION%
+		if errorlevel 1 goto :failed
+		call :provision_env
+		if errorlevel 1 goto :failed
+		> "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" echo %APP_VERSION%
+	)
+)
 exit /b 0
 
 :check_wsl
