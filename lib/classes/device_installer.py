@@ -96,7 +96,7 @@ class DeviceInstaller():
             return list(min_python_version)
         return list(os_version)
 
-def check_device_info(self, mode:str)->str:
+    def check_device_info(self, mode:str)->str:
         if mode == NATIVE:
             previous = self.load_device_info()
             name, tag, msg = self.check_hardware
