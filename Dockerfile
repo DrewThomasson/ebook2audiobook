@@ -12,7 +12,7 @@ FROM python:${PYTHON_VERSION}-slim-trixie
 
 ARG APP_VERSION=26.9.17
 ARG DEVICE_TAG=cu130
-ARG DOCKER_DEVICE_STR='{ "name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu130", "note": "default device" }'
+ARG DOCKER_DEVICE_STR="{\"name\":\"cuda\",\"os\":\"manylinux_2_28\",\"arch\":\"x86_64\",\"pyvenv\":[3,12],\"tag\":\"cu130\",\"note\":\"default_device\"}"
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
@@ -117,7 +117,7 @@ RUN set -eux; \
 RUN sed -i 's/\r$//' ./ebook2audiobook.command
 
 RUN set -eux; \
-    ./ebook2audiobook.command --script_mode build_docker --docker_device '${DOCKER_DEVICE_STR}'; \
+    ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"; \
     rustup self uninstall -y 2>/dev/null || true; \
     apt-get update; \
     apt-get purge -y --auto-remove \
