@@ -786,11 +786,8 @@ exit /b 0
 :build_docker_image
 setlocal enabledelayedexpansion
 set "ARG=%~1"
-if defined ARG (
-    set "ARG_ESCAPED=%ARG:"=\"%"
-) else (
-    set "ARG_ESCAPED="
-)
+set "ARG_ESCAPED="
+if defined ARG set "ARG_ESCAPED=%ARG:"=\"%"
 if "%DOCKER_MODE%"=="podman" (
 	if "%PODMAN_DESKTOP%"=="0" (
 		echo podman-compose is not running.
