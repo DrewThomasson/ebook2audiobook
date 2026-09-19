@@ -115,7 +115,6 @@ if defined REMOVE_PYTHON (
 	"%PS_EXE%" %PS_ARGS% -Command "Get-AppxPackage PythonSoftwareFoundation.PythonManager | Remove-AppxPackage"
 	if errorlevel 1 (
 		echo Failed to uninstall Python Install Manager.
-		exit /b 1
 	)
 	findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
 	if not errorlevel 1 (
@@ -123,7 +122,6 @@ if defined REMOVE_PYTHON (
 		move /y "%INSTALLED_LOG%.tmp" "%INSTALLED_LOG%" >nul
 	)
 	echo Python and the Install Manager have been uninstalled successfully!
-	exit /b 0
 )
 
 :: ========================================================
