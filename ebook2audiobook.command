@@ -660,7 +660,6 @@ else
             fi
             build_docker_image "$DEVICE_INFO_STR" || exit 1
         else
-			echo "DOCKER_DEVICE_STR: $DOCKER_DEVICE_STR"
             if ! $PY_CMD - "$DOCKER_DEVICE_STR" <<'EOF'
 import json
 import sys
