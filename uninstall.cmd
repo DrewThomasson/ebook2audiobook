@@ -59,12 +59,14 @@ tasklist | find /i "%APP_NAME%.exe" >nul && (
 set "REMOVE_CONDA="
 set "REMOVE_UV="
 set "REMOVE_SCOOP="
+set "REMOVE_PYTHON="
 
 if exist "%INSTALLED_LOG%" (
 	for /f "usebackq delims=" %%A in ("%INSTALLED_LOG%") do (
 		if /i "%%A"=="Miniforge3" set "REMOVE_CONDA=1"
 		if /i "%%A"=="uv" set "REMOVE_UV=1"
-		if /i "%%A"=="Scoop"      set "REMOVE_SCOOP=1"
+		if /i "%%A"=="scoop" set "REMOVE_SCOOP=1"
+		if /i "%%A"=="python" set "REMOVE_PYTHON=1"
 	)
 )
 
@@ -98,6 +100,30 @@ if defined REMOVE_UV (
 	"%PS_EXE%" %PS_ARGS% -Command "'uv.exe', 'uvx.exe', 'uvw.exe' | ForEach-Object { Remove-Item \"$HOME\.local\bin\$_\" -ErrorAction SilentlyContinue }"
 	"%PS_EXE%" %PS_ARGS% -Command "Remove-Item \"$env:APPDATA\uv\", \"$env:LOCALAPPDATA\uv\" -Recurse -Force -ErrorAction SilentlyContinue"
 	echo uv successfully uninstalled.
+)
+
+:: ========================================================
+:: REMOVE PYTHON
+:: ========================================================
+if defined REMOVE_PYTHON (
+	echo Uninstalling all managed Python runtimes...
+	pymanager uninstall --purge -y
+	if errorlevel 1 (
+		echo Warning: Could not cleanly uninstall Python runtimes.
+	)
+	echo Uninstalling official Python Install Manager...
+	"%PS_EXE%" %PS_ARGS% -Command "Get-AppxPackage PythonSoftwareFoundation.PythonManager | Remove-AppxPackage"
+	if errorlevel 1 (
+		echo Failed to uninstall Python Install Manager.
+		exit /b 1
+	)
+	findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
+	if not errorlevel 1 (
+		findstr /v /i /x "python" "%INSTALLED_LOG%" > "%INSTALLED_LOG%.tmp"
+		move /y "%INSTALLED_LOG%.tmp" "%INSTALLED_LOG%" >nul
+	)
+	echo Python and the Install Manager have been uninstalled successfully!
+	exit /b 0
 )
 
 :: ========================================================
