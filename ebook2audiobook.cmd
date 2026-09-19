@@ -792,7 +792,7 @@ exit /b 0
 setlocal enabledelayedexpansion
 set "ARG=%~1"
 set "ARG_ESCAPED="
-if defined ARG set "ARG_ESCAPED=%ARG:"=\"%"
+if defined ARG for /f "delims=" %%A in ('powershell -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $env:ARG -replace '[^\p{L}\p{Nd} _-]', ''"') do set "ARG_ESCAPED=%%A"
 if "%DOCKER_MODE%"=="podman" (
 	if "%PODMAN_DESKTOP%"=="0" (
 		echo podman-compose is not running.
