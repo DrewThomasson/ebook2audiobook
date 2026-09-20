@@ -891,6 +891,7 @@ if "%DOCKER_MODE%"=="podman" (
 		:: docker buildx use default
         :: docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%DEVICE_INFO_STR%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
 		echo Using docker build
+		echo DEVICE_INFO_STR: %DEVICE_INFO_STR%
 		docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%DEVICE_INFO_STR%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
 		docker image prune --force
 	) else (
