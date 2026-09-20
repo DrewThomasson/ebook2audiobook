@@ -893,7 +893,7 @@ def build_interface(args:dict)->gr.Blocks:
                     with gr.Tab('Audiobookshelf', elem_id='gr_tab_abs_params', elem_classes='gr-tab', visible=visible_gr_tab_abs_params) as gr_tab_abs_params:
                         with gr.Row(elem_id='gr_row1_abs'):
                             gr_abs_url = gr.Textbox(label='Server URL', elem_id='gr_abs_url', value=default_abs_url, placeholder='http://localhost:13378', lines=1, max_lines=1, interactive=True, scale=2)
-                            gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', lines=1, max_lines=1, interactive=True, scale=1) 
+                            gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', lines=1, max_lines=1, interactive=True, scale=1)
                         with gr.Row(elem_id='gr_row2_abs'):
                             gr_abs_library = gr.Dropdown(label='', elem_id='gr_abs_library', choices=[], value=default_abs_library or None, interactive=True)
                             gr_abs_search_btn = gr.Button('🔍', elem_id='gr_abs_search_btn', elem_classes=['gr-abs-search-btn'], variant='', visible=True, interactive=True, scale=0, min_width=60)
@@ -4182,6 +4182,9 @@ def build_interface(args:dict)->gr.Blocks:
                                     console.warn("Error updating status on unload:", e);
                                 }
                             });
+                            window.onElementAvailable("input:not([type='hidden']), textarea", (el)=>{
+                                el.setAttribute("autocomplete", "off");
+                            }, {once: false});
                             window.onElementAvailable("#gr_voice_player_hidden audio", (el)=>{
                                 window.init_voice_player_hidden();
                             }, {once: false});
