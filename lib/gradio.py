@@ -775,7 +775,7 @@ def build_interface(args:dict)->gr.Blocks:
                         with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-no-col'], visible=True) as gr_group_audiobook_list:
                             gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
-                            gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=true, value=0.0)
+                            gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=True, value=0.0)
                             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
                             gr_audio_kwargs = {"elem_id": "gr_audiobook_player", "label": "", "type": "filepath", "autoplay": False, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True}
                             gr_audiobook_player = gr.Audio(**gr_audio_kwargs)
