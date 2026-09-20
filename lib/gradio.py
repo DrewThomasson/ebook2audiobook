@@ -3898,8 +3898,8 @@ def build_interface(args:dict)->gr.Blocks:
                                                             lastCue = null;
                                                         }
                                                         const now = performance.now();
+                                                        console.log(now, last_time);
                                                         if(now - last_time > 1000){
-                                                            console.log(now, last_time);
                                                             /*
                                                             gr_playback_time.value = String(window.session_storage.playback_time);
                                                             gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
