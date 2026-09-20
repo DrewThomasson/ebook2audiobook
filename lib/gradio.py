@@ -500,8 +500,8 @@ header_css = '''
             height: 60px !important;
         }
         #gr_session_update, #gr_restore_session, #gr_save_session,
-        #gr_audiobook_vtt, #gr_playback_time {
-            display: none !important;
+        #gr_audiobook_vtt {
+            visibility: hidden !important;
         }
         #gr_blocks_nav {
             overflow:hidden !important;
@@ -3898,11 +3898,11 @@ def build_interface(args:dict)->gr.Blocks:
                                                             lastCue = null;
                                                         }
                                                         const now = performance.now();
-                                                        /*if(now - last_time > 1000){
+                                                        if(now - last_time > 1000){
                                                             gr_playback_time.value = String(window.session_storage.playback_time);
                                                             gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
                                                             last_time = now;
-                                                        }*/
+                                                        }
                                                     }catch(e){
                                                         console.warn("gr_audiobook_player tracking error:", e);
                                                     }
