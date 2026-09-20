@@ -1,4 +1,4 @@
-gradio==6.27.0
+gradio==6.28.0
 transformers>=5.0.0,<5.1
 pandas>=1.0,<3.0
 coqui-tts[languages]==0.27.5
