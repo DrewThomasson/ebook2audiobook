@@ -790,10 +790,6 @@ exit /b 0
 
 :build_docker_image
 setlocal enabledelayedexpansion
-echo DEVICE_INFO_STR: %DEVICE_INFO_STR%
-set "ARG=%~1"
-set "ARG_ESCAPED="
-if defined ARG set "ARG_ESCAPED=%ARG:"=\"%"
 if "%DOCKER_MODE%"=="podman" (
 	if "%PODMAN_DESKTOP%"=="0" (
 		echo podman-compose is not running.
@@ -853,7 +849,7 @@ set "ISO3_LANG=!ISO3_LANG!"
 if "%DOCKER_MODE%"=="podman" (
     echo Using podman build
     cd /d "%SAFE_SCRIPT_DIR%"
-    podman build --format docker --no-cache --network=host --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" -f Dockerfile .
+    podman build --format docker --no-cache --network=host --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%DEVICE_INFO_STR%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" -f Dockerfile .
 	if errorlevel 1 (
 		echo Build failed
 		endlocal 
@@ -868,10 +864,10 @@ if "%DOCKER_MODE%"=="podman" (
 ) else if "%DOCKER_MODE%"=="compose" (
     if "%DOCKER_DESKTOP%"=="1" (
 		echo Using docker compose
-        docker compose --profile "%COMPOSE_PROFILES%" build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
+        docker compose --profile "%COMPOSE_PROFILES%" build --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%DEVICE_INFO_STR%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%"
     ) else (
 		echo Using docker compose into WSL2 %DOCKER_WSL_CONTAINER%
-        %wsl_cmd% bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile '%COMPOSE_PROFILES%' build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR=\"%ARG_ESCAPED%\" --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
+        %wsl_cmd% bash -c "cd '%WSL_DIR%' && docker compose --progress=plain --profile '%COMPOSE_PROFILES%' build --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR=\"%DEVICE_INFO_STR%\" --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%'"
     )
 	if errorlevel 1 (
 		echo Build failed
@@ -893,9 +889,9 @@ if "%DOCKER_MODE%"=="podman" (
 	if "%DOCKER_DESKTOP%"=="1" (
 		:: echo Using docker buildx
 		:: docker buildx use default
-        :: docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
+        :: docker buildx build --shm-size=4g --progress=plain --no-cache --platform linux/amd64 --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%DEVICE_INFO_STR%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
 		echo Using docker build
-		docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%ARG_ESCAPED%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
+		docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION="%py_vers%" --build-arg APP_VERSION="%APP_VERSION%" --build-arg DEVICE_TAG="%DEVICE_TAG%" --build-arg DOCKER_DEVICE_STR="%DEVICE_INFO_STR%" --build-arg DOCKER_PROGRAMS_STR="%DOCKER_PROGRAMS%" --build-arg CALIBRE_INSTALLER_URL="%DOCKER_CALIBRE_INSTALLER_URL%" --build-arg ISO3_LANG="%ISO3_LANG%" -t "%DOCKER_IMG_NAME%" .
 		docker image prune --force
 	) else (
 		echo Using docker build into WSL2 %DOCKER_WSL_CONTAINER%
@@ -908,7 +904,7 @@ if "%DOCKER_MODE%"=="podman" (
 		:: 	endlocal 
 		:: 	exit /b 1
 		:: )
-		%wsl_cmd% bash -c "cd '%WSL_DIR%' && docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%ARG_ESCAPED%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
+		%wsl_cmd% bash -c "cd '%WSL_DIR%' && docker build --shm-size=4g --progress=plain --no-cache --build-arg PYTHON_VERSION='%py_vers%' --build-arg APP_VERSION='%APP_VERSION%' --build-arg DEVICE_TAG='%DEVICE_TAG%' --build-arg DOCKER_DEVICE_STR='%DEVICE_INFO_STR%' --build-arg DOCKER_PROGRAMS_STR='%DOCKER_PROGRAMS%' --build-arg CALIBRE_INSTALLER_URL='%DOCKER_CALIBRE_INSTALLER_URL%' --build-arg ISO3_LANG='%ISO3_LANG%' -t '%DOCKER_IMG_NAME%' ."
 		if errorlevel 1 (
 			echo Build failed
 			endlocal 
@@ -985,7 +981,7 @@ if defined arguments.help (
 				)
 				goto :failed
 			)
-			call :build_docker_image !DEVICE_INFO_STR!
+			call :build_docker_image
 			if errorlevel 1 goto :failed
 			endlocal
 		) else (
