@@ -3682,19 +3682,6 @@ def build_interface(args:dict)->gr.Blocks:
                             let init_audiobook_player_timeout;
                             let audio_filter = "none";
                             let cues = [];
-                            const tab_id = create_uuid();
-                            const currentStorage = localStorage.getItem("data");
-                            if(currentStorage){
-                                window.session_storage = JSON.parse(currentStorage);
-                                window.session_storage.tab_id = tab_id;
-                                if(window.session_storage.playback_volume === 0){
-                                    window.session_storage.playback_volume = 1.0;
-                                }
-                            }else{
-                                window.session_storage = {};
-                                window.session_storage.playback_time = 0;
-                                window.session_storage.playback_volume = 1.0;
-                            }
                             if(typeof window.onElementAvailable !== "function"){
                                 window.onElementAvailable = (selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {})=> {
                                     const seen = new WeakSet();
@@ -4223,6 +4210,19 @@ def build_interface(args:dict)->gr.Blocks:
                             }
                             //////////////////////
                             const bc = new BroadcastChannel("E2A-channel");
+                            const tab_id = create_uuid();
+                            const currentStorage = localStorage.getItem("data");
+                            if(currentStorage){
+                                window.session_storage = JSON.parse(currentStorage);
+                                window.session_storage.tab_id = tab_id;
+                                if(window.session_storage.playback_volume === 0){
+                                    window.session_storage.playback_volume = 1.0;
+                                }
+                            }else{
+                                window.session_storage = {};
+                                window.session_storage.playback_time = 0;
+                                window.session_storage.playback_volume = 1.0;
+                            }
                             bc.onmessage = (event)=>{
                                 try{
                                     const msg = event.data;
