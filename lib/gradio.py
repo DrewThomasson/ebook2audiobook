@@ -3886,7 +3886,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                                 gr_audiobook_sentence.style.opacity = "0";
                                                             }
                                                             gr_audiobook_sentence.style.transition = "none";
-                                                            //gr_audiobook_sentence.value = cue.text;
+                                                            gr_audiobook_sentence.value = cue.text;
                                                             clearTimeout(fade_timeout);
                                                             fade_timeout = setTimeout(() => {
                                                                 gr_audiobook_sentence.style.transition = "opacity 0.15s ease-in";
