@@ -3874,7 +3874,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             let lastCue = null;
                                             let fade_timeout = null;
                                             let last_time = 0;
-                                            if(typeof(gr_audiobook_player) != "undefined" && typeof(gr_audiobook_sentence.value) != "undefined" && typeof(gr_playback_time) != "undefined"){
+                                            if(gr_audiobook_player && gr_audiobook_sentence && gr_playback_time){
                                                 function trackPlayback(){
                                                     try {
                                                         window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
@@ -3886,7 +3886,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                                 gr_audiobook_sentence.style.opacity = "0";
                                                             }
                                                             gr_audiobook_sentence.style.transition = "none";
-                                                            gr_audiobook_sentence.value = cue.text;
+                                                            //gr_audiobook_sentence.value = cue.text;
                                                             clearTimeout(fade_timeout);
                                                             fade_timeout = setTimeout(() => {
                                                                 gr_audiobook_sentence.style.transition = "opacity 0.15s ease-in";
@@ -3898,11 +3898,11 @@ def build_interface(args:dict)->gr.Blocks:
                                                             lastCue = null;
                                                         }
                                                         const now = performance.now();
-                                                        if(now - last_time > 1000){
+                                                        /*if(now - last_time > 1000){
                                                             gr_playback_time.value = String(window.session_storage.playback_time);
                                                             gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
                                                             last_time = now;
-                                                        }
+                                                        }*/
                                                     }catch(e){
                                                         console.warn("gr_audiobook_player tracking error:", e);
                                                     }
