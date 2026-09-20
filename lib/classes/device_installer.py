@@ -462,7 +462,7 @@ class DeviceInstaller():
                 tag = forced_tag
                 if forced_tag in ['cu128', 'cu129', 'rocm7.2.1'] and self.system == systems['WINDOWS']:
                     tag = f'win-{forced_tag}'
-                msg = f'Hardware forced from DEVICE_TAG={tag}'
+                msg = f'Hardware forced from {tag}'
             else:
                 msg = f'DEVICE_TAG not valid'
         else:
