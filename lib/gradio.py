@@ -500,7 +500,7 @@ header_css = '''
             height: 60px !important;
         }
         #gr_session_update, #gr_restore_session, #gr_save_session,
-        #gr_audiobook_vtt, #gr_playback_time {
+        #gr_audiobook_vtt, #gr_playback_time, #gr_voice_player_hidden {
             display: none !important;
         }
         #gr_blocks_nav {
@@ -725,7 +725,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
                                     gr_voice_file = gr.File(show_label=False, label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                     with gr.Row(elem_id='gr_row_voice_player') as gr_row_voice_player:
-                                        gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), container=False, visible='hidden', show_label=False, scale=0, min_width=60)
+                                        gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), container=False, visible=True, show_label=False, scale=0, min_width=60)
                                         gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                         gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                         gr_voice_selected_filename = gr.Markdown(value='', elem_id='gr_voice_selected_filename', elem_classes=['gr-markdown'], visible=False)
