@@ -3874,7 +3874,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             let lastCue = null;
                                             let fade_timeout = null;
                                             let last_time = 0;
-                                            if(gr_audiobook_player && gr_audiobook_sentence && gr_playback_time){
+                                            if(typeof(gr_audiobook_player) != "undefined" && typeof(gr_audiobook_sentence.value) != "undefined" && typeof(gr_playback_time) != "undefined"){
                                                 function trackPlayback(){
                                                     try {
                                                         window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
