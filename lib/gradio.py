@@ -3899,9 +3899,11 @@ def build_interface(args:dict)->gr.Blocks:
                                                         }
                                                         const now = performance.now();
                                                         if(now - last_time > 1000){
-                                                            gr_playback_time.value = String(window.session_storage.playback_time);
-                                                            gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
-                                                            last_time = now;
+                                                            if(typeof(gr_playback_time.value) != "undefined"){
+                                                                gr_playback_time.value = String(window.session_storage.playback_time);
+                                                                gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
+                                                                last_time = now;
+                                                            }
                                                         }
                                                     }catch(e){
                                                         console.warn("gr_audiobook_player tracking error:", e);
