@@ -42,6 +42,7 @@ PyOpenGL
 phonemizer-fork
 num2words2
 pydub
+tinytag
 soundfile
 unidecode
 langdetect
