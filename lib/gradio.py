@@ -1321,7 +1321,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
                 try:
-                    visible = True if audiobook is not None else False
+                    visible = True if audiobook is not None else 'hidden'
                     return gr.update(visible=visible), gr.update(value=audiobook), gr.update(active=True)
                 except Exception as e:
                     error = f'_restore_audiobook_player(): {e}'
@@ -1448,13 +1448,13 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         if session.get('audiobook') != selected:
                             session['audiobook'] = selected
-                        visible = session['audiobook'] is not None
+                        visible = True if session['audiobook'] is not None else 'hidden'
                         audiobook = selected if selected else ''
                         return gr.update(visible=visible), gr.update(value=audiobook)
                 except Exception as e:
                     error = f'_change_gr_audiobook_list(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(visible=False), gr.update(value='')
+                return gr.update(visible='hidden'), gr.update(value='')
 
             def _update_gr_audiobook_player(session_id:str)->tuple:
                 try:
@@ -3680,8 +3680,21 @@ def build_interface(args:dict)->gr.Blocks:
                             let tabs_open = false;
                             let init_elements_timeout;
                             let init_audiobook_player_timeout;
-                            let audio_filter = "";
+                            let audio_filter = "none";
                             let cues = [];
+                            const tab_id = create_uuid();
+                            const currentStorage = localStorage.getItem("data");
+                            if(currentStorage){
+                                window.session_storage = JSON.parse(currentStorage);
+                                window.session_storage.tab_id = tab_id;
+                                if(window.session_storage.playback_volume === 0){
+                                    window.session_storage.playback_volume = 1.0;
+                                }
+                            }else{
+                                window.session_storage = {};
+                                window.session_storage.playback_time = 0;
+                                window.session_storage.playback_volume = 1.0;
+                            }
                             if(typeof window.onElementAvailable !== "function"){
                                 window.onElementAvailable = (selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {})=> {
                                     const seen = new WeakSet();
@@ -3854,9 +3867,6 @@ def build_interface(args:dict)->gr.Blocks:
                                                 gr_voice_player_hidden.volume = v;
                                             });
                                             return true;
-                                        }else{
-                                            console.warn("Voice player not found yet, retrying…");
-                                            setTimeout(window.init_voice_player_hidden, 500);
                                         }
                                     }catch(e){
                                         console.warn("init_voice_player_hidden error:", e);
@@ -3867,97 +3877,161 @@ def build_interface(args:dict)->gr.Blocks:
                             if(typeof(window.init_audiobook_player) !== "function"){
                                 window.init_audiobook_player = ()=>{
                                     try{
-                                        if(gr_root){
-                                            gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
-                                            gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                            gr_playback_time = gr_root.querySelector("#gr_playback_time input");
-                                            let lastCue = null;
-                                            let fade_timeout = null;
-                                            let last_time = 0;
-                                            if(gr_audiobook_player && gr_audiobook_sentence && gr_playback_time){
-                                                function trackPlayback(){
-                                                    try {
-                                                        window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
-                                                        const cue = findCue(window.session_storage.playback_time);
-                                                        if(cue && cue !== lastCue){
-                                                            if(fade_timeout){
-                                                                gr_audiobook_sentence.style.opacity = "1";
-                                                            }else{
-                                                                gr_audiobook_sentence.style.opacity = "0";
-                                                            }
-                                                            gr_audiobook_sentence.style.transition = "none";
-                                                            gr_audiobook_sentence.value = cue.text;
-                                                            clearTimeout(fade_timeout);
-                                                            fade_timeout = setTimeout(() => {
-                                                                gr_audiobook_sentence.style.transition = "opacity 0.15s ease-in";
-                                                                gr_audiobook_sentence.style.opacity = "1";
-                                                                fade_timeout = null;
-                                                            }, 33);
-                                                            lastCue = cue;
-                                                        }else if(!cue && lastCue !== null){
-                                                            lastCue = null;
-                                                        }
-                                                        const now = performance.now();
-                                                        console.log(now, last_time);
-                                                        if(now - last_time > 1000){
-                                                            /*
-                                                            gr_playback_time.value = String(window.session_storage.playback_time);
-                                                            gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
-                                                            last_time = now;
-                                                            */
-                                                        }
-                                                    }catch(e){
-                                                        console.warn("gr_audiobook_player tracking error:", e);
-                                                    }
-                                                    if(!gr_audiobook_player.ended){
-                                                        requestAnimationFrame(trackPlayback);
-                                                    }
-                                                }
-                                                gr_audiobook_player.addEventListener("loadeddata", ()=>{
-                                                    gr_audiobook_player.style.transition = "filter 1s ease";
-                                                    gr_audiobook_player.style.filter = audio_filter;
-                                                    gr_audiobook_player.currentTime = parseFloat(window.session_storage?.playback_time) || 0;
-                                                    gr_audiobook_player.volume = window.session_storage.playback_volume;
-                                                });
-                                                gr_audiobook_player.addEventListener("play", ()=>{
-                                                    requestAnimationFrame(trackPlayback);
-                                                });
-                                                gr_audiobook_player.addEventListener("seeked", ()=>{
-                                                    window.session_storage.playback_time = gr_audiobook_player.currentTime;
-                                                    requestAnimationFrame(trackPlayback);
-                                                });
-                                                gr_audiobook_player.addEventListener("ended", ()=>{
-                                                    gr_audiobook_sentence.value = "…";
-                                                    window.session_storage.playback_time = 0;
-                                                    lastCue = null;
-                                                });
-                                                gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                    window.session_storage.playback_volume = gr_audiobook_player.volume;
-                                                    gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
-                                                    if(gr_voice_player_hidden){
-                                                        gr_voice_player_hidden.volume = gr_audiobook_player.volume;
-                                                        gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
-                                                    }
-                                                });
-                                                const themURL = new URL(window.location);
-                                                const theme = themURL.searchParams.get("__theme");
-                                                let osTheme;
-                                                if(theme){
-                                                    if(theme == "dark"){
-                                                        audio_filter = "invert(1) hue-rotate(180deg)";
-                                                    }
-                                                }else{
-                                                    osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                                    if(osTheme){
-                                                        audio_filter = "invert(1) hue-rotate(180deg)";
-                                                    }
-                                                }
-                                                gr_audiobook_player.style.transition = "filter 1s ease";
-                                                gr_audiobook_player.style.filter = audio_filter;
-                                                gr_audiobook_player.volume = window.session_storage.playback_volume;
-                                                return true;
+                                        gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                        if(!gr_root){
+                                            return false;
+                                        }
+                                        const player = gr_root.querySelector("#gr_audiobook_player audio");
+                                        if(!player){
+                                            return false;
+                                        }
+                                        gr_audiobook_player = player;
+                                        if(player.dataset.bound === "true"){
+                                            return true;
+                                        }
+                                        player.dataset.bound = "true";
+                                        let lastCue = null;
+                                        let fade_timeout = null;
+                                        let last_time = 0;
+                                        let raf_id = null;
+                                        function q_sentence(){
+                                            if(!gr_audiobook_sentence || !gr_audiobook_sentence.isConnected){
+                                                gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                            }
+                                            return gr_audiobook_sentence;
+                                        }
+                                        function q_playback_time(){
+                                            if(!gr_playback_time || !gr_playback_time.isConnected){
+                                                gr_playback_time = gr_root.querySelector("#gr_playback_time input, #gr_playback_time textarea");
+                                            }
+                                            return gr_playback_time;
+                                        }
+                                        function push_time(value){
+                                            const el = q_playback_time();
+                                            if(!el){
+                                                return false;
+                                            }
+                                            el.value = String(value);
+                                            el.dispatchEvent(new Event("input", {bubbles: true}));
+                                            return true;
+                                        }
+                                        function safe_volume(value){
+                                            const vol = parseFloat(value);
+                                            return Number.isFinite(vol) ? Math.min(Math.max(vol, 0), 1) : 1;
+                                        }
+                                        function is_playing(){
+                                            return !!(player.isConnected && !player.paused && !player.ended && player.readyState >= 2);
+                                        }
+                                        function start_playback(){
+                                            if(raf_id === null && is_playing()){
+                                                raf_id = requestAnimationFrame(trackPlayback);
                                             }
                                         }
+                                        function stop_playback(){
+                                            if(raf_id !== null){
+                                                cancelAnimationFrame(raf_id);
+                                                raf_id = null;
+                                            }
+                                        }
+                                        function trackPlayback(){
+                                            raf_id = null;
+                                            try{
+                                                window.session_storage.playback_time = parseFloat(player.currentTime);
+                                                const sentence = q_sentence();
+                                                const cue = findCue(window.session_storage.playback_time);
+                                                if(sentence && cue && cue !== lastCue){
+                                                    if(fade_timeout){
+                                                        sentence.style.opacity = "1";
+                                                    }else{
+                                                        sentence.style.opacity = "0";
+                                                    }
+                                                    sentence.style.transition = "none";
+                                                    sentence.value = cue.text;
+                                                    clearTimeout(fade_timeout);
+                                                    fade_timeout = setTimeout(() => {
+                                                        const el = q_sentence();
+                                                        if(el){
+                                                            el.style.transition = "opacity 0.15s ease-in";
+                                                            el.style.opacity = "1";
+                                                        }
+                                                        fade_timeout = null;
+                                                    }, 33);
+                                                    lastCue = cue;
+                                                }else if(!cue && lastCue !== null){
+                                                    lastCue = null;
+                                                }
+                                                const now = performance.now();
+                                                if(now - last_time > 1000){
+                                                    push_time(window.session_storage.playback_time);
+                                                    last_time = now;
+                                                }
+                                            }catch(e){
+                                                console.warn("gr_audiobook_player tracking error:", e);
+                                            }
+                                            if(is_playing()){
+                                                raf_id = requestAnimationFrame(trackPlayback);
+                                            }
+                                        }
+                                        player.addEventListener("loadeddata", ()=>{
+                                            player.style.transition = "filter 1s ease";
+                                            player.style.filter = audio_filter;
+                                            player.currentTime = parseFloat(window.session_storage?.playback_time) || 0;
+                                            player.volume = safe_volume(window.session_storage?.playback_volume);
+                                        });
+                                        player.addEventListener("play", start_playback);
+                                        player.addEventListener("playing", start_playback);
+                                        player.addEventListener("waiting", stop_playback);
+                                        player.addEventListener("pause", ()=>{
+                                            stop_playback();
+                                            push_time(player.currentTime);
+                                        });
+                                        player.addEventListener("seeked", ()=>{
+                                            window.session_storage.playback_time = player.currentTime;
+                                            stop_playback();
+                                            trackPlayback();
+                                        });
+                                        player.addEventListener("ended", ()=>{
+                                            stop_playback();
+                                            const sentence = q_sentence();
+                                            if(sentence){
+                                                sentence.value = "…";
+                                            }
+                                            window.session_storage.playback_time = 0;
+                                            lastCue = null;
+                                            push_time(0);
+                                        });
+                                        player.addEventListener("emptied", stop_playback);
+                                        player.addEventListener("abort", stop_playback);
+                                        player.addEventListener("error", stop_playback);
+                                        player.addEventListener("volumechange", ()=>{
+                                            window.session_storage.playback_volume = player.volume;
+                                            gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
+                                            if(gr_voice_player_hidden){
+                                                gr_voice_player_hidden.volume = player.volume;
+                                                gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
+                                            }
+                                        });
+                                        const themURL = new URL(window.location);
+                                        const theme = themURL.searchParams.get("__theme");
+                                        let osTheme;
+                                        audio_filter = "none";
+                                        if(theme){
+                                            if(theme == "dark"){
+                                                audio_filter = "invert(1) hue-rotate(180deg)";
+                                            }
+                                        }else{
+                                            osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+                                            if(osTheme){
+                                                audio_filter = "invert(1) hue-rotate(180deg)";
+                                            }
+                                        }
+                                        player.style.transition = "filter 1s ease";
+                                        player.style.filter = audio_filter;
+                                        player.volume = safe_volume(window.session_storage?.playback_volume);
+                                        q_sentence();
+                                        q_playback_time();
+                                        start_playback();
+                                        return true;
                                     }catch(e){
                                         console.warn("init_audiobook_player error:", e);
                                     }
@@ -4068,7 +4142,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
                                     let start = null, end = null;
                                     cues = [];
-                                    textBuffer = [];
+                                    const textBuffer = [];
                                     for(let i = 0, len = lines.length; i < len; i++){
                                         const line = lines[i];
                                         if(!line.trim()){ pushCue(); continue; }
@@ -4149,7 +4223,6 @@ def build_interface(args:dict)->gr.Blocks:
                             }
                             //////////////////////
                             const bc = new BroadcastChannel("E2A-channel");
-                            const tab_id = create_uuid();
                             bc.onmessage = (event)=>{
                                 try{
                                     const msg = event.data;
@@ -4174,7 +4247,7 @@ def build_interface(args:dict)->gr.Blocks:
                             window.addEventListener("beforeunload", ()=>{
                                 try{
                                     const newStorage = JSON.parse(localStorage.getItem("data") || "{}");
-                                    if(newStorage.tab_id == window.tab_id || !newStorage.tab_id){
+                                    if(newStorage.tab_id == window.session_storage.tab_id || !newStorage.tab_id){
                                         delete newStorage.tab_id;
                                         delete newStorage.status;
                                         newStorage.playback_time = Number(window.session_storage.playback_time);
@@ -4189,10 +4262,16 @@ def build_interface(args:dict)->gr.Blocks:
                                 el.setAttribute("autocomplete", "off");
                             }, {once: false});
                             window.onElementAvailable("#gr_voice_player_hidden audio", (el)=>{
-                                window.init_voice_player_hidden();
+                                return window.init_voice_player_hidden();
                             }, {once: false});
                             window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
-                                window.init_audiobook_player();
+                                return window.init_audiobook_player();
+                            }, {once: false});
+                            window.onElementAvailable("#gr_playback_time input, #gr_playback_time textarea", (el)=>{
+                                gr_playback_time = el;
+                            }, {once: false});
+                            window.onElementAvailable("#gr_audiobook_sentence textarea", (el)=>{
+                                gr_audiobook_sentence = el;
                             }, {once: false});
                             if (!window._fetch_patched) {
                                 const originalFetch = window.fetch;
@@ -4231,18 +4310,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 }, 250);
                             }catch(e){
                                 console.warn("bc.postMessage error:", e);
-                            }
-                            const currentStorage = localStorage.getItem("data");
-                            if(currentStorage){
-                                window.session_storage = JSON.parse(currentStorage);
-                                window.session_storage.tab_id = tab_id;
-                                if(window.session_storage.playback_volume === 0){
-                                    window.session_storage.playback_volume = 1.0;
-                                }
-                            }else{
-                                window.session_storage = {};
-                                window.session_storage.playback_time = 0;
-                                window.session_storage.playback_volume = 1.0;
                             }
                             return window.session_storage;
                         }catch(e){
