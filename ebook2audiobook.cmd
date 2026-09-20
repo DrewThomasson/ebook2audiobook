@@ -806,7 +806,7 @@ if "%DOCKER_MODE%"=="podman" (
 set "DOCKER_IMG_NAME=%DOCKER_IMG_NAME%:%DEVICE_TAG%"
 set "cmd_options="
 set "py_vers=%PYTHON_VERSION%"
-set "ARG_NQ=%ARG:"=%"
+set "ARG_NQ=%DEVICE_INFO_STR:"=%"
 for /f "tokens=2 delims=[]" %%a in ("!ARG_NQ!") do for /f "tokens=1,2 delims=, " %%b in ("%%a") do set "py_vers=%%b.%%c"
 if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--gpus all"
