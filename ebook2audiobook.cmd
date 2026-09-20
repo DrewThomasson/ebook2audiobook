@@ -790,6 +790,7 @@ exit /b 0
 
 :build_docker_image
 setlocal enabledelayedexpansion
+echo DEVICE_INFO_STR: %DEVICE_INFO_STR%
 set "ARG=%~1"
 set "ARG_ESCAPED="
 if defined ARG set "ARG_ESCAPED=%ARG:"=\"%"
@@ -984,8 +985,7 @@ if defined arguments.help (
 				)
 				goto :failed
 			)
-			echo -------- DOCKER_DEVICE_DESKTOP: !DEVICE_INFO_STR!
-			call :build_docker_image "!DEVICE_INFO_STR!"
+			call :build_docker_image !DEVICE_INFO_STR!
 			if errorlevel 1 goto :failed
 			endlocal
 		) else (
