@@ -67,7 +67,6 @@ def trim_audio(audio_data: Union[list[float], 'Tensor'], samplerate: int, silenc
     return torch.tensor([], dtype=torch.float32)
 
 def _get_length(filepath: str) -> float:
-    """Return duration in seconds for a single audio file."""
     audio = MutagenFile(filepath)
     if audio is None:
         audio = AAC(filepath)
