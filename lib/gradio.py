@@ -500,6 +500,9 @@ header_css = '''
             height: 60px !important;
         }
         #gr_session_update, #gr_restore_session, #gr_save_session,
+        #gr_audiobook_vtt, #gr_playback_time {
+            display: none !important;
+        }
         #gr_blocks_nav {
             overflow:hidden !important;
             display: flex !important;
@@ -771,8 +774,8 @@ def build_interface(args:dict)->gr.Blocks:
 
                         with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-no-col'], visible=True) as gr_group_audiobook_list:
                             gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
-                            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-                            gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=False, value=0.0)
+                            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=True)
+                            gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=True, value=0.0)
                             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
                             gr_audio_kwargs = {"elem_id": "gr_audiobook_player", "label": "", "type": "filepath", "autoplay": False, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True}
                             gr_audiobook_player = gr.Audio(**gr_audio_kwargs)
