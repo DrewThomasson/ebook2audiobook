@@ -334,6 +334,10 @@ Default to config.json model.""")
             error = 'WARNING: shared DLLs not found. aborting…'
             print(error)
             sys.exit(1)
+        if manager.check_voices() == 1:
+            error = f'Error: Could not download voices!'
+            print(error)
+            sys.exit(1)
         import lib.core as c
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
