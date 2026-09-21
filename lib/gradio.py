@@ -116,7 +116,7 @@ header_css = '''
             background-color: #ff5050 !important;
             font-size: 28px !important;
         }
-        .small-btn-lock{
+        .small-btn-lock {
             background: var(--block-background-fill) !important;
             font-size: 18px !important;
             width: 60px !important;
@@ -163,6 +163,10 @@ header_css = '''
         }
         .progress-level {
             flex-direction: column-reverse !important;
+        }
+        .wrap:has(> .progress-level) {
+            justify-content: flex-start !important;
+            padding-top: var(--size-2) !important;
         }
         .file-preview-holder {
             height: auto !important;
