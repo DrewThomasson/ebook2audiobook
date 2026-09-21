@@ -3303,8 +3303,8 @@ def build_interface(args:dict)->gr.Blocks:
                 '''
             )
             gr_playback_time.change(
-                fn=_change_gr_playback_time,
-                inputs=[gr_session, gr_playback_time],
+                fn=None,
+                inputs=None,
                 js='''
                     (time)=>{
                         try{
