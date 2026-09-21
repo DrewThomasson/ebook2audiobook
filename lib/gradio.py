@@ -3867,20 +3867,20 @@ def build_interface(args:dict)->gr.Blocks:
                                         let lastCue = null;
                                         let fade_timeout = null;
                                         let raf_id = null;
-                                        function q_sentence(){
+                                        function check_gr_sentence(){
                                             if(!gr_audiobook_sentence || !gr_audiobook_sentence.isConnected){
                                                 gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                             }
                                             return gr_audiobook_sentence;
                                         }
-                                        function q_playback_time(){
+                                        function check_gr_playback_time(){
                                             if(!gr_playback_time || !gr_playback_time.isConnected){
                                                 gr_playback_time = gr_root.querySelector("#gr_playback_time input, #gr_playback_time textarea");
                                             }
                                             return gr_playback_time;
                                         }
                                         function push_time(value){
-                                            const el = q_playback_time();
+                                            const el = check_gr_playback_time();
                                             if(!el){
                                                 return false;
                                             }
@@ -3910,7 +3910,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             raf_id = null;
                                             try{
                                                 window.session_storage.playback_time = parseFloat(player.currentTime);
-                                                const sentence = q_sentence();
+                                                const sentence = check_gr_sentence();
                                                 const cue = findCue(window.session_storage.playback_time);
                                                 if(sentence && cue && cue !== lastCue){
                                                     if(fade_timeout){
@@ -3922,7 +3922,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                     sentence.value = cue.text;
                                                     clearTimeout(fade_timeout);
                                                     fade_timeout = setTimeout(() => {
-                                                        const el = q_sentence();
+                                                        const el = check_gr_sentence();
                                                         if(el){
                                                             el.style.transition = "opacity 0.15s ease-in";
                                                             el.style.opacity = "1";
@@ -3960,7 +3960,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         });
                                         player.addEventListener("ended", ()=>{
                                             stop_playback();
-                                            const sentence = q_sentence();
+                                            const sentence = check_gr_sentence();
                                             if(sentence){
                                                 sentence.value = "…";
                                             }
@@ -3996,8 +3996,8 @@ def build_interface(args:dict)->gr.Blocks:
                                         player.style.transition = "filter 1s ease";
                                         player.style.filter = audio_filter;
                                         player.volume = safe_volume(window.session_storage?.playback_volume);
-                                        q_sentence();
-                                        q_playback_time();
+                                        check_gr_sentence();
+                                        check_gr_playback_time();
                                         start_playback();
                                         return true;
                                     }catch(e){
