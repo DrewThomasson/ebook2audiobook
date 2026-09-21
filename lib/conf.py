@@ -221,6 +221,7 @@ interface_component_options = {
 }
 
 interface_css = os.path.join(root_dir, 'header.css')
+interface_js = os.path.join(root_dir, 'header.js')
 
 # ---------------------------------------------------------------------
 # UI directories
