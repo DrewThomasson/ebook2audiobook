@@ -164,6 +164,13 @@ header_css = '''
         .progress-level {
             flex-direction: column-reverse !important;
         }
+        .progress-level-inner {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+            height: 3lh;
+            overflow: hidden;
+        }
         .wrap:has(> .progress-level) {
             justify-content: flex-start !important;
             padding-top: var(--size-2) !important;
