@@ -1321,7 +1321,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _restore_audiobook_player(session_id:str, audiobook:str|None)->tuple:
                 try:
-                    visible = True if audiobook is not None else 'hidden'
+                    visible = True if audiobook is not None else False
                     return gr.update(visible=visible), gr.update(value=audiobook), gr.update(active=True)
                 except Exception as e:
                     error = f'_restore_audiobook_player(): {e}'
@@ -1448,13 +1448,13 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         if session.get('audiobook') != selected:
                             session['audiobook'] = selected
-                        visible = True if session['audiobook'] is not None else 'hidden'
+                        visible = session['audiobook'] is not None
                         audiobook = selected if selected else ''
                         return gr.update(visible=visible), gr.update(value=audiobook)
                 except Exception as e:
                     error = f'_change_gr_audiobook_list(): {e}'
                     exception_alert(session_id, error)
-                return gr.update(visible='hidden'), gr.update(value='')
+                return gr.update(visible=False), gr.update(value='')
 
             def _update_gr_audiobook_player(session_id:str)->tuple:
                 try:
@@ -3862,13 +3862,13 @@ def build_interface(args:dict)->gr.Blocks:
                                 };
                             }
                             if(typeof(window.init_audiobook_player) !== "function"){
-                                window.init_audiobook_player = ()=>{
+                                window.init_audiobook_player = (el)=>{
                                     try{
                                         gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         if(!gr_root){
                                             return false;
                                         }
-                                        const player = gr_root.querySelector("#gr_audiobook_player audio");
+                                        const player = (el && el.isConnected) ? el : gr_root.querySelector("#gr_audiobook_player audio");
                                         if(!player){
                                             return false;
                                         }
@@ -4265,7 +4265,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 return window.init_voice_player_hidden();
                             }, {once: false});
                             window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
-                                return window.init_audiobook_player();
+                                return window.init_audiobook_player(el);
                             }, {once: false});
                             window.onElementAvailable("#gr_playback_time input, #gr_playback_time textarea", (el)=>{
                                 gr_playback_time = el;
