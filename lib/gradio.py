@@ -3040,7 +3040,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_ebook_src.upload(
                 fn=_upload_gr_ebook_src,
                 inputs=[gr_session, gr_ebook_mode],
-                outputs=None
+                outputs=None,
+                show_progress_on=[gr_ebook_src]
             )
             _chain_enable(
                 gr_ebook_src.change(
