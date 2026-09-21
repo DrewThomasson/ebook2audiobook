@@ -4135,8 +4135,8 @@ def finalize_audiobook(session_id:str)->tuple:
                 error = 'No sentences found!'
                 return result(error, False)
             block['sentences'] = sentences_list
-                while True:
-            print('')
+        while True:
+            time.sleep(1)
         blocks_current['blocks'] = blocks
         session['blocks_current'] = blocks_current
         conversion = convert_chapters2audio(session_id)
