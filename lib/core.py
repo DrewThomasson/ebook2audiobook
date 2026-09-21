@@ -4111,10 +4111,6 @@ def finalize_audiobook(session_id:str)->tuple:
         session['status'] = status_tags['CONVERTING']
         msg = f"Preparing {os.path.basename(session['ebook'])} conversion, Get sentences…"
         print(msg)
-        while True:
-            if session['is_gui_process']:
-                progress_bar(0, desc=msg)
-            time.sleep(1)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
         for idx, block in enumerate(blocks):
@@ -4136,6 +4132,10 @@ def finalize_audiobook(session_id:str)->tuple:
                 error = 'No sentences found!'
                 return result(error, False)
             block['sentences'] = sentences_list
+        while True:
+            if session['is_gui_process']:
+                progress_bar(0, desc=msg)
+            time.sleep(1)
         blocks_current['blocks'] = blocks
         session['blocks_current'] = blocks_current
         conversion = convert_chapters2audio(session_id)
