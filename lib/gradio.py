@@ -2388,9 +2388,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     args['ebook_textarea'] = args['ebook_textarea'].strip()
                                     if len(args['ebook_textarea']) < 10:
-                                        error = 'Textarea must be > 10 chars.'                     
-                            #elif args['xtts_num_beams'] < args['xtts_length_penalty']:
-                            #    error = 'num beams must be greater or equal than length penalty.'               
+                                        error = 'Textarea must be > 10 chars.'                                
                             if error is None:
                                 session['ticker'] = len(audiobook_options)
                                 if args['ebook_mode'] == ebook_modes['DIRECTORY']:
@@ -2429,7 +2427,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                     override = voice_map[os.path.basename(file)]
                                                 else:
                                                     override = default_voice
-                                                if override is not None and not os.path.exists(override):
+                                                if override is not None and override != default_voice and not os.path.exists(override):
                                                     msg = f'Voice override for {Path(file).name} not found, using default.'
                                                     show_alert(session_id, {
                                                         "type": "warning",
@@ -2438,16 +2436,14 @@ def build_interface(args:dict)->gr.Blocks:
                                                     override = default_voice
                                                 args['voice'] = override
                                                 progress_status, passed = convert_ebook(args)
-                                                if passed:
-                                                    last_progress_status = progress_status
-                                                    if args['blocks_preview']:
-                                                        break
-                                                    continue
-                                                else:
-                                                    error = progress_status
+                                                if not passed:
+                                                    error = progress_status or f'Conversion of {ebook_name} failed.'
+                                                    break
+                                                last_progress_status = progress_status
+                                                if args['blocks_preview']:
                                                     break
                                             if error is None:
-                                                return gr.update(value=last_progress_status)
+                                                return gr.update(value=last_progress_status)                         
                                 elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                     progress_status, passed = convert_ebook(args)
                                     if passed:

@@ -4285,15 +4285,6 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
     restore_session_from_data(data, session, force, filter_keys=filter_keys)
 
 def unload_tts_manager(tts_manager:Any)->None:
-    # called when convert_chapters2audio() gives up. The engine's own
-    # cleanup_memory() only flushes the caching allocator; the weights stay alive
-    # because loaded_tts holds them under the engine's key, and
-    # cleanup_models_cache() deliberately protects that key while the session is
-    # still active. Order matters: popping loaded_tts frees nothing while
-    # tts_manager.engine still references the model, so the engine goes first.
-    # tts_manager is None when TTSManager() itself failed (engine load OOM):
-    # there is no engine to evict, but the half-loaded model's garbage is still
-    # there, so the flush below must run regardless.
     try:
         if tts_manager is not None:
             engine = getattr(tts_manager, 'engine', None)
