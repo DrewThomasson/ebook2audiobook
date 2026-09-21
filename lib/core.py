@@ -4129,14 +4129,14 @@ def finalize_audiobook(session_id:str)->tuple:
             if block.get('sentences', []):
                 print(f'Block {idx} — sentences already split, skipping')
                 continue
-            sentences_list = get_sentences(session_id, block['text'])
+            sentences_list = []
+            #sentences_list = get_sentences(session_id, block['text'])
             if sentences_list is None:
                 error = 'No sentences found!'
                 return result(error, False)
             block['sentences'] = sentences_list
-        while True:
+                while True:
             print('')
-        '''
         blocks_current['blocks'] = blocks
         session['blocks_current'] = blocks_current
         conversion = convert_chapters2audio(session_id)
@@ -4207,7 +4207,6 @@ def finalize_audiobook(session_id:str)->tuple:
             reset_ebook_session(session_id, force=True, filter_keys=False)
             show_alert(session_id, {'type': 'success', 'msg': f'{filename} / converted.'})
             print(f'*********** Session: {session_id} **************\n{session_info}')
-        '''
         return result(filename, True)
     except Exception as e:
         session['status'] = status_tags['END']
