@@ -777,7 +777,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(), gr.update(), gr.update(), gr.update(),
                                 gr.update(), gr.update(), gr.update(visible=True, value=session['ebook_list']), gr.update(),
                                 gr.update(), gr.update(), gr.update(),
-                                gr.update(), gr.update(), gr.update()
+                                gr.update(), gr.update(), gr.update(value='')
                             )
                 except Exception as e:
                     error = f'_refresh_interface(): {e}'
