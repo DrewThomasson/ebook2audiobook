@@ -1914,6 +1914,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
         if session['is_gui_process']:
+            msg = f"Preparing {os.path.basename(session['ebook'])} conversion, Get sentences…"
             progress_bar(0, desc=msg)
         # Tokenize into content and SML runs
         segments = []
