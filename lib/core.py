@@ -4134,6 +4134,8 @@ def finalize_audiobook(session_id:str)->tuple:
                 error = 'No sentences found!'
                 return result(error, False)
             block['sentences'] = sentences_list
+        while True:
+            print('')
         '''
         blocks_current['blocks'] = blocks
         session['blocks_current'] = blocks_current
@@ -4206,7 +4208,7 @@ def finalize_audiobook(session_id:str)->tuple:
             show_alert(session_id, {'type': 'success', 'msg': f'{filename} / converted.'})
             print(f'*********** Session: {session_id} **************\n{session_info}')
         '''
-        return result('okok', True)
+        return result(filename, True)
     except Exception as e:
         session['status'] = status_tags['END']
         reset_ebook_session(session_id, force=True, filter_keys=False)
