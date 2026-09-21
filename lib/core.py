@@ -4202,7 +4202,7 @@ def finalize_audiobook(session_id:str)->tuple:
             reset_ebook_session(session_id, force=True, filter_keys=False)
             show_alert(session_id, {'type': 'success', 'msg': f'{filename} / converted.'})
             print(f'*********** Session: {session_id} **************\n{session_info}')
-        return result(filename, True)
+        yield result(filename, True)
     except Exception as e:
         session['status'] = status_tags['END']
         reset_ebook_session(session_id, force=True, filter_keys=False)
