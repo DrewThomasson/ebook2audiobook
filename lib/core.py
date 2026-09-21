@@ -4111,7 +4111,7 @@ def finalize_audiobook(session_id:str)->tuple:
         session['status'] = status_tags['CONVERTING']
         msg = f"Preparing {os.path.basename(session['ebook'])} conversion, Get sentences…"
         print(msg)
-        if session['is_gui_process']
+        if session['is_gui_process']:
             progress_bar(0, desc=msg)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
