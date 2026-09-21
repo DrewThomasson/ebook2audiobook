@@ -4115,6 +4115,8 @@ def finalize_audiobook(session_id:str)->tuple:
             progress_bar(0, desc=msg)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
+        while True:
+            time.sleep(1)
         for idx, block in enumerate(blocks):
             if session['cancellation_requested']:
                 if session['status'] == status_tags['DISCONNECTED']:
@@ -4129,14 +4131,11 @@ def finalize_audiobook(session_id:str)->tuple:
             if block.get('sentences', []):
                 print(f'Block {idx} — sentences already split, skipping')
                 continue
-            sentences_list = []
-            #sentences_list = get_sentences(session_id, block['text'])
+            sentences_list = get_sentences(session_id, block['text'])
             if sentences_list is None:
                 error = 'No sentences found!'
                 return result(error, False)
             block['sentences'] = sentences_list
-        while True:
-            time.sleep(1)
         blocks_current['blocks'] = blocks
         session['blocks_current'] = blocks_current
         conversion = convert_chapters2audio(session_id)
