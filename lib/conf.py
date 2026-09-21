@@ -1,4 +1,5 @@
 import os, tempfile, sys, re
+from pathlib import Path
 
 debug_mode = False
 
@@ -221,7 +222,7 @@ interface_component_options = {
 }
 
 interface_css = os.path.join(root_dir, 'header.css')
-interface_js = os.path.join(root_dir, 'header.js')
+interface_js = Path(root_dir, 'header.js').read_text(encoding='utf-8')
 
 # ---------------------------------------------------------------------
 # UI directories
