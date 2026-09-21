@@ -4113,7 +4113,6 @@ def finalize_audiobook(session_id:str)->tuple:
         print(msg)
         if session['is_gui_process']:
             progress_bar(0, desc=msg)
-        '''
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
         for idx, block in enumerate(blocks):
@@ -4135,6 +4134,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 error = 'No sentences found!'
                 return result(error, False)
             block['sentences'] = sentences_list
+        '''
         blocks_current['blocks'] = blocks
         session['blocks_current'] = blocks_current
         conversion = convert_chapters2audio(session_id)
@@ -4206,7 +4206,7 @@ def finalize_audiobook(session_id:str)->tuple:
             show_alert(session_id, {'type': 'success', 'msg': f'{filename} / converted.'})
             print(f'*********** Session: {session_id} **************\n{session_info}')
         '''
-        return result('ok', True)
+        return result('okok', True)
     except Exception as e:
         session['status'] = status_tags['END']
         reset_ebook_session(session_id, force=True, filter_keys=False)
