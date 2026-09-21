@@ -2951,11 +2951,11 @@ def convert_chapters2audio(session_id:str)->bool:
                                 last_save_time = now
                         global_sent += 1
                         total_progress = (t.n + 1) / total_sentences
+                        print(f' : {sentence}')
+                        t.set_description(f'{total_progress * 100:.2f}%')
+                        t.update(1)
                         if session['is_gui_process']:
                             progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
-                        t.set_description(f'{total_progress * 100:.2f}%')
-                        print(f' : {sentence}')
-                        t.update(1)
                 sent_end = global_sent - 1
                 show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
                 if converted or block_changed or missing_sentences:
