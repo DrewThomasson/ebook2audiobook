@@ -1914,7 +1914,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
         if session['is_gui_process']:
-            msg = f"Preparing {os.path.basename(session['ebook'])} conversion, Get sentences…"
+            msg = f"Get sentences…"
             progress_bar(0, desc=msg)
         # Tokenize into content and SML runs
         segments = []
@@ -4098,8 +4098,10 @@ def finalize_audiobook(session_id:str)->tuple:
             error = 'finalize_audiobook() failed! blocks_current empty!'
             return _fail(error)
         session['status'] = status_tags['CONVERTING']
-        msg = f"Preparing {os.path.basename(session['ebook'])} conversion, Get sentences…"
+        msg = f"Preparing {os.path.basename(session['ebook'])} conversion…"
         print(msg)
+        if session['is_gui_process']:
+            progress_bar(0, desc=msg)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
         for idx, block in enumerate(blocks):
