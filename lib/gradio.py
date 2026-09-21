@@ -372,12 +372,9 @@ def build_interface(args:dict)->gr.Blocks:
                 else:
                     if exceptions is None:
                         exceptions = []
+                    outputs = [gr.update(interactive=False) for _ in range(len(outputs_disable_components))]
                     if 'gr_session_switch_btn' in exceptions:
-                        outputs = [gr.update(interactive=False) for _ in range(len(outputs_disable_components))]
                         outputs[outputs_disable_components.index(gr_session_switch_btn)] = gr.update(interactive=True)
-                    else:
-                        outputs = [gr.update(interactive=False) for _ in range(len(outputs_disable_components))]
-                        outputs[outputs_disable_components.index(gr_progress)] = gr.update(value='')
                 return outputs
 
             def _enable_components(session_id:str)->tuple:
@@ -2335,7 +2332,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate,
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn,
-                gr_abs_upload_btn, gr_progress
+                gr_abs_upload_btn
             ]
             outputs_enable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
