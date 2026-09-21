@@ -376,7 +376,7 @@ def build_interface(args:dict)->gr.Blocks:
                         outputs = [gr.update(interactive=False) for _ in range(len(outputs_disable_components))]
                         outputs[outputs_disable_components.index(gr_session_switch_btn)] = gr.update(interactive=True)
                     else:
-                        outputs = tuple(gr.update(interactive=False) for _ in range(len(outputs_disable_components)))
+                        outputs = [gr.update(interactive=False) for _ in range(len(outputs_disable_components))]
                         outputs[outputs_disable_components.index(gr_progress)] = gr.update(value='')
                 return outputs
 
