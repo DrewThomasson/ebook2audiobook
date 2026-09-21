@@ -521,7 +521,7 @@ Default to config.json model.""")
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
                 try:
-                    from lib.gradio import theme, header_css, build_interface
+                    from lib.gradio import theme, build_interface
                     c.progress_bar = c.gr.Progress(track_tqdm=False)
                     app = build_interface(args)
                     if app is not None:
@@ -534,7 +534,7 @@ Default to config.json model.""")
                             "share": args['share'],
                             "max_file_size": max_upload_size,
                             "theme": theme,
-                            "css": header_css,
+                            "css_paths": interface_css,
                             "footer_links": ["settings"]
                         }
                         app.queue(default_concurrency_limit=interface_concurrency_limit).launch(**gr_blocks_kwargs)

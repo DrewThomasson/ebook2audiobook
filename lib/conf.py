@@ -220,6 +220,8 @@ interface_component_options = {
     "gr_tab_abs_params": True
 }
 
+interface_css = os.path.join(root_dir, 'lib', 'header.css')
+
 # ---------------------------------------------------------------------
 # UI directories
 # ---------------------------------------------------------------------
