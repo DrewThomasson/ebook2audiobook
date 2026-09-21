@@ -4109,7 +4109,10 @@ def finalize_audiobook(session_id:str)->tuple:
             error = 'finalize_audiobook() failed! blocks_current empty!'
             return _fail(error)
         session['status'] = status_tags['CONVERTING']
-        print('Get sentences…')
+        msg = f"Preparing {os.path.basename(session['ebook'])} conversion, Get sentences…"
+        print(msg)
+        if session['is_gui_process']
+            progress_bar(0, desc=msg)
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
         for idx, block in enumerate(blocks):
