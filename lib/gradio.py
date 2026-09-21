@@ -3532,7 +3532,7 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=finalize_audiobook,
                             inputs=[gr_session],
                             outputs=[gr_progress, gr_dummy_bool],
-                            show_progress_on=[gr_device]
+                            show_progress_on=[gr_progress]
                         )
                     )
                 ),
