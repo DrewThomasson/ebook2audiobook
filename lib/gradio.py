@@ -3867,20 +3867,20 @@ def build_interface(args:dict)->gr.Blocks:
                                         let lastCue = null;
                                         let fade_timeout = null;
                                         let raf_id = null;
-                                        function check_gr_sentence(){
+                                        function q_sentence(){
                                             if(!gr_audiobook_sentence || !gr_audiobook_sentence.isConnected){
                                                 gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                             }
                                             return gr_audiobook_sentence;
                                         }
-                                        function check_gr_playback_time(){
+                                        function q_playback_time(){
                                             if(!gr_playback_time || !gr_playback_time.isConnected){
                                                 gr_playback_time = gr_root.querySelector("#gr_playback_time input, #gr_playback_time textarea");
                                             }
                                             return gr_playback_time;
                                         }
                                         function push_time(value){
-                                            const el = check_gr_playback_time();
+                                            const el = q_playback_time();
                                             if(!el){
                                                 return false;
                                             }
@@ -3910,7 +3910,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             raf_id = null;
                                             try{
                                                 window.session_storage.playback_time = parseFloat(player.currentTime);
-                                                const sentence = check_gr_sentence();
+                                                const sentence = q_sentence();
                                                 const cue = findCue(window.session_storage.playback_time);
                                                 if(sentence && cue && cue !== lastCue){
                                                     if(fade_timeout){
@@ -3922,7 +3922,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                     sentence.value = cue.text;
                                                     clearTimeout(fade_timeout);
                                                     fade_timeout = setTimeout(() => {
-                                                        const el = check_gr_sentence();
+                                                        const el = q_sentence();
                                                         if(el){
                                                             el.style.transition = "opacity 0.15s ease-in";
                                                             el.style.opacity = "1";
@@ -3960,7 +3960,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         });
                                         player.addEventListener("ended", ()=>{
                                             stop_playback();
-                                            const sentence = check_gr_sentence();
+                                            const sentence = q_sentence();
                                             if(sentence){
                                                 sentence.value = "…";
                                             }
@@ -3996,8 +3996,8 @@ def build_interface(args:dict)->gr.Blocks:
                                         player.style.transition = "filter 1s ease";
                                         player.style.filter = audio_filter;
                                         player.volume = safe_volume(window.session_storage?.playback_volume);
-                                        check_gr_sentence();
-                                        check_gr_playback_time();
+                                        q_sentence();
+                                        q_playback_time();
                                         start_playback();
                                         return true;
                                     }catch(e){
@@ -4062,14 +4062,14 @@ def build_interface(args:dict)->gr.Blocks:
                                     }
                                 };
                             }
-                            if(typeof(splitAtLastDash) !== "function"){
-                                function splitAtLastDash(s){
+                            if(typeof(window.splitAtLastDash) !== "function"){
+                                window.splitAtLastDash = function(s){
                                     const idx = s.lastIndexOf("-");
                                     if(idx === -1){
                                         return [s];
                                     }
                                     return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
-                                }
+                                };
                             }
                             if(typeof(window.load_vtt) !== "function"){
                                 window.load_vtt = ()=>{
@@ -4127,8 +4127,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     pushCue();
                                 }
                             }
-                            if(typeof(toSeconds) !== "function"){
-                                function toSeconds(ts){
+                            if(typeof(window.toSeconds) !== "function"){
+                                window.toSeconds = function(ts){
                                     const parts = ts.split(":");
                                     if(parts.length === 3){
                                         return parseInt(parts[0], 10) * 3600 +
@@ -4136,10 +4136,10 @@ def build_interface(args:dict)->gr.Blocks:
                                                parseFloat(parts[2]);
                                     }
                                     return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
-                                }
+                                };
                             }
-                            if(typeof(findCue) !== "function"){
-                                function findCue(time){
+                            if(typeof(window.findCue) !== "function"){
+                                window.findCue = function(time){
                                     let lo = 0, hi = cues.length - 1;
                                     while(lo <= hi){
                                         const mid = (lo + hi) >> 1;
@@ -4153,19 +4153,10 @@ def build_interface(args:dict)->gr.Blocks:
                                         }
                                     }
                                     return null;
-                                }
+                                };
                             }
-                            if(typeof(splitAtLastDash) !== "function"){
-                                function splitAtLastDash(s){
-                                    const idx = s.lastIndexOf("-");
-                                    if(idx === -1){
-                                        return [s];
-                                    }
-                                    return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
-                                }
-                            }
-                            if(typeof(show_glassmask) !== "function"){
-                                function show_glassmask(msg){
+                            if(typeof(window.show_glassmask) !== "function"){
+                                window.show_glassmask = function(msg){
                                     let glassmask = document.querySelector("#gr_glassmask");
                                     if(!glassmask){
                                         glassmask = document.createElement("div");
@@ -4174,10 +4165,10 @@ def build_interface(args:dict)->gr.Blocks:
                                     }
                                     glassmask.className = "gr-glass-mask";
                                     glassmask.innerHTML = `${msg}`;
-                                }
+                                };
                             }
-                            if(typeof(create_uuid) !== "function"){
-                                function create_uuid(){
+                            if(typeof(window.create_uuid) !== "function"){
+                                window.create_uuid = function(){
                                     try{
                                         return crypto.randomUUID();
                                     }catch(e){
@@ -4187,7 +4178,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             return v.toString(16);
                                         });
                                     }
-                                }
+                                };
                             }
                             //////////////////////
                             const bc = new BroadcastChannel("E2A-channel");
