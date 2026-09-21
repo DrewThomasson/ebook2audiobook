@@ -1510,7 +1510,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session and session.get('id', False):
                             session['ebook_selected'] = None
                             session['voice_map'] = {}
-                            msg = 'Click on each file in the list to set its voice individually.'
+                            msg = 'Click on each file in the list to set its global voice individually.'
                             show_alert(session_id, {
                                 'type': 'info',
                                 'msg': msg
