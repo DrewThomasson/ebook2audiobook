@@ -1504,16 +1504,20 @@ def build_interface(args:dict)->gr.Blocks:
                 return bool(session.get('ebook_selected'))
 
             def _upload_gr_ebook_src(session_id:str, ebook_mode:str)->None:
-                if ebook_mode == ebook_modes['DIRECTORY']:
-                    session = context.get_session(session_id)
-                    if session and session.get('id', False):
-                        session['ebook_selected'] = None
-                        session['voice_map'] = {}
-                        msg = 'Click on each file in the list to set its voice individually.'
-                        show_alert(session_id, {
-                            'type': 'info',
-                            'msg': msg
-                        })
+                try:
+                    if ebook_mode == ebook_modes['DIRECTORY']:
+                        session = context.get_session(session_id)
+                        if session and session.get('id', False):
+                            session['ebook_selected'] = None
+                            session['voice_map'] = {}
+                            msg = 'Click on each file in the list to set its voice individually.'
+                            show_alert(session_id, {
+                                'type': 'info',
+                                'msg': msg
+                            })
+                except Exception as e:
+                    error = f'_upload_gr_ebook_src(): {e}'
+                    exception_alert(session_id, error)
 
             def _change_gr_ebook_src(session_id:str, ebook_mode:str, data:any)->tuple:
                 try:
@@ -3527,7 +3531,7 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=finalize_audiobook,
                             inputs=[gr_session],
                             outputs=[gr_progress, gr_dummy_bool],
-                            #show_progress_on=[gr_progress]
+                            show_progress_on=[gr_progress]
                         )
                     )
                 ),
