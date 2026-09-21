@@ -1911,10 +1911,10 @@ def get_sentences(session_id:str, text:str)->list|None:
             lang = session['translate']
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
-
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
-
+        if session['is_gui_process']:
+            progress_bar(0, desc=msg)
         # Tokenize into content and SML runs
         segments = []
         idx = 0
@@ -1935,26 +1935,21 @@ def get_sentences(session_id:str, text:str)->list|None:
                 idx += 1
         if current_text:
             segments.append(('text', ''.join(current_text)))
-
         # SINGLE inline buffer — SML stays in position next to its surrounding text.
         # On overflow, cut at the LAST SML position in the buffer (a natural pause point).
         final_list = []
         buffer = []
         current_len = 0
-
         for seg_type, seg_content in segments:
             if seg_type == 'sml':
                 buffer.append(seg_content)
                 continue
-
             seg_clean_len = _clean_len(seg_content)
             potential_len = current_len + seg_clean_len
-
             if potential_len <= max_chars:
                 buffer.append(seg_content)
                 current_len = potential_len
                 continue
-
             # Doesn't fit. Try to cut at the rightmost SML run in the buffer.
             combined = ''.join(buffer)
             cut_idx = -1
@@ -1964,7 +1959,6 @@ def get_sentences(session_id:str, text:str)->list|None:
                     cut_idx = j + 1
                     break
                 j -= 1
-
             cut_done = False
             if 0 < cut_idx <= len(combined):
                 part1 = combined[:cut_idx]
@@ -1978,7 +1972,6 @@ def get_sentences(session_id:str, text:str)->list|None:
                     buffer = [part2, seg_content] if part2 else [seg_content]
                     current_len = _clean_len(part2) + seg_clean_len
                     cut_done = True
-
             if not cut_done:
                 # No usable SML cut. Flush buffer wholesale (force-split if too long).
                 if _strip_escaped_sml(combined).strip():
@@ -2011,7 +2004,6 @@ def get_sentences(session_id:str, text:str)->list|None:
                     else:
                         buffer = [pending, seg_content] if pending.strip() else [seg_content]
                         current_len = seg_clean_len
-
         # Final flush
         if buffer:
             combined = ''.join(buffer).strip()
@@ -2027,12 +2019,10 @@ def get_sentences(session_id:str, text:str)->list|None:
 
         final_list = [_strip_leading_noise(s) for s in final_list if s.strip()]
         final_list = [s for s in final_list if s]
-
         # Merge orphan-short sentences. A sentence below max_chars/2 is "too short";
         # absorb it into the previous (preferred) or next sentence when that fits.
         merge_threshold = max_chars // 2
         merge_ceiling   = max_chars + max_chars // 2   # max_chars + overhead of max_chars/2
-
         merged_list = []
         i = 0
         n = len(final_list)
@@ -2060,7 +2050,6 @@ def get_sentences(session_id:str, text:str)->list|None:
             merged_list.append(cur)
             i += 1
         final_list = merged_list
-
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in final_list:
@@ -2086,7 +2075,6 @@ def get_sentences(session_id:str, text:str)->list|None:
             if ideogram_list:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
             return ideogram_list
-
         if final_list:
             final_list = [restore_sml(s, sml_blocks) for s in final_list]
         return final_list
@@ -4132,10 +4120,6 @@ def finalize_audiobook(session_id:str)->tuple:
                 error = 'No sentences found!'
                 return result(error, False)
             block['sentences'] = sentences_list
-        while True:
-            if session['is_gui_process']:
-                progress_bar(0, desc=msg)
-            time.sleep(1)
         blocks_current['blocks'] = blocks
         session['blocks_current'] = blocks_current
         conversion = convert_chapters2audio(session_id)
