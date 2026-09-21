@@ -2049,10 +2049,10 @@ def get_sentences(session_id:str, text:str)->list|None:
                         i += 2
                         continue
             merged_list.append(cur)
+            i += 1
             if session['is_gui_process']:
                 msg = f'Get sentences… {i}'
-                progress_bar(i / n, desc=msg)
-            i += 1
+                progress_bar(int(i / n), desc=msg)
         final_list = merged_list
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
