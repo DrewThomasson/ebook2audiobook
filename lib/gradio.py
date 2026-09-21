@@ -1263,6 +1263,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_bark = visible_gr_tab_bark_params
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
                         visible_voice_buttons = True if session.get('voice') is not None else False
+                        visible_row_voice_player = _row_voice_player_visible(session.get('ebook_mode'), False)
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                         voice_file = session.get('voice')
                         translate_enabled_state = bool(session.get('translate_enabled'))
@@ -1305,6 +1306,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=voice_file),
                             gr.update(visible=visible_voice_buttons),
                             gr.update(visible=visible_voice_buttons),
+                            gr.update(visible=visible_row_voice_player),
                             gr.update(label=f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
                             gr.update(visible=visible_custom_model_del_btn),
                             gr.update(value=session.get('abs_url', '')),
@@ -1495,13 +1497,10 @@ def build_interface(args:dict)->gr.Blocks:
                     f'font-weight: 600; }}</style>'
                 )
 
-            def _voice_player_visible(session)->bool:
-                """gr_row_voice_player hides only in DIRECTORY mode with no row currently selected."""
-                if not session:
+            def _row_voice_player_visible(ebook_mode, selected)->bool:
+                if ebook_mode != ebook_modes['DIRECTORY']:
                     return True
-                if session.get('ebook_mode') != ebook_modes['DIRECTORY']:
-                    return True
-                return bool(session.get('ebook_selected'))
+                return bool(selected)
 
             def _upload_gr_ebook_src(session_id:str, ebook_mode:str)->None:
                 try:
@@ -1621,7 +1620,7 @@ def build_interface(args:dict)->gr.Blocks:
                         css_update = gr.update() if val == ebook_modes['DIRECTORY'] else gr.update(value='')
                         if val != ebook_modes['DIRECTORY']:
                             session['ebook_selected'] = None
-                        row_visible = _voice_player_visible(session)
+                        row_visible = _row_voice_player_visible(session.get('ebook_mode'), session.get('ebook_selected'))
                         if val == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
                             filename_update = gr.update(value=Path(session['ebook_selected']).name, visible=True)
                         else:
@@ -3012,7 +3011,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
-                gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn,
+                gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_row_voice_player, gr_custom_model_file, gr_custom_model_del_btn,
                 gr_abs_url, gr_abs_api_token, gr_abs_library, gr_abs_upload_btn, gr_abs_audiobook
             ]
             outputs_refresh_interface = [
