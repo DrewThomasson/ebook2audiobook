@@ -161,6 +161,9 @@ header_css = '''
         .progress-bar.svelte-ls20lj {
             background: var(--secondary-500) !important;
         }
+        .progress-level {
+            flex-direction: column-reverse !important;
+        }
         .file-preview-holder {
             height: auto !important;
             min-height: 0 !important;
