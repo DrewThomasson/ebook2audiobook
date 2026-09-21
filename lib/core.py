@@ -2050,6 +2050,9 @@ def get_sentences(session_id:str, text:str)->list|None:
                         continue
             merged_list.append(cur)
             i += 1
+            if session['is_gui_process']:
+                msg = f'Get sentences… {i}'
+                progress_bar(i / n, desc=msg)
         final_list = merged_list
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
@@ -2545,9 +2548,6 @@ def restore_sml(text:str, sml_blocks:list[str])->str:
     n = enumerate(sml_blocks)
     for i, block in n:
         text = text.replace(chr(sml_escape_tag + i), block)
-        if session['is_gui_process']:
-            msg = f'Get sentences… {i}'
-            progress_bar(i / n, desc=msg)
     return text
 
 def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
