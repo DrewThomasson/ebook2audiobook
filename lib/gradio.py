@@ -375,9 +375,9 @@ def build_interface(args:dict)->gr.Blocks:
                     if 'gr_session_switch_btn' in exceptions:
                         outputs = [gr.update(interactive=False) for _ in range(len(outputs_disable_components))]
                         outputs[outputs_disable_components.index(gr_session_switch_btn)] = gr.update(interactive=True)
-                        outputs[outputs_disable_components.index(gr_progress)] = gr.update(value='')
                     else:
                         outputs = tuple(gr.update(interactive=False) for _ in range(len(outputs_disable_components)))
+                        outputs[outputs_disable_components.index(gr_progress)] = gr.update(value='')
                 return outputs
 
             def _enable_components(session_id:str)->tuple:
