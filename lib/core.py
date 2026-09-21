@@ -4113,10 +4113,10 @@ def finalize_audiobook(session_id:str)->tuple:
         print(msg)
         if session['is_gui_process']:
             progress_bar(0, desc=msg)
-        blocks_current = session['blocks_current']
-        blocks = blocks_current['blocks']
         while True:
             time.sleep(1)
+        blocks_current = session['blocks_current']
+        blocks = blocks_current['blocks']
         for idx, block in enumerate(blocks):
             if session['cancellation_requested']:
                 if session['status'] == status_tags['DISCONNECTED']:
