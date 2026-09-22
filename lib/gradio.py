@@ -2059,7 +2059,7 @@ def build_interface(args:dict)->gr.Blocks:
             def _collapse_all():
                 return [gr.Accordion(open=False) for _ in range(page_size)]
 
-            def _apply_expanded_states(page, blocks)->dict:
+            def _apply_expanded_states(page, blocks)->list[dict]:
                 blocks = blocks or []
                 start = int(page or 0) * page_size
                 updates = []
@@ -2846,11 +2846,6 @@ def build_interface(args:dict)->gr.Blocks:
                             outputs=outputs_edit_blocks,
                             show_progress_on=[gr_progress]
                         ).then(
-                            fn=_collapse_all,
-                            inputs=None,
-                            outputs=accs,
-                            show_progress='hidden'
-                        ).then(
                             fn=_apply_expanded_states,
                             inputs=[gr_blocks_page, gr_blocks_data],
                             outputs=accs,
@@ -2916,6 +2911,11 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
                 outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                 show_progress_on=[gr_blocks_nav]
+            ).then(
+                fn=_apply_expanded_states,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=accs,
+                show_progress='hidden'
             )
             gr_blocks_next_btn.click(
                 fn=lambda session_id, page, blocks, *args: _navigate(session_id, page, blocks, 1, *args),
@@ -2927,6 +2927,11 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
                 outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                 show_progress_on=[gr_blocks_nav]
+            ).then(
+                fn=_apply_expanded_states,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=accs,
+                show_progress='hidden'
             )
             #############
             gr_save_session.change(
