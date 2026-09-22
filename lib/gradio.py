@@ -2057,7 +2057,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return tuple(gr.update() for _ in range(9 + n + 1))
 
             def _collapse_all():
-                return [gr.Accordion(open=False) for _ in * page_size
+                return [gr.Accordion(open=False) for _ in range(page_size)]
 
             def _apply_expanded_states(page, blocks)->dict:
                 blocks = blocks or []
