@@ -2029,7 +2029,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         n = len(final_list)
         while i < n:
             if session['is_gui_process']:
-                msg = f'Get sentences… {i + 1}' 
+                msg = f'{i + 1}' 
                 progress_bar(0, desc=msg)
             cur = final_list[i].strip()
             if not cur:
