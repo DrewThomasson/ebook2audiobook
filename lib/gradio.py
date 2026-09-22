@@ -1032,7 +1032,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if not voice_options or selected is None:
                             new_voice = None
                         else:
-                            voice_value = voice_options[0][1]
+                            voice_value = None if voice_options[0][1] == 'None' else voice_options[0][1]
                             new_voice = next(
                                 (value for label, value in voice_options if value == selected),
                                 voice_value,
@@ -1204,6 +1204,7 @@ def build_interface(args:dict)->gr.Blocks:
                     nonlocal models, voice_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
+                        default_voice = None if voice_options[0][1] == 'None' else voice_options[0][1]
                         models = load_engine_presets(session['tts_engine'])
                         language = session['translate'] if session['translate_enabled'] and session['translate'] is not None else session['language']
                         lang_dir = language if language != 'con' else 'con-'  # Bypass Windows CON reserved name
@@ -1265,7 +1266,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 if f.is_file()
                             )
                         if session['tts_engine'] in tts_engines_with_inner_speaker:
-                            voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
+                            voice_options = [('Default', 'None')] + sorted(voice_options, key=lambda x: x[0].lower())
                         else:
                             voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                         if session['voice'] is not None and isinstance(session.get('voice'), str):
@@ -1286,14 +1287,14 @@ def build_interface(args:dict)->gr.Blocks:
                                                 if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
                                                     session['voice'] = new_voice_path
                                                 else:
-                                                    session['voice'] = voice_options[0][1]
+                                                    session['voice'] = default_voice
                         else:
-                            if voice_options and voice_options[0][1] is not None:
+                            if voice_options and default_voice is not None:
                                 new_voice_path = models[session['fine_tuned']]['voice']
                                 if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
                                     session['voice'] = new_voice_path
                                 else:
-                                    session['voice'] = voice_options[0][1]
+                                    session['voice'] = default_voice
                         return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
                     error = f'_update_gr_voice_list(): {e}!'
@@ -1697,7 +1698,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 "ebook_src": ebook_src if ebook_mode == ebook_modes['SINGLE'] else session['ebook_src'],
                                 "ebook_list": ebook_src if ebook_mode == ebook_modes['DIRECTORY'] else session['ebook_list'],
                                 "ebook_textarea": ebook_textarea if ebook_mode == ebook_modes['TEXT'] else session['ebook_textarea'],
-                                "voice": voice,
+                                "voice": None if voice == 'None' else voice,
                                 "language": language,
                                 "custom_model": custom_model,
                                 "fine_tuned": fine_tuned,
