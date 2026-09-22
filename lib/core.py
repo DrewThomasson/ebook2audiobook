@@ -1914,8 +1914,8 @@ def get_sentences(session_id:str, text:str)->list|None:
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
         if session['is_gui_process']:
-            msg = 'Get sentences…'
-            progress_bar(0, desc=msg)
+            msg = 'Segment 1'
+            progress_bar(0, desc='')
         # Tokenize into content and SML runs
         segments = []
         idx = 0
@@ -2029,7 +2029,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         n = len(final_list)
         while i < n:
             if session['is_gui_process']:
-                msg = f'{i + 1}' 
+                msg = f'Segment {i + 1}' 
                 progress_bar(0, desc=msg)
             cur = final_list[i].strip()
             if not cur:
