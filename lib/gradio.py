@@ -309,20 +309,28 @@ def build_interface(args:dict)->gr.Blocks:
                                 outputs=[acc_text]
                             )
                         acc.expand(
-                            fn=lambda expands, _i=i: [
-                                expands[j] if j != _i else True
-                                for j in range(page_size)
-                            ],
+                            fn=lambda expands, _i=i: (
+                                [
+                                    expands[j] if j != _i else True
+                                    for j in range(page_size)
+                                ],
+                                gr.Accordion(open=True)
+                            ),
                             inputs=[gr_blocks_expands],
-                            outputs=[gr_blocks_expands]
+                            outputs=[gr_blocks_expands, acc],
+                            show_progress='hidden'
                         )
                         acc.collapse(
-                            fn=lambda expands, _i=i: [
-                                expands[j] if j != _i else False
-                                for j in range(page_size)
-                            ],
+                            fn=lambda expands, _i=i: (
+                                [
+                                    expands[j] if j != _i else False
+                                    for j in range(page_size)
+                                ],
+                                gr.Accordion(open=False)
+                            ),
                             inputs=[gr_blocks_expands],
-                            outputs=[gr_blocks_expands]
+                            outputs=[gr_blocks_expands, acc],
+                            show_progress='hidden'
                         )
                         block_components.append((acc, acc_keep, acc_voice_list, acc_text))
 
