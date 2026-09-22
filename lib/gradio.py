@@ -1986,7 +1986,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 b = blocks[idx]
                                 exp = b.get('expand', False)
                                 expands.append(exp)
-                                updates.append(gr.update(label=f'Block {idx}', visible=True, open=exp))
+                                updates.append(gr.update(label=f'Block {idx}', visible=True))
                                 updates.append(gr.update(value=b['keep']))
                                 updates.append(gr.update(value=b.get('voice'), choices=voice_options))
                                 updates.append(gr.update(value=b['text']))
@@ -2015,11 +2015,17 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_navigate(): {e}'
                     exception_alert(session_id, error)
+                start = int(new_page) * page_size
+                acc_updates = [
+                    gr.Accordion(open=bool(new_blocks[start + i].get('expand', False)) if start + i < len(new_blocks) else False)
+                    for i in range(page_size)
+                ]
                 return (
                     new_blocks,
                     new_page,
                     gr.update(interactive=new_page > 0),
                     gr.update(interactive=new_page < max_page),
+                    *acc_updates
                 )
 
             def _edit_blocks(session_id:str)->tuple:
@@ -2909,23 +2915,18 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_back_btn.click(
                 fn=lambda session_id, page, blocks, *args: _navigate(session_id, page, blocks, -1, *args),
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn, *accs],
                 show_progress_on=[gr_blocks_nav]
             ).then(
                 fn=_populate_page,
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
                 outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                 show_progress_on=[gr_blocks_nav]
-            ).then(
-                fn=_apply_expanded_states,
-                inputs=[gr_blocks_page, gr_blocks_data],
-                outputs=accs,
-                show_progress='hidden'
             )
             gr_blocks_next_btn.click(
                 fn=lambda session_id, page, blocks, *args: _navigate(session_id, page, blocks, 1, *args),
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data, gr_blocks_expands, *blocks_keeps, *blocks_voices, *blocks_texts],
-                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn],
+                outputs=[gr_blocks_data, gr_blocks_page, gr_blocks_back_btn, gr_blocks_next_btn, *accs],
                 show_progress_on=[gr_blocks_nav]
             ).then(
                 fn=_populate_page,
