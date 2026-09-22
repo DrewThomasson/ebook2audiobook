@@ -334,6 +334,7 @@ def build_interface(args:dict)->gr.Blocks:
             blocks_keeps = [c[1] for c in block_components]
             blocks_voices = [c[2] for c in block_components]
             blocks_texts = [c[3] for c in block_components]
+            accs = [c[0] for c in block_components]
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
@@ -2055,6 +2056,12 @@ def build_interface(args:dict)->gr.Blocks:
                 n = len(blocks_components_flat) + 1
                 return tuple(gr.update() for _ in range(9 + n + 1))
 
+            def _collapse_all():
+                return [gr.Accordion(open=False) for _ in range(page_size)]
+
+            def _apply_expanded_states(expands):
+                return [gr.Accordion(open=bool(expands[i])) for i in range(page_size)]
+
             def _click_reset_block(session_id:str, block_id:int)->dict:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
@@ -2831,6 +2838,16 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_session],
                             outputs=outputs_edit_blocks,
                             show_progress_on=[gr_progress]
+                        ).then(
+                            fn=_collapse_all,
+                            inputs=None,
+                            outputs=accs,
+                            show_progress='hidden'
+                        ).then(
+                            fn=_apply_expanded_states,
+                            inputs=[gr_blocks_expands],
+                            outputs=accs,
+                            show_progress='hidden'
                         )
                     )
                 ),
@@ -2903,6 +2920,16 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
                 outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                 show_progress_on=[gr_blocks_nav]
+            ).then(
+                fn=_collapse_all,
+                inputs=None,
+                outputs=accs,
+                show_progress='hidden'
+            ).then(
+                fn=_apply_expanded_states,
+                inputs=[gr_blocks_expands],
+                outputs=accs,
+                show_progress='hidden'
             )
             #############
             gr_save_session.change(
