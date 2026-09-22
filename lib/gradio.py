@@ -1980,7 +1980,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return gr.update(), event, gr.update(), gr.update(), gr.update()
 
-            def _populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
+            def _populate_page(session_id:str, page:int, blocks:list[dict], with_open:bool=True)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['EDIT']]:
@@ -1993,7 +1993,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 b = blocks[idx]
                                 exp = b.get('expand', False)
                                 expands.append(exp)
-                                updates.append(gr.update(label=f'Block {idx}', visible=True, open=exp))
+                                if with_open:
+                                    updates.append(gr.update(label=f'Block {idx}', visible=True, open=exp))
+                                else:
+                                    updates.append(gr.update(label=f'Block {idx}', visible=True))
                                 updates.append(gr.update(value=b['keep']))
                                 updates.append(gr.update(value=b.get('voice'), choices=voice_options))
                                 updates.append(gr.update(value=b['text']))
@@ -2006,6 +2009,7 @@ def build_interface(args:dict)->gr.Blocks:
                         end = min(start + page_size, len(blocks))
                         header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
                         return (*updates, header, expands)
+                return tuple(gr.update() for _ in range(len(blocks_components_flat) + 2))
 
             def _navigate(session_id:str, page:int, blocks:list[dict], direction:int, *args)->tuple:
                 new_blocks = _collect_page(page, blocks, *args)
@@ -2042,7 +2046,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 blocks = blocks_current['blocks']
                                 max_page = max((len(blocks) - 1) // page_size, 0)
                                 page = max(0, min(int(blocks_current.get('page', 0)), max_page))
-                                page_updates = list(_populate_page(session_id, page, blocks))
+                                page_updates = list(_populate_page(session_id, page, blocks, with_open=False))
                                 if session['cancellation_requested']:
                                     visible_main = True
                                     visible_blocks = False
@@ -2838,6 +2842,11 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=_edit_blocks,
                             inputs=[gr_session],
                             outputs=outputs_edit_blocks,
+                            show_progress_on=[gr_progress]
+                        ).then(
+                            fn=_populate_page,
+                            inputs=[gr_session, gr_blocks_page, gr_blocks_data],
+                            outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                             show_progress_on=[gr_progress]
                         )
                     )
