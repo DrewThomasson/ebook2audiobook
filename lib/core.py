@@ -2027,32 +2027,32 @@ def get_sentences(session_id:str, text:str)->list|None:
         merged_list = []
         i = 0
         n = len(final_list)
-            while i < n:
-                if session['is_gui_process']:
-                    msg = f'Get sentences… {i + 1}' 
-                    progress_bar((i + 1) / n, desc=msg)
-                cur = final_list[i].strip()
-                if not cur:
-                    i += 1
-                    continue
-                cur_len = _clean_len(cur)
-                if cur_len <= merge_threshold:
-                    # 1) try to attach to the previous sentence
-                    if merged_list:
-                        prev = merged_list[-1]
-                        if _clean_len(prev) + 1 + cur_len <= merge_ceiling:
-                            merged_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
-                            i += 1
-                            continue
-                    # 2) otherwise try to glue it onto the next sentence
-                    if i + 1 < n:
-                        nxt = final_list[i + 1].strip()
-                        if cur_len + 1 + _clean_len(nxt) <= merge_ceiling:
-                            merged_list.append(cur.rstrip() + ' ' + nxt.lstrip())
-                            i += 2
-                            continue
-                merged_list.append(cur)
+        while i < n:
+            if session['is_gui_process']:
+                msg = f'Get sentences… {i + 1}' 
+                progress_bar((i + 1) / n, desc=msg)
+            cur = final_list[i].strip()
+            if not cur:
                 i += 1
+                continue
+            cur_len = _clean_len(cur)
+            if cur_len <= merge_threshold:
+                # 1) try to attach to the previous sentence
+                if merged_list:
+                    prev = merged_list[-1]
+                    if _clean_len(prev) + 1 + cur_len <= merge_ceiling:
+                        merged_list[-1] = prev.rstrip() + ' ' + cur.lstrip()
+                        i += 1
+                        continue
+                # 2) otherwise try to glue it onto the next sentence
+                if i + 1 < n:
+                    nxt = final_list[i + 1].strip()
+                    if cur_len + 1 + _clean_len(nxt) <= merge_ceiling:
+                        merged_list.append(cur.rstrip() + ' ' + nxt.lstrip())
+                        i += 2
+                        continue
+            merged_list.append(cur)
+            i += 1
         final_list = merged_list
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
