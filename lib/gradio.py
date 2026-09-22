@@ -2059,7 +2059,7 @@ def build_interface(args:dict)->gr.Blocks:
             def _collapse_all():
                 return [gr.Accordion(open=False) for _ in range(page_size)]
 
-            def _apply_expanded_states(page, blocks)->list[dict]:
+            def _apply_expanded_states(page, blocks)->list[gr.Accordion]:
                 blocks = blocks or []
                 start = int(page or 0) * page_size
                 updates = []
