@@ -137,6 +137,7 @@ voices_url = 'https://huggingface.co/datasets/ebook2audiobook/E2A-Voices/resolve
 tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
 tempfile.tempdir = run_dir
+detect_gpu_script = os.path.join(components_dir, './detect_gpu.py')
 
 # ---------------------------------------------------------------------
 # Environment setup

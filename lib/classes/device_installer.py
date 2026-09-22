@@ -1719,9 +1719,8 @@ class DeviceInstaller():
             return False
 
         def _probe_gpus()->dict:
-            script = os.path.abspath('./detect_gpus.py')
             try:
-                proc = subprocess.run([python_exec, script], capture_output=True, text=True, timeout=30)
+                proc = subprocess.run([python_exec, detect_gpu_script], capture_output=True, text=True, timeout=30)
                 if proc.returncode != 0:
                     return {'count': 0, 'backend': None, 'error': proc.stderr.strip() or 'non-zero exit'}
                 return json.loads(proc.stdout.strip() or '{}')
