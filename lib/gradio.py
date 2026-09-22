@@ -2927,16 +2927,6 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
                 outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                 show_progress_on=[gr_blocks_nav]
-            ).then(
-                fn=_collapse_all,
-                inputs=None,
-                outputs=accs,
-                show_progress='hidden'
-            ).then(
-                fn=_apply_expanded_states,
-                inputs=[gr_blocks_page, gr_blocks_data],
-                outputs=accs,
-                show_progress='hidden'
             )
             #############
             gr_save_session.change(
