@@ -334,6 +334,51 @@ def build_interface(args:dict)->gr.Blocks:
             blocks_keeps = [c[1] for c in block_components]
             blocks_voices = [c[2] for c in block_components]
             blocks_texts = [c[3] for c in block_components]
+            
+            accs_sync_js = f'''
+                (page, blocks) => {{
+                    try {{
+                        const PAGE_SIZE = {page_size};
+                        const root = (window.gradioApp && window.gradioApp()) || document;
+                        page = parseInt(page) || 0;
+                        blocks = Array.isArray(blocks) ? blocks : [];
+                        const start = page * PAGE_SIZE;
+                        // generation token: a newer sync cancels an older one (fast next/back)
+                        const gen = (window._acc_sync_gen = (window._acc_sync_gen || 0) + 1);
+
+                        const isVisuallyOpen = (i) => {{
+                            // when collapsed, Gradio removes/hides the content -> measure the real DOM
+                            const row = root.querySelector('#block_options_row_' + i);
+                            return !!(row && row.isConnected && row.offsetParent !== null);
+                        }};
+                        const headerBtn = (i) => {{
+                            const acc = root.querySelector('#block_' + i);
+                            if (!acc) return null;
+                            return acc.querySelector(':scope > button')
+                                || acc.querySelector('[aria-expanded]')
+                                || acc.querySelector('button');
+                        }};
+                        const syncOne = (i, tries) => {{
+                            if (window._acc_sync_gen !== gen) return;          // superseded by a newer sync
+                            const acc = root.querySelector('#block_' + i);
+                            if (!acc || acc.offsetParent === null) return;     // hidden slot (visible=False)
+                            const b = blocks[start + i];
+                            const want = !!(b && b.expand);
+                            if (isVisuallyOpen(i) === want) return;            // already correct -> no click
+                            const btn = headerBtn(i);
+                            if (!btn) return;
+                            btn.click();
+                            // a desynced accordion may swallow the first click -> re-check and retry
+                            if (tries > 0) setTimeout(() => syncOne(i, tries - 1), 200);
+                        }};
+                        setTimeout(() => {{
+                            for (let i = 0; i < PAGE_SIZE; i++) syncOne(i, 3);
+                        }}, 200);
+                    }} catch(e) {{
+                        console.warn('js_sync_accordions error:', e);
+                    }}
+                }}
+            '''
 
             gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                 <div style="right:0;margin:auto;padding:10px;text-align:center">
@@ -2831,6 +2876,12 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_session],
                             outputs=outputs_edit_blocks,
                             show_progress_on=[gr_progress]
+                        ).then(
+                            # TO REMOVE WHEN GRADIO ACCORDION EXPAND BUG RESOLVED
+                            fn=None,
+                            inputs=[gr_blocks_page, gr_blocks_data],
+                            outputs=None,
+                            js=accs_sync_js
                         )
                     )
                 ),
@@ -2892,6 +2943,12 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
                 outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                 show_progress_on=[gr_blocks_nav]
+            ).then(
+                # TO REMOVE WHEN GRADIO ACCORDION EXPAND BUG RESOLVED
+                fn=None,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=None,
+                js=accs_sync_js
             )
             gr_blocks_next_btn.click(
                 fn=lambda session_id, page, blocks, *args: _navigate(session_id, page, blocks, 1, *args),
@@ -2903,6 +2960,12 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_blocks_page, gr_blocks_data],
                 outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
                 show_progress_on=[gr_blocks_nav]
+            ).then(
+                # TO REMOVE WHEN GRADIO ACCORDION EXPAND BUG RESOLVED
+                fn=None,
+                inputs=[gr_blocks_page, gr_blocks_data],
+                outputs=None,
+                js=accs_sync_js
             )
             #############
             gr_save_session.change(
