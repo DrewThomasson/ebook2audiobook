@@ -2056,7 +2056,7 @@ def build_interface(args:dict)->gr.Blocks:
                 n = len(blocks_components_flat) + 1
                 return tuple(gr.update() for _ in range(9 + n + 1))
 
-            def _collapse_all():
+            def _collapse_all()->list[gr.Accordion]:
                 return [gr.Accordion(open=False) for _ in range(page_size)]
 
             def _apply_expanded_states(page, blocks)->list[gr.Accordion]:
