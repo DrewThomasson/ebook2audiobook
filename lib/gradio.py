@@ -2846,6 +2846,11 @@ def build_interface(args:dict)->gr.Blocks:
                             outputs=outputs_edit_blocks,
                             show_progress_on=[gr_progress]
                         ).then(
+                            fn=_collapse_all,
+                            inputs=None,
+                            outputs=accs,
+                            show_progress='hidden'
+                        ).then(
                             fn=_apply_expanded_states,
                             inputs=[gr_blocks_page, gr_blocks_data],
                             outputs=accs,
