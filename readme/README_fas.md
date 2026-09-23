@@ -1,8 +1,10 @@
-# 📚 ebook2audiobook (E2A)
+# 📚 کتاب الکترونیکی به کتاب صوتی (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 مبدل CPU/GPU از کتاب الکترونیکی به کتاب صوتی همراه با فصل‌ها و فراداده<br/>
 با استفاده از موتورهای پیشرفته TTS و موارد دیگر.<br/>
 از شبیه‌سازی صدا و ۱۱۵۸ زبان پشتیبانی می‌کند!
-> [!IMPORTANT]
+> مهم
 **این ابزار تنها برای استفاده با کتاب‌های الکترونیکی فاقد DRM که به‌صورت قانونی به دست آمده‌اند، در نظر گرفته شده است.** <br>
 نویسندگان مسئول هیچ‌گونه سوءاستفاده از این نرم‌افزار یا هرگونه پیامد قانونی ناشی از آن نیستند. <br>
 از این ابزار مسئولانه و در چارچوب تمام قوانین قابل اجرا استفاده کنید.

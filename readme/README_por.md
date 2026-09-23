@@ -1,8 +1,10 @@
 # 📚 ebook2audiobook (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 Conversor CPU/GPU de e-book para audiolivro com capítulos e metadados<br/>
 usando motores TTS avançados e muito mais.<br/>
 Suporta clonagem de voz e 1158 idiomas!
-> [!IMPORTANT]
+> IMPORTANTE
 **Esta ferramenta destina-se a ser usada apenas com e-books sem DRM e adquiridos legalmente.** <br>
 Os autores não se responsabilizam por qualquer uso indevido deste software nem por quaisquer consequências legais decorrentes. <br>
 Use esta ferramenta de forma responsável e em conformidade com todas as leis aplicáveis.

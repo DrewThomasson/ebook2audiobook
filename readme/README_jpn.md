@@ -1,8 +1,10 @@
-# 📚 ebook2audiobook (E2A)
+# ebook 📚 2 audiobook (E 2 A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 電子書籍から章とメタデータ付きのオーディオブックへのCPU/GPUコンバーター<br/>
 高度なTTSエンジンなどを使用。<br/>
 音声クローンと1158言語に対応！
-> [!IMPORTANT]
+> 重要
 **このツールは、DRMフリーで合法的に取得された電子書籍でのみ使用することを目的としています。** <br>
 作者は、このソフトウェアのいかなる誤用、またはそれに起因する法的結果について責任を負いません。 <br>
 このツールは責任を持って、適用されるすべての法律に従って使用してください。

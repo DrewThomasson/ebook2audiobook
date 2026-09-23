@@ -1,8 +1,10 @@
 # 📚 ebook2audiobook (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 Ayípadà CPU/GPU láti inú ìwé-kàwé ẹ̀rọ sí ìwé-ohùn pẹ̀lú àwọn orí àti metadata<br/>
 ní lílo àwọn ẹ̀rọ TTS tó ní ìlọsíwájú àti púpọ̀ síi.<br/>
 Ó ń ṣe àtìlẹ́yìn fún ẹ̀dà ohùn àti èdè 1158!
-> [!IMPORTANT]
+> Pàtàkì
 **Ọ̀pá-ìṣẹ́ yìí jẹ́ fún lílo pẹ̀lú àwọn ìwé-kàwé ẹ̀rọ tí kò ní DRM, tí a rí gbà ní ọ̀nà òfin nìkan.** <br>
 Àwọn òǹkọ̀wé kò ní jẹ́jọ́ fún ìlòkulò èyíkéyìí ti software yìí tàbí àbájáde òfin èyíkéyìí tí ó bá yọrí sí. <br>
 Lo ọ̀pá-ìṣẹ́ yìí pẹ̀lú ojúṣe àti ní ìbámu pẹ̀lú gbogbo àwọn òfin tó wà ní agbára.

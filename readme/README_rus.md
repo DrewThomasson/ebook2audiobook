@@ -1,4 +1,6 @@
 # 📚 ebook2audiobook (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 CPU/GPU конвертер из электронной книги в аудиокнигу с главами и метаданными<br/>
 с использованием передовых движков TTS и многого другого.<br/>
 Поддерживает клонирование голоса и 1158 языков!
