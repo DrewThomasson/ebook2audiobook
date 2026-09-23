@@ -5,27 +5,15 @@ After the first run, you are free to use your command line with:
 # go into ebook2audiobook folder then:
 ----------------------------------
 # Linux/Mac
-ebook2audiobook.sh [options]
+./e2a.sh [options]
 # Windows
-ebook2audiobook.cmd [options]
-----------------------------------
-or
-----------------------------------
-# Linux/Mac
-conda activate ./python_env
-# Windows
-conda activate .\python_env
-
-python app.py [options]
-conda deactivate
+e2a.cmd [options]
 ----------------------------------
 Available command options, type:
 # Linux/Mac
-./ebook2audiobook.sh --help
+./e2a.sh --help
 # Windows:
-ebook2audiobook.cmd --help
-# or if conda ./python_env activated:
-python app.py --help
+e2a.cmd --help
 '''
 session_info = 'In headless mode, store it in case of interruption, crash,\nor reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option.\n************************************************************************'
 default_language_code = 'eng' # ISO-639-3

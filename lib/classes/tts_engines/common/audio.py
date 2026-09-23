@@ -2,9 +2,7 @@ import os, subprocess, shutil, json
 
 from typing import Any, Union, TYPE_CHECKING
 from lib.classes.subprocess_pipe import SubprocessPipe
-from mutagen import File as MutagenFile
-from mutagen.aac import AAC
-
+from tinytag import TinyTag
 
 if TYPE_CHECKING:
     from torch import Tensor
@@ -67,13 +65,10 @@ def trim_audio(audio_data: Union[list[float], 'Tensor'], samplerate: int, silenc
     return torch.tensor([], dtype=torch.float32)
 
 def _get_length(filepath: str) -> float:
-    """Return duration in seconds for a single audio file."""
-    audio = MutagenFile(filepath)
-    if audio is None:
-        audio = AAC(filepath)
-    if audio.info is None:
+    tag = TinyTag.get(filepath)
+    if tag.duration is None:
         raise ValueError(f"No audio info: {filepath}")
-    return audio.info.length
+    return tag.duration
 
 def get_audio_duration(filepath: str) -> float:
     try:

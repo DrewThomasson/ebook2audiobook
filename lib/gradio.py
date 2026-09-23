@@ -1,5 +1,14 @@
 from lib.core import *
 
+theme = gr.themes.Origin(
+    primary_hue='green',
+    secondary_hue='amber',
+    neutral_hue='gray',
+    radius_size='lg',
+    font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
+)
+header_css = os.path.join(root_dir, 'header.css')
+
 def build_interface(args:dict)->gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
     try:
@@ -7,6 +16,7 @@ def build_interface(args:dict)->gr.Blocks:
         is_gui_process = args['is_gui_process']
         is_gui_shared = args['share']
         title = 'Ebook2Audiobook'
+        header_js = Path(root_dir, 'header.js').read_text(encoding='utf-8')
         gr_glassmask_msg = 'Initialization, please wait…'
         models = None
         language_options = [
@@ -31,666 +41,9 @@ def build_interface(args:dict)->gr.Blocks:
         visible_gr_tab_abs_params = interface_component_options['gr_tab_abs_params']
         js_hide_elements = 'document.querySelector("#ebook_textarea_toolbar")?.remove();'
         js_show_elements = 'window.gr_ebook_textarea_counter();'
-        theme = gr.themes.Origin(
-            primary_hue='green',
-            secondary_hue='amber',
-            neutral_hue='gray',
-            radius_size='lg',
-            font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
-        )
-        header_css = '''
-            <style>
-                /* Global Scrollbar Customization */
-                /* The entire scrollbar */
-                ::-webkit-scrollbar {
-                    width: 6px !important;
-                    height: 6px !important;
-                    cursor: pointer !important;;
-                }
-                /* The scrollbar track (background) */
-                ::-webkit-scrollbar-track {
-                    background: none transparent !important;
-                    border-radius: 6px !important;
-                }
-                /* The scrollbar thumb (scroll handle) */
-                ::-webkit-scrollbar-thumb {
-                    background: #c09340 !important;
-                    border-radius: 6px !important;
-                }
-                /* The scrollbar thumb on hover */
-                ::-webkit-scrollbar-thumb:hover {
-                    background: #ff8c00 !important;
-                }
-                /* Firefox scrollbar styling */
-                html {
-                    scrollbar-width: thin !important;
-                    scrollbar-color: #c09340 none !important;
-                }
-                button:disabled {
-                    pointer-events: none;
-                }
-                button div.wrap span {
-                    display: none !important;
-                }
-                button div.wrap::after {
-                    content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231E90FF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>") !important;
-                    width: 24px !important;
-                    height: 24px !important;
-                    display: inline-block !important;
-                    vertical-align: middle !important;
-                }
-                body:has(#gr_convert_btn:disabled) table.file-preview button.label-clear-button {
-                    display: none !important;
-                }
-                span[data-testid="block-info"] {
-                    font-size: 12px !important;
-                }
-                /////////////////////
-                .wrap-inner {
-                    border: 1px solid #666666;
-                }
-                .no-wrap {
-                    flex-wrap: nowrap !important;
-                }
-                .selected {
-                    color: var(--secondary-500) !important;
-                    text-shadow: 0.3px 0.3px 0.3px #303030;
-                }
-                .overflow-menu {
-                    display: none !important;
-                }
-                .gr-glass-mask {
-                    z-index: 9999 !important;
-                    position: fixed !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                    width: 100vw !important; 
-                    height: 100vh !important;
-                    background: rgba(0,0,0,0.5) !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    font-size: 1.2rem !important;
-                    color: #ffffff !important;
-                    text-align: center !important;
-                    border: none !important;
-                    opacity: 1;
-                    pointer-events: all !important;
-                }
-                .gr-glass-mask.hide {
-                    animation: fadeOut 2s ease-out 2s forwards !important;
-                }
-                .small-btn{
-                    background: var(--block-background-fill) !important;
-                    font-size: 22px !important;
-                    width: 60px !important;
-                    height: 100% !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }
-                .small-btn:hover {
-                    background: var(--button-primary-background-fill-hover) !important;
-                    font-size: 28px !important;
-                }
-                .small-btn-red{
-                    background: var(--block-background-fill) !important;
-                    font-size: 22px !important;
-                    width: 60px !important;
-                    height: 60px !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }
-                .small-btn-red:hover {
-                    background-color: #ff5050 !important;
-                    font-size: 28px !important;
-                }
-                .small-btn-lock{
-                    background: var(--block-background-fill) !important;
-                    font-size: 18px !important;
-                    width: 60px !important;
-                    height: 60px !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }
-                .small-btn-lock:hover {
-                    background-color: #752eb2 !important;
-                    font-size: 20px !important;
-                }
-                .small-btn-lock:active {
-                    background: var(--body-text-color) !important;
-                    font-size: 20px !important;
-                    color: var(--body-background-fill) !important;
-                }
-                .small-btn:active, .small-btn-red:active {
-                    background: var(--body-text-color) !important;
-                    font-size: 30px !important;
-                    color: var(--body-background-fill) !important;
-                }
-                .micro-btn{
-                    font-size: 16px !important;
-                    background: var(--block-background-fill) !important;
-                    width: 26px !important;
-                    height: 26px !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    border-radius: var(--radius-full) !important;
-                }
-                .micro-btn:hover {
-                    background-color: #ff5050 !important;
-                }
-                .micro-btn:active {
-                    background: var(--body-text-color) !important;
-                    color: var(--body-background-fill) !important;
-                }
-                .file-preview-holder {
-                    height: 116px !important;
-                    overflow: auto !important;
-                }
-                .progress-bar.svelte-ls20lj {
-                    background: var(--secondary-500) !important;
-                }
-                .file-preview-holder {
-                    height: auto !important;
-                    min-height: 0 !important;
-                    max-height: none !important;
-                }
-                ///////////////////
-                .gr-tab {
-                    padding: 0 3px 0 3px !important;
-                    margin: 0 !important;
-                    border: none !important;
-                }
-                .gr-col {
-                    padding: 0 6px 0 6px !important;
-                    margin: 0 !important;
-                    border: none !important;
-                }
-                .gr-group-main > div {
-                    background: none !important;
-                    border-radius: var(--radius-md) !important;
-                }
-                .gr-group > div {
-                    background: none !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
-                    border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
-                }
-                .gr-group-no-col{
-                    background: none !important;
-                    padding-right: 15px !important;
-                    margin: 0 var(--size-2) 0 var(--size-2)!important;;
-                    border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
-                }
-                .gr-group-convert-btn{
-                    margin: var(--size-2) !important;;
-                    padding-right: 15px !important;
-                    border-radius: var(--radius-md) !important;
-                }
-                .gr-label textarea[data-testid="textbox"]{
-                    padding: 0 0 0 3px !important;
-                    margin: 0 !important;
-                    text-align: left !important;
-                    font-weight: normal !important;
-                    height: auto !important;
-                    font-size: 12px !important;
-                    border: none !important;
-                    overflow-y: hidden !important;
-                    line-height: 12px !important;
-                }
-                .gr-markdown p {
-                    margin-top: 8px !important;
-                    width: 90px !important;
-                    padding: 0 !important;
-                    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
-                    background: var(--block-background-fill) !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    text-align: center !important;
-                }
-                .gr-markdown-span {
-                    margin-top: 8px !important;
-                    width: 90px !important;
-                    padding: 0 !important;
-                    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
-                    background: var(--block-background-fill) !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    text-align: center !important;            
-                }
-                .gr-markdown-output-split-hours {
-                    overflow: hidden !important;
-                    background: var(--block-background-fill) !important;
-                    border-radius: 0 !important; 
-                    font-size: 12px !important;
-                    text-align: center !important;
-                    vertical-align: middle !important;
-                    padding-top: 4px !important;
-                    padding-bottom: 4px !important;
-                    white-space: nowrap !important;
-                }
-                .gr-voice-player {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    width: 60px !important;
-                    height: 60px !important;
-                    background: var(--block-background-fill) !important;
-                }
-                #gr_row_language {
-                    align-items: stretch !important;
-                }
-                #gr_row_language > * {
-                    margin-top: 0 !important;
-                    margin-bottom: 0 !important;
-                }
-                #gr_translate_enabled {
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    padding: 0 !important;
-                }
-                #gr_translate_enabled > *,
-                #gr_translate_enabled label,
-                #gr_translate_enabled .wrap {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    width: 100% !important;
-                    height: 100% !important;
-                }
-                .play-pause-button:hover svg {
-                    fill: #ffab00 !important;
-                    stroke: #ffab00 !important;
-                    transform: scale(1.2) !important;
-                }
-                .gr-convert-btn {
-                    font-size: 30px !important;
-                }
-                .gr-convert-btn:hover { background-color: #34d058 !important; }
-                .gr-convert-btn:active, .button-red:active {
-                    background: var(--body-text-color) !important;
-                    color: var(--body-background-fill) !important;
-                }
-                .gr-abs-search-btn {
-                    background-color: #D68215 !important;
-                    font-size: 18px !important;
-                    width: 60px !important;
-                    height: 60px !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }
-                .gr-abs-search-btn:hover {
-                    background-color: #FF950D !important;
-                    font-size: 20px !important;
-                }
-                .gr-abs-search-btn:active {
-                    background: var(--body-text-color) !important;
-                    font-size: 20px !important;
-                    color: var(--body-background-fill) !important;
-                }
-                .gr-abs-upload-btn {
-                    font-size: 30px !important;
-                }
-                .gr-abs-upload-btn:hover { background-color: #34d058 !important; }
-                .gr-abs-upload-btn:active, .button-red:active {
-                    background: var(--body-text-color) !important;
-                    color: var(--body-background-fill) !important;
-                }
-                [id^="block_"]:has(input[type="checkbox"]:checked) {
-                    border-left: 3px solid #22c55e !important;
-                }
-                [id^="block_"]:has(input[type="checkbox"]:checked) > div {
-                    background-color: rgba(34, 197, 94, 0.08) !important;
-                }
-                [id^="block_"]:has(input[type="checkbox"]:not(:checked)) {
-                    border-left: 3px solid #ef4444 !important;
-                }
-                [id^="block_"]:has(input[type="checkbox"]:not(:checked)) > div {
-                    background-color: rgba(239, 68, 68, 0.08) !important;
-                }
-                ////////////////////
-                #gr_ebook_textarea {
-                    height: auto !important;
-                    min-height: 55px !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                }
-                #gr_ebook_textarea label, #gr_custom_model_file label {
-                    background: none !important;
-                    border: none !important;
-                }
-                #gr_audiobook_player label {
-                    display: none !important;
-                }
-                #gr_ebook_src, #gr_custom_model_file, #gr_voice_file {
-                    height: auto !important;
-                    min-height: 100px !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                }
-                #gr_ebook_src button>div, #gr_ebook_textarea button>div, #gr_custom_model_file button>div, #gr_voice_file button>div {
-                    font-size: 12px !important;
-                }
-                #gr_ebook_src .empty, #gr_ebook_textarea .empty, #gr_custom_model_file .empty, #gr_voice_file .empty,
-                #gr_ebook_src .wrap, #gr_ebook_textarea .wrap, #gr_custom_model_file .wrap, #gr_voice_file .wrap {
-                    height: 100% !important;
-                    min-height: 100px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                }
-                #gr_ebook_src button[aria-label="common.upload"], #gr_ebook_textarea  button[aria-label="common.upload"], #gr_custom_model_file button[aria-label="common.upload"], #gr_voice_file button[aria-label="common.upload"] {
-                    display: none !important;
-                }
-                #gr_ebook_src .file-preview-holder {
-                    padding-top: 16px !important;
-                }
-                .gr-voice-highlight-css { display: none !important; }
-                #gr_ebook_src table.file-preview tbody > tr.file:hover {
-                    background: var(--color-accent-soft) !important;
-                }
-                #gr_voice_selected_filename, #gr_custom_model_train_link {
-                    display: flex !important;
-                    align-items: center !important;
-                    margin: auto !important;
-                    padding-left: 6px !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    white-space: nowrap !important;
-                    background: var(--block-background-fill) !important;
-                    width: 100% !important;
-                    height: 100% !important;
-                }
-                #gr_voice_selected_filename p, #gr_custom_model_train_link p {
-                    margin: auto !important;
-                    vertical-align: middle !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    background: var(--block-background-fill) !important;
-                    width: 100% !important;
-                    height: 100% !important;
-                }
-                #gr_voice_selected_filename a, #gr_custom_model_train_link a {
-                    text-decoration: none !important;
-                }
-                #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
-                    display: none !important;
-                }               
-                #gr_fine_tuned_list {
-                    height: 80px !important;
-                }
-                #gr_voice_list {
-                    height: 60px !important;
-                }
-                #gr_output_format_list {
-                    height: 103px !important;
-                }
-                #gr_row_output_split_hours {
-                    border-radius: 0 !important;
-                }
-                #gr_audiobook_sentence textarea{
-                    margin: auto !important;
-                    text-align: center !important;
-                }
-                #gr_session textarea, #gr_progress textarea {
-                    overflow: hidden !important;
-                    overflow-y: auto !important;
-                    scrollbar-width: none !important;
-                }
-                #gr_group_progress .progress-bar, #gr_group_progress [role="progressbar"] > div {
-                    background-color: #ff007f !important;
-                    background-image: none !important;
-                }
-                #gr_progress {
-                    height: 100px !important;
-                    min-height: 100px !important;
-                    max-height: 100px !important;
-                    resize: none;
-                }
-                #gr_session textarea::-webkit-scrollbar, #gr_progress textarea::-webkit-scrollbar {
-                    display: none !important; 
-                }
-                #gr_ebook_mode span[data-testid="block-info"],
-                #gr_language span[data-testid="block-info"],
-                #gr_voice_list span[data-testid="block-info"],
-                #gr_device span[data-testid="block-info"],
-                #gr_tts_engine_list span[data-testid="block-info"],
-                #gr_output_split_hours span[data-testid="block-info"],
-                #gr_session span[data-testid="block-info"],
-                #gr_custom_model_list span[data-testid="block-info"],
-                #gr_audiobook_sentence span[data-testid="block-info"],
-                #gr_audiobook_list span[data-testid="block-info"],
-                #gr_progress span[data-testid="block-info"],
-                #gr_abs_library span[data-testid="block-info"] {
-                    display: none !important;
-                }
-                #gr_row_ebook_mode { align-items: center !important; }
-                #gr_blocks_preview {
-                    align-self: center !important; 
-                    overflow: visible !important;
-                    padding: 20px 0 20px 10px !important;
-                }
-                #gr_group_output_split {
-                    border-radius: 0 !important;
-                }
-                #gr_tts_rating {
-                    overflow: hidden !important;
-                }
-                #gr_row_voice_player, #gr_row_custom_model_list, #gr_row_session, #gr_row_audiobook_list {
-                    height: 60px !important;
-                }
-                #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label), #gr_audiobook_files label[data-testid="block-label"] {
-                    display: none !important;
-                }
-                #gr_audiobook_player audio {
-                    width: 100% !important;
-                    padding-top: 10px !important;
-                    padding-bottom: 10px !important;
-                    border-radius: 0px !important;
-                    background-color: #ebedf0 !important;
-                    color: #ffffff !important;
-                }
-                #gr_audiobook_player audio::-webkit-media-controls-panel {
-                    width: 100% !important;
-                    padding-top: 10px !important;
-                    padding-bottom: 10px !important;
-                    border-radius: 0px !important;
-                    background-color: #ebedf0 !important;
-                    color: #ffffff !important;
-                }
-                #gr_voice_player_hidden {
-                    z-index: -100 !important;
-                    position: absolute !important;
-                    overflow: hidden !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    width: 60px !important;
-                    height: 60px !important;
-                }
-                #gr_session_update, #gr_restore_session, #gr_save_session,
-                #gr_audiobook_vtt, #gr_playback_time {
-                    display: none !important;
-                }
-                #gr_blocks_nav {
-                    overflow:hidden !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                }
-                #gr_blocks_nav p {
-                    white-space:nowrap !important;
-                    overflow:hidden !important;
-                    font-size: 16px !important;
-                    text-align: center !important;
-                }
-                #gr_row_buttons {
-                    justify-content: center !important;
-                    gap: 100px !important;
-                }
-                #gr_blocks_markdown {
-                    background: var(--body-background-fill) !important;
-                    width: 100% !important;
-                    text-align: center !important;
-                    display: flex !important;
-                    justify-content: center !important;
-                    align-items: center !important;
-                    padding-bottom: 20px !important;
-                }
-                #gr_blocks_markdown p {
-                    background: var(--body-background-fill) !important;
-                    width: 100% !important;
-                    font-size: 18px !important;
-                    font-weight: bold !important;
-                }
-                ///////////
-                .fade-in {
-                    animation: fadeIn 1s ease-in !important;
-                    display: inline-block !important;
-                }
-                @keyframes fadeIn {
-                    from {
-                        opacity: 0;
-                        visibility: visible !important;
-                    }
-                    to {
-                        opacity: 1;
-                    }
-                }
-                @keyframes fadeOut {
-                    from {
-                        opacity: 1;
-                    }
-                    to {
-                        opacity: 0;
-                        visibility: hidden;
-                        pointer-events: none;
-                    }
-                }
-                //////////
-                #custom-gr-modal-container,
-                #custom-gr-modal-container .gr-modal {
-                    position: fixed !important;
-                }
-                .hide-elem {
-                    z-index: -1 !important;
-                    position: absolute !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                }
-                .gr-modal {
-                    position: fixed !important;
-                    top: 0 !important; left: 0 !important;
-                    width: 100% !important; height: 100% !important;
-                    background-color: rgba(0, 0, 0, 0.5) !important;
-                    z-index: 9999 !important;
-                    display: flex !important;
-                    justify-content: center !important;
-                    align-items: center !important;
-                }
-                .gr-modal-content {
-                    background-color: #333 !important;
-                    padding: 20px !important;
-                    border-radius: 9px !important;
-                    text-align: center !important;
-                    max-width: 300px !important;
-                    height: auto !important;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
-                    border: 2px solid #FFA500 !important;
-                    color: white !important;
-                    position: relative !important;
-                }
-                .gr-modal-content p {
-                    overflow-wrap: break-word;
-                    word-break: break-word;
-                    white-space: normal;
-                }
-                .confirm-buttons {
-                    display: flex !important;
-                    justify-content: space-evenly !important;
-                    margin-top: 20px !important;
-                }
-                .confirm-buttons button {
-                    padding: 10px 20px !important;
-                    border: none !important;
-                    border-radius: 6px !important;
-                    font-size: 16px !important;
-                    cursor: pointer !important;
-                }
-                .accordion-block-even > button, .accordion-block-odd > button {
-                    padding: 10px 0 10px 0 !important;
-                }
-                .accordion-block-even, .accordion-block-even div label textarea, .accordion-block-even .wrap {
-                    background: var(--table-even-background-fill) !important;
-                }
-                .accordion-block-odd, .accordion-block-odd div label textarea, .accordion-block-odd .wrap {
-                    background: var(--table-odd-background-fill) !important;
-                }
-                .accordion-block-even:hover,
-                .accordion-block-odd:hover {
-                    background: rgba(255, 200, 50, 0.3) !important;
-                }
-                .accordion-block-voice-list {
-                    margin: auto !important;
-                    padding: 0 16px 0 0 !important;
-                }
-                .gr-blocks-buttons {
-                    display: flex !important;
-                    justify-content: space-evenly !important;
-                    margin-top: 12px !important;
-                    margin-bottom: 12px !important;
-                }
-                .gr-blocks-buttons button {
-                    padding: 12px !important;
-                    border: none !important;
-                    border-radius: 9px !important;
-                    font-size: 16px !important;
-                    cursor: pointer !important;
-                }
-                .gr-blocks-buttons:hover { background-color: #34d058 !important; }
-                .gr-blocks-buttons:active, .button-red:active {
-                    background: var(--body-text-color) !important;
-                    color: var(--body-background-fill) !important;
-                }
-                .accordion-block-keep, .accordion-block-keep .wrap{
-                    background: none !important;
-                }
-                .accordion-block-reset {
-                    margin-left: 30px !important;
-                    margin-right: 30px !important;
-                    border-radius: 9px !important;
-                }
-                .button-green { background-color: #28a745 !important; color: white !important; }
-                .button-green:hover { background-color: #34d058 !important; }
-                .button-red  {background-color: #dc3545 !important; color: white !important; }
-                .button-red:hover  { background-color: #ff6f71 !important; }
-                .button-green:active, .button-red:active {
-                    background: var(--body-text-color) !important;
-                    color: var(--body-background-fill) !important;
-                }
-                .spinner {
-                    margin: 15px auto !important;
-                    border: 4px solid rgba(255, 255, 255, 0.2) !important;
-                    border-top: 4px solid #FFA500 !important;
-                    border-radius: 50% !important;
-                    width: 30px !important;
-                    height: 30px !important;
-                    animation: spin 1s linear infinite !important;
-                }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
-        '''
-        
-        with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(604800, 86400)) as app:
+
+        gr_blocks_kwargs = {"title": title, "delete_cache": (604800, 86400)}
+        with gr.Blocks(**gr_blocks_kwargs) as app:
             with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
                 with gr.Tabs(elem_id='gr_tabs') as gr_tabs:
                     with gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab') as gr_tab_main:
@@ -715,7 +68,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
                                     gr_voice_file = gr.File(show_label=False, label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                     with gr.Row(elem_id='gr_row_voice_player') as gr_row_voice_player:
-                                        gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
+                                        gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), container=False, visible=True, show_label=False, scale=0, min_width=60)
                                         gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                         gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                         gr_voice_selected_filename = gr.Markdown(value='', elem_id='gr_voice_selected_filename', elem_classes=['gr-markdown'], visible=False)
@@ -764,10 +117,11 @@ def build_interface(args:dict)->gr.Blocks:
 
                         with gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-no-col'], visible=True) as gr_group_audiobook_list:
                             gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
-                            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
-                            gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
+                            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=True)
+                            gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=True, value=0.0)
                             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
-                            gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
+                            gr_audio_kwargs = {"elem_id": "gr_audiobook_player", "label": "", "type": "filepath", "autoplay": False, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True}
+                            gr_audiobook_player = gr.Audio(**gr_audio_kwargs)
                             with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
                                 gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
@@ -882,9 +236,9 @@ def build_interface(args:dict)->gr.Blocks:
                     with gr.Tab('Audiobookshelf', elem_id='gr_tab_abs_params', elem_classes='gr-tab', visible=visible_gr_tab_abs_params) as gr_tab_abs_params:
                         with gr.Row(elem_id='gr_row1_abs'):
                             gr_abs_url = gr.Textbox(label='Server URL', elem_id='gr_abs_url', value=default_abs_url, placeholder='http://localhost:13378', lines=1, max_lines=1, interactive=True, scale=2)
-                            gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', lines=1, max_lines=1, interactive=True, scale=1) 
+                            gr_abs_api_token = gr.Textbox(label='API Token', elem_id='gr_abs_api_token', value=default_abs_api_token, type='password', placeholder='eyJ...', lines=1, max_lines=1, interactive=True, scale=1)
                         with gr.Row(elem_id='gr_row2_abs'):
-                            gr_abs_library = gr.Dropdown(label='', elem_id='gr_abs_library', choices=[('Enter URL + API Token to load libraries', '')], value=default_abs_library or None, interactive=True)
+                            gr_abs_library = gr.Dropdown(label='', elem_id='gr_abs_library', choices=[], value=default_abs_library or None, interactive=True)
                             gr_abs_search_btn = gr.Button('🔍', elem_id='gr_abs_search_btn', elem_classes=['gr-abs-search-btn'], variant='', visible=True, interactive=True, scale=0, min_width=60)
                         with gr.Group(elem_id='gr_group_abs_upload_btn', elem_classes=['gr-group-abs-upload-btn']):
                             gr_abs_audiobook = gr.Textbox(elem_id='gr_abs_audiobook', label='Audiobook', lines=1, max_lines=1, interactive=False, visible=True)
@@ -915,13 +269,14 @@ def build_interface(args:dict)->gr.Blocks:
                         ) as acc:
                             with gr.Row(elem_id=f'block_options_row_{i}', elem_classes=[acc_class, 'no-wrap']) as block_options_row:
                                 acc_keep = gr.Checkbox(
-                                    label='',
+                                    show_label=False,
                                     elem_id=f'block_keep_{i}',
                                     elem_classes=['accordion-block-keep'],
                                     value=True,
                                     interactive=True,
+                                    visible=True,
                                     scale=0,
-                                    visible=True
+                                    min_width=20
                                 )
                                 acc_voice_list = gr.Dropdown(
                                     show_label=False,
@@ -930,7 +285,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     choices=voice_options,
                                     type='value',
                                     interactive=True,
-                                    scale=1
+                                    scale=3,
+                                    min_width=100
                                 )
                                 acc_reset_btn = gr.Button(
                                     '↺',
@@ -955,20 +311,28 @@ def build_interface(args:dict)->gr.Blocks:
                                 outputs=[acc_text]
                             )
                         acc.expand(
-                            fn=lambda expands, _i=i: [
-                                expands[j] if j != _i else True
-                                for j in range(page_size)
-                            ],
+                            fn=lambda expands, _i=i: (
+                                [
+                                    expands[j] if j != _i else True
+                                    for j in range(page_size)
+                                ],
+                                gr.Accordion(open=True)
+                            ),
                             inputs=[gr_blocks_expands],
-                            outputs=[gr_blocks_expands]
+                            outputs=[gr_blocks_expands, acc],
+                            show_progress='hidden'
                         )
                         acc.collapse(
-                            fn=lambda expands, _i=i: [
-                                expands[j] if j != _i else False
-                                for j in range(page_size)
-                            ],
+                            fn=lambda expands, _i=i: (
+                                [
+                                    expands[j] if j != _i else False
+                                    for j in range(page_size)
+                                ],
+                                gr.Accordion(open=False)
+                            ),
                             inputs=[gr_blocks_expands],
-                            outputs=[gr_blocks_expands]
+                            outputs=[gr_blocks_expands, acc],
+                            show_progress='hidden'
                         )
                         block_components.append((acc, acc_keep, acc_voice_list, acc_text))
 
@@ -1014,15 +378,13 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _disable_components(session_id:str, exceptions:list|None=None)->tuple:
                 if session_id is None:
-                    outputs = tuple(gr.update() for _ in range(23))
+                    outputs = tuple([gr.update() for _ in range(len(outputs_disable_components))])
                 else:
                     if exceptions is None:
                         exceptions = []
+                    outputs = [gr.update(interactive=False) for _ in range(len(outputs_disable_components))]
                     if 'gr_session_switch_btn' in exceptions:
-                        outputs = [gr.update(interactive=False) for _ in range(len(outputs_disable_components))]
                         outputs[outputs_disable_components.index(gr_session_switch_btn)] = gr.update(interactive=True)
-                    else:
-                        outputs = tuple(gr.update(interactive=False) for _ in range(23))
                 return outputs
 
             def _enable_components(session_id:str)->tuple:
@@ -1033,7 +395,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
                             outputs = list(gr.update(interactive=True) for _ in range(26))
-                            outputs[23] = gr.update()  # gr_modal is gr.HTML, no interactive support
+                            outputs[23] = gr.update()
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             enabled_convert_btn = False
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
@@ -1102,9 +464,31 @@ def build_interface(args:dict)->gr.Blocks:
                     cancel_btn = f'#gr_{type}_cancel_btn'
                     confirm_btn = f'#gr_{type}_confirm_btn'
                     return f'''
+                    <style>
+                        .confirm-buttons .btn {{
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 50px;
+                            height: 50px;
+                            border: none;
+                            border-radius: 6px;
+                            font-size: 20px;
+                            cursor: pointer;
+                            user-select: none;
+                        }}
+                        .confirm-buttons .btn-red {{ background-color: #dc3545; color: white; }}
+                        .confirm-buttons .btn-red:hover {{ background-color: #ff6f71; }}
+                        .confirm-buttons .btn-green {{ background-color: #28a745; color: white; }}
+                        .confirm-buttons .btn-green:hover {{ background-color: #34d058; }}
+                        .confirm-buttons .btn:active {{
+                            background: var(--body-text-color) !important;
+                            color: var(--body-background-fill) !important;
+                        }}
+                    </style>
                     <div class="confirm-buttons">
-                        <button class="button-red" style="width:50px; height:50px" onclick="document.querySelector('{cancel_btn}').click()">✖</button>
-                        <button class="button-green" style="width:50px; height:50px" onclick="document.querySelector('{confirm_btn}').click()">✔</button>
+                        <div class="btn btn-red" onclick="document.querySelector('{cancel_btn}').click()">✖</div>
+                        <div class="btn btn-green" onclick="document.querySelector('{confirm_btn}').click()">✔</div>
                     </div>
                     '''
                 else:
@@ -1228,6 +612,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_bark = visible_gr_tab_bark_params
                         visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
                         visible_voice_buttons = True if session.get('voice') is not None else False
+                        visible_row_voice_player = _row_voice_player_visible(session.get('ebook_mode'), False)
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                         voice_file = session.get('voice')
                         translate_enabled_state = bool(session.get('translate_enabled'))
@@ -1270,6 +655,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=voice_file),
                             gr.update(visible=visible_voice_buttons),
                             gr.update(visible=visible_voice_buttons),
+                            gr.update(visible=visible_row_voice_player),
                             gr.update(label=f"Upload a {session['tts_engine'].upper()} ZIP file (Required: {', '.join(models[default_fine_tuned]['files'])})"),
                             gr.update(visible=visible_custom_model_del_btn),
                             gr.update(value=session.get('abs_url', '')),
@@ -1323,8 +709,10 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if not session or not session.get('id', False):
                         return (gr.update(interactive=True), 'Session not found')
-                    if not audiobook or not os.path.isfile(str(audiobook)):
-                        return (gr.update(interactive=True), 'No audiobook to upload')
+                    if not audiobook:
+                        return (gr.update(interactive=True), 'No audiobook file to upload!')
+                    elif not os.path.isfile(str(audiobook)):
+                        return (gr.update(interactive=True), 'Audiobook file does not exist!')
                     from lib.classes.audiobookshelf import upload_to_abs
                     from urllib.parse import urlparse
                     title = Path(audiobook).stem
@@ -1397,7 +785,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(), gr.update(), gr.update(), gr.update(),
                                 gr.update(), gr.update(), gr.update(visible=True, value=session['ebook_list']), gr.update(),
                                 gr.update(), gr.update(), gr.update(),
-                                gr.update(), gr.update(), gr.update()
+                                gr.update(), gr.update(), gr.update(value='')
                             )
                 except Exception as e:
                     error = f'_refresh_interface(): {e}'
@@ -1412,8 +800,8 @@ def build_interface(args:dict)->gr.Blocks:
                         if session.get('audiobook') != selected:
                             session['audiobook'] = selected
                         visible = session['audiobook'] is not None
-                        audiobook_file = selected if selected else ''
-                        return gr.update(visible=visible), gr.update(value=audiobook_file)
+                        audiobook = selected if selected else ''
+                        return gr.update(visible=visible), gr.update(value=audiobook)
                 except Exception as e:
                     error = f'_change_gr_audiobook_list(): {e}'
                     exception_alert(session_id, error)
@@ -1458,25 +846,26 @@ def build_interface(args:dict)->gr.Blocks:
                     f'font-weight: 600; }}</style>'
                 )
 
-            def _voice_player_visible(session)->bool:
-                """gr_row_voice_player hides only in DIRECTORY mode with no row currently selected."""
-                if not session:
+            def _row_voice_player_visible(ebook_mode, selected)->bool:
+                if ebook_mode != ebook_modes['DIRECTORY']:
                     return True
-                if session.get('ebook_mode') != ebook_modes['DIRECTORY']:
-                    return True
-                return bool(session.get('ebook_selected'))
+                return bool(selected)
 
             def _upload_gr_ebook_src(session_id:str, ebook_mode:str)->None:
-                if ebook_mode == ebook_modes['DIRECTORY']:
-                    session = context.get_session(session_id)
-                    if session and session.get('id', False):
-                        session['ebook_selected'] = None
-                        session['voice_map'] = {}
-                        msg = 'Click on each file in the list to set its voice individually.'
-                        show_alert(session_id, {
-                            'type': 'info',
-                            'msg': msg
-                        })
+                try:
+                    if ebook_mode == ebook_modes['DIRECTORY']:
+                        session = context.get_session(session_id)
+                        if session and session.get('id', False):
+                            session['ebook_selected'] = None
+                            session['voice_map'] = {}
+                            msg = 'Click on each file in the list to set its global voice individually.'
+                            show_alert(session_id, {
+                                'type': 'info',
+                                'msg': msg
+                            })
+                except Exception as e:
+                    error = f'_upload_gr_ebook_src(): {e}'
+                    exception_alert(session_id, error)
 
             def _change_gr_ebook_src(session_id:str, ebook_mode:str, data:any)->tuple:
                 try:
@@ -1580,7 +969,7 @@ def build_interface(args:dict)->gr.Blocks:
                         css_update = gr.update() if val == ebook_modes['DIRECTORY'] else gr.update(value='')
                         if val != ebook_modes['DIRECTORY']:
                             session['ebook_selected'] = None
-                        row_visible = _voice_player_visible(session)
+                        row_visible = _row_voice_player_visible(session.get('ebook_mode'), session.get('ebook_selected'))
                         if val == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
                             filename_update = gr.update(value=Path(session['ebook_selected']).name, visible=True)
                         else:
@@ -2347,9 +1736,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     args['ebook_textarea'] = args['ebook_textarea'].strip()
                                     if len(args['ebook_textarea']) < 10:
-                                        error = 'Textarea must be > 10 chars.'                     
-                            #elif args['xtts_num_beams'] < args['xtts_length_penalty']:
-                            #    error = 'num beams must be greater or equal than length penalty.'               
+                                        error = 'Textarea must be > 10 chars.'                                
                             if error is None:
                                 session['ticker'] = len(audiobook_options)
                                 if args['ebook_mode'] == ebook_modes['DIRECTORY']:
@@ -2388,7 +1775,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                     override = voice_map[os.path.basename(file)]
                                                 else:
                                                     override = default_voice
-                                                if override is not None and not os.path.exists(override):
+                                                if override is not None and override != default_voice and not os.path.exists(override):
                                                     msg = f'Voice override for {Path(file).name} not found, using default.'
                                                     show_alert(session_id, {
                                                         "type": "warning",
@@ -2397,16 +1784,14 @@ def build_interface(args:dict)->gr.Blocks:
                                                     override = default_voice
                                                 args['voice'] = override
                                                 progress_status, passed = convert_ebook(args)
-                                                if passed:
-                                                    last_progress_status = progress_status
-                                                    if args['blocks_preview']:
-                                                        break
-                                                    continue
-                                                else:
-                                                    error = progress_status
+                                                if not passed:
+                                                    error = progress_status or f'Conversion of {ebook_name} failed.'
+                                                    break
+                                                last_progress_status = progress_status
+                                                if args['blocks_preview']:
                                                     break
                                             if error is None:
-                                                return gr.update(value=last_progress_status)
+                                                return gr.update(value=last_progress_status)                         
                                 elif args['ebook_mode'] == ebook_modes['SINGLE']:
                                     progress_status, passed = convert_ebook(args)
                                     if passed:
@@ -2420,10 +1805,14 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         error = progress_status
                             if error is not None:
-                                show_alert(session_id, {"type": "warning", "msg": error})
-                                if session['cancellation_requested'] and session['status'] == status_tags['DISCONNECTED']:
-                                    context_tracker.end_session(session_id, session['socket_hash'])
-                                    return gr.update()
+                                if session['cancellation_requested']:
+                                    msg = 'Conversion cancelled'
+                                    show_alert(session_id, {"type": "warning", "msg": msg})
+                                    if session['status'] == status_tags['DISCONNECTED']:
+                                        context_tracker.end_session(session_id, session['socket_hash'])
+                                        return gr.update()
+                                else:
+                                    show_alert(session_id, {"type": "warning", "msg": error})
                                 session['status'] = status_tags['END']
                             return gr.update(value=error)
                         else:
@@ -2593,7 +1982,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return gr.update(), event, gr.update(), gr.update(), gr.update()
 
-            def _populate_page(session_id:str, page:int, blocks:list[dict])->tuple:
+            def _populate_page(session_id:str, page:int, blocks:list[dict], with_open:bool=True)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
                     if session['status'] in [status_tags['EDIT']]:
@@ -2606,7 +1995,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 b = blocks[idx]
                                 exp = b.get('expand', False)
                                 expands.append(exp)
-                                updates.append(gr.update(label=f'Block {idx}', visible=True, open=exp))
+                                if with_open:
+                                    updates.append(gr.update(label=f'Block {idx}', visible=True, open=exp))
+                                else:
+                                    updates.append(gr.update(label=f'Block {idx}', visible=True))
                                 updates.append(gr.update(value=b['keep']))
                                 updates.append(gr.update(value=b.get('voice'), choices=voice_options))
                                 updates.append(gr.update(value=b['text']))
@@ -2619,6 +2011,7 @@ def build_interface(args:dict)->gr.Blocks:
                         end = min(start + page_size, len(blocks))
                         header = gr.update(value=f'Blocks {start}–{end-1} of {len(blocks)-1}')
                         return (*updates, header, expands)
+                return tuple(gr.update() for _ in range(len(blocks_components_flat) + 2))
 
             def _navigate(session_id:str, page:int, blocks:list[dict], direction:int, *args)->tuple:
                 new_blocks = _collect_page(page, blocks, *args)
@@ -2655,7 +2048,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 blocks = blocks_current['blocks']
                                 max_page = max((len(blocks) - 1) // page_size, 0)
                                 page = max(0, min(int(blocks_current.get('page', 0)), max_page))
-                                page_updates = list(_populate_page(session_id, page, blocks))
+                                page_updates = list(_populate_page(session_id, page, blocks, with_open=False))
                                 if session['cancellation_requested']:
                                     visible_main = True
                                     visible_blocks = False
@@ -2975,7 +2368,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
-                gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_custom_model_file, gr_custom_model_del_btn,
+                gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_row_voice_player, gr_custom_model_file, gr_custom_model_del_btn,
                 gr_abs_url, gr_abs_api_token, gr_abs_library, gr_abs_upload_btn, gr_abs_audiobook
             ]
             outputs_refresh_interface = [
@@ -2999,7 +2392,8 @@ def build_interface(args:dict)->gr.Blocks:
             gr_ebook_src.upload(
                 fn=_upload_gr_ebook_src,
                 inputs=[gr_session, gr_ebook_mode],
-                outputs=None
+                outputs=None,
+                show_progress_on=[gr_ebook_src]
             )
             _chain_enable(
                 gr_ebook_src.change(
@@ -3265,19 +2659,6 @@ def build_interface(args:dict)->gr.Blocks:
                     }
                 '''
             )
-            gr_playback_time.change(
-                fn=_change_gr_playback_time,
-                inputs=[gr_session, gr_playback_time],
-                js='''
-                    (time)=>{
-                        try{
-                            window.session_storage.playback_time = Number(time);
-                        }catch(e){
-                            console.warn("gr_playback_time.change error: "+e);
-                        }
-                    }
-                '''
-            )
             gr_audiobook_download_btn.click(
                 fn=_toggle_audiobook_files,
                 inputs=[gr_session, gr_audiobook_list, gr_audiobook_files_state],
@@ -3464,6 +2845,11 @@ def build_interface(args:dict)->gr.Blocks:
                             inputs=[gr_session],
                             outputs=outputs_edit_blocks,
                             show_progress_on=[gr_progress]
+                        ).then(
+                            fn=_populate_page,
+                            inputs=[gr_session, gr_blocks_page, gr_blocks_data],
+                            outputs=[*blocks_components_flat, gr_blocks_header, gr_blocks_expands],
+                            show_progress_on=[gr_progress]
                         )
                     )
                 ),
@@ -3503,7 +2889,7 @@ def build_interface(args:dict)->gr.Blocks:
                             fn=finalize_audiobook,
                             inputs=[gr_session],
                             outputs=[gr_progress, gr_dummy_bool],
-                            #show_progress_on=[gr_progress]
+                            show_progress_on=[gr_progress]
                         )
                     )
                 ),
@@ -3626,588 +3012,7 @@ def build_interface(args:dict)->gr.Blocks:
             ############
             app.load(
                 fn=None,
-                js=r'''
-                    ()=>{
-                        try{
-                            let gr_root = (window.gradioApp && window.gradioApp()) || document;
-                            let gr_checkboxes;
-                            let gr_radios;
-                            let gr_voice_player_hidden;
-                            let gr_audiobook_vtt;
-                            let gr_audiobook_sentence;
-                            let gr_audiobook_player;
-                            let gr_playback_time;
-                            let gr_progress;
-                            let gr_voice_play;
-                            let gr_ebook_textarea;
-                            let tabs_open = false;
-                            let init_elements_timeout;
-                            let init_audiobook_player_timeout;
-                            let audio_filter = "";
-                            let cues = [];
-                            if(typeof window.onElementAvailable !== "function"){
-                                window.onElementAvailable = (selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {})=> {
-                                    const seen = new WeakSet();
-                                    const fireFor = (context) => {
-                                        context.querySelectorAll(selector).forEach((el) => {
-                                            if (seen.has(el)) return;
-                                            const success = callback(el);
-                                            if (success !== false) {
-                                                // Mark as seen only if callback succeeded
-                                                seen.add(el);
-                                                if (once) return;
-                                            } else {
-                                                // Retry check later (in case conditions weren’t met yet)
-                                                setTimeout(() => fireFor(root), 300);
-                                            }
-                                        });
-                                    };
-                                    fireFor(root);
-                                    const observer = new MutationObserver((mutations) => {
-                                        for (const m of mutations) {
-                                            for (const n of m.addedNodes) {
-                                                if (n.nodeType !== 1) continue;
-                                                if (n.matches?.(selector)) {
-                                                    if (!seen.has(n)) {
-                                                        const success = callback(n);
-                                                        if (success !== false) {
-                                                            seen.add(n);
-                                                            if (once) {
-                                                                observer.disconnect();
-                                                                return;
-                                                            }
-                                                        } else {
-                                                            setTimeout(() => fireFor(root), 300);
-                                                        }
-                                                    }
-                                                } else {
-                                                    fireFor(n);
-                                                }
-                                            }
-                                        }
-                                    });
-                                    observer.observe(root, { childList: true, subtree: true });
-                                    return () => observer.disconnect();
-                                }
-                            }
-                            if(typeof window.init_interface !== "function"){
-                                window.init_interface = ()=>{
-                                    try {
-                                        gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                        gr_progress = (gr_root) ? gr_root.querySelector("#gr_progress") : undefined;
-                                        if(!gr_root || !gr_progress){
-                                            clearTimeout(init_elements_timeout);
-                                            console.warn("Components not ready… retrying");
-                                            init_elements_timeout = setTimeout(init_interface, 1000);
-                                            return;
-                                        }
-                                        // Function to apply theme borders
-                                        function applyThemeBorders(){
-                                            const url = new URL(window.location);
-                                            const theme = url.searchParams.get("__theme");
-                                            let elColor = "#666666";
-                                            if(theme == "dark"){
-                                                elColor = "#fff";
-                                            }else if(!theme){
-                                                const osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                                if(osTheme){
-                                                    elColor = "#fff";
-                                                }
-                                            }
-                                            gr_root.querySelectorAll("input[type='checkbox'], input[type='radio']")
-                                                .forEach(cb => cb.style.border = "1px solid " + elColor);
-                                        }
-                                        // Run once on init
-                                        applyThemeBorders();
-                                        // Re-run when DOM changes (tabs, redraws, etc.)
-                                        new MutationObserver(applyThemeBorders).observe(gr_root, {
-                                            childList: true,
-                                            subtree: true
-                                        });
-                                        // Keep your progress observer
-                                        new MutationObserver(tab_progress).observe(gr_progress, {
-                                            attributes: true,
-                                            childList: true,
-                                            subtree: true,
-                                            characterData: true
-                                        });
-                                        // new MutationObserver(tab_progress).observe(gr_progress.parentElement, { ... });
-                                        // gr_progress.addEventListener("change", tab_progress);
-                                        if(!window._tab_progress_interval){
-                                            window._tab_progress_interval = setInterval(tab_progress, 500);
-                                        }
-                                        window.gr_ebook_textarea_counter();
-                                    }catch(e){
-                                        console.warn("init_interface error:", e);
-                                    }
-                                };
-                            }
-                            if(typeof(window._restoreSlider) !== "function"){
-                                window._restoreSlider = (slider, parseFn = parseFloat)=>{
-                                    if(!slider) return;
-                                    const container = slider.closest("div[id]");
-                                    if(!container) return;
-                                    const key = container.id.replace(/^gr_/, "");
-                                    const saved = window.session_storage?.[key];
-                                    if(saved === undefined || saved === null || saved === ""){
-                                        return;
-                                    }
-                                    const parsed = parseFn(saved);
-                                    if(!Number.isFinite(parsed)){
-                                        return;
-                                    }
-                                    slider.value = parsed;
-                                    slider.dispatchEvent(new Event("input", { bubbles: true }));
-                                };
-                            }
-                            if(typeof(window.init_xtts_sliders) !== "function"){
-                                window.init_xtts_sliders = ()=>{
-                                    try{
-                                        const q = (id) => gr_root.querySelector(`#gr_${id} input[type=number]`);
-                                        window._restoreSlider(q("xtts_temperature"));
-                                        window._restoreSlider(q("xtts_repetition_penalty"));
-                                        window._restoreSlider(q("xtts_top_k"), (v) => parseInt(v, 10));
-                                        window._restoreSlider(q("xtts_top_p"));
-                                        window._restoreSlider(q("xtts_speed"));
-                                    }catch(e){
-                                        console.warn("init_xtts_sliders error:", e);
-                                    }
-                                };
-                            }
-                            if(typeof(window.init_bark_sliders) !== "function"){
-                                window.init_bark_sliders = ()=>{
-                                    try{
-                                        const q = (id) => gr_root.querySelector(`#gr_${id} input[type=number]`);
-                                        window._restoreSlider(q("bark_text_temp"));
-                                        window._restoreSlider(q("bark_waveform_temp"));
-                                    }catch(e){
-                                        console.warn("init_bark_sliders error:", e);
-                                    }
-                                };
-                            }
-                            if(typeof window.init_voice_player_hidden !== "function"){
-                                window.init_voice_player_hidden = ()=>{
-                                    try{
-                                        const gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
-                                        const gr_voice_play = gr_root.querySelector("#gr_voice_play");
-                                        if(gr_voice_player_hidden && gr_voice_play){
-                                            if(gr_voice_play.dataset.bound === "true") return;
-                                            gr_voice_play.dataset.bound = "true";
-                                            gr_voice_player_hidden.addEventListener("loadeddata", ()=>{
-                                                gr_voice_play.textContent = "▶";
-                                            });
-                                            gr_voice_play.addEventListener("click", ()=>{
-                                                if(gr_voice_player_hidden.paused){
-                                                    gr_voice_player_hidden.play().then(()=>{
-                                                        gr_voice_play.textContent = "⏸";
-                                                    }).catch(err => console.warn("Play failed:", err));
-                                                }else{
-                                                    gr_voice_player_hidden.pause();
-                                                    gr_voice_play.textContent = "▶";
-                                                }
-                                            });
-                                            gr_voice_player_hidden.addEventListener("pause", ()=>{
-                                                gr_voice_play.textContent = "▶";
-                                            });
-                                            gr_voice_player_hidden.addEventListener("ended", ()=>{
-                                                gr_voice_play.textContent = "▶";
-                                            });
-                                            gr_voice_player_hidden.addEventListener("play", ()=>{
-                                                const v = window.session_storage?.playback_volume ?? 1;
-                                                gr_voice_player_hidden.volume = v;
-                                            });
-                                            return true;
-                                        }else{
-                                            console.warn("Voice player not found yet, retrying…");
-                                            setTimeout(window.init_voice_player_hidden, 500);
-                                        }
-                                    }catch(e){
-                                        console.warn("init_voice_player_hidden error:", e);
-                                    }
-                                    return false;
-                                };
-                            }
-                            if(typeof(window.init_audiobook_player) !== "function"){
-                                window.init_audiobook_player = ()=>{
-                                    try{
-                                        if(gr_root){
-                                            gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
-                                            gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                            gr_playback_time = gr_root.querySelector("#gr_playback_time input");
-                                            let lastCue = null;
-                                            let fade_timeout = null;
-                                            let last_time = 0;
-                                            if(gr_audiobook_player && gr_audiobook_sentence && gr_playback_time){
-                                                function trackPlayback(){
-                                                    try {
-                                                        window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
-                                                        const cue = findCue(window.session_storage.playback_time);
-                                                        if(cue && cue !== lastCue){
-                                                            if(fade_timeout){
-                                                                gr_audiobook_sentence.style.opacity = "1";
-                                                            }else{
-                                                                gr_audiobook_sentence.style.opacity = "0";
-                                                            }
-                                                            gr_audiobook_sentence.style.transition = "none";
-                                                            gr_audiobook_sentence.value = cue.text;
-                                                            clearTimeout(fade_timeout);
-                                                            fade_timeout = setTimeout(() => {
-                                                                gr_audiobook_sentence.style.transition = "opacity 0.15s ease-in";
-                                                                gr_audiobook_sentence.style.opacity = "1";
-                                                                fade_timeout = null;
-                                                            }, 33);
-                                                            lastCue = cue;
-                                                        }else if(!cue && lastCue !== null){
-                                                            lastCue = null;
-                                                        }
-                                                        const now = performance.now();
-                                                        if(now - last_time > 1000){
-                                                            gr_playback_time.value = String(window.session_storage.playback_time);
-                                                            gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
-                                                            last_time = now;
-                                                        }
-                                                    }catch(e){
-                                                        console.warn("gr_audiobook_player tracking error:", e);
-                                                    }
-                                                    if(!gr_audiobook_player.ended){
-                                                        requestAnimationFrame(trackPlayback);
-                                                    }
-                                                }
-                                                gr_audiobook_player.addEventListener("loadeddata", ()=>{
-                                                    gr_audiobook_player.style.transition = "filter 1s ease";
-                                                    gr_audiobook_player.style.filter = audio_filter;
-                                                    gr_audiobook_player.currentTime = parseFloat(window.session_storage?.playback_time) || 0;
-                                                    gr_audiobook_player.volume = window.session_storage.playback_volume;
-                                                });
-                                                gr_audiobook_player.addEventListener("play", ()=>{
-                                                    requestAnimationFrame(trackPlayback);
-                                                });
-                                                gr_audiobook_player.addEventListener("seeked", ()=>{
-                                                    window.session_storage.playback_time = gr_audiobook_player.currentTime;
-                                                    requestAnimationFrame(trackPlayback);
-                                                });
-                                                gr_audiobook_player.addEventListener("ended", ()=>{
-                                                    gr_audiobook_sentence.value = "…";
-                                                    window.session_storage.playback_time = 0;
-                                                    lastCue = null;
-                                                });
-                                                gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                    window.session_storage.playback_volume = gr_audiobook_player.volume;
-                                                    gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
-                                                    if(gr_voice_player_hidden){
-                                                        gr_voice_player_hidden.volume = gr_audiobook_player.volume;
-                                                        gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
-                                                    }
-                                                });
-                                                const themURL = new URL(window.location);
-                                                const theme = themURL.searchParams.get("__theme");
-                                                let osTheme;
-                                                if(theme){
-                                                    if(theme == "dark"){
-                                                        audio_filter = "invert(1) hue-rotate(180deg)";
-                                                    }
-                                                }else{
-                                                    osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                                    if(osTheme){
-                                                        audio_filter = "invert(1) hue-rotate(180deg)";
-                                                    }
-                                                }
-                                                gr_audiobook_player.style.transition = "filter 1s ease";
-                                                gr_audiobook_player.style.filter = audio_filter;
-                                                gr_audiobook_player.volume = window.session_storage.playback_volume;
-                                                return true;
-                                            }
-                                        }
-                                    }catch(e){
-                                        console.warn("init_audiobook_player error:", e);
-                                    }
-                                    return false;
-                                };
-                            }
-                            if(typeof window.gr_ebook_textarea_counter !== "function"){
-                                const max_ebook_textarea_length = __max_ebook_textarea_length__;
-                                window.gr_ebook_textarea_counter = function(){
-                                    const container = document.querySelector("#gr_ebook_textarea");
-                                    if(container){
-                                        const textarea = container.querySelector("textarea");
-                                        const ebook_textarea_toolbar = document.querySelector("#ebook_textarea_toolbar");
-                                        document.querySelector("#ebook_textarea_toolbar")?.remove();
-                                        container.style.position = "relative";
-                                        const toolbar = document.createElement("div");
-                                        toolbar.id = toolbar.name = "ebook_textarea_toolbar";
-                                        toolbar.style.cssText = "position:absolute;top:4px;right:8px;display:flex;align-items:center;gap:6px;z-index:1;";
-                                        const counter = document.createElement("span");
-                                        counter.style.cssText = "font-size:0.85em;color:var(--body-text-color);";
-                                        counter.textContent = textarea.value.length + " / " + max_ebook_textarea_length;
-                                        toolbar.appendChild(counter);
-                                        const btn = document.createElement("button");
-                                        btn.textContent = "🗑";
-                                        btn.id = btn.name = "clear_ebook_textarea";
-                                        btn.className = "micro-btn";
-                                        btn.addEventListener("click", ()=>{
-                                            textarea.value = "";
-                                            textarea.dispatchEvent(new Event("input", {bubbles: true}));
-                                            counter.textContent = "0 / " + max_ebook_textarea_length;
-                                            counter.style.color = "var(--body-text-color)";
-                                        });
-                                        textarea.addEventListener("input", ()=>{
-                                            const len = textarea.value.length;
-                                            counter.textContent = len + " / " + max_ebook_textarea_length;
-                                            counter.style.color = len >= max_ebook_textarea_length ? "red" : "var(--body-text-color)";
-                                        });
-                                        toolbar.appendChild(btn);
-                                        container.appendChild(toolbar);
-                                    }
-                                };
-                            }
-                            if(typeof(window.tab_progress) !== "function"){
-                                window.tab_progress = ()=>{
-                                    try{
-                                        const gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                        const el = gr_root.querySelector("#gr_progress");
-                                        const val = el?.value || el?.textContent || "";
-                                        const valArray = splitAtLastDash(val);
-                                        if(valArray[1]){
-                                            const title = valArray[0].trim().split(/ (.*)/)[1].trim();
-                                            const percentage = valArray[1].trim();
-                                            const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
-                                            document.title = titleShort + ": " + percentage;
-                                        }else{
-                                            document.title = "Ebook2Audiobook";
-                                        }
-                                    }catch(e){
-                                        console.warn("tab_progress error:", e);
-                                    }
-                                };
-                            }
-                            if(typeof(splitAtLastDash) !== "function"){
-                                function splitAtLastDash(s){
-                                    const idx = s.lastIndexOf("-");
-                                    if(idx === -1){
-                                        return [s];
-                                    }
-                                    return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
-                                }
-                            }
-                            if(typeof(window.load_vtt) !== "function"){
-                                window.load_vtt = ()=>{
-                                    try{
-                                        gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
-                                        gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                        if(gr_audiobook_sentence){
-                                            gr_audiobook_sentence.style.fontSize = "14px";
-                                            gr_audiobook_sentence.style.fontWeight = "bold";
-                                            gr_audiobook_sentence.style.width = "100%";
-                                            gr_audiobook_sentence.style.height = "auto";
-                                            gr_audiobook_sentence.style.textAlign = "center";
-                                            gr_audiobook_sentence.style.margin = "0";
-                                            gr_audiobook_sentence.style.padding = "7px 0 7px 0";
-                                            gr_audiobook_sentence.style.lineHeight = "14px";
-                                            const txt = gr_audiobook_vtt.value;
-                                            if(txt == ""){
-                                                gr_audiobook_sentence.value = "…";
-                                            }else{
-                                                parseVTT(txt);
-                                            }
-                                        }
-                                    }catch(e){
-                                        console.warn("load_vtt error:", e);
-                                    }
-                                };
-                            }
-                            if(typeof(window.parseVTT) !== "function"){
-                                 window.parseVTT = (vtt)=>{
-                                    function pushCue(){
-                                        if(start !== null && end !== null && textBuffer.length){
-                                            cues.push({ start, end, text: textBuffer.join("\n") });
-                                        }
-                                        start = end = null;
-                                        textBuffer.length = 0;
-                                    }
-                                    const lines = vtt.split(/\r?\n/);
-                                    const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
-                                    let start = null, end = null;
-                                    cues = [];
-                                    textBuffer = [];
-                                    for(let i = 0, len = lines.length; i < len; i++){
-                                        const line = lines[i];
-                                        if(!line.trim()){ pushCue(); continue; }
-                                        if(line.includes("-->")){
-                                            const [s, e] = line.split("-->").map(l => l.trim().split(" ")[0]);
-                                            if(timePattern.test(s) && timePattern.test(e)){
-                                                start = toSeconds(s);
-                                                end = toSeconds(e);
-                                            }
-                                        }else if(!timePattern.test(line)){
-                                            textBuffer.push(line);
-                                        }
-                                    }
-                                    pushCue();
-                                }
-                            }
-                            if(typeof(toSeconds) !== "function"){
-                                function toSeconds(ts){
-                                    const parts = ts.split(":");
-                                    if(parts.length === 3){
-                                        return parseInt(parts[0], 10) * 3600 +
-                                               parseInt(parts[1], 10) * 60 +
-                                               parseFloat(parts[2]);
-                                    }
-                                    return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
-                                }
-                            }
-                            if(typeof(findCue) !== "function"){
-                                function findCue(time){
-                                    let lo = 0, hi = cues.length - 1;
-                                    while(lo <= hi){
-                                        const mid = (lo + hi) >> 1;
-                                        const cue = cues[mid];
-                                        if(time < cue.start){
-                                            hi = mid - 1;
-                                        }else if(time >= cue.end){
-                                            lo = mid + 1;
-                                        }else{
-                                            return cue;
-                                        }
-                                    }
-                                    return null;
-                                }
-                            }
-                            if(typeof(splitAtLastDash) !== "function"){
-                                function splitAtLastDash(s){
-                                    const idx = s.lastIndexOf("-");
-                                    if(idx === -1){
-                                        return [s];
-                                    }
-                                    return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
-                                }
-                            }
-                            if(typeof(show_glassmask) !== "function"){
-                                function show_glassmask(msg){
-                                    let glassmask = document.querySelector("#gr_glassmask");
-                                    if(!glassmask){
-                                        glassmask = document.createElement("div");
-                                        glassmask.id = "gr_glassmask";
-                                        document.body.appendChild(glassmask);
-                                    }
-                                    glassmask.className = "gr-glass-mask";
-                                    glassmask.innerHTML = `${msg}`;
-                                }
-                            }
-                            if(typeof(create_uuid) !== "function"){
-                                function create_uuid(){
-                                    try{
-                                        return crypto.randomUUID();
-                                    }catch(e){
-                                        return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c =>{
-                                            const r = Math.random() * 16 | 0;
-                                            const v = c === "x" ? r : (r & 0x3 | 0x8);
-                                            return v.toString(16);
-                                        });
-                                    }
-                                }
-                            }
-                            //////////////////////
-                            const bc = new BroadcastChannel("E2A-channel");
-                            const tab_id = create_uuid();
-                            bc.onmessage = (event)=>{
-                                try{
-                                    const msg = event.data;
-                                    if(!msg || msg.senderId === tab_id){
-                                        return;
-                                    }
-                                    switch (msg.type){
-                                        case "check-existing":
-                                            bc.postMessage({ type: "already-open", senderId: tab_id });
-                                            break;
-                                        case "already-open":
-                                            tabs_open = true;
-                                            break;
-                                        case "new-tab-open":
-                                            show_glassmask(msg.text);
-                                            break;
-                                    }
-                                }catch(e){
-                                    console.warn("bc.onmessage error:", e);
-                                }
-                            };
-                            window.addEventListener("beforeunload", ()=>{
-                                try{
-                                    const newStorage = JSON.parse(localStorage.getItem("data") || "{}");
-                                    if(newStorage.tab_id == window.tab_id || !newStorage.tab_id){
-                                        delete newStorage.tab_id;
-                                        delete newStorage.status;
-                                        newStorage.playback_time = Number(window.session_storage.playback_time);
-                                        newStorage.playback_volume = parseFloat(window.session_storage.playback_volume);
-                                        localStorage.setItem("data", JSON.stringify(newStorage));
-                                    }
-                                }catch(e){
-                                    console.warn("Error updating status on unload:", e);
-                                }
-                            });
-                            window.onElementAvailable("#gr_voice_player_hidden audio", (el)=>{
-                                window.init_voice_player_hidden();
-                            }, {once: false});
-                            window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
-                                window.init_audiobook_player();
-                            }, {once: false});
-                            if (!window._fetch_patched) {
-                                const originalFetch = window.fetch;
-                                window._original_fetch = window._original_fetch || originalFetch;
-                                window.fetch = async function(url, options) {
-                                    if (typeof url === "string" && url.includes("/upload") && options?.body instanceof FormData){
-                                        let has_files = false;
-                                        for(const [, value] of options.body.entries()){
-                                            if(value instanceof File && value.size > 0){
-                                                has_files = true;
-                                                break;
-                                            }
-                                        }
-                                        if(!has_files){
-                                            console.warn("Blocked empty folder upload");
-                                            return new Response(JSON.stringify([]), {
-                                                status: 200,
-                                                headers: {"Content-Type": "application/json"},
-                                            });
-                                        }
-                                    }
-                                    return window._original_fetch.apply(this, arguments);
-                                };
-                                window._fetch_patched = true;
-                            }
-                            try{
-                                bc.postMessage({ type: "check-existing", senderId: tab_id });
-                                setTimeout(()=>{
-                                    if(tabs_open){
-                                        bc.postMessage({
-                                            type: "new-tab-open",
-                                            text: "Session expired.<br/>You can close this window",
-                                            senderId: tab_id
-                                        });
-                                    }
-                                }, 250);
-                            }catch(e){
-                                console.warn("bc.postMessage error:", e);
-                            }
-                            const currentStorage = localStorage.getItem("data");
-                            if(currentStorage){
-                                window.session_storage = JSON.parse(currentStorage);
-                                window.session_storage.tab_id = tab_id;
-                                if(window.session_storage.playback_volume === 0){
-                                    window.session_storage.playback_volume = 1.0;
-                                }
-                            }else{
-                                window.session_storage = {};
-                                window.session_storage.playback_time = 0;
-                                window.session_storage.playback_volume = 1.0;
-                            }
-                            return window.session_storage;
-                        }catch(e){
-                            console.warn("gr_raed_data js error:", e);
-                        }
-                        return null;
-                    }
-                '''.replace('__max_ebook_textarea_length__', str(max_ebook_textarea_length)),
+                js=header_js,
                 outputs=[gr_restore_session],
             )
             app.unload(on_unload)
@@ -4217,6 +3022,7 @@ def build_interface(args:dict)->gr.Blocks:
             os.environ['no_proxy'] = ' ,'.join(all_ips)
             return app
     except Exception as e:
+        traceback.print_exc()
         error = f'An unexpected error occurred: {e}'
         exception_alert(None, error)
     return None

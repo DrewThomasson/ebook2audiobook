@@ -8,7 +8,7 @@ ARG PYTHON_VERSION=3.12
 # and its Level Zero loader (libze1 1.8.12) predates zesInit.
 FROM python:${PYTHON_VERSION}-slim-trixie
 
-ARG APP_VERSION=26.9.7
+ARG APP_VERSION=26.9.23
 ARG DEVICE_TAG=cu130
 ARG DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu130", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
@@ -57,11 +57,46 @@ RUN set -eux; \
 	fi; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		gcc g++ make pkg-config cmake curl wget git bash xz-utils python3-dev \
-		fontconfig libfontconfig1 libfreetype6 libgl1 libegl1 libopengl0 \
-		libx11-6 libxext6 libxrender1 libxcb1 libxcb-render0 libxcb-shm0 \
-		libxcb-xfixes0 libxcb-cursor0 libgomp1 libsndfile1 libnss3 \
-		${DOCKER_PROGRAMS_STR} tesseract-ocr tesseract-ocr-eng; \
+		bash \
+		build-essential \
+		ca-certificates \
+		cmake \
+		curl \
+		fontconfig \
+		g++ \
+		gcc \
+		git \
+		libegl1 \
+		libfontconfig1 \
+		libfreetype6 \
+		libgcc-s1 \
+		libgl1 \
+		libglib2.0-0 \
+		libgomp1 \
+		libnss3 \
+		libopengl0 \
+		libsndfile1 \
+		libstdc++6 \
+		libx11-6 \
+		libxcb-cursor0 \
+		libxcb-render0 \
+		libxcb-shm0 \
+		libxcb-xfixes0 \
+		libxcb-xinerama0 \
+		libxcb1 \
+		libxext6 \
+		libxkbcommon-x11-0 \
+		libxrender1 \
+		make \
+		pkg-config \
+		python3-dev \
+		tesseract-ocr \
+		wget \
+		xz-utils \
+		${DOCKER_PROGRAMS_STR}; \
+	if [ -n "${ISO3_LANG}" ]; then \
+		apt-get install -y --no-install-recommends "tesseract-ocr-${ISO3_LANG}" || true; \
+	fi; \
 	rm -rf /var/lib/apt/lists/*
 
 # Intel XPU user-mode driver — runs only when DEVICE_TAG=xpu.

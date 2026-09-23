@@ -6,7 +6,7 @@ from .conf import (
     ebooks_dir, interface_component_options, interface_concurrency_limit,
     interface_host, interface_port, interface_shared_tmp_expire,
     max_python_version, min_python_version, models_dir, os,
-    output_formats, prog_version, python_env_dir,
+    output_formats, prog_version, python_env_dir, python_exec,
     requirements_file, components_dir, root_dir, tmp_dir, run_dir, gradio_cache_dir, tmp_expire, max_ebook_textarea_length,
     tts_dir, voice_formats, voices_dir, default_output_split, default_output_split_hours,
     default_abs_url, default_abs_api_token, default_abs_library
@@ -38,7 +38,7 @@ __all__ = [
     "ebooks_dir", "interface_component_options", "interface_concurrency_limit",
     "interface_host", "interface_port", "interface_shared_tmp_expire",
     "max_python_version", "min_python_version", "models_dir", "os",
-    "output_formats", "prog_version", "python_env_dir",
+    "output_formats", "prog_version", "python_env_dir", "python_exec",
     "requirements_file", "components_dir", "root_dir", "tmp_dir", "run_dir", "gradio_cache_dir", "tmp_expire", "max_ebook_textarea_length", 
     "tts_dir", "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours",
 

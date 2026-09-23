@@ -19,6 +19,11 @@ set "CONDA_PATH=%CONDA_HOME%\condabin"
 
 :: Honor SCOOP env var if set, otherwise default user-install location
 if defined SCOOP (set "SCOOP_HOME=%SCOOP%") else (set "SCOOP_HOME=%USERPROFILE%\scoop")
+
+set "PS_EXE=pwsh"
+where.exe /Q pwsh >nul 2>&1 || set "PS_EXE=powershell"
+set "PS_ARGS=-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass"
+
 :: ========================================================
 
 echo ========================================================
@@ -52,12 +57,16 @@ tasklist | find /i "%APP_NAME%.exe" >nul && (
 :: PROCESS .installed (CONTROLLED REMOVAL)
 :: ========================================================
 set "REMOVE_CONDA="
+set "REMOVE_UV="
 set "REMOVE_SCOOP="
+set "REMOVE_PYTHON="
 
 if exist "%INSTALLED_LOG%" (
 	for /f "usebackq delims=" %%A in ("%INSTALLED_LOG%") do (
 		if /i "%%A"=="Miniforge3" set "REMOVE_CONDA=1"
-		if /i "%%A"=="Scoop"      set "REMOVE_SCOOP=1"
+		if /i "%%A"=="uv" set "REMOVE_UV=1"
+		if /i "%%A"=="scoop" set "REMOVE_SCOOP=1"
+		if /i "%%A"=="python" set "REMOVE_PYTHON=1"
 	)
 )
 
@@ -80,12 +89,48 @@ if defined REMOVE_CONDA if exist "%CONDA_HOME%" (
 )
 
 :: ========================================================
+:: REMOVE UV
+:: ========================================================
+if defined REMOVE_UV (
+	where.exe /Q uv
+	if not errorlevel 1 (
+		echo Cleaning uv cache...
+		uv cache clean >nul 2>&1
+	)
+	"%PS_EXE%" %PS_ARGS% -Command "'uv.exe', 'uvx.exe', 'uvw.exe' | ForEach-Object { Remove-Item \"$HOME\.local\bin\$_\" -ErrorAction SilentlyContinue }"
+	"%PS_EXE%" %PS_ARGS% -Command "Remove-Item \"$env:APPDATA\uv\", \"$env:LOCALAPPDATA\uv\" -Recurse -Force -ErrorAction SilentlyContinue"
+	echo uv successfully uninstalled.
+)
+
+:: ========================================================
+:: REMOVE PYTHON
+:: ========================================================
+if defined REMOVE_PYTHON (
+	echo Uninstalling all managed Python runtimes...
+	pymanager uninstall --purge -y
+	if errorlevel 1 (
+		echo Warning: Could not cleanly uninstall Python runtimes.
+	)
+	echo Uninstalling official Python Install Manager...
+	"%PS_EXE%" %PS_ARGS% -Command "Get-AppxPackage PythonSoftwareFoundation.PythonManager | Remove-AppxPackage"
+	if errorlevel 1 (
+		echo Failed to uninstall Python Install Manager.
+	)
+	findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
+	if not errorlevel 1 (
+		findstr /v /i /x "python" "%INSTALLED_LOG%" > "%INSTALLED_LOG%.tmp"
+		move /y "%INSTALLED_LOG%.tmp" "%INSTALLED_LOG%" >nul
+	)
+	echo Python and the Install Manager have been uninstalled successfully!
+)
+
+:: ========================================================
 :: REMOVE SCOOP (USER INSTALL)
 :: - scoop 'current' folders are junctions
 :: - rd /s /q removes the junction, not the target
 :: ========================================================
 if defined REMOVE_SCOOP if exist "%SCOOP_HOME%" (
-	echo %SCOOP_HOME%
+	echo Uninstalling scoop at %SCOOP_HOME%...
 	rd /s /q "%SCOOP_HOME%" >nul 2>&1
 )
 
@@ -93,15 +138,14 @@ if defined REMOVE_SCOOP if exist "%SCOOP_HOME%" (
 :: REMOVE SHORTCUTS + REGISTRY
 :: ========================================================
 if exist "%STARTMENU_DIR%" (
-	echo %STARTMENU_DIR%
+	echo Removing %STARTMENU_DIR%...
 	rd /s /q "%STARTMENU_DIR%" >nul 2>&1
 )
-
 if exist "%DESKTOP_LNK%" (
-	echo %DESKTOP_LNK%
+	echo Removing %DESKTOP_LNK%...
 	del /q "%DESKTOP_LNK%" >nul 2>&1
 )
-
+echo Deleting registry HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook...
 reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audiobook" /f >nul 2>&1
 
 :: ========================================================
@@ -111,21 +155,16 @@ reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\ebook2audio
 :: - continue even if some items are already gone
 :: ========================================================
 echo Cleaning repository content...
-
-:: Delete files
 for %%I in ("%REAL_INSTALL_DIR%\*") do (
     if /i not "%%~nxI"=="%SCRIPT_NAME%" (
         echo %%~nxI
         del /f /q "%%~fI" >nul 2>&1
     )
 )
-
-:: Delete directories
 for /D %%I in ("%REAL_INSTALL_DIR%\*") do (
     echo %%~nxI
     rd /s /q "%%~fI" >nul 2>&1
 )
-
 if exist "%INSTALLED_LOG%" (
 	echo .installed
 	del /f /q "%INSTALLED_LOG%" >nul 2>&1

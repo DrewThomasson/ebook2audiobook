@@ -1,7 +1,5 @@
 import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warnings
-
 from pathlib import Path
-
 from lib.conf import *
 from lib.conf_lang import default_language_code, language_mapping, install_info
 from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
@@ -18,22 +16,71 @@ def init_multiprocessing():
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
     search_python_env = str(os.path.basename(sys.prefix))
-    if search_python_env == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
+    if script_mode == FULL_DOCKER:
+        return True
+    if search_python_env == 'python_env':
+        pyvenv_cfg = os.path.join(sys.prefix, 'pyvenv.cfg')
+        conda_meta = os.path.join(sys.prefix, 'conda-meta')
+        if os.path.isdir(conda_meta):
+            error=f'''***********
+Wrong launch: {search_python_env} was created by conda/Miniforge3, not uv!
+Please remove the '{search_python_env}' directory and re-run the installer:
+"./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+{install_info}
+***********'''
+            print(error)
+            return False
+        if not os.path.isfile(pyvenv_cfg):
+            error=f'''***********
+Wrong launch: {search_python_env} does not appear to be a valid virtual environment.
+Please remove the '{search_python_env}' directory and re-run the installer:
+"./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+{install_info}
+***********'''
+            print(error)
+            return False
+        is_uv_venv = False
+        try:
+            with open(pyvenv_cfg, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip().startswith('uv'):
+                        is_uv_venv = True
+                        break
+        except OSError:
+            pass
+        if not is_uv_venv:
+            error=f'''***********
+Wrong launch: {search_python_env} was not created by uv!
+Please remove the '{search_python_env}' directory and re-run the installer:
+"./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+{install_info}
+***********'''
+            print(error)
+            return False
+        if not shutil.which('uv'):
+            error=f'''***********
+Wrong launch: uv binary not found in PATH.
+The application requires uv to manage Python packages.
+Please install uv: https://docs.astral.sh/uv/getting-started/installation/
+Then re-run the installer.
+{install_info}
+***********'''
+            print(error)
+            return False
+        return True
+    if script_mode == NATIVE:
+        return True
+    if current_version >= min_python_version and current_version <= max_python_version:
         return True
     error=f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
-NOTE: If you are running a Docker so you are probably using an old version of ebook2audiobook.
-To solve this issue go to download the new version at https://github.com/DrewThomasson/ebook2audiobook
-If the directory python_env does not exist in the ebook2audiobook root directory,
-run your command with "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
-to install it all automatically.
 {install_info}
 ***********'''
     print(error)
     return False
 
 def check_python_version(script_mode:str)->bool:
-    if script_mode == BUILD_DOCKER:
+    if script_mode == BUILD_DOCKER or script_mode == NATIVE:
         return True
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
@@ -93,99 +140,104 @@ def register_dlls()->str|bool:
 def main()->None:
     wsl_cmd = ''
     wsl_extra = ''
-    if os.environ.get('DOCKER_IN_WSL', '0') == '1' and os.environ.get('DOCKER_DESKTOP', '0') == '0' and os.environ.get('PODMAN_DESKTOP', '0') == '0':
+    if os.environ.get('DOCKER_IN_WSL', '0') == '1' and os.environ.get('DOCKER_DESKTOP', '0') == '0' and os.environ.get('PODMAN_DESKTOP', '0') == '0': 
         wsl_cmd = 'wsl --user root --'
     if wsl_cmd:
         wsl_extra = f'DEVICE_TAG=cu128'
     else:
-        wsl_extra = f'DEVICE_TAG=cu128 &&'
+        wsl_extra = f'DEVICE_TAG=cu128  & &'
+
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
         epilog=f'''
-Example usage:    
+Example usage: 
 Windows native mode:
-    Gradio/GUI:
-    ebook2audiobook.cmd
-    Headless mode:
-    ebook2audiobook.cmd --headless --ebook '/path/to/file' --language eng
+Gradio/GUI:
+ebook2audiobook.cmd
+Headless mode:
+ebook2audiobook.cmd --headless --ebook '/path/to/file' --language eng
 Linux/Mac natvie mode:
-    Gradio/GUI:
-    ./ebook2audiobook.command
-    Headless mode:
-    ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+Gradio/GUI:
+./ebook2audiobook.command
+Headless mode:
+./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 Docker build image:
-    Windows:
-        Docker:
-            ebook2audiobook.cmd --script_mode build_docker
-        Docker Compose:
-            ebook2audiobook.cmd --script_mode build_docker --docker_mode compose
-        Podman Compose:
-            ebook2audiobook.cmd --script_mode build_docker --docker_mode podman
-    Linux/Mac
-        Docker:
-            ./ebook2audiobook.command --script_mode build_docker
-        Docker Compose
-            ./ebook2audiobook.command --script_mode build_docker --docker_mode compose
-        Podman Compose:
-            ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
+Windows:
+Docker:
+ebook2audiobook.cmd --script_mode build_docker
+Docker Compose:
+ebook2audiobook.cmd --script_mode build_docker --docker_mode compose
+Podman Compose:
+ebook2audiobook.cmd --script_mode build_docker --docker_mode podman
+Linux/Mac
+Docker:
+./ebook2audiobook.command --script_mode build_docker
+Docker Compose
+./ebook2audiobook.command --script_mode build_docker --docker_mode compose
+Podman Compose: 
+./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 Docker run image:
-    Gradio/GUI:
-        CPU:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
-        CUDA:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
-        ROCM:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
-        XPU:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
-        JETSON:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --runtime nvidia  --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[51/60/61 etc...]
-    Headless mode:
-        CPU:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-        CUDA:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-        ROCM:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-        XPU:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
-        JETSON:
-         {wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+Gradio/GUI:
+CPU:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
+CUDA:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
+ROCM:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
+XPU:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
+JETSON:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --runtime nvidia  --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[51/60/61 etc...]
+Headless mode:
+CPU:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+CUDA:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+ROCM:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+XPU:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+JETSON:
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 Docker Compose (i.e. cuda 12.8:
-        Run Gradio GUI:
-             {wsl_cmd} {wsl_extra} docker compose --profile gpu up --no-log-prefix
-        Run Headless mode:
-             {wsl_cmd} {wsl_extra} docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+Run Gradio GUI:
+{wsl_cmd} {wsl_extra} docker compose --profile gpu up --no-log-prefix
+Run Headless mode:
+{wsl_cmd} {wsl_extra} docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 Podman Compose (i.e. cuda 12.8:
-        Run Gradio GUI:
-             {wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu up
-        Run Headless mode:
-             {wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+Run Gradio GUI:
+{wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu up
+Run Headless mode:
+{wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 SML tags available:
-        [break] — silence (random range **0.3–0.6 sec.**)
-        [pause] — silence (random range **1.0–1.6 sec.**)
-        [pause:N] — fixed pause (**N sec.**)
-        [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-        ''',
+[break] — silence (random range 0.3–0.6 sec.)
+[pause] — silence (random range 1.0–1.6 sec.)
+[pause:N] — fixed pause (N sec.)
+[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+''',
         formatter_class=argparse.RawTextHelpFormatter
     )
     tts_engine_list_keys = [*TTS_ENGINES]
     tts_engine_list_values = list(TTS_ENGINES.values())
+
     all_group = parser.add_argument_group('**** The following options are for container only', 'Optional')
     all_group.add_argument(cli_options[0], type=str, help='Mandatory to build a container. The only value is: build_docker.')
     all_group.add_argument(cli_options[1], type=str, help='Optional. The only values are: podman and compose. without this option standard docker buildx is used.')
     parser.add_argument(cli_options[2], type=str, help='Session to resume the conversion in case of interruption, crash, or reuse of custom models and custom cloning voices.')
+
     gui_group = parser.add_argument_group('**** The following option are for gradio/gui mode only', 'Optional')
     gui_group.add_argument(cli_options[3], action='store_true', help='''Enable a public shareable Gradio link.''')
-    headless_group = parser.add_argument_group('**** The following cli_options are for --headless mode only')
+
+    headless_group = parser.add_argument_group('**** The followin cli_options are for --headless mode only')
     headless_group.add_argument(cli_options[4], action='store_true', help='Run the script in headless mode')
     headless_group.add_argument(cli_options[5], type=str, help='Path to the ebook file for conversion. Cannot be used when --ebooks_dir or --text is present.')
     headless_group.add_argument(cli_options[6], type=str, help='Relative or absolute path of the directory containing the files to convert. Cannot be used when --ebook or --text is present.')
     headless_group.add_argument(cli_options[7], type=str, help='Raw text for conversion. Cannot be used when --ebook or --ebooks_dir is present.')
     headless_group.add_argument(cli_options[8], type=str, default=default_language_code, help='Language of the e-book. Default language is set in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py')
+
     headless_optional_group = parser.add_argument_group('optional parameters')
-    headless_optional_group.add_argument(cli_options[9], type=str, default=None, metavar='ISO3', help='''Translate ebook to a target language (ISO 639-3 code, e.g. eng, fra, deu) before TTS synthesis. 
+    headless_optional_group.add_argument(cli_options[9], type=str, default=None, metavar='ISO3', help='''Translate ebook to a target language (ISO 639-3 code, e.g. eng, fra, deu) before TTS synthesis.
 Uses argostranslate. The target language becomes the effective TTS language for the run.
 A copy of the source ebook is made with the _<iso3> suffix so translated and non-translated
 outputs stay isolated (independent process folder, audio chunks, and final file).''')
@@ -202,41 +254,42 @@ Default depends on the selected language. The tts engine should be compatible wi
     headless_optional_group.add_argument(cli_options[15], type=str, default=default_fine_tuned, help='Fine tuned model path. Default is builtin model.')
     headless_optional_group.add_argument(cli_options[16], type=str, default=default_output_format, help=f'Output audio format. Default is {default_output_format} set in ./lib/conf.py')
     headless_optional_group.add_argument(cli_options[17], type=str, default=default_output_channel, help=f'Output audio channel. Default is {default_output_channel} set in ./lib/conf.py')
-    headless_optional_group.add_argument(cli_options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['temperature'], help=f"""(xtts only, optional) Temperature for the model. 
+    headless_optional_group.add_argument(cli_options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['temperature'], help=f"""(xtts only, optional) Temperature for the model.
 Default to config.json model. Higher temperatures lead to more creative outputs.""")
-    headless_optional_group.add_argument(cli_options[19], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder. 
+    headless_optional_group.add_argument(cli_options[19], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder.
 Default to config.json model. Not applied to custom models.""")
-    headless_optional_group.add_argument(cli_options[20], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
+    headless_optional_group.add_argument(cli_options[20], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[21], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
+    headless_optional_group.add_argument(cli_options[21], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[22], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_k'], help=f"""(xtts only, optional) Top-k sampling. 
-Lower values mean more likely outputs and increased audio generation speed. 
+    headless_optional_group.add_argument(cli_options[22], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_k'], help=f"""(xtts only, optional) Top-k sampling.
+Lower values mean more likely outputs and increased audio generation speed.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[23], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_p'], help=f"""(xtts only, optional) Top-p sampling. 
+    headless_optional_group.add_argument(cli_options[23], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_p'], help=f"""(xtts only, optional) Top-p sampling.
 Lower values mean more likely outputs and increased audio generation speed. Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[24], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation. 
+    headless_optional_group.add_argument(cli_options[24], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[25], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
+    headless_optional_group.add_argument(cli_options[25], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[26], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['text_temp'], help=f"""(bark only, optional) Text Temperature for the model. 
+    headless_optional_group.add_argument(cli_options[26], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['text_temp'], help=f"""(bark only, optional) Text Temperature for the model.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[27], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model. 
+    headless_optional_group.add_argument(cli_options[27], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model.
 Default to config.json model.""")
     headless_optional_group.add_argument(cli_options[28], type=str, help='Path to the output directory. Default is set in ./lib/conf.py')
     headless_optional_group.add_argument(cli_options[29], type=str, default='', help='Audiobookshelf server URL (e.g. http://localhost:13378).')
     headless_optional_group.add_argument(cli_options[30], type=str, default='', help='Audiobookshelf API token.')
     headless_optional_group.add_argument(cli_options[31], type=str, default='', help='Audiobookshelf library ID.')
     headless_optional_group.add_argument(cli_options[32], action='version', version=f'ebook2audiobook version {prog_version}', help='Show the version of the script and exit')
+
     internal_group = parser.add_argument_group(argparse.SUPPRESS)
     internal_group.add_argument(cli_options[33], type=str, default=None, help=argparse.SUPPRESS)
     internal_group.add_argument(cli_options[34], type=str, default=None, help=argparse.SUPPRESS)
 
     for arg in sys.argv:
-        if arg.startswith('--') and arg not in cli_options:
-            error = f'Error: Unrecognized option "{arg}"'
-            print(error)
-            sys.exit(1)
+         if arg.startswith('--') and arg not in cli_options:
+             error = f'Error: Unrecognized option "{arg}"'
+             print(error)
+             sys.exit(1)
 
     args = vars(parser.parse_args())
 
@@ -263,7 +316,7 @@ Default to config.json model.""")
             sys.exit(1)
 
         print(f"v{prog_version} {args['script_mode']} mode")
-        
+
         from lib.classes.device_installer import DeviceInstaller
         manager = DeviceInstaller()
         device_info_str = manager.check_device_info(args['script_mode'])
@@ -272,26 +325,25 @@ Default to config.json model.""")
                 error = f'Error: Could not installed device packages!'
                 print(error)
                 sys.exit(1)
+            import importlib
+            importlib.invalidate_caches()
             result = manager.install_python_packages()
             if result == 1:
                 sys.exit(1)
-        elif args['script_mode'] == FULL_DOCKER:
-            if manager.check_voices() == 1:
-                error = f'Error: Could not download voices!'
-                print(error)
-                sys.exit(1)
-
         if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
             error = 'WARNING: shared DLLs not found. aborting…'
             print(error)
             sys.exit(1)
-
+        if manager.check_voices() == 1:
+            error = f'Error: Could not download voices!'
+            print(error)
+            sys.exit(1)
         import lib.core as c
-
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         error = ''
+
         if args.get('headless', False):
             args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
             if args['id'] == workflow_id or not args['session']:
@@ -304,10 +356,12 @@ Default to config.json model.""")
                     print(error)
                     sys.exit(1)
                 session = c.context.set_session(args['id'])
+
             if not c.context_tracker.start_session(args['id']):
                 error = 'Session could not start!'
                 print(error)
                 sys.exit(1)
+
             args['is_gui_process'] = False
             args['blocks_preview'] = False
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
@@ -356,6 +410,7 @@ Default to config.json model.""")
                     args['translate_enabled'] = True
                     args['translate'] = tgt
                     args['translate_iso1'] = tgt_iso1
+
             # -------------------------------------------------------------------------
             specified_input = sum(
                 args.get(k, None) is not None
@@ -466,20 +521,23 @@ Default to config.json model.""")
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
                 try:
-                    from lib.gradio import build_interface
+                    from lib.gradio import theme, header_css, build_interface
                     c.progress_bar = c.gr.Progress(track_tqdm=False)
                     app = build_interface(args)
                     if app is not None:
-                        app.queue(
-                            default_concurrency_limit=interface_concurrency_limit
-                        ).launch(
-                            debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),
-                            show_error=debug_mode, favicon_path='./favicon.ico', 
-                            server_name=interface_host, 
-                            server_port=interface_port, 
-                            share= args['share'], 
-                            max_file_size=max_upload_size
-                        )
+                        gr_blocks_kwargs = {
+                            "debug": bool(int(os.environ.get('GRADIO_DEBUG', '0'))),
+                            "show_error": debug_mode,
+                            "favicon_path": "./favicon.ico",
+                            "server_name": interface_host,
+                            "server_port": interface_port,
+                            "share": args['share'],
+                            "max_file_size": max_upload_size,
+                            "theme": theme,
+                            "css_paths": header_css,
+                            "footer_links": ["settings"]
+                        }
+                        app.queue(default_concurrency_limit=interface_concurrency_limit).launch(**gr_blocks_kwargs)
                 except OSError as e:
                     error = f'Connection error: {e}'
                     c.exception_alert(None, error)

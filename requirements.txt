@@ -1,3 +1,10 @@
+gradio==6.28.0
+transformers>=5.0.0,<5.1
+pandas>=1.0,<3.0
+coqui-tts[languages]==0.27.5
+piper-tts==1.4.2
+argostranslate
+stanza
 cryptography
 requests
 py-cpuinfo
@@ -35,6 +42,7 @@ PyOpenGL
 phonemizer-fork
 num2words2
 pydub
+tinytag
 soundfile
 unidecode
 langdetect
@@ -42,11 +50,6 @@ phonemizer
 indic-nlp-library
 pytesseract
 torchvggish
-sentence-transformers
-stanza==1.10.1
-argostranslate==1.11.0
-pandas>=1.0,<3.0
-gradio==5.49.1
-coqui-tts[languages]==0.27.5
-piper-tts==1.4.2
-./ext/py/demucs
+pyannote-audio
+demucs-simple
+huggingface-hub
