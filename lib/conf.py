@@ -222,9 +222,6 @@ interface_component_options = {
     "gr_tab_abs_params": True
 }
 
-interface_css = os.path.join(root_dir, 'header.css')
-interface_js = Path(root_dir, 'header.js').read_text(encoding='utf-8')
-
 # ---------------------------------------------------------------------
 # UI directories
 # ---------------------------------------------------------------------

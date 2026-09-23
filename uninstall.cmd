@@ -93,7 +93,7 @@ if defined REMOVE_CONDA if exist "%CONDA_HOME%" (
 :: ========================================================
 if defined REMOVE_UV (
 	where.exe /Q uv
-	if %errorlevel% equ 0 (
+	if not errorlevel 1 (
 		echo Cleaning uv cache...
 		uv cache clean >nul 2>&1
 	)

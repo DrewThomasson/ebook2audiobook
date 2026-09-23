@@ -117,7 +117,7 @@ else
 	elif command -v apk &>/dev/null; then
 		UNINSTALL_CMD="$SUDO apk del"
 	elif command -v emerge &>/dev/null; then
-		UNINSTALL_CMD="$SUDO emerge --deselect"
+		UNINSTALL_CMD="$SUDO emerge --unmerge"
 	elif command -v un-get &>/dev/null; then
 		UNINSTALL_CMD="$SUDO un-get remove"
 	fi
