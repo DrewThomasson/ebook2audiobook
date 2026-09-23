@@ -7,6 +7,8 @@ theme = gr.themes.Origin(
     radius_size='lg',
     font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
 )
+header_css = os.path.join(root_dir, 'header.css')
+header_js = Path(root_dir, 'header.js').read_text(encoding='utf-8')
 
 def build_interface(args:dict)->gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
@@ -3010,7 +3012,7 @@ def build_interface(args:dict)->gr.Blocks:
             ############
             app.load(
                 fn=None,
-                js=interface_js,
+                js=header_js,
                 outputs=[gr_restore_session],
             )
             app.unload(on_unload)
