@@ -330,17 +330,14 @@ Default to config.json model.""")
             result = manager.install_python_packages()
             if result == 1:
                 sys.exit(1)
-        elif args['script_mode'] == FULL_DOCKER:
-            if manager.check_voices() == 1:
-                error = f'Error: Could not download voices!'
-                print(error)
-                sys.exit(1)
-
         if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
             error = 'WARNING: shared DLLs not found. aborting…'
             print(error)
             sys.exit(1)
-
+        if manager.check_voices() == 1:
+            error = f'Error: Could not download voices!'
+            print(error)
+            sys.exit(1)
         import lib.core as c
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
@@ -524,7 +521,7 @@ Default to config.json model.""")
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
                 try:
-                    from lib.gradio import theme, header_css, build_interface
+                    from lib.gradio import theme, build_interface
                     c.progress_bar = c.gr.Progress(track_tqdm=False)
                     app = build_interface(args)
                     if app is not None:
@@ -537,7 +534,7 @@ Default to config.json model.""")
                             "share": args['share'],
                             "max_file_size": max_upload_size,
                             "theme": theme,
-                            "css": header_css,
+                            "css_paths": interface_css,
                             "footer_links": ["settings"]
                         }
                         app.queue(default_concurrency_limit=interface_concurrency_limit).launch(**gr_blocks_kwargs)

@@ -1,4 +1,4 @@
-gradio==6.27.0
+gradio==6.28.0
 transformers<5.1,>=5.0.0
 pandas<3.0,>=1.0
 coqui-tts[languages]==0.27.5
@@ -42,6 +42,7 @@ PyOpenGL
 phonemizer-fork
 num2words2
 pydub
+tinytag
 soundfile
 unidecode
 langdetect

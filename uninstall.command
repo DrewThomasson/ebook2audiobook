@@ -93,11 +93,88 @@ if [[ "${OSTYPE:-}" == linux* ]]; then
 fi
 
 # =========================================================
-# PROCESS .installed (CONTROLLED REMOVAL)
+# DETECT OS & PACKAGE MANAGER UNINSTALL COMMAND
 # =========================================================
-REMOVE_CONDA=0
-if [[ -f "$INSTALLED_LOG" ]] && grep -iqF "Miniforge3" "$INSTALLED_LOG"; then
-	REMOVE_CONDA=1
+UNINSTALL_CMD=""
+if [[ "${OSTYPE:-}" == darwin* ]]; then
+	SUDO=""
+	if command -v brew &>/dev/null; then
+		UNINSTALL_CMD="brew uninstall"
+	fi
+else
+	[[ "${OSTYPE:-}" != darwin* ]] && SUDO="sudo" || SUDO=""
+
+	if command -v apt-get &>/dev/null; then
+		UNINSTALL_CMD="$SUDO apt-get remove -y"
+	elif command -v dnf &>/dev/null; then
+		UNINSTALL_CMD="$SUDO dnf remove -y"
+	elif command -v yum &>/dev/null; then
+		UNINSTALL_CMD="$SUDO yum remove -y"
+	elif command -v zypper &>/dev/null; then
+		UNINSTALL_CMD="$SUDO zypper remove -y"
+	elif command -v pacman &>/dev/null; then
+		UNINSTALL_CMD="$SUDO pacman -R --noconfirm"
+	elif command -v apk &>/dev/null; then
+		UNINSTALL_CMD="$SUDO apk del"
+	elif command -v emerge &>/dev/null; then
+		UNINSTALL_CMD="$SUDO emerge --deselect"
+	elif command -v un-get &>/dev/null; then
+		UNINSTALL_CMD="$SUDO un-get remove"
+	fi
+fi
+
+# =========================================================
+# PROCESS .installed
+# =========================================================
+if [[ -f "$INSTALLED_LOG" ]]; then
+	while IFS= read -r app || [[ -n "$app" ]]; do
+		app="$(echo "$app" | xargs)"
+		[[ -z "$app" || "$app" =~ ^# ]] && continue
+		echo -e "\e[33mUninstalling: $app…\e[0m"
+		case "$app" in
+			uv)
+				uv cache clean 2>/dev/null || true
+				rm -f ~/.local/bin/uv ~/.local/bin/uvx
+				rm -rf ~/.cache/uv ~/.local/share/uv ~/.config/uv
+				rm -rf ~/Library/Caches/uv ~/Library/Application\ Support/uv 2>/dev/null || true
+				;;
+			miniforge3|Miniforge3|conda)
+				if command -v conda &>/dev/null; then
+					CONDA_DIR=$(conda info --base 2>/dev/null || true)
+					conda init --reverse --all 2>/dev/null || true
+					[[ -n "$CONDA_DIR" && "$CONDA_DIR" != "/" ]] && rm -rf "$CONDA_DIR"
+				fi
+				rm -rf ~/miniforge3 ~/miniforge ~/.conda ~/.condarc ~/.mamba ~/.mambarc
+				;;
+			rust|rustc|rustup)
+				if command -v rustup &>/dev/null; then
+					rustup self uninstall -y 2>/dev/null || true
+				fi
+				rm -rf ~/.cargo ~/.rustup
+				;;
+			calibre)
+				if [[ "${OSTYPE:-}" == darwin* ]]; then
+					brew uninstall --cask calibre 2>/dev/null || true
+				elif command -v calibre-uninstall &>/dev/null; then
+					$SUDO calibre-uninstall 2>/dev/null || true
+				elif [[ -n "$UNINSTALL_CMD" ]]; then
+					eval "$UNINSTALL_CMD calibre" 2>/dev/null || true
+				fi
+				;;
+			homebrew)
+				if [[ "${OSTYPE:-}" == darwin* ]] && command -v brew &>/dev/null; then
+					NONINTERACTIVE=1 /usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" 2>/dev/null || true
+				fi
+				;;
+			*)
+				if [[ -n "$UNINSTALL_CMD" ]]; then
+					eval "$UNINSTALL_CMD \"$app\"" 2>/dev/null || echo "Failed or already removed: $app"
+				else
+					echo "Warning: No package manager found to uninstall '$app'"
+				fi
+				;;
+		esac
+	done < "$INSTALLED_LOG"
 fi
 
 # =========================================================
@@ -162,7 +239,6 @@ for item in "$SCRIPT_DIR"/* "$SCRIPT_DIR"/.*; do
 	fi
 done
 
-# remove .installed if still present
 if [[ -n "$INSTALLED_LOG" && "$INSTALLED_LOG" != "/" ]]; then
 	rm -f "$INSTALLED_LOG" 2>/dev/null || true
 fi
@@ -177,7 +253,7 @@ echo
 echo "  The application content has been removed."
 echo "  Please remove the empty repository folder manually:"
 echo
-echo "    $SCRIPT_DIR"
+echo "	$SCRIPT_DIR"
 echo
 echo "================================================"
 echo

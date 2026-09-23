@@ -104,7 +104,7 @@ class DeviceInstaller():
             arch = archs['AARCH64'] if name in [devices['JETSON']['proc']] else self.arch
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
-                device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg}
+                device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": re.sub(r'[^\w\s-]', '', msg.replace('!', ''))}
                 if device_info != previous:
                     try:
                         with open(device_info_json, 'w', encoding='utf-8') as f:
@@ -120,7 +120,7 @@ class DeviceInstaller():
             arch = archs['AARCH64'] if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else self.arch
             if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
-            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": msg.replace('!', '')}
+            device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": re.sub(r'[^\w\s-]', '', msg.replace('!', ''))}
             try:
                 with open(device_info_json, 'w', encoding='utf-8') as f:
                     json.dump(device_info, f)
@@ -462,7 +462,7 @@ class DeviceInstaller():
                 tag = forced_tag
                 if forced_tag in ['cu128', 'cu129', 'rocm7.2.1'] and self.system == systems['WINDOWS']:
                     tag = f'win-{forced_tag}'
-                msg = f'Hardware forced from DEVICE_TAG={tag}'
+                msg = f'Hardware forced from {tag}'
             else:
                 msg = f'DEVICE_TAG not valid'
         else:
@@ -1641,9 +1641,6 @@ class DeviceInstaller():
             print(error)
 
     def drop_pip_cache(self)->None:
-        # the scoped cache exists only to bridge the requirements pass and
-        # finalize_exclusive_packages(). Once both have run it is dead weight,
-        # and inside a docker RUN it must be gone before the layer is committed.
         try:
             if os.path.isdir(self.pip_cache_dir):
                 shutil.rmtree(self.pip_cache_dir, ignore_errors=True)
@@ -1652,11 +1649,6 @@ class DeviceInstaller():
             print(error)
 
     def finalize_exclusive_packages(self)->int:
-        # runs AFTER the requirements pass. transitive requirements reintroduce
-        # packages that were removed before it: piper-tts declares
-        # 'onnxruntime<2,>=1', which lands plain onnxruntime alongside
-        # onnxruntime-gpu. Both ship the same module, so import order decides
-        # which one the process actually gets.
         try:
             for pkg, choices in self.exclusive_pkgs.items():
                 keep = re.split(r'[<>=!\[;]', self.select_pkg(pkg), 1)[0].strip()
@@ -1666,15 +1658,8 @@ class DeviceInstaller():
                 broken = bool(installed) and not self.is_pkg_importable(pkg)
                 if not losers and not broken:
                     continue
-                # uninstall every distribution first, then delete what they shared,
-                # then install the keeper into a clean directory. Removing only the
-                # losers leaves the keeper gutted, which is what produced
-                # 'cannot import name InferenceSession ... (unknown location)'.
                 msg = f"Resolving {pkg}: keeping {keep}, removing {', '.join(losers) if losers else 'a broken install'}…"
                 print(msg)
-                # --cache-dir, not --no-cache: the requirements pass already
-                # fetched this exact wheel into pip_cache_dir, so the reinstall is
-                # served from disk instead of pulling 250 MB off PyPI a second time.
                 if installed:
                     subprocess.call(self._uv_pip('uninstall', *installed))
                 self.clean_pkg_dir(pkg)
@@ -1734,9 +1719,8 @@ class DeviceInstaller():
             return False
 
         def _probe_gpus()->dict:
-            script = os.path.abspath('./detect_gpus.py')
             try:
-                proc = subprocess.run([python_exec, script], capture_output=True, text=True, timeout=30)
+                proc = subprocess.run([python_exec, detect_gpu_script], capture_output=True, text=True, timeout=30)
                 if proc.returncode != 0:
                     return {'count': 0, 'backend': None, 'error': proc.stderr.strip() or 'non-zero exit'}
                 return json.loads(proc.stdout.strip() or '{}')

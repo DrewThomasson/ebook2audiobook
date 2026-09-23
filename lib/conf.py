@@ -1,4 +1,5 @@
 import os, tempfile, sys, re
+from pathlib import Path
 
 debug_mode = False
 
@@ -85,8 +86,8 @@ torch_matrix = {
     "cu118":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.7.1",  "codec": ""},
     "cu121":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.5.1", "last": "2.5.1",  "codec": ""},
     "cu124":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.6.0", "last": "2.6.0",  "codec": ""},
-    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
-    "cu128":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
+    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.11.1"},
+    "cu128":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     "win-cu128":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.9.1", "codec": "0.9.0"},
     "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
     "win-cu129":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.8.0", "codec": "0.8.0"},
@@ -136,6 +137,7 @@ voices_url = 'https://huggingface.co/datasets/ebook2audiobook/E2A-Voices/resolve
 tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
 tempfile.tempdir = run_dir
+detect_gpu_script = os.path.join(components_dir, './detect_gpu.py')
 
 # ---------------------------------------------------------------------
 # Environment setup
@@ -219,6 +221,9 @@ interface_component_options = {
     "gr_group_custom_model": True,
     "gr_tab_abs_params": True
 }
+
+interface_css = os.path.join(root_dir, 'header.css')
+interface_js = Path(root_dir, 'header.js').read_text(encoding='utf-8')
 
 # ---------------------------------------------------------------------
 # UI directories

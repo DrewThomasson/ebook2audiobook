@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: ebook2audiobook
-Version: 26.9.17
+Version: 26.9.23
 Summary: Convert eBooks to audiobooks with chapters and metadata
 Author: Drew Thomasson
 Project-URL: Homepage, https://github.com/DrewThomasson/ebook2audiobook
@@ -10,7 +10,7 @@ Classifier: Operating System :: OS Independent
 Requires-Python: <3.13,>3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: gradio==6.27.0
+Requires-Dist: gradio==6.28.0
 Requires-Dist: transformers<5.1,>=5.0.0
 Requires-Dist: pandas<3.0,>=1.0
 Requires-Dist: coqui-tts[languages]==0.27.5
@@ -54,6 +54,7 @@ Requires-Dist: PyOpenGL
 Requires-Dist: phonemizer-fork
 Requires-Dist: num2words2
 Requires-Dist: pydub
+Requires-Dist: tinytag
 Requires-Dist: soundfile
 Requires-Dist: unidecode
 Requires-Dist: langdetect
