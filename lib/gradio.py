@@ -2160,7 +2160,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['ebook'] = session['ebook_src'] = None
                     if isinstance(session.get('voice'), str):
                         if not os.path.exists(session['voice']):
-                            session['voice'] = session['ebook_src'] = None
+                            session['voice'] = None
                     if isinstance(session.get('custom_model'), str):
                         custom_model_dir = session.get('custom_model_dir')
                         if isinstance(custom_model_dir, str) and not os.path.exists(custom_model_dir):
