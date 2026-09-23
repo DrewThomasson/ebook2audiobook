@@ -14,8 +14,6 @@ Available command options, type:
 ./e2a.sh --help
 # Windows:
 e2a.cmd --help
-# or if source ./python_env/bin/activate:
-python app.py --help
 '''
 session_info = 'In headless mode, store it in case of interruption, crash,\nor reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option.\n************************************************************************'
 default_language_code = 'eng' # ISO-639-3
