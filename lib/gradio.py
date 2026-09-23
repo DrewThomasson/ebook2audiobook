@@ -8,7 +8,6 @@ theme = gr.themes.Origin(
     font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
 )
 header_css = os.path.join(root_dir, 'header.css')
-header_js = Path(root_dir, 'header.js').read_text(encoding='utf-8')
 
 def build_interface(args:dict)->gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
@@ -17,6 +16,7 @@ def build_interface(args:dict)->gr.Blocks:
         is_gui_process = args['is_gui_process']
         is_gui_shared = args['share']
         title = 'Ebook2Audiobook'
+        header_js = Path(root_dir, 'header.js').read_text(encoding='utf-8')
         gr_glassmask_msg = 'Initialization, please wait…'
         models = None
         language_options = [
