@@ -16,7 +16,7 @@ def register_package(repo_root: str) -> int:
     # Prefer uv if available, otherwise fall back to pip
     uv_bin = shutil.which('uv')
     if uv_bin:
-        cmd = [uv_bin, 'pip', 'install', '-e', repo_root, '--no-deps']
+        cmd = [uv_bin, 'pip', 'install', '--python', sys.executable, '-e', repo_root, '--no-deps']
     else:
         print('Warning: uv not found, falling back to pip')
         cmd = [
