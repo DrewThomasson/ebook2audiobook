@@ -1,5 +1,4 @@
 gradio==6.28.0
-pandas>=1.0,<3.0
 coqui-tts[languages]==0.27.5
 piper-tts==1.4.2
 argostranslate
