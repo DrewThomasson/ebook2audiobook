@@ -49,6 +49,9 @@ jobs:
         #  windows and linux can be added to the matrix when good runners for those are made available for this repo
         os: [macos]
     runs-on: [self-hosted, "${{ matrix.os }}"]
+    env:
+      # python_env must be built on a uv-managed interpreter, never on a leftover conda/Homebrew/system one
+      UV_PYTHON_PREFERENCE: only-managed
     
     steps:
       - name: Print runner info
@@ -170,19 +173,26 @@ jobs:
           git log -1 --oneline
        
           if [ "$FRESH_CLONE" -eq 1 ]; then
-            echo "==> Running Help Check to verify install"
+            echo "==> Running Help Check to verify launcher (python_env is provisioned by the first headless run)"
             
             # Use the dynamic command variable
-            if ! $RUN_CMD --help; then
-              echo "==> Attempting fallback with conda deactivation (Unix only)"
-              if [ "$IS_WINDOWS" != "true" ]; then
-                  source "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" 2>/dev/null && conda deactivate || true
-              fi
-              $RUN_CMD --help
-            fi
+            $RUN_CMD --help
           else
             echo "==> Skipping script run because repo already existed"
           fi
+
+      - name: Invalidate python_env when dependency inputs change
+        shell: bash
+        run: |
+          cd ~/ebook2audiobook
+          # python_env/.provisioned only gates on existence, so a reused runner repo keeps stale deps across commits/PRs
+          HASH_FILE=.git/e2a_python_env.hash
+          DEPS_HASH=$({ cat VERSION.txt ebook2audiobook.command ebook2audiobook.cmd lib/conf.py lib/classes/device_installer.py requirements.txt 2>/dev/null || true; } | git hash-object --stdin)
+          if [ -d python_env ] && [ "$(cat "$HASH_FILE" 2>/dev/null)" != "$DEPS_HASH" ]; then
+            echo "==> Dependency inputs changed since python_env was provisioned: removing it (uv cache keeps the rebuild fast)"
+            rm -rf python_env
+          fi
+          echo "$DEPS_HASH" > "$HASH_FILE"
 
       - name: Create Audiobook Output folders for Artifacts
         shell: bash
@@ -190,20 +200,10 @@ jobs:
           mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON,FAIRSEQ,UnFAIRSEQ,VITS,PIPER,YOURTTS,XTTS,XTTSFineTune,XTTSFineTuneCustom,BARK,TORTOISE,GLOWTTS}
           find ~/ebook2audiobook/audiobooks/{TACOTRON,FAIRSEQ,UnFAIRSEQ,VITS,PIPER,YOURTTS,XTTS,XTTSFineTune,XTTSFineTuneCustom,BARK,TORTOISE,GLOWTTS} -mindepth 1 -exec rm -rf {} +
 
-      # This step only runs on non-windows because we don't need to modify the .command file if we are running .cmd
-      - name: Add set -e at beginning of ebook2audiobook.command (for error passing)
-        if: matrix.os != 'windows'
-        shell: bash
-        run: |
-          cd ~/ebook2audiobook
-          conda deactivate 2>/dev/null || true
-          sed -i.bak '1s;^;set -e\n;' ebook2audiobook.command && rm -f ebook2audiobook.command.bak
-
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
           
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON
 
@@ -211,7 +211,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --translate spa --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
@@ -219,7 +218,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language spa --translate deu --ebook "tools/workflow-testing/spa_long_test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
@@ -227,7 +225,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language hat --ebook "tools/workflow-testing/odc_test_haitian.pdf" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
@@ -235,7 +232,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
        
@@ -243,7 +239,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/urd-script_davanagari-test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/UnFAIRSEQ
 
@@ -251,7 +246,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
 
@@ -259,7 +253,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language hun --ebook "tools/workflow-testing/hun-test.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
 
@@ -267,7 +260,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
 
@@ -275,7 +267,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine PIPER --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/PIPER
 
@@ -283,7 +274,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TORTOISE --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TORTOISE
 
@@ -291,7 +281,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine GLOWTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/GLOWTTS
 
@@ -299,7 +288,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTS
 
@@ -307,7 +295,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless  --language hun --ebook "tools/workflow-testing/hun-test.txt" --tts_engine XTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTS
 
@@ -316,7 +303,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTS --fine_tuned AiExplained --output_dir ~/ebook2audiobook/audiobooks/XTTSFineTune
 
@@ -324,7 +310,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           [ ! -f BadCartmanSouthPark.zip ] && curl -L "https://huggingface.co/drewThomasson/fineTunedTTSModels/resolve/main/xtts-v2/eng/BadCartmanSouthPark/BadCartmanSouthPark.zip" -o BadCartmanSouthPark.zip || echo "BadCartmanSouthPark.zip already exists"
           
@@ -338,7 +323,6 @@ jobs:
         shell: bash
         run: |
           cd ~/ebook2audiobook
-          if [ "$IS_WINDOWS" != "true" ]; then conda deactivate 2>/dev/null || true; fi
 
           $RUN_CMD --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/BARK 
 
