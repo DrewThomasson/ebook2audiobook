@@ -22,7 +22,7 @@
 /* Firefox scrollbar styling */
 html {
 	scrollbar-width: thin !important;
-	scrollbar-color: #c09340 #c09340 !important
+	scrollbar-color: #c09340 transparent !important
 }
 button:disabled {
 	pointer-events: none;
