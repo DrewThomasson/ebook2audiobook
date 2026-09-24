@@ -769,13 +769,13 @@ exit /b 0
 
 :install_device_packages
 "%PS_EXE%" %PS_ARGS% -Command ^
-"& $env:\"PY_CMD\" -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
+"& \"$env:PY_CMD\" -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
 exit /b %errorlevel%
 
 :install_python_packages
 echo Installing python dependencies…
 "%PS_EXE%" %PS_ARGS% -Command ^
-"& "$env:\"PY_CMD\" -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
+"& \"$env:PY_CMD" -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
 exit /b %errorlevel%
 
 :check_sitecustomized
