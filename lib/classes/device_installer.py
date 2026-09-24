@@ -6,8 +6,13 @@ from importlib.metadata import version, PackageNotFoundError
 from lib.conf import *
 
 class DeviceInstaller():
-    device_pkgs = ['onnxruntime']
+    device_pkgs = ['onnxruntime', 'transformers']
     torchaudio_max = '2.11.0'
+    # transformers raises its torch floor inside the 5.x series (5.0 -> 2.2, 5.1 -> 2.4,
+    # 5.15 -> 2.5) and below it silently disables PyTorch instead of failing.
+    # installed torch below the key -> transformers must stay below the value.
+    # add a row when a release raises the floor again.
+    transformers_caps = {'2.4': '5.1', '2.5': '5.15'}
     exclusive_pkgs = {
         'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }
@@ -1239,6 +1244,7 @@ class DeviceInstaller():
         packages.append(onnx_pkg)
         if onnx_pkg == 'onnxruntime-directml':
             packages.append('protobuf<7')
+        packages.append(self.select_pkg('transformers'))
         if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
             overrides['llvmlite'] = 'llvmlite==0.44.0'
             overrides['numba'] = 'numba==0.61.0'
@@ -1538,7 +1544,9 @@ class DeviceInstaller():
     def has_torchcodec_stack(self)->bool:
         # single source of truth for the whole dependency universe:
         #   torch >= 2.9 -> torchcodec exists -> pyannote 4 -> hub 1.x -> transformers 5
-        #   torch <  2.9 -> no torchcodec     -> pyannote 3.4.0 -> hub <1.0 -> transformers 4.57.6
+        #   torch <  2.9 -> no torchcodec     -> pyannote 3.4.0 -> hub 1.x (use_auth_token via sitecustomize)
+        # transformers itself is not part of this split: it follows the torch floor,
+        # see select_pkg('transformers') and transformers_caps.
         # torch_matrix tags with codec '' (cu118/cu121/cu124, rocm<=6.2.4, jetson*)
         # top out below 2.9 and must stay on the old branch.
         # (2, 9) is the same boundary _needs_reinstall() uses to decide whether
@@ -1604,6 +1612,24 @@ class DeviceInstaller():
                 if not self.has_directml_gpu():
                     return 'onnxruntime'
                 return 'onnxruntime-directml'
+            case 'transformers':
+                # not in requirements.txt: it arrives through coqui-tts (transformers>=4.57,
+                # no upper bound), so left alone the resolver takes the newest release even
+                # when the installed torch is below its floor, and transformers then disables
+                # PyTorch at import:
+                #   Disabling PyTorch because PyTorch >= 2.5 is required but found 2.2.2
+                # the torch floor is the only thing arbitrated here. The rest of what the
+                # older stacks need from transformers 5.x / huggingface_hub 1.x is patched at
+                # runtime by sitecustomize.py (check_torch_load_is_safe for torch<2.6,
+                # isin_mps_friendly for coqui-tts tortoise, use_auth_token for pyannote 3.4).
+                # listed in device_pkgs so the cap rides along on every install call and
+                # coqui-tts cannot drag transformers back above it.
+                torch_version = self.get_package_version('torch') or ''
+                if torch_version:
+                    for torch_floor, transformers_cap in self.transformers_caps.items():
+                        if self.version_tuple(torch_version, 2) < self.version_tuple(torch_floor, 2):
+                            return f'transformers<{transformers_cap}'
+                return 'transformers'
             case _:
                 raise ValueError(f'select_pkg(): no rule for {pkg}')
 

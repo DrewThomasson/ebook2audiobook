@@ -13,10 +13,27 @@ It patches transformers.check_torch_load_is_safe ONLY if/when transformers is im
 It replaces torchaudio.load ONLY if/when torchaudio is imported (avoids torchcodec
 DLL load failures on PyTorch ROCm/Windows builds).
 
+Contract with device_installer.select_pkg('transformers'):
+the installer only caps transformers under the installed torch floor (<5.1 for
+torch<2.4, <5.15 for torch<2.5, uncapped above), so every device tag resolves to
+transformers 5.x + huggingface_hub 1.x. That is only valid because the patches
+below cover what the older stacks still expect:
+• check_torch_load_is_safe → torch.load (.bin checkpoints) requires torch>=2.6 in every
+  transformers release, 4.57.6 included; macOS x86_64 (2.2.2) and jetson (2.4.x/2.5.0)
+  are below. No pin can replace this patch.
+• isin_mps_friendly        → removed in transformers 5.1, still imported by coqui-tts
+  tortoise. Without it: cap transformers<5.1 on every tag.
+• use_auth_token → token   → removed in huggingface_hub 1.x, still passed by pyannote 3.4
+  (torch<2.9 branch). Without it: transformers==4.57.6 + huggingface_hub<1.0 there.
+
 Compatible with Python 3.10 → 3.14.
 """
 
 import sys, os, importlib
+# importlib.machinery is NOT loaded at interpreter startup: the hook below would
+# raise AttributeError on the first transformers/huggingface_hub/torchaudio import
+# of any process that did not happen to import it earlier (python -c, subprocesses).
+import importlib.machinery
 from types import ModuleType, FunctionType
 from typing import Any
 
