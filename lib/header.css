@@ -494,7 +494,9 @@ span[data-testid="block-info"] {
 }
 @supports selector(::-moz-range-thumb) {
 	#gr_audiobook_player audio {
-		background-color: #101215 !important;
+		background-color: transparent !important;
+		padding-top: 0 !important;
+		padding-bottom: 0 !important;
 	}
 }
 #gr_voice_player_hidden {
