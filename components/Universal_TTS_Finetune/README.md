@@ -78,15 +78,17 @@ After training, load the generated `artifacts.json` (or the training folder) and
 
 ## Install
 
-Install the required dependencies using pip:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) first. UFT uses its own Python environment; installing ebook2audiobook is optional.
 
 ```bash
 git clone https://github.com/DrewThomasson/ebook2audiobook.git
-cd ebook2audiobook
-./ebook2audiobook.command #Mac/Linux or ebook2audiobook.cmd #Window | locally install ebook2audiobook first
-conda activate ./python_env  # Activate the created python env for E2A
-cd components/Universal_TTS_Finetune # Go into Universal_TTS_Finetune dir
+cd ebook2audiobook/components/Universal_TTS_Finetune
+uv venv --python 3.12 .venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
 ```
+
+On Windows, activate the environment with `.venv\Scripts\activate` instead of `source .venv/bin/activate`. Activate it again before running the GUI or CLI below.
 
 ## Run the web GUI
 
