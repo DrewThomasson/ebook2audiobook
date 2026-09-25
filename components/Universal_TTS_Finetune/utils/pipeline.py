@@ -28,6 +28,7 @@ try:
 except ImportError:
     pass
 
+import ast
 import csv
 import json
 import random
@@ -99,7 +100,7 @@ from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 from TTS.utils.manage import ModelManager
 
-from utils.model_registry import MODEL_SPECS, get_model_spec, list_model_choices
+from utils.model_registry import MODEL_SPECS, get_model_spec, list_model_choices, normalize_language, pretrained_model_choices
 from utils.tokenizer import multilingual_cleaners
 
 AUDIO_EXTENSIONS = {".wav", ".mp3", ".flac", ".m4a", ".ogg"}
@@ -1177,17 +1178,25 @@ def _prepare_workspace(spec_key: str, dataset_dir: Path, training_root: Path) ->
     return workspace_root, recipe_target_dir / spec.train_script
 
 
-def _download_restore_path(spec_key: str, use_pretrained: bool, restore_path: str | None, progress: ProgressCallback) -> str | None:
+def _download_restore_path(spec_key: str, language: str, use_pretrained: bool, restore_path: str | None, pretrained_model_id: str | None, progress: ProgressCallback) -> str | None:
     spec = get_model_spec(spec_key)
+    if pretrained_model_id and (restore_path or not use_pretrained):
+        raise ValueError("Select either a local restore path or a pretrained model, and enable pretrained loading.")
+    choices = pretrained_model_choices(spec_key, language)
+    if pretrained_model_id and pretrained_model_id not in choices:
+        raise ValueError(f"{pretrained_model_id} is not a mapped {language} checkpoint for {spec.label}.")
     if restore_path:
         return str(_resolve_user_path(restore_path, must_exist=True, expect_directory=False))
     if spec.family == "xtts":
         _notify(progress, f"{spec.label} already downloads its official base checkpoint inside the recipe.")
         return None
-    if not use_pretrained or not spec.official_model_id:
+    if not use_pretrained or not choices:
+        if use_pretrained and not choices:
+            _notify(progress, f"No mapped {language} pretrained checkpoint for {spec.label}; training from scratch.")
         return None
-    _notify(progress, f"Downloading base checkpoint for {spec.label}...")
-    model_path, _, _ = ModelManager(progress_bar=True).download_model(spec.official_model_id)
+    model_id = pretrained_model_id or choices[0]
+    _notify(progress, f"Downloading base checkpoint {model_id} for {spec.label}...")
+    model_path, _, _ = ModelManager(progress_bar=True).download_model(model_id)
     return model_path
 
 
@@ -1266,10 +1275,21 @@ def _patch_recipe_script(
     grad_accum: int,
     max_audio_seconds: int,
     restore_path: str | None,
+    trusted_pretrained_restore: bool,
     extra_overrides: dict[str, Any],
     reference_wav: str,
 ) -> list[str]:
     source = script_path.read_text(encoding="utf-8")
+    if trusted_pretrained_restore:
+        # Some published Coqui checkpoints contain defaultdict metadata that
+        # Trainer's PyTorch 2.6+ weights-only loader cannot unpickle. This
+        # applies only to an official model ID downloaded above, never to an
+        # arbitrary user-supplied restore path.
+        source = source.replace(
+            "from trainer import Trainer, TrainerArgs",
+            "from trainer import Trainer, TrainerArgs\nimport trainer.io as _uft_trainer_io\n_uft_trainer_io._WEIGHTS_ONLY = False",
+            1,
+        )
     dataset_str = str(dataset_dir)
     wavs_str = str(dataset_dir / "wavs")
 
@@ -1295,6 +1315,14 @@ def _patch_recipe_script(
 
     source = _replace_keyword_value(source, "batch_size", str(batch_size))
     source = _replace_keyword_value(source, "eval_batch_size", str(batch_size))
+    # Tacotron's gradual schedule rewrites config.batch_size at epoch start.
+    # Keep its reduction-factor schedule while honoring the requested batch.
+    gradual_match = re.search(r"(?m)^\s*gradual_training\s*=\s*(\[[^\n]*\])\s*,", source)
+    if gradual_match:
+        gradual_schedule = ast.literal_eval(gradual_match.group(1))
+        for stage in gradual_schedule:
+            stage[2] = batch_size
+        source = source[:gradual_match.start(1)] + repr(gradual_schedule) + source[gradual_match.end(1):]
     source = _replace_keyword_value(source, "epochs", str(epochs))
     source = _replace_keyword_value(source, "BATCH_SIZE", str(batch_size))
     source = _replace_keyword_value(source, "GRAD_ACUMM_STEPS", str(grad_accum))
@@ -1569,6 +1597,7 @@ def train_model(
     max_audio_seconds: int = 11,
     restore_path: str | None = None,
     use_pretrained: bool = True,
+    pretrained_model_id: str | None = None,
     extra_overrides_json: str | None = None,
     dry_run: bool = False,
     progress: ProgressCallback = None,
@@ -1577,6 +1606,9 @@ def train_model(
     sample_text: str = "",
 ) -> dict[str, Any]:
     spec = get_model_spec(model_key)
+    language = normalize_language(language)
+    if spec.family == "xtts" and not pretrained_model_choices(model_key, language):
+        raise ValueError(f"{spec.label} does not support language {language}.")
     dataset_root = _normalize_dataset_dir(dataset_dir, output_root)
     dataset_info = load_dataset_info(str(dataset_root))
     output_root_path = _resolve_user_path(output_root, expect_directory=True)
@@ -1585,6 +1617,8 @@ def train_model(
     training_root.mkdir(parents=True, exist_ok=True)
 
     if model_key == "piper":
+        if pretrained_model_id and (restore_path or not use_pretrained):
+            raise ValueError("Select either a local Piper restore path or a pretrained checkpoint, and enable pretrained loading.")
         from utils.piper_utils import (
             ensure_monotonic_align_compiled,
             resolve_piper_checkpoint,
@@ -1597,6 +1631,7 @@ def train_model(
         
         # Resolve and download pretrained checkpoint if applicable
         base_ckpt_path = None
+        base_checkpoint_id = ""
         config_path = None
         quality = "medium"
         sample_rate = 22050
@@ -1622,7 +1657,8 @@ def train_model(
                 espeak_language = ckpt_config.get("espeak", {}).get("voice") or ckpt_config.get("language", {}).get("code") or espeak_language
         elif use_pretrained:
             _notify(progress, f"Resolving Piper checkpoint for language: {language}...")
-            checkpoint_info = resolve_piper_checkpoint(language)
+            checkpoint_info = resolve_piper_checkpoint(language, checkpoint_id=pretrained_model_id)
+            base_checkpoint_id = checkpoint_info["id"]
             _notify(progress, f"Downloading checkpoint: {checkpoint_info['voice']} ({checkpoint_info['quality']})")
             base_ckpt_path, config_path = download_piper_checkpoint(checkpoint_info, progress)
 
@@ -1645,6 +1681,7 @@ def train_model(
             "preprocessed_dir": str(preprocessed_dir),
             "dataset_dir": str(dataset_root),
             "base_checkpoint": str(base_ckpt_path) if base_ckpt_path else "",
+            "pretrained_model_id": base_checkpoint_id,
             "base_config": str(config_path),
             "espeak_language": espeak_language,
             "sample_rate": sample_rate,
@@ -1659,7 +1696,8 @@ def train_model(
         preprocess_piper_dataset(dataset_root, preprocessed_dir, espeak_language, sample_rate)
         
         # 2. Overwrite configuration with base checkpoint's config
-        shutil.copy2(config_path, preprocessed_dir / "config.json")
+        if config_path.resolve() != (preprocessed_dir / "config.json").resolve():
+            shutil.copy2(config_path, preprocessed_dir / "config.json")
         
         # 3. Train the model
         _notify(progress, f"Training Piper model for {epochs} epochs...")
@@ -1714,6 +1752,7 @@ def train_model(
             "config": str(ready_onnx) + ".json",
             "reference_wav": "",
             "log_path": str(log_path),
+            "pretrained_model_id": base_checkpoint_id,
             "unused_overrides": {},
         }
         artifacts_path = ready_dir / "artifacts.json"
@@ -1721,7 +1760,7 @@ def train_model(
         artifacts["artifacts_file"] = str(artifacts_path)
         return artifacts
 
-    computed_restore_path = _download_restore_path(model_key, use_pretrained, restore_path, progress)
+    computed_restore_path = _download_restore_path(model_key, language, use_pretrained, restore_path, pretrained_model_id, progress)
     extra_overrides = json.loads(extra_overrides_json) if extra_overrides_json else {}
     if extra_overrides_json and not isinstance(extra_overrides, dict):
         raise ValueError("extra_overrides_json must be a JSON object.")
@@ -1738,10 +1777,13 @@ def train_model(
         grad_accum=grad_accum,
         max_audio_seconds=max_audio_seconds,
         restore_path=computed_restore_path,
+        trusted_pretrained_restore=bool(use_pretrained and not restore_path and computed_restore_path),
         extra_overrides=extra_overrides,
         reference_wav=str(reference_wav) if reference_wav else "",
     )
 
+    matching_models = pretrained_model_choices(model_key, language)
+    selected_pretrained_id = (pretrained_model_id or matching_models[0]) if use_pretrained and not restore_path and matching_models else ""
     run_summary = {
         "model_key": spec.key,
         "model_label": spec.label,
@@ -1750,6 +1792,7 @@ def train_model(
         "dataset_dir": str(dataset_root),
         "script_path": str(script_path),
         "restore_path": computed_restore_path or "",
+        "pretrained_model_id": selected_pretrained_id,
         "unused_overrides": unused_overrides,
     }
     if dry_run:
@@ -1806,6 +1849,7 @@ def train_model(
     )
     artifacts["log_path"] = str(log_path)
     artifacts["trained_steps"] = trained_steps
+    artifacts["pretrained_model_id"] = run_summary["pretrained_model_id"]
     artifacts["unused_overrides"] = unused_overrides
     Path(artifacts["artifacts_file"]).write_text(
         json.dumps(_json_ready({key: value for key, value in artifacts.items() if key != "artifacts_file"}), indent=2),

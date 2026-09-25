@@ -79,7 +79,10 @@ def main():
 
     trainer_kwargs = {}
     if args.max_epochs is not None:
-        trainer_kwargs["max_epochs"] = checkpoint_epoch + args.max_epochs
+        # Lightning checkpoints store the last completed epoch as a zero-based
+        # index. Resume starts at the next epoch, so include that offset when
+        # converting the requested additional epochs to an absolute limit.
+        trainer_kwargs["max_epochs"] = checkpoint_epoch + args.max_epochs + (1 if args.resume_from_checkpoint else 0)
     if args.accelerator is not None:
         trainer_kwargs["accelerator"] = args.accelerator
     if args.devices is not None:

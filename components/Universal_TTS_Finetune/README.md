@@ -30,6 +30,8 @@ The current workflow targets the bundled `recipes/ljspeech` training recipes for
 
 When Coqui publishes a matching pretrained checkpoint, the trainer can auto-download it and continue from it. Otherwise the workflow still prepares the recipe workspace and can train from a user-supplied checkpoint or recipe defaults.
 
+Choose the model and dataset language before training. The GUI then lists published checkpoints mapped to that engine and language, including non-English VITS, Glow-TTS, Tacotron2 DCA, and Tacotron2 DDC models. It also lists Piper **training checkpoints** by locale, voice, and quality; a ready-to-speak ONNX voice alone is not a fine-tuning checkpoint. If no Piper checkpoint exists for a language, training does not silently switch to English. XTTS v1 and v2 have different supported-language lists; use `zh-cn` for Chinese.
+
 ## What it does
 
 ### 1. Prepare a dataset
@@ -140,6 +142,20 @@ List models:
 ```bash
 python headless_cli.py list-models
 ```
+
+List available base checkpoints for an engine and language, then select one for training. Omitting `--pretrained-model-id` uses the preferred matching default:
+
+```bash
+python headless_cli.py list-checkpoints --model vits_tts --language es
+python headless_cli.py train \
+  --model vits_tts \
+  --language es \
+  --dataset-dir /absolute/path/to/spanish-dataset \
+  --output-root /absolute/path/to/output \
+  --pretrained-model-id tts_models/es/css10/vits
+```
+
+Piper checkpoint IDs returned by `list-checkpoints` begin with `piper:` and can be passed to the same `--pretrained-model-id` option. A local `--restore-path` resumes from your own checkpoint instead.
 
 Prepare a dataset from a folder of audio and auto-transcribe with Whisper:
 
