@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Web GUI for SML Book Dialog Extractor using Gradio."""
 
-import json
 import os
 import tempfile
-from pathlib import Path
 
+from sml_extractor.core import configure_booknlp_cache
+if 'HF_HOME' not in os.environ:
+    configure_booknlp_cache(os.environ.get('E2A_PATH'))
 import gradio as gr
 
 from sml_extractor.core import (
@@ -15,7 +16,7 @@ from sml_extractor.core import (
     load_booknlp_output,
     run_booknlp,
 )
-from sml_extractor.sml_generator import generate_sml_macros, generate_sml_output
+from sml_extractor.sml_generator import generate_sml_output, portable_voice_assignments
 from sml_extractor.voice_matcher import (
     auto_assign_voices,
     get_voice_category_info,
@@ -53,11 +54,11 @@ def _voice_display_label(voice_path: str) -> str:
 
 
 def process_book(
-    input_file,
-    model_size,
-    e2a_path,
-    progress=gr.Progress(),
-):
+    input_file:str|None,
+    model_size:str,
+    e2a_path:str,
+    progress:gr.Progress=gr.Progress(),
+)->tuple[object,...]:
     """Process a book file through BookNLP and extract characters."""
     if input_file is None:
         raise gr.Error("Please upload a book file.")
@@ -107,7 +108,7 @@ def process_book(
     progress(0.15, desc=f"Running BookNLP ({model_size} model)... This may take a while.")
 
     try:
-        result = run_booknlp(txt_path, booknlp_dir, model_size)
+        result = run_booknlp(txt_path, booknlp_dir, model_size, e2a_path=e2a_path)
     except Exception as e:
         raise gr.Error(f"BookNLP processing failed: {e}")
 
@@ -259,8 +260,8 @@ def reassign_voice(char_name, voice_path):
     )
 
 
-def generate_output(progress=gr.Progress()):
-    """Generate the SML output files."""
+def generate_output(progress:gr.Progress=gr.Progress())->tuple[str,str,str]:
+    """Generate the SML file accepted directly by ebook2audiobook."""
     if "booknlp_data" not in _session_state:
         raise gr.Error("Please process a book first.")
 
@@ -280,26 +281,17 @@ def generate_output(progress=gr.Progress()):
     output_dir = os.path.join(work_dir, "sml_output")
     os.makedirs(output_dir, exist_ok=True)
 
-    # Generate SML text with macro-based voice tags (character names)
-    sml_path = os.path.join(output_dir, f"{book_id}.sml.txt")
-    generate_sml_output(booknlp_data, characters, sml_path, voice_assignments, use_macros=True)
+    progress(0.5, desc="Generating E2A-ready SML...")
 
-    progress(0.5, desc="Generating deprecated SML (path-based)...")
-
-    # Generate deprecated SML with raw voice file paths in tags
-    deprecated_sml_path = os.path.join(output_dir, f"{book_id}.deprecated.sml.txt")
-    generate_sml_output(booknlp_data, characters, deprecated_sml_path, voice_assignments, use_macros=False)
-
-    progress(0.75, desc="Generating SML macros JSON...")
-
-    # Generate SML macros JSON
-    macros_path = os.path.join(output_dir, f"{book_id}.sml.json")
-    generate_sml_macros(characters, macros_path, voice_assignments)
+    # Generate path-based SML with portable voice-library paths
+    e2a_sml_path = os.path.join(output_dir, f"{book_id}.e2a.sml.txt")
+    portable_assignments = portable_voice_assignments(voice_assignments, _session_state["e2a_path"])
+    generate_sml_output(booknlp_data, characters, e2a_sml_path, portable_assignments, use_macros=False)
 
     progress(0.9, desc="Preparing download...")
 
     # Read generated content for preview
-    with open(sml_path, "r", encoding="utf-8") as f:
+    with open(e2a_sml_path, "r", encoding="utf-8") as f:
         sml_content = f.read()
 
     sml_preview = sml_content[:5000] + ("..." if len(sml_content) > 5000 else "")
@@ -307,19 +299,17 @@ def generate_output(progress=gr.Progress()):
     progress(1.0, desc="Done!")
 
     return (
-        f"✅ Generated successfully!\n\nFiles:\n  - {sml_path}\n  - {deprecated_sml_path}\n  - {macros_path}",
+        f"✅ Generated successfully!\n\nUse with ebook2audiobook: {e2a_sml_path}",
         sml_preview,
-        sml_path,
-        deprecated_sml_path,
-        macros_path,
+        e2a_sml_path,
     )
 
 
-def create_app(default_e2a_path: str = "") -> gr.Blocks:
+def create_app(default_e2a_path:str='')->gr.Blocks:
     if not default_e2a_path:
-        default_e2a_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        if not os.path.isdir(os.path.join(default_e2a_path, "voices")) and os.path.isdir("/ebook2audiobook/voices"):
-            default_e2a_path = "/ebook2audiobook"
+        default_e2a_path = os.environ.get('E2A_PATH') or os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', '..')
+        )
     
     """Create the Gradio web interface.
 
@@ -337,6 +327,8 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
 
             Convert books to **SML format** for multi-speaker audiobook generation with
             [ebook2audiobook](https://github.com/DrewThomasson/ebook2audiobook).
+
+            Book analysis currently supports English books only.
 
             This tool uses [BookNLP](https://github.com/DrewThomasson/booknlp) to analyze books,
             identify characters and their dialog, then generates SML-tagged output with voice assignments.
@@ -360,7 +352,7 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
                 with gr.Column(scale=1):
                     model_size = gr.Radio(
                         ["small", "big"],
-                        value="small",
+                        value="big",
                         label="🧠 BookNLP Model",
                         info="'big' is more accurate but slower and requires more RAM/GPU",
                     )
@@ -425,15 +417,12 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
 
             gen_status = gr.Textbox(label="Generation Status", interactive=False)
             sml_preview = gr.Textbox(
-                label="📄 SML Output Preview",
+                label="📄 E2A-ready SML Preview",
                 lines=15,
                 interactive=False,
             )
 
-            with gr.Row():
-                sml_download = gr.File(label="📥 Download SML Text (macro)", interactive=False)
-                deprecated_sml_download = gr.File(label="📥 Download Deprecated SML (path-based)", interactive=False)
-                macros_download = gr.File(label="📥 Download SML Macros JSON", interactive=False)
+            e2a_sml_download = gr.File(label="📥 Download for ebook2audiobook", interactive=False)
 
         # --- Wire up events ---
 
@@ -470,7 +459,7 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
         # Generate SML output
         generate_btn.click(
             fn=generate_output,
-            outputs=[gen_status, sml_preview, sml_download, deprecated_sml_download, macros_download],
+            outputs=[gen_status, sml_preview, e2a_sml_download],
         )
 
     return app

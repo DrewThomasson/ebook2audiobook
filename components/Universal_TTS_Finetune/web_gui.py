@@ -48,6 +48,7 @@ from utils.pipeline import (
     pause_training,
     resume_training,
 )
+from utils.model_registry import pretrained_model_choices
 
 LANGUAGE_CHOICES = [
     "en",
@@ -62,10 +63,14 @@ LANGUAGE_CHOICES = [
     "nl",
     "cs",
     "ar",
-    "zh",
+    "zh-cn",
     "hu",
     "ko",
     "ja",
+    "hi",
+    "bg", "da", "et", "ga", "uk", "fa", "be", "el", "fi",
+    "hr", "lt", "lv", "mt", "ro", "sk", "sl", "sr", "sv", "ca",
+    "cy", "is", "ka", "kk", "lb", "ne", "no", "sw", "ur", "vi",
 ]
 WHISPER_CHOICES = ["large-v3", "large-v2", "large", "distil-large-v3", "distil-large-v2", "medium", "medium.en", "small", "small.en", "base", "base.en", "tiny", "tiny.en"]
 MODEL_CHOICES = [(label, key) for key, label in dropdown_choices()]
@@ -467,7 +472,7 @@ def preprocess_re_diarize(dataset_dir, expected_speakers, diarize_threshold, out
         )
 
 
-def run_training(model_key, dataset_dir, language, num_epochs, batch_size, grad_accum, out_path, max_audio_length, restore_path, use_pretrained, extra_overrides_json, sample_epoch_interval=0, sample_text="", progress=gr.Progress()):
+def run_training(model_key, dataset_dir, language, num_epochs, batch_size, grad_accum, out_path, max_audio_length, restore_path, use_pretrained, pretrained_model_id, extra_overrides_json, sample_epoch_interval=0, sample_text="", progress=gr.Progress()):
     try:
         tracker = TrainingProgressTracker(progress, int(num_epochs))
         result = train_model(
@@ -481,6 +486,7 @@ def run_training(model_key, dataset_dir, language, num_epochs, batch_size, grad_
             max_audio_seconds=int(max_audio_length),
             restore_path=restore_path or None,
             use_pretrained=use_pretrained,
+            pretrained_model_id=pretrained_model_id if use_pretrained and not restore_path else None,
             extra_overrides_json=extra_overrides_json or None,
             progress=tracker,
             sample_epoch_interval=int(sample_epoch_interval),
@@ -597,19 +603,38 @@ def on_training_params_change(model_key, dataset_dir):
     return epochs, batch_size
 
 
-def update_training_options(model_key, language, use_pretrained):
+def update_checkpoint_choices(model_key, language):
+    if model_key == "piper":
+        from utils.piper_utils import list_piper_checkpoint_choices, resolve_piper_checkpoint
+        checkpoints = list(list_piper_checkpoint_choices(language))
+        if checkpoints:
+            preferred = resolve_piper_checkpoint(language)["id"]
+            checkpoints.sort(key=lambda item: (item["id"] != preferred, item["id"]))
+        choices = [
+            (f"{item['locale']} · {item['voice'].replace('_', ' ').title()} · {item['quality']}", item["id"])
+            for item in checkpoints
+        ]
+    else:
+        choices = [(model_id.split("/")[2].replace("_", " ").title(), model_id) for model_id in pretrained_model_choices(model_key, language)]
+    return gr.update(choices=choices, value=choices[0][1] if choices else None, interactive=bool(choices))
+
+
+def update_training_options(model_key, language, use_pretrained, pretrained_model_id=None):
     try:
         from utils.model_registry import get_model_spec
         spec = get_model_spec(model_key)
         model_label = spec.label
-        official_model_id = spec.official_model_id
+        choices = pretrained_model_choices(model_key, language)
+        official_model_id = pretrained_model_id if pretrained_model_id in choices else (choices[0] if choices else None)
         family = spec.family
     except Exception as exc:
         return f"Error loading model spec: {exc}", gr.update()
 
     # 1. XTTS family
     if family == "xtts":
-        msg = f"🟢 **{model_label}** is a multilingual model supporting all listed languages.\n\n"
+        if not choices:
+            return f"❌ **{model_label}** does not support `{language}`. Choose another language or model.", gr.update(value=False, interactive=False)
+        msg = f"🟢 **{model_label}** supports `{language}` using a multilingual checkpoint.\n\n"
         if use_pretrained:
             msg += f"Fine-tuning will start from the official pre-trained multilingual checkpoint: `{official_model_id}`."
         else:
@@ -618,63 +643,36 @@ def update_training_options(model_key, language, use_pretrained):
 
     # 2. Piper family
     elif family == "piper":
-        from utils.piper_utils import resolve_piper_checkpoint, get_voices_json_languages
+        from utils.piper_utils import resolve_piper_checkpoint
         try:
-            checkpoint_info = resolve_piper_checkpoint(language)
-            resolved_lang = checkpoint_info.get("lang")
-            normalized_req_lang = language.split("-")[0].split("_")[0].lower()
-
-            # Check if language exists in prebuilt voices.json
-            prebuilt_exists = False
-            try:
-                prebuilt_langs = get_voices_json_languages()
-                prebuilt_exists = language.lower() in prebuilt_langs or normalized_req_lang in prebuilt_langs
-            except Exception:
-                pass
-
-            if resolved_lang == normalized_req_lang:
-                msg = f"🟢 **Piper TTS** has a pre-trained checkpoint for `{language}`: `{checkpoint_info['voice']}` ({checkpoint_info['quality']}).\n\n"
-                if use_pretrained:
-                    msg += f"Fine-tuning will download and use the official `{language}` pre-trained checkpoint."
-                else:
-                    msg += "**Training from scratch** (random initialization). *Note: Training from scratch is not recommended unless you have a very large dataset and plan to train for many steps.*"
-                return msg, gr.update(interactive=True)
-            elif prebuilt_exists:
-                msg = f"🟢 **Piper TTS** has pre-built ONNX models for `{language}` (listed in `voices.json`), but **no official training checkpoint (`.ckpt`)** is hosted in the official `rhasspy/piper-checkpoints` repository.\n\n"
-                if use_pretrained:
-                    msg += f"Fine-tuning will default to using the English base model (`{checkpoint_info['voice']}`) as a starting point (cross-lingual transfer)."
-                else:
-                    msg += "**Training from scratch** (random initialization). *Note: Training from scratch is not recommended unless you have a very large dataset and plan to train for many steps.*"
-                return msg, gr.update(interactive=True)
-            else:
-                msg = f"🟡 **Piper TTS** has no official pre-trained checkpoint mapped for `{language}`.\n\n"
-                if use_pretrained:
-                    msg += f"Fine-tuning will default to using the English base model (`{checkpoint_info['voice']}`) as a starting point (cross-lingual transfer)."
-                else:
-                    msg += "**Training from scratch** (random initialization). *Note: Training from scratch is not recommended unless you have a very large dataset and plan to train for many steps.*"
-                return msg, gr.update(interactive=True)
-        except Exception as e:
-            msg = f"🟡 **Piper TTS** pre-trained checkpoint check failed: {e}. Defaulting to training from scratch or cross-lingual transfer."
-            return msg, gr.update(interactive=True)
+            lang = language.split("-")[0].split("_")[0].lower()
+            selected_id = pretrained_model_id if pretrained_model_id and pretrained_model_id.startswith(f"piper:{lang}/") else None
+            checkpoint_info = resolve_piper_checkpoint(language, checkpoint_id=selected_id)
+        except (LookupError, ValueError) as exc:
+            return (
+                f"🟡 **Piper TTS** has no matching training checkpoint for `{language}`: {exc}. Training from scratch remains available.",
+                gr.update(value=False, interactive=False),
+            )
+        msg = f"🟢 **Piper TTS** has a `{language}` training checkpoint: `{checkpoint_info['id']}`.\n\n"
+        if use_pretrained:
+            msg += "Fine-tuning will download and load this checkpoint."
+        else:
+            msg += "Training will start from scratch."
+        return msg, gr.update(interactive=True)
 
     # 3. Single-language models
     else:
-        if language == "en":
-            if official_model_id:
-                msg = f"🟢 **{model_label}** has a pre-trained English checkpoint mapped: `{official_model_id}`.\n\n"
-                if use_pretrained:
-                    msg += "Fine-tuning will download and use this pre-trained base model."
-                else:
-                    msg += "**Training from scratch** (random initialization). This means the model weights start completely blank."
-                return msg, gr.update(interactive=True)
+        if official_model_id:
+            msg = f"🟢 **{model_label}** has a pre-trained `{language}` checkpoint mapped: `{official_model_id}`.\n\n"
+            if use_pretrained:
+                msg += "Fine-tuning will download and use this pre-trained base model."
             else:
-                msg = f"🟡 **{model_label}** has no official pre-trained checkpoint mapped.\n\n"
-                msg += "**Training from scratch** (random initialization) is required. *Training from scratch means the model starts with random weights and requires a larger dataset (hours of audio) and longer training (e.g. 100k+ steps) to sound intelligible.*"
-                return msg, gr.update(value=False, interactive=False)
+                msg += "**Training from scratch** (random initialization). This means the model weights start completely blank."
+            return msg, gr.update(interactive=True)
         else:
-            msg = f"❌ **{model_label}** is a single-language model designed for English. There is no pre-trained checkpoint mapped for `{language}`.\n\n"
+            msg = f"🟡 **{model_label}** has no pre-trained checkpoint mapped for `{language}`.\n\n"
             msg += "**Training from scratch** (random initialization) is required. *Training from scratch means the model starts with random weights and requires a larger dataset (hours of audio) and longer training (e.g. 100k+ steps) to sound intelligible.*\n\n"
-            msg += f"✨ **Automatic Recipe Optimization**: The backend will dynamically adapt the recipe at runtime to use `\"multilingual_cleaners\"` and the `{language}` phonemizer, ensuring it compiles and trains successfully on your dataset."
+            msg += f"The backend adapts the recipe to the `{language}` phonemizer when available."
             return msg, gr.update(value=False, interactive=False)
 
 
@@ -682,7 +680,7 @@ def preprocess_and_train(
     audio_files, audio_dir, transcript_file, language, whisper_model, out_path, dataset_name, diarize_speakers,
     expected_speakers, diarize_threshold,
     generate_synthetic, synthetic_audio_file, synthetic_vtt_file,
-    model_key, train_language, num_epochs, batch_size, grad_accum, max_audio_length, restore_path, use_pretrained, extra_overrides_json,
+    model_key, train_language, num_epochs, batch_size, grad_accum, max_audio_length, restore_path, use_pretrained, pretrained_model_id, extra_overrides_json,
     sample_epoch_interval, sample_text,
     tts_text,
     auto_split_sentences=True,
@@ -707,7 +705,7 @@ def preprocess_and_train(
         progress(0.4, desc="Preprocessing complete! Starting step 2: Training model...")
         
         train_res = run_training(
-            model_key, dataset_dir, train_language, num_epochs, batch_size, grad_accum, out_path, max_audio_length, restore_path, use_pretrained, extra_overrides_json,
+            model_key, dataset_dir, train_language, num_epochs, batch_size, grad_accum, out_path, max_audio_length, restore_path, use_pretrained, pretrained_model_id, extra_overrides_json,
             sample_epoch_interval, sample_text,
             progress
         )
@@ -736,6 +734,7 @@ def preprocess_and_train(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Universal Coqui TTS fine-tuning web UI")
     parser.add_argument("--share", action="store_true", default=False)
+    parser.add_argument("--host", default="127.0.0.1", help="Interface to bind the web UI to")
     parser.add_argument("--port", type=int, default=7862)
     parser.add_argument("--out_path", type=str, default=str(Path.cwd() / "finetune_models"))
     parser.add_argument("--num_epochs", type=int, default=10)
@@ -768,7 +767,7 @@ if __name__ == "__main__":
     }
     """
 
-    with gr.Blocks(title="Universal TTS Finetune", theme=theme, css=css_str) as demo:
+    with gr.Blocks(title='Universal TTS Finetune') as demo:
         gr.Markdown(
             "# Universal TTS Finetune\n"
             "Prepare an LJSpeech-style dataset, fine-tune a supported Coqui recipe, and test the trained model."
@@ -857,7 +856,7 @@ if __name__ == "__main__":
         with gr.Tab("2 - Train model"):
             model_key = gr.Dropdown(label="Model", choices=MODEL_CHOICES, value="xtts_v2")
             model_checkpoint_warning = gr.Markdown(
-                value="🟢 **XTTS v2** is a multilingual model supporting all listed languages.\n\nFine-tuning will start from the official pre-trained multilingual checkpoint: `tts_models/multilingual/multi-dataset/xtts_v2`."
+                value="🟢 **XTTS v2** supports English.\n\nFine-tuning will start from the official multilingual checkpoint: `tts_models/multilingual/multi-dataset/xtts_v2`."
             )
             train_dataset_dir = gr.Dropdown(
                 label="Dataset directory",
@@ -866,7 +865,7 @@ if __name__ == "__main__":
                 allow_custom_value=True,
                 interactive=True,
             )
-            train_language = gr.Dropdown(label="Model language (XTTS/Piper support multilingual)", choices=LANGUAGE_CHOICES, value="en")
+            train_language = gr.Dropdown(label="Fine-tuning language", choices=LANGUAGE_CHOICES, value="en", info="Choose your dataset language; available base checkpoints update automatically.")
             with gr.Row():
                 restore_model_dropdown = gr.Dropdown(
                     label="Resume from previous training run",
@@ -875,7 +874,14 @@ if __name__ == "__main__":
                     interactive=True,
                 )
                 restore_path = gr.Textbox(label="Optional checkpoint to continue from", value="")
-            use_pretrained = gr.Checkbox(label="Auto-download matching pretrained model when available", value=True)
+            use_pretrained = gr.Checkbox(label="Start from a pretrained checkpoint", value=True)
+            pretrained_model_id = gr.Dropdown(
+                label="Starting checkpoint",
+                choices=list(pretrained_model_choices("xtts_v2", "en")),
+                value=pretrained_model_choices("xtts_v2", "en")[0],
+                interactive=True,
+                info="Choose a published voice or model for this language. Your local restore path takes precedence.",
+            )
             num_epochs = gr.Slider(label="Epochs", minimum=1, maximum=1000, step=1, value=args.num_epochs)
             batch_size = gr.Slider(label="Batch size", minimum=1, maximum=128, step=1, value=args.batch_size)
             grad_accum = gr.Slider(label="Grad accumulation", minimum=1, maximum=128, step=1, value=args.grad_acumm)
@@ -1023,6 +1029,7 @@ if __name__ == "__main__":
                 max_audio_length,
                 restore_path,
                 use_pretrained,
+                pretrained_model_id,
                 extra_overrides_json,
                 sample_epoch_interval,
                 sample_text,
@@ -1088,6 +1095,7 @@ if __name__ == "__main__":
                 max_audio_length,
                 restore_path,
                 use_pretrained,
+                pretrained_model_id,
                 extra_overrides_json,
                 sample_epoch_interval,
                 sample_text,
@@ -1172,17 +1180,24 @@ if __name__ == "__main__":
         )
         model_key.change(
             fn=update_training_options,
-            inputs=[model_key, train_language, use_pretrained],
+            inputs=[model_key, train_language, use_pretrained, pretrained_model_id],
             outputs=[model_checkpoint_warning, use_pretrained],
         )
+        model_key.change(fn=update_checkpoint_choices, inputs=[model_key, train_language], outputs=[pretrained_model_id])
         train_language.change(
             fn=update_training_options,
-            inputs=[model_key, train_language, use_pretrained],
+            inputs=[model_key, train_language, use_pretrained, pretrained_model_id],
             outputs=[model_checkpoint_warning, use_pretrained],
         )
+        train_language.change(fn=update_checkpoint_choices, inputs=[model_key, train_language], outputs=[pretrained_model_id])
         use_pretrained.change(
-            fn=lambda m, l, u: update_training_options(m, l, u)[0],
-            inputs=[model_key, train_language, use_pretrained],
+            fn=lambda m, l, u, p: update_training_options(m, l, u, p)[0],
+            inputs=[model_key, train_language, use_pretrained, pretrained_model_id],
+            outputs=[model_checkpoint_warning],
+        )
+        pretrained_model_id.change(
+            fn=lambda m, l, u, p: update_training_options(m, l, u, p)[0],
+            inputs=[model_key, train_language, use_pretrained, pretrained_model_id],
             outputs=[model_checkpoint_warning],
         )
 
@@ -1257,7 +1272,7 @@ if __name__ == "__main__":
 
         demo.load(
             fn=update_training_options,
-            inputs=[model_key, train_language, use_pretrained],
+            inputs=[model_key, train_language, use_pretrained, pretrained_model_id],
             outputs=[model_checkpoint_warning, use_pretrained],
         )
 
@@ -1267,4 +1282,4 @@ if __name__ == "__main__":
         str(Path.cwd().resolve()),
         str(Path.cwd().parent.parent.resolve())
     ]
-    demo.launch(share=args.share, debug=False, server_port=args.port, allowed_paths=allowed)
+    demo.launch(share=args.share, debug=False, server_name=args.host, server_port=args.port, allowed_paths=allowed, theme=theme, css=css_str)

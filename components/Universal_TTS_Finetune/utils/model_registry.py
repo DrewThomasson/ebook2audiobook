@@ -174,6 +174,76 @@ MODEL_SPECS = (
 
 MODEL_SPECS_BY_KEY = {spec.key: spec for spec in MODEL_SPECS}
 
+# Published Coqui checkpoints whose model architecture matches an existing UFT
+# recipe. Keep the full model ID: dataset and voice variants are distinct bases.
+# English defaults remain in ModelSpec.official_model_id for older callers.
+PRETRAINED_MODEL_IDS: dict[str, dict[str, tuple[str, ...]]] = {
+    "glow_tts": {
+        "tr": ("tts_models/tr/common-voice/glow-tts",),
+        "it": ("tts_models/it/mai_female/glow-tts", "tts_models/it/mai_male/glow-tts"),
+        "uk": ("tts_models/uk/mai/glow-tts",),
+        "fa": ("tts_models/fa/custom/glow-tts",),
+        "be": ("tts_models/be/common-voice/glow-tts",),
+    },
+    "tacotron2_dca": {
+        "de": ("tts_models/de/thorsten/tacotron2-DCA",),
+    },
+    "tacotron2_ddc": {
+        "es": ("tts_models/es/mai/tacotron2-DDC",),
+        "fr": ("tts_models/fr/mai/tacotron2-DDC",),
+        "nl": ("tts_models/nl/mai/tacotron2-DDC",),
+        "de": ("tts_models/de/thorsten/tacotron2-DDC",),
+        "ja": ("tts_models/ja/kokoro/tacotron2-DDC",),
+    },
+    "vits_tts": {
+        "bg": ("tts_models/bg/cv/vits",),
+        "cs": ("tts_models/cs/cv/vits",),
+        "da": ("tts_models/da/cv/vits",),
+        "et": ("tts_models/et/cv/vits",),
+        "ga": ("tts_models/ga/cv/vits",),
+        "es": ("tts_models/es/css10/vits",),
+        "fr": ("tts_models/fr/css10/vits",),
+        "nl": ("tts_models/nl/css10/vits",),
+        "de": ("tts_models/de/thorsten/vits",),
+        "it": ("tts_models/it/mai_female/vits", "tts_models/it/mai_male/vits"),
+        "hu": ("tts_models/hu/css10/vits",),
+        "pl": ("tts_models/pl/mai_female/vits",),
+        "pt": ("tts_models/pt/cv/vits",),
+        "el": ("tts_models/el/cv/vits",),
+        "fi": ("tts_models/fi/css10/vits",),
+        "hr": ("tts_models/hr/cv/vits",),
+        "lt": ("tts_models/lt/cv/vits",),
+        "lv": ("tts_models/lv/cv/vits",),
+        "mt": ("tts_models/mt/cv/vits",),
+        "ro": ("tts_models/ro/cv/vits",),
+        "sk": ("tts_models/sk/cv/vits",),
+        "sl": ("tts_models/sl/cv/vits",),
+        "sv": ("tts_models/sv/cv/vits",),
+        "ca": ("tts_models/ca/custom/vits",),
+        "uk": ("tts_models/uk/mai/vits",),
+    },
+}
+
+XTTS_LANGUAGES = {
+    "xtts_v1": frozenset("en es fr de it pt pl tr ru nl cs ar zh-cn ja".split()),
+    "xtts_v2": frozenset("en es fr de it pt pl tr ru nl cs ar zh-cn hu ko ja hi".split()),
+}
+
+
+def normalize_language(language: str) -> str:
+    normalized = language.lower().replace("_", "-")
+    return "zh-cn" if normalized == "zh" else normalized
+
+
+def pretrained_model_choices(model_key: str, language: str) -> tuple[str, ...]:
+    spec = get_model_spec(model_key)
+    language = normalize_language(language)
+    if spec.family == "xtts":
+        return (spec.official_model_id,) if spec.official_model_id and language in XTTS_LANGUAGES[model_key] else ()
+    if language == "en":
+        return (spec.official_model_id,) if spec.official_model_id else ()
+    return PRETRAINED_MODEL_IDS.get(model_key, {}).get(language, ())
+
 
 def get_model_spec(model_key: str) -> ModelSpec:
     try:

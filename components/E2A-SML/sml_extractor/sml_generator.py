@@ -3,6 +3,21 @@
 import json
 import os
 import re
+from pathlib import Path
+
+
+def portable_voice_assignments(voice_assignments:dict[str,str], e2a_path:str)->dict[str,str]:
+    """Express library voices relative to the E2A root used for synthesis."""
+    voices_root = Path(e2a_path).expanduser().resolve() / 'voices'
+    portable:dict[str,str] = {}
+    for character, voice_path in voice_assignments.items():
+        try:
+            relative = Path(voice_path).expanduser().resolve().relative_to(voices_root)
+        except ValueError:
+            portable[character] = voice_path
+        else:
+            portable[character] = str(Path('voices') / relative)
+    return portable
 
 
 def generate_sml_output(
@@ -28,8 +43,8 @@ def generate_sml_output(
         output_path: Path to write the SML output file.
         voice_assignments: Optional dict mapping character names to voice file paths.
         use_macros: If True, voice tags use character names as macro references
-            instead of raw file paths. Defaults to True (macro-based output is
-            the recommended mode for use with ebook2audiobook).
+            instead of raw file paths. This format also needs the generated
+            character-to-voice JSON; use path-based tags for direct E2A input.
 
     Returns:
         Path to the generated SML file.

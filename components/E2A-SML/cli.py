@@ -2,19 +2,19 @@
 """Command-line interface for SML Book Dialog Extractor."""
 
 import argparse
-import json
 import os
 import sys
 from pathlib import Path
 
 from sml_extractor.core import (
+    configure_booknlp_cache,
     check_booknlp_installation,
     convert_ebook_to_txt,
     extract_characters,
     load_booknlp_output,
     run_booknlp,
 )
-from sml_extractor.sml_generator import generate_sml_macros, generate_sml_output
+from sml_extractor.sml_generator import generate_sml_output, portable_voice_assignments
 from sml_extractor.voice_matcher import (
     auto_assign_voices,
     get_voice_display_name,
@@ -23,7 +23,7 @@ from sml_extractor.voice_matcher import (
 )
 
 
-def main():
+def main()->None:
     parser = argparse.ArgumentParser(
         description="SML Book Dialog Extractor - Convert books to SML format for ebook2audiobook",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -60,12 +60,12 @@ Examples:
     parser.add_argument(
         "--model",
         choices=["small", "big"],
-        default="small",
-        help="BookNLP model size (default: small)",
+        default="big",
+        help="BookNLP model size (default: big)",
     )
-    default_e2a_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    if not os.path.isdir(os.path.join(default_e2a_path, "voices")) and os.path.isdir("/ebook2audiobook/voices"):
-        default_e2a_path = "/ebook2audiobook"
+    default_e2a_path = os.environ.get('E2A_PATH') or os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', '..')
+    )
 
     parser.add_argument(
         "--e2a-path",
@@ -80,7 +80,7 @@ Examples:
     parser.add_argument(
         "--language",
         default="eng",
-        help="Language code for voice selection (default: eng)",
+        help="Voice-library language code (default: eng); book analysis supports English only",
     )
     parser.add_argument(
         "--booknlp-dir",
@@ -125,7 +125,7 @@ Examples:
         args.booknlp_dir = os.path.expanduser(args.booknlp_dir)
     if args.input_file:
         args.input_file = os.path.expanduser(args.input_file)
-
+    configure_booknlp_cache(args.e2a_path)
     if args.gui:
         _launch_gui(args)
         return
@@ -148,10 +148,10 @@ Examples:
     _run_headless(args)
 
 
-def _run_headless(args):
+def _run_headless(args:argparse.Namespace)->None:
     """Run in headless/CLI mode."""
 
-    def progress(msg, pct=0):
+    def progress(msg:str, pct:int=0)->None:
         print(f"[{pct:3d}%] {msg}")
 
     # Check BookNLP installation before starting
@@ -192,7 +192,7 @@ def _run_headless(args):
         progress(f"Text file: {txt_file}", 5)
 
         booknlp_dir = os.path.join(output_dir, "booknlp")
-        result = run_booknlp(txt_file, booknlp_dir, args.model, progress)
+        result = run_booknlp(txt_file, booknlp_dir, args.model, progress, e2a_path=args.e2a_path)
         book_id = result["book_id"]
 
     # Step 2: Load BookNLP data
@@ -229,44 +229,30 @@ def _run_headless(args):
         print(f"  {name} -> {get_voice_display_name(voice)}")
     print()
 
-    # Step 5: Generate SML output (macro-based: voice tags use character names)
+    # Generate SML with voice paths that ebook2audiobook accepts directly.
     if not booknlp_data.get("tokens") and "book_txt" not in booknlp_data:
         print("Error: No token data or book.txt found in BookNLP output. Cannot generate SML.")
         sys.exit(1)
 
-    sml_output_path = os.path.join(output_dir, f"{book_id}.sml.txt")
+    e2a_sml_path = os.path.join(output_dir, f"{book_id}.e2a.sml.txt")
+    portable_assignments = portable_voice_assignments(voice_assignments, args.e2a_path)
     generate_sml_output(
-        booknlp_data, characters, sml_output_path, voice_assignments, use_macros=True
+        booknlp_data, characters, e2a_sml_path, portable_assignments, use_macros=False
     )
-    progress(f"SML output written to: {sml_output_path}", 88)
-
-    # Step 6: Generate deprecated SML output (path-based: voice tags use raw file paths)
-    deprecated_sml_path = os.path.join(output_dir, f"{book_id}.deprecated.sml.txt")
-    generate_sml_output(
-        booknlp_data, characters, deprecated_sml_path, voice_assignments, use_macros=False
-    )
-    progress(f"Deprecated SML (path-based) written to: {deprecated_sml_path}", 92)
-
-    # Step 7: Generate SML macros JSON
-    macros_json_path = os.path.join(output_dir, f"{book_id}.sml.json")
-    generate_sml_macros(characters, macros_json_path, voice_assignments)
-    progress(f"SML Macros JSON written to: {macros_json_path}", 97)
+    progress(f"E2A-ready SML written to: {e2a_sml_path}", 92)
 
     progress("Done!", 100)
 
-    print(f"\n=== Output Files ===")
-    print(f"  SML text (macro):      {sml_output_path}")
-    print(f"  SML text (deprecated): {deprecated_sml_path}")
-    print(f"  SML Macros JSON:       {macros_json_path}")
+    print(f"\nE2A-ready SML: {e2a_sml_path}")
     if voice_assignments:
         print(f"\n  Voice assignments are embedded in the SML output.")
-        print(f"  Use the SML file with ebook2audiobook for multi-speaker audiobook generation.")
+        print(f"  Give {e2a_sml_path} to ebook2audiobook for multi-speaker audiobook generation.")
     else:
         print(f"\n  No voices were matched from {args.e2a_path}.")
         print(f"  Check that voices/{args.language}/ contains voice files.")
 
 
-def _launch_gui(args):
+def _launch_gui(args:argparse.Namespace)->None:
     """Launch the web GUI."""
     try:
         import gradio as gr
@@ -280,7 +266,7 @@ def _launch_gui(args):
         )
     except ImportError as e:
         print(f"Error: Could not launch GUI. Make sure gradio is installed: {e}")
-        print("  pip install gradio")
+        print("  uv pip install gradio")
         sys.exit(1)
 
 

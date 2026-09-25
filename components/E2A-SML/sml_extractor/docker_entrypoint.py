@@ -6,9 +6,11 @@ import os
 import sys
 
 from .voice_library import DEFAULT_REPO_ID, configured_e2a_path, ensure_voice_library
+from .core import configure_booknlp_cache
 
 
-def main() -> None:
+def main()->None:
+    configure_booknlp_cache(configured_e2a_path())
     repo_id = os.environ.get("E2A_VOICES_REPO_ID", DEFAULT_REPO_ID)
     try:
         ensure_voice_library(configured_e2a_path(), repo_id=repo_id)

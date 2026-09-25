@@ -6,9 +6,18 @@ import re
 import tempfile
 from collections import Counter
 from pathlib import Path
+from typing import Callable
 
 
-def check_booknlp_installation() -> tuple[bool, str]:
+def configure_booknlp_cache(e2a_path:str|Path|None=None)->Path:
+    '''Configure the Hugging Face cache before its first import.'''
+    repo_dir = Path(e2a_path).expanduser().resolve() if e2a_path else Path(__file__).resolve().parents[3]
+    model_dir = repo_dir / 'models' / 'booknlp_models'
+    os.environ['HF_HOME'] = str(model_dir / 'huggingface')
+    return model_dir
+
+
+def check_booknlp_installation()->tuple[bool,str]:
     """Check if BookNLP and its dependencies are properly installed.
 
     Returns:
@@ -28,11 +37,12 @@ def check_booknlp_installation() -> tuple[bool, str]:
 
     # Check key dependencies that commonly fail
     dep_checks = [
-        ("torch", "torch", "pip install torch"),
-        ("transformers", "transformers", "pip install transformers>=4.30.0"),
-        ("spacy", "spacy", "pip install spacy>=3.5.0"),
-        ("sentence_transformers", "sentence-transformers", "pip install sentence-transformers"),
-        ("numpy", "numpy", "pip install numpy>=1.24.0"),
+        ("torch", "torch", "uv pip install torch"),
+        ("transformers", "transformers", "uv pip install 'transformers>=4.30.0,<5'"),
+        ("spacy", "spacy", "uv pip install 'spacy>=3.5.0'"),
+        ("sentence_transformers", "sentence-transformers", "uv pip install sentence-transformers"),
+        ("numpy", "numpy", "uv pip install 'numpy>=1.24.0'"),
+        ("pkg_resources", "setuptools<81", "uv pip install 'setuptools<81'"),
     ]
 
     for module_name, pkg_name, install_cmd in dep_checks:
@@ -46,8 +56,8 @@ def check_booknlp_installation() -> tuple[bool, str]:
             "BookNLP dependencies are missing:\n"
             + "\n".join(errors)
             + "\n\nOr install all at once:\n"
-            "  pip install -r requirements.txt\n"
-            "  python -m spacy download en_core_web_sm"
+            "  uv pip install -r requirements.txt\n"
+            '  uv pip install "$(python -m spacy info en_core_web_sm --url)"'
         )
 
     # Check spacy model
@@ -57,7 +67,7 @@ def check_booknlp_installation() -> tuple[bool, str]:
     except OSError:
         errors.append(
             "spaCy English model not found. Install it with:\n"
-            "  python -m spacy download en_core_web_sm"
+            '  uv pip install "$(python -m spacy info en_core_web_sm --url)"'
         )
 
     if errors:
@@ -71,8 +81,8 @@ def check_booknlp_installation() -> tuple[bool, str]:
             f"BookNLP failed to initialize: {e}\n\n"
             "This usually means a dependency version conflict.\n"
             "Try reinstalling dependencies in a clean environment:\n"
-            "  pip install -r requirements.txt\n"
-            "  python -m spacy download en_core_web_sm"
+            "  uv pip install -r requirements.txt\n"
+            '  uv pip install "$(python -m spacy info en_core_web_sm --url)"'
         )
 
     return True, "BookNLP is ready."
@@ -111,11 +121,12 @@ def convert_ebook_to_txt(input_file: str, output_dir: str) -> str:
 
 
 def run_booknlp(
-    input_file: str,
-    output_dir: str,
-    model: str = "small",
-    progress_callback=None,
-) -> dict:
+    input_file:str,
+    output_dir:str,
+    model:str='small',
+    progress_callback:Callable[[str,int],None]|None=None,
+    e2a_path:str|Path|None=None,
+)->dict[str,str]:
     """Run BookNLP pipeline on a text file and return extracted data.
 
     Args:
@@ -123,6 +134,7 @@ def run_booknlp(
         output_dir: Directory for BookNLP output files.
         model: BookNLP model size ('small' or 'big').
         progress_callback: Optional callable(message, pct) for progress updates.
+        e2a_path: ebook2audiobook repository root for the model cache.
 
     Returns:
         Dict with keys: 'book_id', 'output_dir', 'characters', 'tokens_file',
@@ -131,6 +143,7 @@ def run_booknlp(
     Raises:
         RuntimeError: If BookNLP or its dependencies are not properly installed.
     """
+    model_dir = configure_booknlp_cache(e2a_path)
     # Pre-check installation before attempting import
     ok, msg = check_booknlp_installation()
     if not ok:
@@ -144,13 +157,10 @@ def run_booknlp(
     if progress_callback:
         progress_callback("Initializing BookNLP...", 5)
 
-    # Set model path to ebook2audiobook/models/booknlp_models
-    model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "models", "booknlp_models"))
-    
     model_params = {
-        "pipeline": "entity,quote,supersense,event,coref",
-        "model": model,
-        "model_path": model_dir,
+        'pipeline': 'entity,quote,supersense,event,coref',
+        'model': model,
+        'model_path': str(model_dir),
     }
 
     booknlp = BookNLP("en", model_params)

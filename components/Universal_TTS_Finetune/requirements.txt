@@ -2,6 +2,8 @@ faster_whisper>=1.0.2
 gradio>=4.13.0
 spacy>=3.7.4
 coqui-tts[languages]>=0.24.2
+transformers>=4.57,<5
+hangul-romanize==0.1.0
 
 cutlet
 fugashi[unidic-lite]
@@ -21,4 +23,3 @@ onnxscript>=0.7.0
 # Speaker Diarization Upgrade
 pyannote-audio
 uroman
-
