@@ -476,32 +476,29 @@ span[data-testid="block-info"] {
 #gr_audiobook_files label[data-testid="block-label"] {
 	display: none !important;
 }
+/* Fix Chrome & Firefox Audio Player Styling */
 #gr_audiobook_player audio {
 	width: 100% !important;
 	padding-top: 10px !important;
 	padding-bottom: 10px !important;
 	border-radius: 0px !important;
 	background-color: var(--block-background-fill, #1f2937) !important;
+	color-scheme: dark !important; /* Forces Chrome to render dark controls */
 	color: #ffffff !important;
-}
-#gr_audiobook_player audio::-webkit-media-controls-panel {
-	width: 100% !important;
-	padding-top: 10px !important;
-	padding-bottom: 10px !important;
-	border-radius: 0px !important;
-	background-color: var(--block-background-fill, #1f2937) !important;
-	color: #ffffff !important;
-}
-
-/* Remove Firefox native default outline and white background on audio elements */
-#gr_audiobook_player audio,
-audio {
-	background-color: var(--block-background-fill, #1f2937) !important;
 	border: none !important;
 	outline: none !important;
 	box-shadow: none !important;
 }
+/* Chrome/WebKit Specific Panel Styling */
+#gr_audiobook_player audio::-webkit-media-controls-panel {
+	background-color: var(--block-background-fill, #1f2937) !important;
+	background: var(--block-background-fill, #1f2937) !important;
+}
 
+/* Invert Chrome icons if they still appear dark grey/invisible */
+#gr_audiobook_player audio::-webkit-media-controls-enclosure {
+	background-color: var(--block-background-fill, #1f2937) !important;
+}
 /* Fix Gradio container wrapper for the audiobook player */
 #gr_audiobook_player,
 #gr_audiobook_player .block,
