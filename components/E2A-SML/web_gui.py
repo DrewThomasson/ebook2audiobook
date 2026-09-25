@@ -6,6 +6,11 @@ import os
 import tempfile
 from pathlib import Path
 
+from sml_extractor.core import configure_booknlp_cache
+
+if 'HF_HOME' not in os.environ:
+    configure_booknlp_cache(os.environ.get('E2A_PATH'))
+
 import gradio as gr
 
 from sml_extractor.core import (
@@ -53,11 +58,11 @@ def _voice_display_label(voice_path: str) -> str:
 
 
 def process_book(
-    input_file,
-    model_size,
-    e2a_path,
-    progress=gr.Progress(),
-):
+    input_file:str|None,
+    model_size:str,
+    e2a_path:str,
+    progress:gr.Progress=gr.Progress(),
+)->tuple[object,...]:
     """Process a book file through BookNLP and extract characters."""
     if input_file is None:
         raise gr.Error("Please upload a book file.")
@@ -259,7 +264,7 @@ def reassign_voice(char_name, voice_path):
     )
 
 
-def generate_output(progress=gr.Progress()):
+def generate_output(progress:gr.Progress=gr.Progress())->tuple[str,str,str,str,str]:
     """Generate the SML output files."""
     if "booknlp_data" not in _session_state:
         raise gr.Error("Please process a book first.")
@@ -316,7 +321,7 @@ def generate_output(progress=gr.Progress()):
     )
 
 
-def create_app(default_e2a_path: str = "") -> gr.Blocks:
+def create_app(default_e2a_path:str='')->gr.Blocks:
     if not default_e2a_path:
         default_e2a_path = os.environ.get("E2A_PATH") or os.path.abspath(
             os.path.join(os.path.dirname(__file__), "..", "..")
@@ -338,6 +343,8 @@ def create_app(default_e2a_path: str = "") -> gr.Blocks:
 
             Convert books to **SML format** for multi-speaker audiobook generation with
             [ebook2audiobook](https://github.com/DrewThomasson/ebook2audiobook).
+
+            Book analysis currently supports English books only.
 
             This tool uses [BookNLP](https://github.com/DrewThomasson/booknlp) to analyze books,
             identify characters and their dialog, then generates SML-tagged output with voice assignments.

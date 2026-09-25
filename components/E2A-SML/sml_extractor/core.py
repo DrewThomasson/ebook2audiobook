@@ -6,9 +6,17 @@ import re
 import tempfile
 from collections import Counter
 from pathlib import Path
+from typing import Callable
 
 
-def check_booknlp_installation() -> tuple[bool, str]:
+def configure_booknlp_cache(e2a_path:str|Path|None=None)->Path:
+    repo_dir = Path(e2a_path).expanduser().resolve() if e2a_path else Path(__file__).resolve().parents[3]
+    model_dir = repo_dir / 'models' / 'booknlp_models'
+    os.environ['HF_HOME'] = str(model_dir / 'huggingface')
+    return model_dir
+
+
+def check_booknlp_installation()->tuple[bool,str]:
     """Check if BookNLP and its dependencies are properly installed.
 
     Returns:
@@ -112,12 +120,12 @@ def convert_ebook_to_txt(input_file: str, output_dir: str) -> str:
 
 
 def run_booknlp(
-    input_file: str,
-    output_dir: str,
-    model: str = "small",
-    progress_callback=None,
-    e2a_path: str | Path | None = None,
-) -> dict:
+    input_file:str,
+    output_dir:str,
+    model:str='small',
+    progress_callback:Callable[[str,int],None]|None=None,
+    e2a_path:str|Path|None=None,
+)->dict[str,str]:
     """Run BookNLP pipeline on a text file and return extracted data.
 
     Args:
@@ -134,9 +142,7 @@ def run_booknlp(
     Raises:
         RuntimeError: If BookNLP or its dependencies are not properly installed.
     """
-    repo_dir = Path(e2a_path).expanduser().resolve() if e2a_path else Path(__file__).resolve().parents[3]
-    model_dir = repo_dir / "models" / "booknlp_models"
-    os.environ["BOOKNLP_HF_CACHE"] = str(model_dir / "huggingface")
+    model_dir = configure_booknlp_cache(e2a_path)
 
     # Pre-check installation before attempting import
     ok, msg = check_booknlp_installation()
@@ -154,7 +160,7 @@ def run_booknlp(
     model_params = {
         "pipeline": "entity,quote,supersense,event,coref",
         "model": model,
-        "model_path": str(model_dir),
+        'model_path': str(model_dir),
     }
 
     booknlp = BookNLP("en", model_params)

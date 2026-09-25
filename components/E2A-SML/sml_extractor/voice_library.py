@@ -70,6 +70,6 @@ def ensure_voice_library(
     return True
 
 
-def configured_e2a_path() -> Path:
+def configured_e2a_path()->Path:
     """Return the standalone data directory used by the Docker image."""
-    return Path(os.environ.get("E2A_PATH", "/app/data"))
+    return Path(os.environ.get('E2A_PATH', '/app/data'))

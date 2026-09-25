@@ -9,7 +9,6 @@ import torch
 import numpy as np
 import argparse
 import json
-import os
 from booknlp.common.b3 import b3
 
 from collections import Counter
@@ -40,9 +39,9 @@ class BERTSpeakerID(nn.Module):
 
 		assert bert_dim != 0
 
-		self.tokenizer = BertTokenizer.from_pretrained(modelName, do_lower_case=False, do_basic_tokenize=False, cache_dir=os.environ.get("BOOKNLP_HF_CACHE"))
+		self.tokenizer = BertTokenizer.from_pretrained(modelName, do_lower_case=False, do_basic_tokenize=False)
 		self.tokenizer.add_tokens(["[QUOTE]", "[ALTQUOTE]", "[PAR]", "[CAP]"], special_tokens=True)
-		self.bert = BertModel.from_pretrained(modelName, cache_dir=os.environ.get("BOOKNLP_HF_CACHE"))
+		self.bert = BertModel.from_pretrained(modelName)
 		self.bert.resize_token_embeddings(len(self.tokenizer))
 		self.bert.to(device)
 			

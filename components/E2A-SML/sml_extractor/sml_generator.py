@@ -6,17 +6,17 @@ import re
 from pathlib import Path
 
 
-def portable_voice_assignments(voice_assignments: dict, e2a_path: str) -> dict:
+def portable_voice_assignments(voice_assignments:dict[str,str], e2a_path:str)->dict[str,str]:
     """Express library voices relative to the E2A root used for synthesis."""
-    voices_root = (Path(e2a_path).expanduser().resolve() / "voices")
-    portable = {}
+    voices_root = Path(e2a_path).expanduser().resolve() / 'voices'
+    portable:dict[str,str] = {}
     for character, voice_path in voice_assignments.items():
         try:
             relative = Path(voice_path).expanduser().resolve().relative_to(voices_root)
         except ValueError:
             portable[character] = voice_path
         else:
-            portable[character] = str(Path("voices") / relative)
+            portable[character] = str(Path('voices') / relative)
     return portable
 
 

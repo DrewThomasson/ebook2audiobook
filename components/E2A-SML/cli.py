@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from sml_extractor.core import (
+    configure_booknlp_cache,
     check_booknlp_installation,
     convert_ebook_to_txt,
     extract_characters,
@@ -23,7 +24,7 @@ from sml_extractor.voice_matcher import (
 )
 
 
-def main():
+def main()->None:
     parser = argparse.ArgumentParser(
         description="SML Book Dialog Extractor - Convert books to SML format for ebook2audiobook",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -80,7 +81,7 @@ Examples:
     parser.add_argument(
         "--language",
         default="eng",
-        help="Language code for voice selection (default: eng)",
+        help="Voice-library language code (default: eng); book analysis supports English only",
     )
     parser.add_argument(
         "--booknlp-dir",
@@ -126,6 +127,8 @@ Examples:
     if args.input_file:
         args.input_file = os.path.expanduser(args.input_file)
 
+    configure_booknlp_cache(args.e2a_path)
+
     if args.gui:
         _launch_gui(args)
         return
@@ -148,7 +151,7 @@ Examples:
     _run_headless(args)
 
 
-def _run_headless(args):
+def _run_headless(args:argparse.Namespace)->None:
     """Run in headless/CLI mode."""
 
     def progress(msg, pct=0):
@@ -267,7 +270,7 @@ def _run_headless(args):
         print(f"  Check that voices/{args.language}/ contains voice files.")
 
 
-def _launch_gui(args):
+def _launch_gui(args:argparse.Namespace)->None:
     """Launch the web GUI."""
     try:
         import gradio as gr

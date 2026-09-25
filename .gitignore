@@ -7,9 +7,6 @@
 *.wixobj
 __pycache__/
 python_env/
-.venv/
-components/E2A-SML/data/
-components/E2A-SML/output/
 audiobooks/cli/*
 audiobooks/gui/gradio/*
 audiobooks/gui/host/*

@@ -156,9 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — fixed pause (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
 
-### Generate SML with E2A-SML
-
-[E2A-SML](./components/E2A-SML) detects speakers and adds voice tags to a book. For a native install, enter `components/E2A-SML`, create its own `.venv` with `uv venv --python 3.10`, install `requirements.txt` with `uv pip install -r requirements.txt`, and install the spaCy English model using uv. Native BookNLP models are stored in the selected E2A checkout's `models/` folder; its standalone Docker container keeps its own persistent models and voices. See the [E2A-SML installation guide](./components/E2A-SML/README.md#local-installation) for activation, Docker, and usage instructions. E2A itself does not need to be installed in this environment.
+**Check our other repo dedicated to add SML automatically in your ebook -> [E2A-SML](./components/E2A-SML)**
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
@@ -441,11 +439,9 @@ The built-in cloned voices list is mainly in English. If you need voices in othe
 added to the list, please contact us and we'll add them after review.
 
 ## Fine Tuned TTS models
-#### Fine tune your own TTS model
+#### Fine Tune your own XTTSv2 model
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) trains TTS models separately from E2A. For a native install, enter `components/Universal_TTS_Finetune`, create its own `.venv` with `uv venv --python 3.12`, and install `requirements.txt` with `uv pip install -r requirements.txt`. See the [UFT installation guide](./components/Universal_TTS_Finetune/README.md#install) for activation, Docker, and usage instructions. E2A itself does not need to be installed in this environment.
-
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
+[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
 #### De-noise training data

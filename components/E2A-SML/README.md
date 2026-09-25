@@ -2,6 +2,8 @@
 
 Uses [BookNLP](https://github.com/DrewThomasson/booknlp) to analyze books, extract character dialog, and generate **SML-formatted output** for multi-speaker audiobook generation with [ebook2audiobook](https://github.com/DrewThomasson/ebook2audiobook).
 
+Book analysis currently supports English only. The published [Propp-FR weights](https://huggingface.co/collections/AntoineBourgois/propp-fr) detect French character mentions and coreferences, but [Propp-FR does not yet extract quotations](https://github.com/DrewThomasson/ebook2audiobook/issues/2051#issuecomment-5464322920). E2A-SML needs quotation extraction and speaker attribution to generate multi-speaker SML, so French is not offered as a processing option yet. The CLI `--language` flag selects the voice-library language; it does not change BookNLP's analysis language.
+
 ## ✨ Features
 
 - **Automatic character detection** — identifies characters, their gender, and age category
