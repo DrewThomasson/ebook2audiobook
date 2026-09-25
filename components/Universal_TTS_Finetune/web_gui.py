@@ -768,7 +768,7 @@ if __name__ == "__main__":
     }
     """
 
-    with gr.Blocks(title="Universal TTS Finetune", theme=theme, css=css_str) as demo:
+    with gr.Blocks(title='Universal TTS Finetune') as demo:
         gr.Markdown(
             "# Universal TTS Finetune\n"
             "Prepare an LJSpeech-style dataset, fine-tune a supported Coqui recipe, and test the trained model."
@@ -1267,4 +1267,4 @@ if __name__ == "__main__":
         str(Path.cwd().resolve()),
         str(Path.cwd().parent.parent.resolve())
     ]
-    demo.launch(share=args.share, debug=False, server_port=args.port, allowed_paths=allowed)
+    demo.launch(share=args.share, debug=False, server_port=args.port, allowed_paths=allowed, theme=theme, css=css_str)
