@@ -198,8 +198,6 @@ if DEVICE_SYSTEM == systems['WINDOWS']:
 if not any(_v in os.environ for _v in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES', 'CUDA_VISIBLE_DEVICES')):
     os.environ['ROCR_VISIBLE_DEVICES'] = '0'
     os.environ['HIP_VISIBLE_DEVICES'] = '0'
-if 'HSA_OVERRIDE_GFX_VERSION' not in os.environ:
-    os.environ['HSA_OVERRIDE_GFX_VERSION'] = '10.3.0'
 
 # ---------------------------------------------------------------------
 # Global settings
