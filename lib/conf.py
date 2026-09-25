@@ -204,26 +204,46 @@ if DEVICE_SYSTEM == systems['LINUX'] and 'HSA_OVERRIDE_GFX_VERSION' not in os.en
         'gfx1034': '10.3.0', 'gfx1035': '10.3.0', 'gfx1036': '10.3.0',
         'gfx1103': '11.0.0'
     }
-    _kfd_gfx = []
+    _kfd_gpus = []
     _kfd_nodes = Path('/sys/class/kfd/kfd/topology/nodes')
     if _kfd_nodes.is_dir():
         for _node in sorted((p for p in _kfd_nodes.iterdir() if p.name.isdigit()), key=lambda p: int(p.name)):
             try:
-                _m = re.search(r'^gfx_target_version\s+(\d+)', (_node / 'properties').read_text(), re.M)
+                _props = (_node / 'properties').read_text()
             except OSError:
                 continue
+            _m = re.search(r'^gfx_target_version\s+(\d+)', _props, re.M)
             if _m and int(_m.group(1)):
                 _v = int(_m.group(1))
-                _kfd_gfx.append(f"gfx{_v // 10000}{(_v // 100) % 100:x}{_v % 100:x}")
-    for _var in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES'):
+                _u = re.search(r'^unique_id\s+(\d+)', _props, re.M)
+                _kfd_gpus.append(dict(
+                    # KFD encodes major*10000 + minor*100 + stepping, gfx names use hex for minor/stepping (90010 = gfx90a)
+                    gfx=f"gfx{_v // 10000}{(_v // 100) % 100:x}{_v % 100:x}",
+                    # ROCr UUID is GPU-<unique_id as 16 hex>, 0 means no UUID support (rocminfo shows GPU-XX)
+                    uuid=f"gpu-{int(_u.group(1)):016x}" if _u and int(_u.group(1)) else None
+                ))
+    # ROCr filters the KFD GPU list first, HIP then indexes into what ROCr exposes (layered, not parallel)
+    # HIP falls back to CUDA_VISIBLE_DEVICES when HIP_VISIBLE_DEVICES is unset
+    _hip_var = 'HIP_VISIBLE_DEVICES' if 'HIP_VISIBLE_DEVICES' in os.environ else 'CUDA_VISIBLE_DEVICES'
+    for _var in ('ROCR_VISIBLE_DEVICES', _hip_var):
         if _var in os.environ:
-            _ids = os.environ[_var].replace(' ', '').split(',')
-            if not all(i.isdigit() and int(i) < len(_kfd_gfx) for i in _ids):
-                _kfd_gfx = []
+            _selected = []
+            for _id in os.environ[_var].replace(' ', '').lower().split(','):
+                if _id.isdigit():
+                    _gpu = _kfd_gpus[int(_id)] if int(_id) < len(_kfd_gpus) else None
+                else:
+                    _gpu = next((g for g in _kfd_gpus if g['uuid'] == _id), None)
+                if _gpu is None:
+                    _selected = []
+                    break
+                _selected.append(_gpu)
+            _kfd_gpus = _selected
+            if not _kfd_gpus:
                 break
-            _kfd_gfx = [_kfd_gfx[int(i)] for i in _ids]
-    if _kfd_gfx and _kfd_gfx[0] in hsa_gfx_overrides:
-        os.environ['HSA_OVERRIDE_GFX_VERSION'] = hsa_gfx_overrides[_kfd_gfx[0]]
+    # HSA_OVERRIDE_GFX_VERSION applies to every agent in the process: only set it when all visible GPUs agree
+    _gfx_targets = {hsa_gfx_overrides.get(g['gfx']) for g in _kfd_gpus}
+    if len(_gfx_targets) == 1 and None not in _gfx_targets:
+        os.environ['HSA_OVERRIDE_GFX_VERSION'] = _gfx_targets.pop()
 
 # ---------------------------------------------------------------------
 # Global settings
