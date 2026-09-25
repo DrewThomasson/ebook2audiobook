@@ -22,7 +22,7 @@
 /* Firefox scrollbar styling */
 html {
 	scrollbar-width: thin !important;
-	scrollbar-color: #c09340 none !important;
+	scrollbar-color: #c09340 transparent !important
 }
 button:disabled {
 	pointer-events: none;
@@ -46,7 +46,7 @@ body:has(#gr_convert_btn:disabled) table.file-preview button.label-clear-button 
 span[data-testid="block-info"] {
 	font-size: 12px !important;
 }
-/////////////////////
+/* Classes */
 .wrap-inner {
 	border: 1px solid #666666;
 }
@@ -169,7 +169,6 @@ span[data-testid="block-info"] {
 	min-height: 0 !important;
 	max-height: none !important;
 }
-///////////////////
 .gr-tab {
 	padding: 0 3px 0 3px !important;
 	margin: 0 !important;
@@ -326,7 +325,7 @@ span[data-testid="block-info"] {
 [id^="block_"]:has(input[type="checkbox"]:not(:checked)) > div {
 	background-color: rgba(239, 68, 68, 0.08) !important;
 }
-////////////////////
+/* Html elements */
 #gr_ebook_textarea {
 	height: auto !important;
 	min-height: 55px !important;
@@ -493,6 +492,13 @@ span[data-testid="block-info"] {
 	background-color: #ebedf0 !important;
 	color: #ffffff !important;
 }
+@supports selector(::-moz-range-thumb) {
+	#gr_audiobook_player audio {
+		background-color: transparent !important;
+		padding-top: 0 !important;
+		padding-bottom: 0 !important;
+	}
+}
 #gr_voice_player_hidden {
 	z-index: -100 !important;
 	position: absolute !important;
@@ -537,7 +543,7 @@ span[data-testid="block-info"] {
 	font-size: 18px !important;
 	font-weight: bold !important;
 }
-///////////
+/* Effects */
 .fade-in {
 	animation: fadeIn 1s ease-in !important;
 	display: inline-block !important;
@@ -561,7 +567,7 @@ span[data-testid="block-info"] {
 		pointer-events: none;
 	}
 }
-//////////
+/* Modal */
 #custom-gr-modal-container,
 #custom-gr-modal-container .gr-modal {
 	position: fixed !important;

@@ -16,7 +16,7 @@ on:
 
 jobs:
   DockerBuild:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
     runs-on: [self-hosted, macos]
     steps:
 
@@ -36,8 +36,7 @@ jobs:
           HEAD_REF="${{ github.event.pull_request.head.ref }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           HEAD_REPO_URL="${{ github.event.pull_request.head.repo.clone_url }}"
-          TRIGGER_SHA="${{ github.sha }}"
-          FRESH_CLONE=0
+          TRIGGER_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
       
           echo "==> Event: ${{ github.event_name }}"
           echo "==> Repo: $REPO_URL"
@@ -61,7 +60,6 @@ jobs:
             git remote set-head origin -a
             git remote prune origin
             git fetch --all --prune
-            FRESH_CLONE=1
           fi
       
           if [ "$IS_PR" = "true" ]; then
@@ -98,17 +96,6 @@ jobs:
           echo "==> Final repo state:"
           git status
           git log -1 --oneline
-      
-          if [ "$FRESH_CLONE" -eq 1 ]; then
-            echo "==> Running ./ebook2audiobook.sh --help because this was a fresh clone"
-            if ! ./ebook2audiobook.sh --help; then
-              echo "==> Attempting fallback with conda deactivation"
-              source "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" 2>/dev/null && conda deactivate || true
-              ./ebook2audiobook.sh --help
-            fi
-          else
-            echo "==> Skipping script run because repo already existed"
-          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -123,7 +110,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Get Git Commit Hash
-        run: echo "GIT_HASH=${GITHUB_SHA::9}" >> $GITHUB_ENV
+        run: echo "GIT_HASH=$(git -C ~/E2ADockerBuild/ebook2audiobook rev-parse HEAD | cut -c1-9)" >> $GITHUB_ENV
 
       - name: Get Latest Release Tag
         run: |

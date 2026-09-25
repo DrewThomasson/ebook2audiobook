@@ -3,7 +3,8 @@ import sys
 import os
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEVICE_INFO_JSON = os.path.normpath(os.path.join(SCRIPT_DIR, '.device_info.json'))
+ROOT_DIR = os.path.dirname(SCRIPT_DIR)
+DEVICE_INFO_JSON = os.path.normpath(os.path.join(ROOT_DIR, '.device_info.json'))
 
 def main()->None:
     result = {'count': 0, 'backend': None, 'error': None}

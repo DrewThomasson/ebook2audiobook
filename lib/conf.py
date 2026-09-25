@@ -115,6 +115,8 @@ torch_matrix = {
     "jetson61":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.5.0", "last": "2.5.0", "codec": ""},
 }
 
+torchaudio_max = '2.11.0'
+transformers_caps = {'2.4': '5.1', '2.5': '5.8'}
 cuda_version_range = {"min": (11,8), "max": (13,2)}
 rocm_version_range = {"min": (5,7), "max": (7,2)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
@@ -192,6 +194,11 @@ os.environ['MIOPEN_FIND_ENFORCE'] = '0'
 os.environ['MIOPEN_LOG_LEVEL'] = '2'
 os.environ['MIOPEN_DEBUG_CONV_IMPLICIT_GEMM'] = '0'
 os.environ['HSA_NO_SCRATCH_RECLAIM'] = '0'
+os.environ['HSA_OVERRIDE_GFX_VERSION'] = '10.3.0'
+os.environ['HSA_ENABLE_SDMA'] = '0'
+os.environ['HIP_VISIBLE_DEVICES'] = '0'
+os.environ['ROCR_VISIBLE_DEVICES'] = '0'
+os.environ['PyTorch_HIP_ALLOC_CONF'] = 'garbage_collection_threshold:0.8,max_split_size_mb:512'
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['SYCL_IN_MEM_CACHE_EVICTION_THRESHOLD'] = str(512 * 1024 * 1024)

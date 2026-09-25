@@ -457,7 +457,7 @@ check_uv() {
 	fi
 	if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 		local model="other"
-		if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "x86_64" ]]; then	
+		if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "amd64" ]]; then	
 			PYTHON_VERSION="3.11"
 		else
 			if [[ -r /proc/device-tree/model ]]; then
