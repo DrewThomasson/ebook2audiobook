@@ -492,25 +492,22 @@ span[data-testid="block-info"] {
 	background-color: #ebedf0 !important;
 	color: #ffffff !important;
 }
-/* Firefox only: Chrome/Safari do not match ::-moz-range-thumb */
-@supports selector(::-moz-range-thumb) {
-	/* Remove Firefox native default outline and white background on audio elements */
-	#gr_audiobook_player audio,
-	audio {
-		background-color: var(--block-background-fill, #1f2937) !important;
-		border: none !important;
-		outline: none !important;
-		box-shadow: none !important;
-	}
-	/* Fix Gradio container wrapper for the audiobook player */
-	#gr_audiobook_player,
-	#gr_audiobook_player .block,
-	#gr_audiobook_player .container,
-	#gr_voice_player_hidden {
-		background-color: transparent !important;
-		border: none !important;
-		box-shadow: none !important;
-	}
+/* Firefox only: :-moz-read-only is Firefox's alias of :read-only (always true on audio/div), Chrome/Safari drop these rules.
+   No @supports here: Gradio's prefix_css() silently discards @supports blocks from css_paths. */
+#gr_audiobook_player audio:-moz-read-only,
+audio:-moz-read-only {
+	background-color: var(--block-background-fill, #1f2937) !important;
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+#gr_audiobook_player:-moz-read-only,
+#gr_audiobook_player .block:-moz-read-only,
+#gr_audiobook_player .container:-moz-read-only,
+#gr_voice_player_hidden:-moz-read-only {
+	background-color: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
 }
 #gr_voice_player_hidden {
 	z-index: -100 !important;
