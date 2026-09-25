@@ -492,11 +492,24 @@ span[data-testid="block-info"] {
 	background-color: #ebedf0 !important;
 	color: #ffffff !important;
 }
+/* Firefox only: Chrome/Safari do not match ::-moz-range-thumb */
 @supports selector(::-moz-range-thumb) {
-	#gr_audiobook_player audio {
+	/* Remove Firefox native default outline and white background on audio elements */
+	#gr_audiobook_player audio,
+	audio {
+		background-color: var(--block-background-fill, #1f2937) !important;
+		border: none !important;
+		outline: none !important;
+		box-shadow: none !important;
+	}
+	/* Fix Gradio container wrapper for the audiobook player */
+	#gr_audiobook_player,
+	#gr_audiobook_player .block,
+	#gr_audiobook_player .container,
+	#gr_voice_player_hidden {
 		background-color: transparent !important;
-		padding-top: 0 !important;
-		padding-bottom: 0 !important;
+		border: none !important;
+		box-shadow: none !important;
 	}
 }
 #gr_voice_player_hidden {
