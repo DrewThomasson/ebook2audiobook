@@ -10,6 +10,7 @@ from typing import Callable
 
 
 def configure_booknlp_cache(e2a_path:str|Path|None=None)->Path:
+    '''Configure the Hugging Face cache before its first import.'''
     repo_dir = Path(e2a_path).expanduser().resolve() if e2a_path else Path(__file__).resolve().parents[3]
     model_dir = repo_dir / 'models' / 'booknlp_models'
     os.environ['HF_HOME'] = str(model_dir / 'huggingface')
@@ -143,7 +144,6 @@ def run_booknlp(
         RuntimeError: If BookNLP or its dependencies are not properly installed.
     """
     model_dir = configure_booknlp_cache(e2a_path)
-
     # Pre-check installation before attempting import
     ok, msg = check_booknlp_installation()
     if not ok:
@@ -158,8 +158,8 @@ def run_booknlp(
         progress_callback("Initializing BookNLP...", 5)
 
     model_params = {
-        "pipeline": "entity,quote,supersense,event,coref",
-        "model": model,
+        'pipeline': 'entity,quote,supersense,event,coref',
+        'model': model,
         'model_path': str(model_dir),
     }
 

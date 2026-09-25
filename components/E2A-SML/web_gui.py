@@ -7,10 +7,8 @@ import tempfile
 from pathlib import Path
 
 from sml_extractor.core import configure_booknlp_cache
-
 if 'HF_HOME' not in os.environ:
     configure_booknlp_cache(os.environ.get('E2A_PATH'))
-
 import gradio as gr
 
 from sml_extractor.core import (
@@ -323,8 +321,8 @@ def generate_output(progress:gr.Progress=gr.Progress())->tuple[str,str,str,str,s
 
 def create_app(default_e2a_path:str='')->gr.Blocks:
     if not default_e2a_path:
-        default_e2a_path = os.environ.get("E2A_PATH") or os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..")
+        default_e2a_path = os.environ.get('E2A_PATH') or os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', '..')
         )
     
     """Create the Gradio web interface.

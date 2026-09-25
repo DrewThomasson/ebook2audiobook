@@ -64,8 +64,8 @@ Examples:
         default="small",
         help="BookNLP model size (default: small)",
     )
-    default_e2a_path = os.environ.get("E2A_PATH") or os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..")
+    default_e2a_path = os.environ.get('E2A_PATH') or os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', '..')
     )
 
     parser.add_argument(
@@ -126,9 +126,7 @@ Examples:
         args.booknlp_dir = os.path.expanduser(args.booknlp_dir)
     if args.input_file:
         args.input_file = os.path.expanduser(args.input_file)
-
     configure_booknlp_cache(args.e2a_path)
-
     if args.gui:
         _launch_gui(args)
         return
@@ -154,7 +152,7 @@ Examples:
 def _run_headless(args:argparse.Namespace)->None:
     """Run in headless/CLI mode."""
 
-    def progress(msg, pct=0):
+    def progress(msg:str, pct:int=0)->None:
         print(f"[{pct:3d}%] {msg}")
 
     # Check BookNLP installation before starting
