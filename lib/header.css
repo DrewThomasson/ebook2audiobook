@@ -481,7 +481,7 @@ span[data-testid="block-info"] {
 	padding-top: 10px !important;
 	padding-bottom: 10px !important;
 	border-radius: 0px !important;
-	background-color: #ebedf0 !important;
+	background-color: var(--block-background-fill, #1f2937) !important;
 	color: #ffffff !important;
 }
 #gr_audiobook_player audio::-webkit-media-controls-panel {
@@ -489,16 +489,17 @@ span[data-testid="block-info"] {
 	padding-top: 10px !important;
 	padding-bottom: 10px !important;
 	border-radius: 0px !important;
-	background-color: #ebedf0 !important;
+	background-color: var(--block-background-fill, #1f2937) !important;
 	color: #ffffff !important;
 }
 
 /* Remove Firefox native default outline and white background on audio elements */
+#gr_audiobook_player audio,
 audio {
-	background-color: #000000 !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
+	background-color: var(--block-background-fill, #1f2937) !important;
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
 }
 
 /* Fix Gradio container wrapper for the audiobook player */
@@ -506,9 +507,9 @@ audio {
 #gr_audiobook_player .block,
 #gr_audiobook_player .container,
 #gr_voice_player_hidden {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+	background-color: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
 }
 
 #gr_voice_player_hidden {
