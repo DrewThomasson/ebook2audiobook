@@ -591,9 +591,8 @@ endlocal & exit /b %RC%
 where.exe /Q uv
 if errorlevel 1 (
 	echo Uv is not installed.
-	echo Installing Uv…
+	echo Installing Uv...
 	"%PS_EXE%" %PS_ARGS% -Command "iwr -useb %UV_INSTALLER_PS1% | iex"
-	set "PATH=%USERPROFILE%\.local\bin;%PATH%"
 	where.exe /Q uv
 	if errorlevel 1 (
 		echo %ESC%[31m=============== uv failed.%ESC%[0m
@@ -608,30 +607,38 @@ if errorlevel 1 (
 )
 set "CURRENT_ENV="
 if defined VIRTUAL_ENV ( set "CURRENT_ENV=%VIRTUAL_ENV%" )
+if defined CONDA_PREFIX ( set "CURRENT_ENV=%CONDA_PREFIX%" )
 if defined CURRENT_ENV (
 	if /i not "%CURRENT_ENV%"=="%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-		echo Current python virtual environment detected: %CURRENT_ENV%.
+		echo Current python virtual environment detected: "%CURRENT_ENV%".
 		echo This script runs with its own virtual env and must be out of any other virtual environment.
 		goto :failed
 	)
 )
+for /f "tokens=1,2 delims=." %%a in ("%PYTHON_VERSION%") do set /a "PY_CUR=%%a*100+%%b"
+for /f "tokens=1,2 delims=." %%a in ("%MIN_PYTHON_VERSION%") do set /a "PY_MIN=%%a*100+%%b"
+for /f "tokens=1,2 delims=." %%a in ("%MAX_PYTHON_VERSION%") do set /a "PY_MAX=%%a*100+%%b"
+if "%SCRIPT_MODE%"=="%NATIVE%" if %PY_CUR% lss %PY_MIN% set "PYTHON_VERSION=%MIN_PYTHON_VERSION%"
+if "%SCRIPT_MODE%"=="%NATIVE%" if %PY_CUR% gtr %PY_MAX% set "PYTHON_VERSION=%MAX_PYTHON_VERSION%"
 if "%SCRIPT_MODE%"=="%NATIVE%" (
 	set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-	set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
+	set "PATH=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts;%PATH%"
 	set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
-	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" (
 		if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\pyvenv.cfg" (
-			echo %PYTHON_ENV% is not a virtualenv — removing...
+			echo %PYTHON_ENV% is not a virtualenv - removing...
 			rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+			if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" goto :failed
 		) else (
 			uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION% --allow-existing >nul 2>&1
 			if errorlevel 1 (
-				echo %PYTHON_ENV% is inconsistent — removing and recreating...
+				echo %PYTHON_ENV% is inconsistent - removing and recreating...
 				rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+				if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" goto :failed
 			)
 		)
 	)
-	if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+	if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" (
 		echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION% via uv...
 		uv python find %PYTHON_VERSION% >nul 2>&1
 		if errorlevel 1 (
@@ -640,7 +647,18 @@ if "%SCRIPT_MODE%"=="%NATIVE%" (
 		)
 		uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION%
 		if errorlevel 1 goto :failed
-		call :provision_env
+	)
+	if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
+		set "DEVICE_INFO_STR="
+		call :check_device_info "%SCRIPT_MODE%"
+		if errorlevel 1 goto :failed
+		if not defined DEVICE_INFO_STR (
+			echo check_device_info^(^) error: result is empty
+			goto :failed
+		)
+		call :install_device_packages
+		if errorlevel 1 goto :failed
+		call :install_python_packages
 		if errorlevel 1 goto :failed
 		> "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" echo %APP_VERSION%
 	)
@@ -750,14 +768,12 @@ endlocal & set "DEVICE_TAG=%JSON_VALUE%"
 exit /b 0
 
 :install_device_packages
-"%PS_EXE%" %PS_ARGS% -Command ^
-"& $env:"PY_CMD" -c \"import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))\""
+"%PY_CMD%" -c "import sys, os; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_device_packages(os.environ.get('DEVICE_INFO_STR', '')))"
 exit /b %errorlevel%
 
 :install_python_packages
 echo Installing python dependencies…
-"%PS_EXE%" %PS_ARGS% -Command ^
-"& "$env:PY_CMD" -c \"import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())\""
+"%PY_CMD%" -c "import sys; from lib.classes.device_installer import DeviceInstaller; device = DeviceInstaller(); sys.exit(device.install_python_packages())"
 exit /b %errorlevel%
 
 :check_sitecustomized

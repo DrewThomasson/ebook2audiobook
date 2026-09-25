@@ -57,9 +57,17 @@ Please remove the '{search_python_env}' directory and re-run the installer:
 ***********'''
             print(error)
             return False
-        if not shutil.which('uv'):
+        uv_bin = shutil.which('uv')
+        if not uv_bin:
+            uv_candidates = [os.path.expanduser('~/.local/bin/uv'), os.path.expanduser('~/.cargo/bin/uv')]
+            if os.name == 'nt':
+                uv_candidates += [os.path.expanduser(r'~\.local\bin\uv.exe'), os.path.expanduser(r'~\.cargo\bin\uv.exe')]
+            else:
+                uv_candidates.append(os.path.expanduser('~/Library/Application Support/uv/bin/uv'))
+            uv_bin = next((c for c in uv_candidates if os.path.isfile(c)), None)
+        if not uv_bin:
             error=f'''***********
-Wrong launch: uv binary not found in PATH.
+Wrong launch: uv binary not found.
 The application requires uv to manage Python packages.
 Please install uv: https://docs.astral.sh/uv/getting-started/installation/
 Then re-run the installer.
