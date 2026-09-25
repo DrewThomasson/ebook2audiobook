@@ -214,7 +214,7 @@ if DEVICE_SYSTEM == systems['LINUX'] and 'HSA_OVERRIDE_GFX_VERSION' not in os.en
                 continue
             if _m and int(_m.group(1)):
                 _v = int(_m.group(1))
-                _kfd_gfx.append(f"gfx{_v // 10000}{(_v // 100) % 100:x}{_v % 100:x}")
+                _kfd_gfx.append(f"gfx{_v // 100}")
     for _var in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES'):
         if _var in os.environ:
             _ids = os.environ[_var].replace(' ', '').split(',')
