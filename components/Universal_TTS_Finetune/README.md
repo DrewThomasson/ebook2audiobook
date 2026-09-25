@@ -90,6 +90,14 @@ uv pip install -r requirements.txt
 
 On Windows, activate the environment with `.venv\Scripts\activate` instead of `source .venv/bin/activate`. Activate it again before running the GUI or CLI below.
 
+### Where files are stored
+
+For a native run from this checkout, downloaded Coqui, Whisper, Hugging Face, Torch, and Piper models use `ebook2audiobook/models/`. XTTS base files use `ebook2audiobook/models/xtts/base_models/<version>/`. If UFT is copied outside an ebook2audiobook checkout, it uses a `models/` folder beside its own code instead.
+
+The GUI defaults to `components/Universal_TTS_Finetune/finetune_models/` when started from this directory. Datasets go under `<output_root>/dataset/` and trained checkpoints under `<output_root>/training_runs/`. Set `--out_path` in the GUI command or `--output-root` in the CLI to choose another location.
+
+The standalone Docker Compose setup mounts its own `./models/`, `./finetune_models/`, and `./audio_data/` folders. It does not mount the main ebook2audiobook checkout.
+
 ## Run the web GUI
 
 Run the application directly with Python:
@@ -107,6 +115,21 @@ docker-compose up --build
 ```
 
 The application will be available at `http://localhost:7862`.
+
+## Python code normalization for contributors
+
+For UFT Python changes:
+
+- Use four spaces for indentation, never tabs.
+- Use single quotes for dictionary keys and key access, except where `dict()` or JSON requires another form. Write `item['key']`.
+- Declare types for every function argument and return value. Write `name:str` and `def example()->str:` without spaces around the argument colon or function return arrow.
+- Keep blank lines between functions and classes, not between statements within a function.
+
+```python
+def model_location(name:str, models_dir:str)->str:
+    folders:dict[str,str] = {'xtts': 'xtts/base_models', 'piper': 'piper/checkpoints'}
+    return f"{models_dir}/{folders[name]}"
+```
 
 ## Headless CLI
 

@@ -41,18 +41,14 @@ import warnings
 from dataclasses import asdict
 import os
 from pathlib import Path
+from utils.model_paths import get_models_dir
 
 _PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-_MAIN_MODELS_DIR = _PROJECT_ROOT.parent.parent / "models"
-if _MAIN_MODELS_DIR.exists() and _MAIN_MODELS_DIR.is_dir():
-    _MODELS_DIR = _MAIN_MODELS_DIR
-else:
-    _MODELS_DIR = _PROJECT_ROOT / "models"
-    _MODELS_DIR.mkdir(exist_ok=True)
+_MODELS_DIR = get_models_dir()
 
-os.environ["HF_HOME"] = str(_MODELS_DIR)
-os.environ["TTS_HOME"] = str(_MODELS_DIR)
-os.environ["TORCH_HOME"] = str(_MODELS_DIR)
+os.environ['HF_HOME'] = str(_MODELS_DIR)
+os.environ['TTS_HOME'] = str(_MODELS_DIR)
+os.environ['TORCH_HOME'] = str(_MODELS_DIR)
 
 _CURRENT_PROCESS: subprocess.Popen | None = None
 

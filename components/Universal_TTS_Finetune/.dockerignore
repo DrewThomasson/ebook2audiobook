@@ -1,5 +1,6 @@
 .venv/
 models/
+base_models/
 finetune_models/
 audio_data/
 __pycache__/

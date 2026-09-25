@@ -14,9 +14,10 @@ except ImportError:
     from TTS.tts.configs.xtts_config import XttsAudioConfig
 from TTS.utils.manage import ModelManager
 import shutil
+from utils.model_paths import get_models_dir
 
 
-def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm, train_csv, eval_csv, output_path, max_audio_length=255995):
+def train_gpt(custom_model:str|Path|None, version:str, language:str, num_epochs:int, batch_size:int, grad_acumm:int, train_csv:str, eval_csv:str, output_path:str, max_audio_length:int=255995)->tuple[str,str,str,str,str,str]:
     #  Logging parameters
     RUN_NAME = "GPT_XTTS_FT"
     PROJECT_NAME = "XTTS_trainer"
@@ -49,7 +50,7 @@ def train_gpt(custom_model,version, language, num_epochs, batch_size, grad_acumm
     DATASETS_CONFIG_LIST = [config_dataset]
 
     # Define the path where XTTS v2.0.1 files will be downloaded
-    CHECKPOINTS_OUT_PATH = os.path.join(Path.cwd(), "base_models",f"{version}")
+    CHECKPOINTS_OUT_PATH = os.fspath(get_models_dir() / 'xtts' / 'base_models' / version)
     os.makedirs(CHECKPOINTS_OUT_PATH, exist_ok=True)
 
 

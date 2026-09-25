@@ -9,13 +9,8 @@ import subprocess
 from pathlib import Path
 import torch
 
-_PROJECT_ROOT = Path(__file__).resolve().parent.parent
-_MAIN_MODELS_DIR = _PROJECT_ROOT.parent.parent / "models"
-if _MAIN_MODELS_DIR.exists() and _MAIN_MODELS_DIR.is_dir():
-    _MODELS_DIR = _MAIN_MODELS_DIR
-else:
-    _MODELS_DIR = _PROJECT_ROOT / "models"
-    _MODELS_DIR.mkdir(exist_ok=True)
+from utils.model_paths import get_models_dir
+_MODELS_DIR = get_models_dir()
 
 def ensure_monotonic_align_compiled():
     """Auto-compiles the monotonic_align Cython extension for Piper training if not already compiled."""
