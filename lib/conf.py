@@ -180,11 +180,6 @@ os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
 os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
 os.environ['CUDA_CACHE_MAXSIZE'] = '2147483648'
 os.environ['ONEDNN_DEFAULT_FPMATH_MODE'] = 'STRICT'
-# oneDNN keeps one JIT-compiled primitive per distinct problem descriptor, 1024 of
-# them by default. Every sentence produces a different conv width (iw8352, iw50112…)
-# so on the XPU/SYCL backend the cache is nearly all misses and just accumulates
-# kernel binaries in device memory until the JIT can no longer create a primitive.
-# 64 keeps the shapes that do repeat and drops the long tail.
 os.environ['ONEDNN_PRIMITIVE_CACHE_CAPACITY'] = '64'
 os.environ['SUNO_OFFLOAD_CPU'] = 'FALSE'
 os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'
@@ -194,16 +189,41 @@ os.environ['MIOPEN_FIND_ENFORCE'] = '0'
 os.environ['MIOPEN_LOG_LEVEL'] = '2'
 os.environ['MIOPEN_DEBUG_CONV_IMPLICIT_GEMM'] = '0'
 os.environ['HSA_NO_SCRATCH_RECLAIM'] = '0'
-os.environ['HSA_OVERRIDE_GFX_VERSION'] = '10.3.0'
 os.environ['HSA_ENABLE_SDMA'] = '0'
-os.environ['HIP_VISIBLE_DEVICES'] = '0'
-os.environ['ROCR_VISIBLE_DEVICES'] = '0'
-os.environ['PyTorch_HIP_ALLOC_CONF'] = 'garbage_collection_threshold:0.8,max_split_size_mb:512'
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['SYCL_IN_MEM_CACHE_EVICTION_THRESHOLD'] = str(512 * 1024 * 1024)
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
+if 'ROCR_VISIBLE_DEVICES' not in os.environ and 'HIP_VISIBLE_DEVICES' not in os.environ:
+    os.environ['ROCR_VISIBLE_DEVICES'] = '0'
+    os.environ['HIP_VISIBLE_DEVICES'] = '0'
+if DEVICE_SYSTEM == systems['LINUX'] and 'HSA_OVERRIDE_GFX_VERSION' not in os.environ:
+    hsa_gfx_overrides = {
+        'gfx1031': '10.3.0', 'gfx1032': '10.3.0', 'gfx1033': '10.3.0',
+        'gfx1034': '10.3.0', 'gfx1035': '10.3.0', 'gfx1036': '10.3.0',
+        'gfx1103': '11.0.0'
+    }
+    _kfd_gfx = []
+    _kfd_nodes = Path('/sys/class/kfd/kfd/topology/nodes')
+    if _kfd_nodes.is_dir():
+        for _node in sorted((p for p in _kfd_nodes.iterdir() if p.name.isdigit()), key=lambda p: int(p.name)):
+            try:
+                _m = re.search(r'^gfx_target_version\s+(\d+)', (_node / 'properties').read_text(), re.M)
+            except OSError:
+                continue
+            if _m and int(_m.group(1)):
+                _v = int(_m.group(1))
+                _kfd_gfx.append(f"gfx{_v // 10000}{(_v // 100) % 100:x}{_v % 100:x}")
+    for _var in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES'):
+        if _var in os.environ:
+            _ids = os.environ[_var].replace(' ', '').split(',')
+            if not all(i.isdigit() and int(i) < len(_kfd_gfx) for i in _ids):
+                _kfd_gfx = []
+                break
+            _kfd_gfx = [_kfd_gfx[int(i)] for i in _ids]
+    if _kfd_gfx and _kfd_gfx[0] in hsa_gfx_overrides:
+        os.environ['HSA_OVERRIDE_GFX_VERSION'] = hsa_gfx_overrides[_kfd_gfx[0]]
 
 # ---------------------------------------------------------------------
 # Global settings
