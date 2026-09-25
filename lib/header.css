@@ -492,13 +492,25 @@ span[data-testid="block-info"] {
 	background-color: #ebedf0 !important;
 	color: #ffffff !important;
 }
-@supports selector(::-moz-range-thumb) {
-	#gr_audiobook_player audio {
-		background-color: transparent !important;
-		padding-top: 0 !important;
-		padding-bottom: 0 !important;
-	}
+
+/* Remove Firefox native default outline and white background on audio elements */
+audio {
+	background-color: #1f2937 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
+
+/* Fix Gradio container wrapper for the audiobook player */
+#gr_audiobook_player,
+#gr_audiobook_player .block,
+#gr_audiobook_player .container,
+#gr_voice_player_hidden {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 #gr_voice_player_hidden {
 	z-index: -100 !important;
 	position: absolute !important;
