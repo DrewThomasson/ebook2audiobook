@@ -28,11 +28,11 @@ def check_booknlp_installation() -> tuple[bool, str]:
 
     # Check key dependencies that commonly fail
     dep_checks = [
-        ("torch", "torch", "pip install torch"),
-        ("transformers", "transformers", "pip install transformers>=4.30.0"),
-        ("spacy", "spacy", "pip install spacy>=3.5.0"),
-        ("sentence_transformers", "sentence-transformers", "pip install sentence-transformers"),
-        ("numpy", "numpy", "pip install numpy>=1.24.0"),
+        ("torch", "torch", "uv pip install torch"),
+        ("transformers", "transformers", "uv pip install 'transformers>=4.30.0'"),
+        ("spacy", "spacy", "uv pip install 'spacy>=3.5.0'"),
+        ("sentence_transformers", "sentence-transformers", "uv pip install sentence-transformers"),
+        ("numpy", "numpy", "uv pip install 'numpy>=1.24.0'"),
     ]
 
     for module_name, pkg_name, install_cmd in dep_checks:
@@ -46,8 +46,8 @@ def check_booknlp_installation() -> tuple[bool, str]:
             "BookNLP dependencies are missing:\n"
             + "\n".join(errors)
             + "\n\nOr install all at once:\n"
-            "  pip install -r requirements.txt\n"
-            "  python -m spacy download en_core_web_sm"
+            "  uv pip install -r requirements.txt\n"
+            '  uv pip install "$(python -m spacy info en_core_web_sm --url)"'
         )
 
     # Check spacy model
@@ -57,7 +57,7 @@ def check_booknlp_installation() -> tuple[bool, str]:
     except OSError:
         errors.append(
             "spaCy English model not found. Install it with:\n"
-            "  python -m spacy download en_core_web_sm"
+            '  uv pip install "$(python -m spacy info en_core_web_sm --url)"'
         )
 
     if errors:
@@ -71,8 +71,8 @@ def check_booknlp_installation() -> tuple[bool, str]:
             f"BookNLP failed to initialize: {e}\n\n"
             "This usually means a dependency version conflict.\n"
             "Try reinstalling dependencies in a clean environment:\n"
-            "  pip install -r requirements.txt\n"
-            "  python -m spacy download en_core_web_sm"
+            "  uv pip install -r requirements.txt\n"
+            '  uv pip install "$(python -m spacy info en_core_web_sm --url)"'
         )
 
     return True, "BookNLP is ready."

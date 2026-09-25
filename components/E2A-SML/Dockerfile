@@ -1,4 +1,5 @@
 FROM python:3.10-slim
+COPY --from=ghcr.io/astral-sh/uv:0.9.13 /uv /uvx /bin/
 
 # Install system dependencies (Calibre for ebook conversion)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -9,10 +10,10 @@ WORKDIR /app
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv pip install --system --no-cache -r requirements.txt
 
-# Download spaCy English model
-RUN python -m spacy download en_core_web_sm
+# Install the compatible spaCy English model with uv
+RUN uv pip install --system --no-cache "$(python -m spacy info en_core_web_sm --url)"
 
 # Copy application code
 COPY . .
