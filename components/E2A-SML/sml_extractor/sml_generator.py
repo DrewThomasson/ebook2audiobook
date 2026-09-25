@@ -43,8 +43,8 @@ def generate_sml_output(
         output_path: Path to write the SML output file.
         voice_assignments: Optional dict mapping character names to voice file paths.
         use_macros: If True, voice tags use character names as macro references
-            instead of raw file paths. Defaults to True (macro-based output is
-            the recommended mode for use with ebook2audiobook).
+            instead of raw file paths. This format also needs the generated
+            character-to-voice JSON; use path-based tags for direct E2A input.
 
     Returns:
         Path to the generated SML file.

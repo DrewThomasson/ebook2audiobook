@@ -34,10 +34,10 @@ On Windows, activate with `.venv\Scripts\activate` instead. When run from this r
 
 1. In **Process Book**, upload an English book and select **Analyze Book**.
 2. In **Characters & Voices**, review or change the assigned voices.
-3. In **Preview & Generate**, select **Generate SML Output** and download the **path-based SML** file named `<book>.deprecated.sml.txt`.
+3. In **Preview & Generate**, select **Generate SML Output** and download the **E2A-ready SML** file named `<book>.e2a.sml.txt`.
 4. Give that file to E2A as the book input. Its `voices/...` paths must refer to files in E2A's voice library. Run native E2A from its repository root; if you use separate containers, copy or mount the matching voices into E2A.
 
-The filename says `deprecated` because E2A-SML also writes a newer character-name macro format. The path-based file is the one E2A currently accepts directly. The GUI also offers the macro SML and its `<book>.sml.json` voice map for editing or other workflows.
+E2A-SML produces one SML file for E2A. Its voice tags use paths to the assigned voice files.
 
 ## Command line
 
