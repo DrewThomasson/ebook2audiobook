@@ -195,57 +195,11 @@ os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['SYCL_IN_MEM_CACHE_EVICTION_THRESHOLD'] = str(512 * 1024 * 1024)
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
-# only default to GPU 0 when the user selected nothing: HIP also reads CUDA_VISIBLE_DEVICES,
-# so an injected HIP/ROCR value would silently override a user CUDA selection
 if not any(_v in os.environ for _v in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES', 'CUDA_VISIBLE_DEVICES')):
     os.environ['ROCR_VISIBLE_DEVICES'] = '0'
     os.environ['HIP_VISIBLE_DEVICES'] = '0'
-if DEVICE_SYSTEM == systems['LINUX'] and 'HSA_OVERRIDE_GFX_VERSION' not in os.environ:
-    hsa_gfx_overrides = {
-        'gfx1031': '10.3.0', 'gfx1032': '10.3.0', 'gfx1033': '10.3.0',
-        'gfx1034': '10.3.0', 'gfx1035': '10.3.0', 'gfx1036': '10.3.0',
-        'gfx1103': '11.0.0'
-    }
-    _kfd_gpus = []
-    _kfd_nodes = Path('/sys/class/kfd/kfd/topology/nodes')
-    if _kfd_nodes.is_dir():
-        for _node in sorted((p for p in _kfd_nodes.iterdir() if p.name.isdigit()), key=lambda p: int(p.name)):
-            try:
-                _props = (_node / 'properties').read_text()
-            except OSError:
-                continue
-            _m = re.search(r'^gfx_target_version\s+(\d+)', _props, re.M)
-            if _m and int(_m.group(1)):
-                _v = int(_m.group(1))
-                _u = re.search(r'^unique_id\s+(\d+)', _props, re.M)
-                _kfd_gpus.append(dict(
-                    # KFD encodes major*10000 + minor*100 + stepping, gfx names use hex for minor/stepping (90010 = gfx90a)
-                    gfx=f"gfx{_v // 10000}{(_v // 100) % 100:x}{_v % 100:x}",
-                    # ROCr UUID is GPU-<unique_id as 16 hex>, 0 means no UUID support (rocminfo shows GPU-XX)
-                    uuid=f"gpu-{int(_u.group(1)):016x}" if _u and int(_u.group(1)) else None
-                ))
-    # ROCr filters the KFD GPU list first, HIP then indexes into what ROCr exposes (layered, not parallel)
-    # HIP falls back to CUDA_VISIBLE_DEVICES when HIP_VISIBLE_DEVICES is unset
-    _hip_var = 'HIP_VISIBLE_DEVICES' if 'HIP_VISIBLE_DEVICES' in os.environ else 'CUDA_VISIBLE_DEVICES'
-    for _var in ('ROCR_VISIBLE_DEVICES', _hip_var):
-        if _var in os.environ:
-            _selected = []
-            for _id in os.environ[_var].replace(' ', '').lower().split(','):
-                if _id.isdigit():
-                    _gpu = _kfd_gpus[int(_id)] if int(_id) < len(_kfd_gpus) else None
-                else:
-                    _gpu = next((g for g in _kfd_gpus if g['uuid'] == _id), None)
-                if _gpu is None:
-                    _selected = []
-                    break
-                _selected.append(_gpu)
-            _kfd_gpus = _selected
-            if not _kfd_gpus:
-                break
-    # HSA_OVERRIDE_GFX_VERSION applies to every agent in the process: only set it when all visible GPUs agree
-    _gfx_targets = {hsa_gfx_overrides.get(g['gfx']) for g in _kfd_gpus}
-    if len(_gfx_targets) == 1 and None not in _gfx_targets:
-        os.environ['HSA_OVERRIDE_GFX_VERSION'] = _gfx_targets.pop()
+if 'HSA_OVERRIDE_GFX_VERSION' not in os.environ:
+    os.environ['HSA_OVERRIDE_GFX_VERSION'] = '10.3.0'
 
 # ---------------------------------------------------------------------
 # Global settings
