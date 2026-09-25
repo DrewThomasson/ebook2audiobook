@@ -123,7 +123,7 @@ The tool converts BookNLP's tagged output into SML format:
 [OBrien] "How many fingers am I holding up, Winston?" [/]
 ```
 
-**SML output** (for ebook2audiobook):
+**SML output with character names** (requires resolving the names to voice files before use in E2A):
 ```
 [voice:Narrator]
 It was a bright cold day in April, and the clocks were striking thirteen.
@@ -155,9 +155,11 @@ When given the path to an ebook2audiobook installation, voices are automatically
 
 | File | Description |
 |---|---|
-| `{book_id}.sml.txt` | SML-tagged text with `[voice:CharacterName]` macro tags |
-| `{book_id}.sml.json` | SML macros mapping character names to voice file paths |
-| `{book_id}.deprecated.sml.txt` | Legacy SML format with raw file paths in tags |
+| `{book_id}.sml.txt` | SML text with character-name tags for editing or another macro-aware workflow |
+| `{book_id}.sml.json` | Character-to-voice reference mapping |
+| `{book_id}.deprecated.sml.txt` | Path-based SML to open in E2A today; library voices use portable `voices/...` paths |
+
+To generate an audiobook in E2A, use `{book_id}.deprecated.sml.txt`. Run E2A from its repository root so `voices/...` resolves against its own voice library. If E2A and E2A-SML run in separate containers, copy or mount the generated file into E2A and make sure the corresponding voice files exist in E2A's `voices/` folder. The E2A Docker Compose setup mounts that folder at `/app/voices`. Custom voices outside the E2A-SML voice library keep their original paths and must be copied or reassigned for the E2A environment.
 
 ### sml.json format
 
@@ -165,9 +167,9 @@ When given the path to an ebook2audiobook installation, voices are automatically
 {
   "macros": {
     "voices": {
-      "Narrator": "/path/to/narrator_voice.wav",
-      "Winston": "/path/to/male_voice.wav",
-      "OBrien": "/path/to/obrien_voice.wav"
+      "Narrator": "voices/eng/adult/female/narrator.wav",
+      "Winston": "voices/eng/adult/male/winston.wav",
+      "OBrien": "voices/eng/adult/male/obrien.wav"
     }
   }
 }

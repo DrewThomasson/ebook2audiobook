@@ -14,7 +14,7 @@ from sml_extractor.core import (
     load_booknlp_output,
     run_booknlp,
 )
-from sml_extractor.sml_generator import generate_sml_macros, generate_sml_output
+from sml_extractor.sml_generator import generate_sml_macros, generate_sml_output, portable_voice_assignments
 from sml_extractor.voice_matcher import (
     auto_assign_voices,
     get_voice_display_name,
@@ -240,16 +240,17 @@ def _run_headless(args):
     )
     progress(f"SML output written to: {sml_output_path}", 88)
 
-    # Step 6: Generate deprecated SML output (path-based: voice tags use raw file paths)
+    # Step 6: Generate path-based SML output for E2A
     deprecated_sml_path = os.path.join(output_dir, f"{book_id}.deprecated.sml.txt")
+    portable_assignments = portable_voice_assignments(voice_assignments, args.e2a_path)
     generate_sml_output(
-        booknlp_data, characters, deprecated_sml_path, voice_assignments, use_macros=False
+        booknlp_data, characters, deprecated_sml_path, portable_assignments, use_macros=False
     )
     progress(f"Deprecated SML (path-based) written to: {deprecated_sml_path}", 92)
 
     # Step 7: Generate SML macros JSON
     macros_json_path = os.path.join(output_dir, f"{book_id}.sml.json")
-    generate_sml_macros(characters, macros_json_path, voice_assignments)
+    generate_sml_macros(characters, macros_json_path, portable_assignments)
     progress(f"SML Macros JSON written to: {macros_json_path}", 97)
 
     progress("Done!", 100)

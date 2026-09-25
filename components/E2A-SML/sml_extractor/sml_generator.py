@@ -3,6 +3,21 @@
 import json
 import os
 import re
+from pathlib import Path
+
+
+def portable_voice_assignments(voice_assignments: dict, e2a_path: str) -> dict:
+    """Express library voices relative to the E2A root used for synthesis."""
+    voices_root = (Path(e2a_path).expanduser().resolve() / "voices")
+    portable = {}
+    for character, voice_path in voice_assignments.items():
+        try:
+            relative = Path(voice_path).expanduser().resolve().relative_to(voices_root)
+        except ValueError:
+            portable[character] = voice_path
+        else:
+            portable[character] = str(Path("voices") / relative)
+    return portable
 
 
 def generate_sml_output(
