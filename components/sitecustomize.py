@@ -15,7 +15,7 @@ DLL load failures on PyTorch ROCm/Windows builds).
 
 Contract with device_installer.select_pkg('transformers'):
 the installer only caps transformers under the installed torch floor (<5.1 for
-torch<2.4, <5.15 for torch<2.5, uncapped above), so every device tag resolves to
+torch<2.4, <5.8 for torch<2.5, uncapped above), so every device tag resolves to
 transformers 5.x + huggingface_hub 1.x. That is only valid because the patches
 below cover what the older stacks still expect:
 • check_torch_load_is_safe → torch.load (.bin checkpoints) requires torch>=2.6 in every

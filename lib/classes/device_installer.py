@@ -7,10 +7,16 @@ from lib.conf import *
 
 class DeviceInstaller():
     device_pkgs = ['onnxruntime', 'transformers']
-    # transformers raises its torch floor inside the 5.x series (5.0 -> 2.2, 5.1 -> 2.4,
-    # 5.15 -> 2.5) and below it silently disables PyTorch instead of failing.
+    torchaudio_max = '2.11.0'
     # installed torch below the key -> transformers must stay below the value.
-    # add a row when a release raises the floor again.
+    # 2.4: 5.1+ declares torch>=2.4 and silently disables PyTorch below it.
+    # 2.5: 5.15+ declares torch>=2.5, but the declared floor lies for 2.4: 5.8 breaks
+    #      at import (torch.library.custom_op with string annotations, rejected by
+    #      2.4's infer_schema), 5.9/5.10 fail too, 5.14 imports DTensor from its
+    #      2.5-only public path. Verified on torch 2.4.1: 5.0.0 to 5.7.0 import and generate.
+    # add a row when a release raises the floor again, and test it: the declared
+    # floor alone is not enough.
+    transformers_caps = {'2.4': '5.1', '2.5': '5.8'}
     exclusive_pkgs = {
         'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }

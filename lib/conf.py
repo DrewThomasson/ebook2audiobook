@@ -116,7 +116,7 @@ torch_matrix = {
 }
 
 torchaudio_max = '2.11.0'
-transformers_caps = {'2.4': '5.1', '2.5': '5.15'}
+transformers_caps = {'2.4': '5.1', '2.5': '5.8'}
 cuda_version_range = {"min": (11,8), "max": (13,2)}
 rocm_version_range = {"min": (5,7), "max": (7,2)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
