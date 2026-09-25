@@ -476,30 +476,31 @@ span[data-testid="block-info"] {
 #gr_audiobook_files label[data-testid="block-label"] {
 	display: none !important;
 }
-#gr_audiobook_player audio {
-	width: 100% !important;
-	padding-top: 10px !important;
-	padding-bottom: 10px !important;
-	border-radius: 0px !important;
-	background-color: var(--block-background-fill, #1f2937) !important;
-	color: #ffffff !important;
-}
-#gr_audiobook_player audio::-webkit-media-controls-panel {
-	width: 100% !important;
-	padding-top: 10px !important;
-	padding-bottom: 10px !important;
-	border-radius: 0px !important;
-	background-color: var(--block-background-fill, #1f2937) !important;
-	color: #ffffff !important;
-}
 
-/* Remove Firefox native default outline and white background on audio elements */
+/* ========================================================= */
+/* UNIFIED AUDIO PLAYER STYLING (CHROME & FIREFOX)           */
+/* ========================================================= */
+
+/* Target the root audio element (Fixes Firefox and basic styling) */
 #gr_audiobook_player audio,
 audio {
+	width: 100% !important;
+	padding-top: 10px !important;
+	padding-bottom: 10px !important;
+	border-radius: 0px !important;
 	background-color: var(--block-background-fill, #1f2937) !important;
+	color-scheme: dark !important;
+	color: #ffffff !important;
 	border: none !important;
 	outline: none !important;
 	box-shadow: none !important;
+}
+
+/* Target WebKit/Chrome Shadow DOM to enforce background and contrast */
+#gr_audiobook_player audio::-webkit-media-controls-enclosure,
+#gr_audiobook_player audio::-webkit-media-controls-panel {
+	background-color: var(--block-background-fill, #1f2937) !important;
+	color: #ffffff !important;
 }
 
 /* Fix Gradio container wrapper for the audiobook player */
@@ -511,6 +512,8 @@ audio {
 	border: none !important;
 	box-shadow: none !important;
 }
+
+/* ========================================================= */
 
 #gr_voice_player_hidden {
 	z-index: -100 !important;
