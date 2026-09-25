@@ -476,33 +476,30 @@ span[data-testid="block-info"] {
 #gr_audiobook_files label[data-testid="block-label"] {
 	display: none !important;
 }
-
-/* ========================================================= */
-/* UNIFIED AUDIO PLAYER STYLING (CHROME & FIREFOX)           */
-/* ========================================================= */
-
-/* Target the root audio element (Fixes Firefox and basic styling) */
-#gr_audiobook_player audio,
+/* Firefox: remove native outline and white background on all audio elements */
 audio {
+	background-color: var(--block-background-fill, #1f2937) !important;
+	border: none !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+/* Chrome & Firefox audiobook player */
+#gr_audiobook_player audio {
 	width: 100% !important;
 	padding-top: 10px !important;
 	padding-bottom: 10px !important;
 	border-radius: 0px !important;
 	background-color: var(--block-background-fill, #1f2937) !important;
-	color-scheme: dark !important;
+	color-scheme: dark !important; /* Forces Chrome to render dark panel and white icons */
 	color: #ffffff !important;
-	border: none !important;
-	outline: none !important;
-	box-shadow: none !important;
 }
-
-/* Target WebKit/Chrome Shadow DOM to enforce background and contrast */
-#gr_audiobook_player audio::-webkit-media-controls-enclosure,
+/* Chrome/WebKit only (Firefox drops these rules, keep them as standalone selectors) */
 #gr_audiobook_player audio::-webkit-media-controls-panel {
-	background-color: var(--block-background-fill, #1f2937) !important;
-	color: #ffffff !important;
+	background: var(--block-background-fill, #1f2937) !important;
 }
-
+#gr_audiobook_player audio::-webkit-media-controls-enclosure {
+	background-color: var(--block-background-fill, #1f2937) !important;
+}
 /* Fix Gradio container wrapper for the audiobook player */
 #gr_audiobook_player,
 #gr_audiobook_player .block,
@@ -512,8 +509,6 @@ audio {
 	border: none !important;
 	box-shadow: none !important;
 }
-
-/* ========================================================= */
 
 #gr_voice_player_hidden {
 	z-index: -100 !important;
