@@ -61,8 +61,8 @@ Examples:
     parser.add_argument(
         "--model",
         choices=["small", "big"],
-        default="small",
-        help="BookNLP model size (default: small)",
+        default="big",
+        help="BookNLP model size (default: big)",
     )
     default_e2a_path = os.environ.get('E2A_PATH') or os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', '..')

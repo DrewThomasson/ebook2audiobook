@@ -366,7 +366,7 @@ def create_app(default_e2a_path:str='')->gr.Blocks:
                 with gr.Column(scale=1):
                     model_size = gr.Radio(
                         ["small", "big"],
-                        value="small",
+                        value="big",
                         label="🧠 BookNLP Model",
                         info="'big' is more accurate but slower and requires more RAM/GPU",
                     )

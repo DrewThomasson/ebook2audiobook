@@ -189,7 +189,7 @@ usage: cli.py [-h] [-o OUTPUT_DIR] [--model {small,big}] [--e2a-path E2A_PATH]
 Options:
   input_file              Input book file (.txt, .epub, .mobi, .pdf, etc.)
   -o, --output-dir        Output directory (default: output/)
-  --model {small,big}     BookNLP model size (default: small)
+  --model {small,big}     BookNLP model size (default: big)
   --e2a-path              Path to ebook2audiobook repo (auto-detected by default)
   --voices-dir            Path to custom voice files directory
   --language              Language code for voice selection (default: eng)
