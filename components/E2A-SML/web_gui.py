@@ -107,7 +107,7 @@ def process_book(
     progress(0.15, desc=f"Running BookNLP ({model_size} model)... This may take a while.")
 
     try:
-        result = run_booknlp(txt_path, booknlp_dir, model_size)
+        result = run_booknlp(txt_path, booknlp_dir, model_size, e2a_path=e2a_path)
     except Exception as e:
         raise gr.Error(f"BookNLP processing failed: {e}")
 
@@ -317,9 +317,9 @@ def generate_output(progress=gr.Progress()):
 
 def create_app(default_e2a_path: str = "") -> gr.Blocks:
     if not default_e2a_path:
-        default_e2a_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-        if not os.path.isdir(os.path.join(default_e2a_path, "voices")) and os.path.isdir("/ebook2audiobook/voices"):
-            default_e2a_path = "/ebook2audiobook"
+        default_e2a_path = os.environ.get("E2A_PATH") or os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..")
+        )
     
     """Create the Gradio web interface.
 

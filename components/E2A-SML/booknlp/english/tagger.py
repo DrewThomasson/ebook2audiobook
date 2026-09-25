@@ -1,6 +1,7 @@
 import sys
 import re
 import math
+import os
 from transformers import BertTokenizer, BertModel 
 
 import torch.nn as nn
@@ -55,8 +56,8 @@ class Tagger(nn.Module):
 
 		self.num_labels_flat=len(tagset_flat)
 
-		self.tokenizer = BertTokenizer.from_pretrained(modelName, do_lower_case=False, do_basic_tokenize=False)
-		self.bert = BertModel.from_pretrained(modelName)
+		self.tokenizer = BertTokenizer.from_pretrained(modelName, do_lower_case=False, do_basic_tokenize=False, cache_dir=os.environ.get("BOOKNLP_HF_CACHE"))
+		self.bert = BertModel.from_pretrained(modelName, cache_dir=os.environ.get("BOOKNLP_HF_CACHE"))
 
 		self.tokenizer.add_tokens(["[CAP]"], special_tokens=True)
 		self.bert.resize_token_embeddings(len(self.tokenizer))
@@ -1130,4 +1131,3 @@ class Tagger(nn.Module):
 				index[i]=list(idx)
 
 		return indices
-

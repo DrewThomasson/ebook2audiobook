@@ -15,7 +15,7 @@ Uses [BookNLP](https://github.com/DrewThomasson/booknlp) to analyze books, extra
 
 ## 🐳 Docker (Recommended)
 
-The easiest way to run the tool — all dependencies (BookNLP, spaCy, Calibre, Gradio) are pre-installed.
+The easiest way to run the tool — all dependencies (BookNLP, spaCy, Calibre, Gradio) are pre-installed. This container is independent of the E2A container. It downloads its own voice library and stores voices and models in `./data/` beside this Compose file.
 
 ### Quick Start with Docker Compose
 
@@ -24,7 +24,7 @@ The easiest way to run the tool — all dependencies (BookNLP, spaCy, Calibre, G
 docker compose up --build
 ```
 
-Open http://localhost:7861 in your browser. The ebook2audiobook path is pre-filled as `/ebook2audiobook`.
+Open http://localhost:7861 in your browser. The voice library path is pre-filled as `/app/data`.
 
 ### Docker CLI
 
@@ -32,12 +32,12 @@ Open http://localhost:7861 in your browser. The ebook2audiobook path is pre-fill
 # Build the image
 docker build -t sml-extractor .
 
-# Run the web GUI (mount your ebook2audiobook folder)
-docker run -p 7861:7861 -v $(pwd)/../..:/ebook2audiobook sml-extractor
+# Run the web GUI with persistent voices, models, and output
+docker run -p 7861:7861 -v "$(pwd)/data:/app/data" -v "$(pwd)/output:/app/output" sml-extractor
 
 # Run headless mode
-docker run -v $(pwd)/../..:/ebook2audiobook -v ./output:/app/output \
-  -v ./mybook.txt:/app/mybook.txt \
+docker run -v "$(pwd)/data:/app/data" -v "$(pwd)/output:/app/output" \
+  -v "$(pwd)/mybook.txt:/app/mybook.txt:ro" \
   sml-extractor python cli.py /app/mybook.txt -o /app/output
 ```
 
@@ -57,6 +57,8 @@ uv pip install "$(python -m spacy info en_core_web_sm --url)"
 ```
 
 On Windows, activate the environment with `.venv\Scripts\activate` instead of `source .venv/bin/activate`. Activate it again before running the GUI or CLI below. To use E2A's voices, point E2A-SML at your ebook2audiobook checkout in the GUI or CLI.
+
+For native runs, BookNLP checkpoints and the BERT model cache are stored under `models/booknlp_models/` in the E2A checkout you select. The standalone Docker setup stores them under `./data/models/booknlp_models/` instead, so they persist across container rebuilds without mounting an E2A installation.
 
 ### Web GUI
 
@@ -199,18 +201,17 @@ Options:
 
 ### Docker (recommended)
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
-- [ebook2audiobook](https://github.com/DrewThomasson/ebook2audiobook) cloned locally (for the voice library)
 
 The standalone Docker image automatically downloads `voices.zip` from the
 [E2A-Voices dataset](https://huggingface.co/datasets/ebook2audiobook/E2A-Voices)
-when the mounted `voices/` directory has no WAV files. Existing voices are
+when `./data/voices/` has no WAV files. Existing voices are
 reused. Set `E2A_VOICES_REPO_ID` to use a different Hugging Face dataset.
 
 ### Local installation
 - Python 3.10+
-- [BookNLP-plus](https://github.com/DrewThomasson/booknlp) (installed via requirements.txt)
+- BookNLP is bundled with E2A-SML; its dependencies are installed from `requirements.txt`
 - [Calibre](https://calibre-ebook.com/download) (optional, for non-txt ebook formats)
-- [ebook2audiobook](https://github.com/DrewThomasson/ebook2audiobook) (required, for voice library)
+- An ebook2audiobook checkout containing the voice library
 
 ## 📄 License
 

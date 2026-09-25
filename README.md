@@ -158,7 +158,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ### Generate SML with E2A-SML
 
-[E2A-SML](./components/E2A-SML) detects speakers and adds voice tags to a book. For a native install, enter `components/E2A-SML`, create its own `.venv` with `uv venv --python 3.10`, install `requirements.txt` with `uv pip install -r requirements.txt`, and install the spaCy English model using uv. See the [E2A-SML installation guide](./components/E2A-SML/README.md#local-installation) for activation, Docker, and usage instructions. E2A itself does not need to be installed in this environment.
+[E2A-SML](./components/E2A-SML) detects speakers and adds voice tags to a book. For a native install, enter `components/E2A-SML`, create its own `.venv` with `uv venv --python 3.10`, install `requirements.txt` with `uv pip install -r requirements.txt`, and install the spaCy English model using uv. Native BookNLP models are stored in the selected E2A checkout's `models/` folder; its standalone Docker container keeps its own persistent models and voices. See the [E2A-SML installation guide](./components/E2A-SML/README.md#local-installation) for activation, Docker, and usage instructions. E2A itself does not need to be installed in this environment.
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>

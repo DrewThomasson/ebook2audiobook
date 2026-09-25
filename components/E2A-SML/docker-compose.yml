@@ -3,9 +3,10 @@ services:
     build: .
     ports:
       - "7861:7861"
+    environment:
+      E2A_PATH: /app/data
     volumes:
-      # Mount the parent ebook2audiobook folder for voice library access.
-      # Automatically mounts the directory two levels up.
-      - ../../:/ebook2audiobook
+      # Persist the standalone voice library and BookNLP models.
+      - ./data:/app/data
       # Mount a local output directory to persist generated SML files
       - ./output:/app/output

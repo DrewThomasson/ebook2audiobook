@@ -71,5 +71,5 @@ def ensure_voice_library(
 
 
 def configured_e2a_path() -> Path:
-    """Return the repository mount used by the standalone Docker image."""
-    return Path(os.environ.get("E2A_PATH", "/ebook2audiobook"))
+    """Return the standalone data directory used by the Docker image."""
+    return Path(os.environ.get("E2A_PATH", "/app/data"))

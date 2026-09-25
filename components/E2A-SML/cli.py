@@ -63,9 +63,9 @@ Examples:
         default="small",
         help="BookNLP model size (default: small)",
     )
-    default_e2a_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    if not os.path.isdir(os.path.join(default_e2a_path, "voices")) and os.path.isdir("/ebook2audiobook/voices"):
-        default_e2a_path = "/ebook2audiobook"
+    default_e2a_path = os.environ.get("E2A_PATH") or os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..")
+    )
 
     parser.add_argument(
         "--e2a-path",
@@ -192,7 +192,7 @@ def _run_headless(args):
         progress(f"Text file: {txt_file}", 5)
 
         booknlp_dir = os.path.join(output_dir, "booknlp")
-        result = run_booknlp(txt_file, booknlp_dir, args.model, progress)
+        result = run_booknlp(txt_file, booknlp_dir, args.model, progress, e2a_path=args.e2a_path)
         book_id = result["book_id"]
 
     # Step 2: Load BookNLP data
@@ -280,7 +280,7 @@ def _launch_gui(args):
         )
     except ImportError as e:
         print(f"Error: Could not launch GUI. Make sure gradio is installed: {e}")
-        print("  pip install gradio")
+        print("  uv pip install gradio")
         sys.exit(1)
 
 

@@ -18,12 +18,13 @@ RUN uv pip install --system --no-cache "$(python -m spacy info en_core_web_sm --
 # Copy application code
 COPY . .
 
-# Default mount point for ebook2audiobook
-RUN mkdir -p /ebook2audiobook
+# Standalone storage for voices and BookNLP models
+ENV E2A_PATH=/app/data
+RUN mkdir -p /app/data
 
 # Expose Gradio default port
 EXPOSE 7861
 
-# Download the shared voice library when the mounted repository does not have it,
+# Download the voice library when persistent storage does not have it,
 # then launch the web GUI accessible from outside the container.
 CMD ["python", "-m", "sml_extractor.docker_entrypoint"]

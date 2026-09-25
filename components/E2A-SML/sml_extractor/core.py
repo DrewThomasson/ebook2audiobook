@@ -116,6 +116,7 @@ def run_booknlp(
     output_dir: str,
     model: str = "small",
     progress_callback=None,
+    e2a_path: str | Path | None = None,
 ) -> dict:
     """Run BookNLP pipeline on a text file and return extracted data.
 
@@ -124,6 +125,7 @@ def run_booknlp(
         output_dir: Directory for BookNLP output files.
         model: BookNLP model size ('small' or 'big').
         progress_callback: Optional callable(message, pct) for progress updates.
+        e2a_path: ebook2audiobook repository root for the model cache.
 
     Returns:
         Dict with keys: 'book_id', 'output_dir', 'characters', 'tokens_file',
@@ -132,6 +134,10 @@ def run_booknlp(
     Raises:
         RuntimeError: If BookNLP or its dependencies are not properly installed.
     """
+    repo_dir = Path(e2a_path).expanduser().resolve() if e2a_path else Path(__file__).resolve().parents[3]
+    model_dir = repo_dir / "models" / "booknlp_models"
+    os.environ["BOOKNLP_HF_CACHE"] = str(model_dir / "huggingface")
+
     # Pre-check installation before attempting import
     ok, msg = check_booknlp_installation()
     if not ok:
@@ -145,13 +151,10 @@ def run_booknlp(
     if progress_callback:
         progress_callback("Initializing BookNLP...", 5)
 
-    # Set model path to ebook2audiobook/models/booknlp_models
-    model_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "models", "booknlp_models"))
-    
     model_params = {
         "pipeline": "entity,quote,supersense,event,coref",
         "model": model,
-        "model_path": model_dir,
+        "model_path": str(model_dir),
     }
 
     booknlp = BookNLP("en", model_params)

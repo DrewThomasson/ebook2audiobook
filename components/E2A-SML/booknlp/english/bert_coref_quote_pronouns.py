@@ -53,8 +53,8 @@ class BERTCorefTagger(nn.Module):
 
 		self.pronominalCorefOnly=pronominalCorefOnly
 
-		self.tokenizer = BertTokenizer.from_pretrained(modelName, do_lower_case=False, do_basic_tokenize=False)
-		self.bert = BertModel.from_pretrained(modelName)
+		self.tokenizer = BertTokenizer.from_pretrained(modelName, do_lower_case=False, do_basic_tokenize=False, cache_dir=os.environ.get("BOOKNLP_HF_CACHE"))
+		self.bert = BertModel.from_pretrained(modelName, cache_dir=os.environ.get("BOOKNLP_HF_CACHE"))
 
 		self.tokenizer.add_tokens(["[CAP]"], special_tokens=True)
 		self.bert.resize_token_embeddings(len(self.tokenizer))
@@ -1203,6 +1203,5 @@ class BERTCorefTagger(nn.Module):
 								ents[(start_tid, tid)].proper=ner_parts[0]
 
 		return all_sents, all_ents, all_named_ents, all_antecedent_labels, all_max_words, all_max_ents, all_doc_names, sentence_breaks, all_quotes, all_docids
-
 
 
