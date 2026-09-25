@@ -195,7 +195,9 @@ os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['SYCL_IN_MEM_CACHE_EVICTION_THRESHOLD'] = str(512 * 1024 * 1024)
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
-if 'ROCR_VISIBLE_DEVICES' not in os.environ and 'HIP_VISIBLE_DEVICES' not in os.environ:
+# only default to GPU 0 when the user selected nothing: HIP also reads CUDA_VISIBLE_DEVICES,
+# so an injected HIP/ROCR value would silently override a user CUDA selection
+if not any(_v in os.environ for _v in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES', 'CUDA_VISIBLE_DEVICES')):
     os.environ['ROCR_VISIBLE_DEVICES'] = '0'
     os.environ['HIP_VISIBLE_DEVICES'] = '0'
 if DEVICE_SYSTEM == systems['LINUX'] and 'HSA_OVERRIDE_GFX_VERSION' not in os.environ:
