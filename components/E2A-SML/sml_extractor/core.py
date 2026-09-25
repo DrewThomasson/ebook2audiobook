@@ -29,10 +29,11 @@ def check_booknlp_installation() -> tuple[bool, str]:
     # Check key dependencies that commonly fail
     dep_checks = [
         ("torch", "torch", "uv pip install torch"),
-        ("transformers", "transformers", "uv pip install 'transformers>=4.30.0'"),
+        ("transformers", "transformers", "uv pip install 'transformers>=4.30.0,<5'"),
         ("spacy", "spacy", "uv pip install 'spacy>=3.5.0'"),
         ("sentence_transformers", "sentence-transformers", "uv pip install sentence-transformers"),
         ("numpy", "numpy", "uv pip install 'numpy>=1.24.0'"),
+        ("pkg_resources", "setuptools<81", "uv pip install 'setuptools<81'"),
     ]
 
     for module_name, pkg_name, install_cmd in dep_checks:
