@@ -495,7 +495,7 @@ span[data-testid="block-info"] {
 
 /* Remove Firefox native default outline and white background on audio elements */
 audio {
-	background-color: #1f2937 !important;
+	background-color: #000000 !important;
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
