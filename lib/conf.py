@@ -214,16 +214,22 @@ if DEVICE_SYSTEM == systems['LINUX'] and 'HSA_OVERRIDE_GFX_VERSION' not in os.en
                 continue
             if _m and int(_m.group(1)):
                 _v = int(_m.group(1))
-                _kfd_gfx.append(f"gfx{_v // 100}")
-    for _var in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES'):
+                # KFD encodes major*10000 + minor*100 + stepping, gfx names use hex for minor/stepping (90010 = gfx90a)
+                _kfd_gfx.append(f"gfx{_v // 10000}{(_v // 100) % 100:x}{_v % 100:x}")
+    # ROCr filters the KFD GPU list first, HIP then indexes into what ROCr exposes (layered, not parallel)
+    # HIP falls back to CUDA_VISIBLE_DEVICES when HIP_VISIBLE_DEVICES is unset
+    _hip_var = 'HIP_VISIBLE_DEVICES' if 'HIP_VISIBLE_DEVICES' in os.environ else 'CUDA_VISIBLE_DEVICES'
+    for _var in ('ROCR_VISIBLE_DEVICES', _hip_var):
         if _var in os.environ:
             _ids = os.environ[_var].replace(' ', '').split(',')
             if not all(i.isdigit() and int(i) < len(_kfd_gfx) for i in _ids):
                 _kfd_gfx = []
                 break
             _kfd_gfx = [_kfd_gfx[int(i)] for i in _ids]
-    if _kfd_gfx and _kfd_gfx[0] in hsa_gfx_overrides:
-        os.environ['HSA_OVERRIDE_GFX_VERSION'] = hsa_gfx_overrides[_kfd_gfx[0]]
+    # HSA_OVERRIDE_GFX_VERSION applies to every agent in the process: only set it when all visible GPUs agree
+    _gfx_targets = {hsa_gfx_overrides.get(g) for g in _kfd_gfx}
+    if len(_gfx_targets) == 1 and None not in _gfx_targets:
+        os.environ['HSA_OVERRIDE_GFX_VERSION'] = _gfx_targets.pop()
 
 # ---------------------------------------------------------------------
 # Global settings
