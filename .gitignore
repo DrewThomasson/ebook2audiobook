@@ -7,7 +7,6 @@
 *.wixobj
 __pycache__/
 python_env/
-.venv/
 audiobooks/cli/*
 audiobooks/gui/gradio/*
 audiobooks/gui/host/*
