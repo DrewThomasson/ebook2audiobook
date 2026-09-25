@@ -1274,7 +1274,9 @@ def _patch_recipe_script(
     wavs_str = str(dataset_dir / "wavs")
 
     source = _replace_literal(source, 'path=os.path.join(output_path, "../LJSpeech-1.1/")', f'path=r"{dataset_str}"')
+    source = _replace_literal(source, 'path=os.path.join("data", "LJSpeech-1.1/")', f'path=r"{dataset_str}"')
     source = _replace_literal(source, 'path="/raid/datasets/LJSpeech-1.1_24khz/"', f'path=r"{dataset_str}"')
+    source = _replace_literal(source, 'data_path = "/srv/data/"', f'data_path = r"{dataset_str}"')
     source = _replace_literal(
         source,
         'meta_file_train="/raid/datasets/LJSpeech-1.1_24khz/metadata.csv"',
@@ -1297,9 +1299,15 @@ def _patch_recipe_script(
     source = _replace_keyword_value(source, "BATCH_SIZE", str(batch_size))
     source = _replace_keyword_value(source, "GRAD_ACUMM_STEPS", str(grad_accum))
     source = _replace_keyword_value(source, "max_wav_length", str(int(max_audio_seconds * DEFAULT_SAMPLE_RATE)))
+    source = _replace_keyword_value(source, "max_audio_len", str(int(max_audio_seconds * DEFAULT_SAMPLE_RATE)))
     source = _replace_keyword_value(source, "num_loader_workers", "0")
     source = _replace_keyword_value(source, "num_eval_loader_workers", "0")
+    source = _replace_keyword_value(source, "precompute_num_workers", "0")
+    source = _replace_keyword_value(source, "gpu", "0")
     source = _replace_keyword_value(source, "mixed_precision", "False")
+    # A newly initialized model can produce invalid audio during Coqui's
+    # optional end-of-epoch synthesis. Keep training independent of that demo.
+    source = _replace_keyword_value(source, "test_delay_epochs", str(epochs))
 
     spec = get_model_spec(spec_key)
     # Patch for multilingual/scratch training on single-language models
@@ -1310,6 +1318,11 @@ def _patch_recipe_script(
             source = source.replace(f'phoneme_language={q}en-us{q}', f'phoneme_language={q}{language}{q}')
 
     if spec_key.startswith("xtts_"):
+        # With START_WITH_EVAL=True the Trainer skips training in its first
+        # epoch. A one-epoch request would therefore run evaluation only.
+        source = _replace_keyword_value(source, "START_WITH_EVAL", "False")
+        if epochs == 1:
+            source = _replace_keyword_value(source, "save_step", "20")
         source = _replace_keyword_value(source, "language", repr(language))
         speaker_value = f'SPEAKER_REFERENCE = [r"{reference_wav}"]'
         source = re.sub(r"SPEAKER_REFERENCE\s*=\s*\[[^\]]*\]", speaker_value, source, count=1, flags=re.DOTALL)
@@ -1342,6 +1355,17 @@ def _patch_recipe_script(
             source = source.replace("TrainerArgs()", f"TrainerArgs(restore_path=r\"{restore_path}\")", 1)
 
     source, unused = _apply_source_overrides(source, extra_overrides)
+    fit_pattern = re.compile(r"^(?P<indent>[ \t]*)trainer\.fit\(\)", re.MULTILINE)
+    if not fit_pattern.search(source):
+        raise ValueError(f"Recipe for {spec_key} has no trainer.fit() call to verify training.")
+    source = fit_pattern.sub(
+        lambda match: match.group(0)
+        + "\n"
+        + match.group("indent")
+        + 'print(f"UFT_TRAINING_STEPS={trainer.total_steps_done}", flush=True)',
+        source,
+        count=1,
+    )
     script_path.write_text(source, encoding="utf-8")
     return unused
 
@@ -1500,19 +1524,15 @@ def _finalize_training_artifacts(
                         dest_path.write_bytes(response.read())
                     speaker = dest_path
                 except Exception as dl_err:
-                    _notify(None, f"Warning: Failed to download speakers_xtts.pth: {dl_err}. Creating a dummy speaker file.")
-                    dest_dir = (_MODELS_DIR / "tts") if (_MODELS_DIR / "tts").is_dir() else _MODELS_DIR
-                    dest_path = dest_dir / f"XTTS_{version_str}_original_model_files" / "speakers_xtts.pth"
-                    dest_path.parent.mkdir(parents=True, exist_ok=True)
-                    dest_path.write_bytes(b"")
-                    speaker = dest_path
+                    _notify(None, f"Warning: Failed to download optional speakers_xtts.pth: {dl_err}")
 
         ready_vocab = ready_dir / "vocab.json"
-        ready_speaker = ready_dir / "speakers_xtts.pth"
         shutil.copy2(vocab, ready_vocab)
-        shutil.copy2(speaker, ready_speaker)
         artifacts["vocab"] = str(ready_vocab)
-        artifacts["speaker_file"] = str(ready_speaker)
+        if speaker:
+            ready_speaker = ready_dir / "speakers_xtts.pth"
+            shutil.copy2(speaker, ready_speaker)
+            artifacts["speaker_file"] = str(ready_speaker)
 
     artifacts_path = ready_dir / "artifacts.json"
     artifacts_path.write_text(json.dumps(_json_ready(artifacts), indent=2), encoding="utf-8")
@@ -1771,6 +1791,13 @@ def train_model(
             f"Training failed for {spec.label}. See {log_path}\n\n"
             f"LOGS:\n{_tail_text(full_log, ERROR_LOG_TAIL_CHARS)}"
         )
+    step_matches = re.findall(r"^UFT_TRAINING_STEPS=(\d+)$", full_log, re.MULTILINE)
+    trained_steps = int(step_matches[-1]) if step_matches else 0
+    if trained_steps < 1:
+        raise RuntimeError(
+            f"Training finished for {spec.label} without a confirmed optimizer step. "
+            f"See {log_path}\n\nLOGS:\n{_tail_text(full_log, ERROR_LOG_TAIL_CHARS)}"
+        )
     artifacts = _finalize_training_artifacts(
         spec_key=model_key,
         training_root=training_root,
@@ -1778,7 +1805,12 @@ def train_model(
         reference_wav=str(reference_wav) if reference_wav else "",
     )
     artifacts["log_path"] = str(log_path)
+    artifacts["trained_steps"] = trained_steps
     artifacts["unused_overrides"] = unused_overrides
+    Path(artifacts["artifacts_file"]).write_text(
+        json.dumps(_json_ready({key: value for key, value in artifacts.items() if key != "artifacts_file"}), indent=2),
+        encoding="utf-8",
+    )
     return artifacts
 
 
@@ -1829,7 +1861,7 @@ def _load_xtts_runtime(artifacts: dict[str, Any]) -> Xtts:
         config,
         checkpoint_path=artifacts["checkpoint"],
         vocab_path=artifacts["vocab"],
-        speaker_file_path=artifacts["speaker_file"],
+        speaker_file_path=artifacts.get("speaker_file"),
         use_deepspeed=False,
     )
     if torch.cuda.is_available():
