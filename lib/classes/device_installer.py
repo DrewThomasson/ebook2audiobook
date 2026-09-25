@@ -1331,7 +1331,7 @@ class DeviceInstaller():
                     print(msg)
                     if pkg_name == 'demucs-simple':
                         subprocess.run(
-                            [self.uv_bin, 'pip', 'uninstall', 'demucs'],
+                            self._uv_pip('uninstall', 'demucs'),
                             check=False,
                             stdout=subprocess.DEVNULL,
                             stderr=subprocess.DEVNULL
