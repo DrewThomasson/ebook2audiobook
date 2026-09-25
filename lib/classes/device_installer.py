@@ -7,12 +7,10 @@ from lib.conf import *
 
 class DeviceInstaller():
     device_pkgs = ['onnxruntime', 'transformers']
-    torchaudio_max = '2.11.0'
     # transformers raises its torch floor inside the 5.x series (5.0 -> 2.2, 5.1 -> 2.4,
     # 5.15 -> 2.5) and below it silently disables PyTorch instead of failing.
     # installed torch below the key -> transformers must stay below the value.
     # add a row when a release raises the floor again.
-    transformers_caps = {'2.4': '5.1', '2.5': '5.15'}
     exclusive_pkgs = {
         'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }

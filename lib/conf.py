@@ -115,6 +115,8 @@ torch_matrix = {
     "jetson61":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.5.0", "last": "2.5.0", "codec": ""},
 }
 
+torchaudio_max = '2.11.0'
+transformers_caps = {'2.4': '5.1', '2.5': '5.15'}
 cuda_version_range = {"min": (11,8), "max": (13,2)}
 rocm_version_range = {"min": (5,7), "max": (7,2)}
 mps_version_range = {"min": (0,0), "max": (0,0)}

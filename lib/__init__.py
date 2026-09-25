@@ -9,7 +9,10 @@ from .conf import (
     output_formats, prog_version, python_env_dir, python_exec,
     requirements_file, components_dir, root_dir, tmp_dir, run_dir, gradio_cache_dir, tmp_expire, max_ebook_textarea_length,
     tts_dir, voice_formats, voices_dir, default_output_split, default_output_split_hours,
-    default_abs_url, default_abs_api_token, default_abs_library
+    default_abs_url, default_abs_api_token, default_abs_library,
+    default_py_major, default_py_minor, default_pytorch_url, default_pytorch_amd_url, default_torchcodec_arm_url, default_jetson_url,
+    torch_matrix, torchaudio_max, transformers_caps, cuda_version_range, rocm_version_range, mps_version_range, xpu_version_range, jetson_version_range,
+    voices_url, detect_gpu_script, default_vram_flush_ratio
 )
 
 from .conf_lang import (
@@ -25,7 +28,7 @@ from .conf_models import (
     TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, SML_TAG_PATTERN, IPA_REMAINING_PATTERN, sml_escape_tag, default_fine_tuned, default_tts_engine, 
     default_engine_settings, default_vc_model, default_voice_detection_model, tts_engines_from_coqui, tts_engines_with_inner_speaker, tts_engines_with_custom_model,
     loaded_tts, xtts_builtin_speakers_list,
-    max_custom_model, max_custom_voices, voices_dir
+    max_custom_model, max_custom_voices
 )
 
 __all__ = [
@@ -41,6 +44,10 @@ __all__ = [
     "output_formats", "prog_version", "python_env_dir", "python_exec",
     "requirements_file", "components_dir", "root_dir", "tmp_dir", "run_dir", "gradio_cache_dir", "tmp_expire", "max_ebook_textarea_length", 
     "tts_dir", "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours",
+    "default_abs_url", "default_abs_api_token", "default_abs_library",
+    "default_py_major", "default_py_minor", "default_pytorch_url", "default_pytorch_amd_url", "default_torchcodec_arm_url", "default_jetson_url",
+    "torch_matrix", "torchaudio_max", "transformers_caps", "cuda_version_range", "rocm_version_range", "mps_version_range", "xpu_version_range", "jetson_version_range",
+    "voices_url", "detect_gpu_script", "default_vram_flush_ratio",
 
     # from conf_lang
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code",
@@ -54,6 +61,5 @@ __all__ = [
     "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "SML_TAG_PATTERN", "IPA_REMAINING_PATTERN", "sml_escape_tag", "default_fine_tuned", "default_tts_engine",
     "default_engine_settings", "default_vc_model", "default_voice_detection_model", "tts_engines_from_coqui", "tts_engines_with_inner_speaker", "tts_engines_with_custom_model",
     "loaded_tts", "xtts_builtin_speakers_list", "max_custom_model",
-    "max_custom_voices", "voices_dir",
-    "default_abs_url", "default_abs_api_token", "default_abs_library"
+    "max_custom_voices"
 ]
