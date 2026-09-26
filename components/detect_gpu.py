@@ -1,44 +1,64 @@
 import json
 import sys
 import os
-import subprocess
+from typing import Optional
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
 DEVICE_INFO_JSON = os.path.normpath(os.path.join(ROOT_DIR, '.device_info.json'))
+HSA_OVERRIDE_ENV = "HSA_OVERRIDE_GFX_VERSION"
 
-def handle_rocm_override():
-    """Attempts to apply ROCm override; updates rocmfix if the GPU is unrecognized."""
+def handle_rocm_override()->Optional[str]:
+    """Sets HSA_OVERRIDE_GFX_VERSION in this process before torch loads.
+    Returns the effective override (user-provided or resolved), or None."""
+    if os.environ.get(HSA_OVERRIDE_ENV):
+        return os.environ[HSA_OVERRIDE_ENV]
     try:
+        if SCRIPT_DIR not in sys.path:
+            sys.path.insert(0, SCRIPT_DIR)
         import rocmfix
-        
-        # 1. Attempt initial override using the local database
-        applied = rocmfix.apply_override()
-        
-        # 2. If no override was applied and HSA_OVERRIDE_GFX_VERSION is missing,
-        #    the GPU architecture might be unrecognized. Trigger a DB update.
-        if not applied and "HSA_OVERRIDE_GFX_VERSION" not in os.environ:
+        gpus = rocmfix.detect_gpus()
+        if not gpus:
+            return None
+        # pass 0: offline lookup, bundled fallback DB + last downloaded cache, no network
+        if rocmfix.DB_CACHE_FILE.exists():
             try:
-                # Call update via rocmfix module or fallback to CLI execution
-                if hasattr(rocmfix, "update"):
-                    rocmfix.update()
-                else:
-                    rocmfix_script = os.path.join(SCRIPT_DIR, "rocmfix.py")
-                    subprocess.run(
-                        [sys.executable, rocmfix_script, "update"], 
-                        check=False, 
-                        capture_output=True
-                    )
-                
-                # 3. Retry applying the override with the newly updated database
-                rocmfix.apply_override()
+                rocmfix.GPU_DATABASE.update(rocmfix._validate_db(json.loads(rocmfix.DB_CACHE_FILE.read_text())))
             except Exception:
-                pass  # Avoid crashing if the network is offline
-    except ImportError:
-        pass
+                pass  # corrupt cache: keep the fallback DB
+        override = None
+        for attempt in range(2):
+            overrides:set = set()
+            native_targets:set = set()
+            has_unknown = False
+            for gpu in gpus:
+                info = rocmfix.GPU_DATABASE.get(gpu['pci_id'])
+                if info is None:
+                    has_unknown = True
+                elif info.get('override'):
+                    overrides.add(info['override'])
+                elif info.get('supported'):
+                    native_targets.add(info['gfx_target'])
+            override = None
+            if len(overrides) == 1:
+                override = overrides.pop()
+                # HSA_OVERRIDE_GFX_VERSION is process-wide: it also retargets natively supported cards,
+                # so only apply it when they share its target ('10.3.0' -> 'gfx1030', '12.0.1' -> 'gfx1201')
+                major, minor, step = (int(part) for part in override.split('.'))
+                if native_targets - {f"gfx{major}{minor}{step:x}"}:
+                    override = None
+            if not has_unknown or attempt == 1:
+                break
+            # pass 1: a card is not in the DB, download it now
+            rocmfix.sync_gpu_database(force=True)
+        if override:
+            os.environ[HSA_OVERRIDE_ENV] = override
+        return override
+    except Exception:
+        return None  # rocmfix missing, offline, or unwritable ~/.rocmfix: never block GPU detection
 
 def main() -> None:
-    result = {'count': 0, 'backend': None, 'error': None}
+    result = {'count': 0, 'backend': None, 'hsa_override': None, 'error': None}
     try:
         if not os.path.exists(DEVICE_INFO_JSON):
             result['error'] = f'device_info_json not found: {DEVICE_INFO_JSON}'
@@ -53,7 +73,7 @@ def main() -> None:
         
         # Run ROCm check & fallback before PyTorch loads
         if backend == 'rocm':
-            handle_rocm_override()
+            result['hsa_override'] = handle_rocm_override()
             
         import torch
         if backend in ('cuda', 'rocm') and torch.cuda.is_available():
