@@ -912,7 +912,7 @@ if "%DOCKER_MODE%"=="podman" (
 		endlocal 
 		exit /b 1
 	)
-	set "podman_prefix=set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
+	set "podman_prefix=set "DEVICE_TAG=%DEVICE_TAG%" &&"
 	if defined hsa_override set "podman_prefix=set "HSA_OVERRIDE_GFX_VERSION=%hsa_override%" ^&^& set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
 	echo Docker image ready. To run your docker:
 	echo Podman Compose:
