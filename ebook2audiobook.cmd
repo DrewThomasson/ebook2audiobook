@@ -830,7 +830,7 @@ if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--gpus all"
 ) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
     set "cmd_options=--runtime nvidia --gpus all"
-) else if /i "%DEVICE_TAG:~0,8%"=="rocm" (
+) else if /i "%DEVICE_TAG:~0,4%"=="rocm" (
     set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
     set "cmd_options=--device=/dev/dri"
@@ -839,6 +839,9 @@ if /i "%DEVICE_TAG:~0,2%"=="cu" (
 ) else if /i "%DEVICE_TAG%"=="cpu" (
     set "cmd_options="
 )
+set "hsa_override="
+if /i "%DEVICE_TAG:~0,4%"=="rocm" for /f "delims=" %%v in ('call "%PY_CMD%" -c "import sys; sys.path.insert(0, sys.argv[1]); import detect_gpu; print(detect_gpu.handle_rocm_override() or '')" "%SAFE_SCRIPT_DIR%\components" 2^>nul') do set "hsa_override=%%v"
+if defined hsa_override set "cmd_options=%cmd_options% -e HSA_OVERRIDE_GFX_VERSION=%hsa_override%"
 if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=cpu"
 ) else if /i "%DEVICE_TAG%"=="mps" (
@@ -873,12 +876,14 @@ if "%DOCKER_MODE%"=="podman" (
 		endlocal 
 		exit /b 1
 	)
+	set "podman_prefix=set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
+	if defined hsa_override set "podman_prefix=set "HSA_OVERRIDE_GFX_VERSION=%hsa_override%" ^&^& set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
 	echo Docker image ready. To run your docker:
 	echo Podman Compose:
 	echo 	GUI mode:
-	echo 		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% up
+	echo 		!podman_prefix! podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% up
 	echo 	Headless mode:
-	echo   		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		!podman_prefix! podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
     if "%DOCKER_DESKTOP%"=="1" (
 		echo Using docker compose
@@ -894,8 +899,10 @@ if "%DOCKER_MODE%"=="podman" (
 	)
 	if defined wsl_cmd (
 		set "env_prefix=DEVICE_TAG=%DEVICE_TAG%"
+		if defined hsa_override set "env_prefix=HSA_OVERRIDE_GFX_VERSION=%hsa_override% DEVICE_TAG=%DEVICE_TAG%"
 	) else (
 		set "env_prefix=set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
+		if defined hsa_override set "env_prefix=set "HSA_OVERRIDE_GFX_VERSION=%hsa_override%" ^&^& set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
 	)
 	echo Docker image ready. To run your docker:
 	echo Docker Compose:
@@ -931,9 +938,9 @@ if "%DOCKER_MODE%"=="podman" (
 	%wsl_cmd% docker image prune --force
 	echo Docker image ready. To run your docker:
 	echo GUI mode:
-	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options! --rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 	echo Headless mode:
-	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice "/app/custom_voice/voice.wav" etc..]
+	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options! --rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice "/app/custom_voice/voice.wav" etc..]
 )
 if "%DOCKER_DESKTOP%"=="1" (
 	set "wsl_cmd=wsl --user root -d %DOCKER_WSL_CONTAINER% --"

@@ -17,6 +17,7 @@
 #   DEVICE_TAG=cu130    docker compose   --profile cuda   up
 #   DEVICE_TAG=jetson51 docker compose   --profile jetson up
 #   DEVICE_TAG=rocm     docker compose   --profile rocm   up
+#   (add HSA_OVERRIDE_GFX_VERSION=x.y.z in front when the launcher printed one)
 #   DEVICE_TAG=xpu      docker compose   --profile xpu    up
 #
 # Requires Compose V2 (the `docker compose` plugin), NOT the legacy
@@ -112,6 +113,12 @@ services:
     extends:
       service: ebook2audiobook-base
     profiles: [rocm]
+    environment:
+      # Set by the launcher's run hint when the host needs a gfx override
+      # (e.g. HSA_OVERRIDE_GFX_VERSION=10.3.0 for gfx1031/gfx1032). Empty default
+      # rather than a bare null: some podman-compose versions render null as
+      # NAME=None, and ROCr treats an empty value exactly like an unset one.
+      HSA_OVERRIDE_GFX_VERSION: ${HSA_OVERRIDE_GFX_VERSION:-}
     devices:
       - /dev/kfd
       - /dev/dri
