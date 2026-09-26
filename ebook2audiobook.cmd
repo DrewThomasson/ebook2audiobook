@@ -127,7 +127,7 @@ call :check_python
 
 if not "%~1"=="" (
 	setlocal EnableDelayedExpansion
-	for /f "delims=" %%V in ('%PY_CMD% -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
+	for /f "delims=" %%V in ('call "%PY_CMD%" -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
 	for %%A in (%*) do (
 		set "ARG=%%~A"
 		if "!ARG:~0,2!"=="--" (
@@ -328,8 +328,12 @@ exit /b
 set "PYTHON_BIN=%LocalAppData%\Python\bin"
 set "PYTHON_MANAGER_DEFAULT=%MAX_PYTHON_VERSION%"
 set "PATH=%PYTHON_BIN%;%LocalAppData%\Microsoft\WindowsApps;%PATH%"
-pymanager exec -V:%MAX_PYTHON_VERSION% --version >nul 2>&1
+call :find_pymanager
+if not defined PYMANAGER_EXE goto :install_pymanager
+call :resolve_python
 if not errorlevel 1 exit /b 0
+goto :install_python_runtime
+:install_pymanager
 echo Python is not installed. Detecting system architecture…
 set "ARCH=amd64"
 if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
@@ -341,17 +345,49 @@ if errorlevel 1 (
 	echo Failed to install Python Install Manager.
 	goto :failed
 )
-set "PATH=%PYTHON_BIN%;%LocalAppData%\Microsoft\WindowsApps;%PATH%"
+call :find_pymanager
+if not defined PYMANAGER_EXE (
+	echo Python Install Manager is installed but pymanager.exe cannot be located.
+	goto :failed
+)
+:install_python_runtime
 echo Installing Python %MAX_PYTHON_VERSION%
-pymanager install %MAX_PYTHON_VERSION%
+"%PYMANAGER_EXE%" install %MAX_PYTHON_VERSION%
 if errorlevel 1 (
 	echo Failed to install Python %MAX_PYTHON_VERSION%.
 	goto :failed
 )
+call :resolve_python
+if errorlevel 1 (
+	echo Python %MAX_PYTHON_VERSION% is installed but its interpreter path cannot be resolved.
+	goto :failed
+)
 findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
 if errorlevel 1 echo python>>"%INSTALLED_LOG%"
-echo Python %MAX_PYTHON_VERSION% (%ARCH%) installed successfully! relaunching %APP_NAME%…
-goto :restart_script
+echo Python %MAX_PYTHON_VERSION% (%ARCH%) installed successfully!
+exit /b 0
+
+:find_pymanager
+:: App execution alias inside the package folder, independent of alias conflicts and PATH order
+set "PYMANAGER_EXE="
+for %%D in (3847v3x7pw1km qbz5n2kfra8p0) do (
+	if not defined PYMANAGER_EXE if exist "%LocalAppData%\Microsoft\WindowsApps\PythonSoftwareFoundation.PythonManager_%%D\pymanager.exe" set "PYMANAGER_EXE=%LocalAppData%\Microsoft\WindowsApps\PythonSoftwareFoundation.PythonManager_%%D\pymanager.exe"
+)
+if not defined PYMANAGER_EXE for /f "delims=" %%P in ('where.exe pymanager 2^>nul') do if not defined PYMANAGER_EXE set "PYMANAGER_EXE=%%P"
+exit /b 0
+
+:resolve_python
+:: Absolute interpreter path, so nothing depends on the python.exe alias
+set "_PY_EXE="
+for /f "delims=" %%P in ('call "%PYMANAGER_EXE%" list --one --format=exe %MAX_PYTHON_VERSION% 2^>nul') do if not defined _PY_EXE set "_PY_EXE=%%P"
+if not defined _PY_EXE exit /b 1
+if not exist "%_PY_EXE%" (
+	set "_PY_EXE="
+	exit /b 1
+)
+set "PY_CMD=%_PY_EXE%"
+set "_PY_EXE="
+exit /b 0
 
 :check_scoop
 where.exe /Q scoop >nul 2>&1
@@ -830,7 +866,7 @@ if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--gpus all"
 ) else if /i "%DEVICE_TAG:~0,6%"=="jetson" (
     set "cmd_options=--runtime nvidia --gpus all"
-) else if /i "%DEVICE_TAG:~0,8%"=="rocm" (
+) else if /i "%DEVICE_TAG:~0,4%"=="rocm" (
     set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
     set "cmd_options=--device=/dev/dri"
@@ -839,6 +875,9 @@ if /i "%DEVICE_TAG:~0,2%"=="cu" (
 ) else if /i "%DEVICE_TAG%"=="cpu" (
     set "cmd_options="
 )
+set "hsa_override="
+if /i "%DEVICE_TAG:~0,4%"=="rocm" for /f "delims=" %%v in ('call "%PY_CMD%" -c "import sys; sys.path.insert(0, sys.argv[1]); import detect_gpu; print(detect_gpu.handle_rocm_override() or '')" "%SAFE_SCRIPT_DIR%\components" 2^>nul') do set "hsa_override=%%v"
+if defined hsa_override set "cmd_options=%cmd_options% -e HSA_OVERRIDE_GFX_VERSION=%hsa_override%"
 if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=cpu"
 ) else if /i "%DEVICE_TAG%"=="mps" (
@@ -873,12 +912,14 @@ if "%DOCKER_MODE%"=="podman" (
 		endlocal 
 		exit /b 1
 	)
+	set "podman_prefix=set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
+	if defined hsa_override set "podman_prefix=set "HSA_OVERRIDE_GFX_VERSION=%hsa_override%" ^&^& set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
 	echo Docker image ready. To run your docker:
 	echo Podman Compose:
 	echo 	GUI mode:
-	echo 		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% up
+	echo 		!podman_prefix! podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% up
 	echo 	Headless mode:
-	echo   		podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
+	echo   		!podman_prefix! podman-compose -f podman-compose.yml --profile %COMPOSE_PROFILES% run --rm -v "/mnt/c/Users/myname/whatever/custom_voice:/app/custom_voice" %SERVICE% --headless --ebook "/app/ebooks/tests/test_eng.txt" --tts_engine yourtts --language eng --voice "/app/Desktop/myvoice.wav" etc.
 ) else if "%DOCKER_MODE%"=="compose" (
     if "%DOCKER_DESKTOP%"=="1" (
 		echo Using docker compose
@@ -894,8 +935,10 @@ if "%DOCKER_MODE%"=="podman" (
 	)
 	if defined wsl_cmd (
 		set "env_prefix=DEVICE_TAG=%DEVICE_TAG%"
+		if defined hsa_override set "env_prefix=HSA_OVERRIDE_GFX_VERSION=%hsa_override% DEVICE_TAG=%DEVICE_TAG%"
 	) else (
 		set "env_prefix=set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
+		if defined hsa_override set "env_prefix=set "HSA_OVERRIDE_GFX_VERSION=%hsa_override%" ^&^& set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
 	)
 	echo Docker image ready. To run your docker:
 	echo Docker Compose:
@@ -931,9 +974,9 @@ if "%DOCKER_MODE%"=="podman" (
 	%wsl_cmd% docker image prune --force
 	echo Docker image ready. To run your docker:
 	echo GUI mode:
-	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options! --rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 	echo Headless mode:
-	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options!--rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice "/app/custom_voice/voice.wav" etc..]
+	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options! --rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice "/app/custom_voice/voice.wav" etc..]
 )
 if "%DOCKER_DESKTOP%"=="1" (
 	set "wsl_cmd=wsl --user root -d %DOCKER_WSL_CONTAINER% --"
