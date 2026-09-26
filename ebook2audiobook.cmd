@@ -937,7 +937,7 @@ if "%DOCKER_MODE%"=="podman" (
 		set "env_prefix=DEVICE_TAG=%DEVICE_TAG%"
 		if defined hsa_override set "env_prefix=HSA_OVERRIDE_GFX_VERSION=%hsa_override% DEVICE_TAG=%DEVICE_TAG%"
 	) else (
-		set "env_prefix=set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
+		set "env_prefix=set "DEVICE_TAG=%DEVICE_TAG%" &&"
 		if defined hsa_override set "env_prefix=set "HSA_OVERRIDE_GFX_VERSION=%hsa_override%" ^&^& set "DEVICE_TAG=%DEVICE_TAG%" ^&^&"
 	)
 	echo Docker image ready. To run your docker:
