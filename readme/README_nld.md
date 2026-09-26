@@ -156,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — vaste pauze (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — wissel van stem ten opzichte van de standaard- of in de GUI/CLI geselecteerde stem
 
-**Bekijk onze andere repo die gewijd is aan het automatisch toevoegen van SML in je e-book -> [E2A-SML](./components/E2A-SML)**
+**Bekijk onze andere repo die gewijd is aan het automatisch toevoegen van SML in je e-book -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > [!IMPORTANT]
 **Voordat je een installatie- of bugprobleem plaatst, zoek zorgvuldig in het tabblad met open en gesloten issues<br>
@@ -441,7 +441,7 @@ toegevoegd aan de lijst, neem dan contact met ons op en we zullen ze na beoordel
 ## Fijnafgestelde (fine-tuned) TTS-modellen
 #### Stel je eigen XTTSv2-model fijn af
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
 #### Ruis verwijderen uit trainingsdata

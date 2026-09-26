@@ -156,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — pausa fissa (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — cambiare voce rispetto alla voce predefinita o selezionata da GUI/CLI
 
-**Dai un'occhiata al nostro altro repo dedicato all'aggiunta automatica di SML nel tuo e-book -> [E2A-SML](./components/E2A-SML)**
+**Dai un'occhiata al nostro altro repo dedicato all'aggiunta automatica di SML nel tuo e-book -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > [!IMPORTANT]
 **Prima di pubblicare un problema di installazione o un bug, cerca attentamente nella scheda dei problemi aperti e chiusi<br>
@@ -441,7 +441,7 @@ aggiunto all'elenco, ti preghiamo di contattarci e li aggiungeremo dopo averlo e
 ## Modelli TTS ottimizzati (fine-tuned)
 #### Ottimizza il tuo modello XTTSv2
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
 #### Rimuovere il rumore dai dati di addestramento

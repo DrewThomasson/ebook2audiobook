@@ -156,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — jeda tetap (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — alihkan suara dari suara default atau suara yang dipilih dari GUI/CLI
 
-**Lihat repo kami yang lain yang didedikasikan untuk menambahkan SML secara otomatis di eBook Anda -> [E2A-SML](./components/E2A-SML)**
+**Lihat repo kami yang lain yang didedikasikan untuk menambahkan SML secara otomatis di eBook Anda -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > [!IMPORTANT]
 **Sebelum memposting masalah pemasangan atau bug, cari dengan cermat di TAB masalah yang terbuka dan tertutup<br>
@@ -441,7 +441,7 @@ ditambahkan ke daftar, silakan hubungi kami dan kami akan menambahkannya setelah
 ## Model TTS yang Disetel Halus (fine-tuned)
 #### Setel Halus model XTTSv2 Anda sendiri
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
 #### Menghilangkan derau dari data pelatihan
