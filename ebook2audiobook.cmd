@@ -123,27 +123,6 @@ for /f "tokens=1* delims==" %%A in ('set arguments. 2^>nul') do set "%%A="
 
 ::::::::::::::::::::::::::::::: CORE FUNCTIONS
 
-call :check_python
-
-if not "%~1"=="" (
-	setlocal EnableDelayedExpansion
-	for /f "delims=" %%V in ('call "%PY_CMD%" -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
-	for %%A in (%*) do (
-		set "ARG=%%~A"
-		if "!ARG:~0,2!"=="--" (
-			set "FOUND=0"
-			for %%V in (!VALID_ARGS!) do (
-				if /i "!ARG!"=="%%V" set "FOUND=1"
-			)
-			if !FOUND! equ 0 (
-				echo ERROR: Unknown option "!ARG!"
-				exit /b 1
-			)
-		)
-	)
-	endlocal
-)
-
 :parse_args
 rem No setlocal here: arguments.* are set in the current scope so they reach :main
 rem without an endlocal tunnel. Indirect names are set via call set "…%%key%%…".
@@ -325,68 +304,53 @@ if /i "%~1"=="yo" set "ISO3_LANG=yor"
 exit /b
 
 :check_python
-set "PYTHON_BIN=%LocalAppData%\Python\bin"
-set "PYTHON_MANAGER_DEFAULT=%MAX_PYTHON_VERSION%"
-set "PATH=%PYTHON_BIN%;%LocalAppData%\Microsoft\WindowsApps;%PATH%"
-call :find_pymanager
-if not defined PYMANAGER_EXE goto :install_pymanager
-call :resolve_python
-if not errorlevel 1 exit /b 0
-goto :install_python_runtime
-:install_pymanager
-echo Python is not installed. Detecting system architecture…
-set "ARCH=amd64"
-if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
-if /i "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "ARCH=arm64"
-echo Detected Architecture: %ARCH%
-echo Installing official Python Install Manager…
-"%PS_EXE%" %PS_ARGS% -Command "Add-AppxPackage -AppInstallerFile 'https://www.python.org/ftp/python/pymanager/pymanager.appinstaller'"
+:: full_docker: the image python is used as is, nothing to install
+if "%SCRIPT_MODE%"=="%FULL_DOCKER%" exit /b 0
+set "CURRENT_ENV="
+if defined VIRTUAL_ENV ( set "CURRENT_ENV=%VIRTUAL_ENV%" )
+if defined CONDA_PREFIX ( set "CURRENT_ENV=%CONDA_PREFIX%" )
+if defined CURRENT_ENV (
+	if /i not "%CURRENT_ENV%"=="%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
+		echo Current python virtual environment detected: "%CURRENT_ENV%".
+		echo This script runs with its own virtual env and must be out of any other virtual environment.
+		goto :failed
+	)
+)
+where.exe /Q uv
 if errorlevel 1 (
-	echo Failed to install Python Install Manager.
-	goto :failed
+	echo Uv is not installed.
+	echo Installing Uv...
+	"%PS_EXE%" %PS_ARGS% -Command "iwr -useb %UV_INSTALLER_PS1% | iex"
+	where.exe /Q uv
+	if errorlevel 1 (
+		echo %ESC%[31m=============== uv failed.%ESC%[0m
+		goto :failed
+	)
+	echo %ESC%[32m=============== uv OK ===============%ESC%[0m
+	findstr /i /x "uv" "%INSTALLED_LOG%" >nul 2>&1
+	if errorlevel 1 (
+		echo uv>>"%INSTALLED_LOG%"
+	)
+	goto :restart_script
 )
-call :find_pymanager
-if not defined PYMANAGER_EXE (
-	echo Python Install Manager is installed but pymanager.exe cannot be located.
-	goto :failed
-)
-:install_python_runtime
-echo Installing Python %MAX_PYTHON_VERSION%
-"%PYMANAGER_EXE%" install %MAX_PYTHON_VERSION%
+:: native + build_docker: python comes from uv (installed in uv's own dir), the OS python is never used
+for /f "tokens=1,2 delims=." %%a in ("%PYTHON_VERSION%") do set /a "PY_CUR=%%a*100+%%b"
+for /f "tokens=1,2 delims=." %%a in ("%MIN_PYTHON_VERSION%") do set /a "PY_MIN=%%a*100+%%b"
+for /f "tokens=1,2 delims=." %%a in ("%MAX_PYTHON_VERSION%") do set /a "PY_MAX=%%a*100+%%b"
+if "%SCRIPT_MODE%"=="%NATIVE%" if %PY_CUR% lss %PY_MIN% set "PYTHON_VERSION=%MIN_PYTHON_VERSION%"
+if "%SCRIPT_MODE%"=="%NATIVE%" if %PY_CUR% gtr %PY_MAX% set "PYTHON_VERSION=%MAX_PYTHON_VERSION%"
+uv python find --system --python-preference only-managed %PYTHON_VERSION% >nul 2>&1
 if errorlevel 1 (
-	echo Failed to install Python %MAX_PYTHON_VERSION%.
+	echo Installing python %PYTHON_VERSION% via uv...
+	uv python install %PYTHON_VERSION%
+	if errorlevel 1 goto :failed
+)
+set "PY_CMD="
+for /f "delims=" %%P in ('uv python find --system --python-preference only-managed %PYTHON_VERSION% 2^>nul') do if not defined PY_CMD set "PY_CMD=%%P"
+if not defined PY_CMD (
+	echo %ESC%[31m=============== python %PYTHON_VERSION% from uv cannot be resolved.%ESC%[0m
 	goto :failed
 )
-call :resolve_python
-if errorlevel 1 (
-	echo Python %MAX_PYTHON_VERSION% is installed but its interpreter path cannot be resolved.
-	goto :failed
-)
-findstr /i /x "python" "%INSTALLED_LOG%" >nul 2>&1
-if errorlevel 1 echo python>>"%INSTALLED_LOG%"
-echo Python %MAX_PYTHON_VERSION% (%ARCH%) installed successfully!
-exit /b 0
-
-:find_pymanager
-:: App execution alias inside the package folder, independent of alias conflicts and PATH order
-set "PYMANAGER_EXE="
-for %%D in (3847v3x7pw1km qbz5n2kfra8p0) do (
-	if not defined PYMANAGER_EXE if exist "%LocalAppData%\Microsoft\WindowsApps\PythonSoftwareFoundation.PythonManager_%%D\pymanager.exe" set "PYMANAGER_EXE=%LocalAppData%\Microsoft\WindowsApps\PythonSoftwareFoundation.PythonManager_%%D\pymanager.exe"
-)
-if not defined PYMANAGER_EXE for /f "delims=" %%P in ('where.exe pymanager 2^>nul') do if not defined PYMANAGER_EXE set "PYMANAGER_EXE=%%P"
-exit /b 0
-
-:resolve_python
-:: Absolute interpreter path, so nothing depends on the python.exe alias
-set "_PY_EXE="
-for /f "delims=" %%P in ('call "%PYMANAGER_EXE%" list --one --format=exe %MAX_PYTHON_VERSION% 2^>nul') do if not defined _PY_EXE set "_PY_EXE=%%P"
-if not defined _PY_EXE exit /b 1
-if not exist "%_PY_EXE%" (
-	set "_PY_EXE="
-	exit /b 1
-)
-set "PY_CMD=%_PY_EXE%"
-set "_PY_EXE="
 exit /b 0
 
 :check_scoop
@@ -530,6 +494,12 @@ if not "%missing_prog_array%"=="" (
 	"%PS_EXE%" %PS_ARGS% -Command "$cp=[System.Environment]::GetEnvironmentVariable('Path','User'); $np=$cp; @('%SCOOP_SHIMS%','%SCOOP_APPS%','%UV_INSTALL_DIR%','%NODE_PATH%') | Where-Object {$_ -and $cp -notlike ('*'+$_+'*')} | ForEach-Object {$np+=(';'+$_)}; [System.Environment]::SetEnvironmentVariable('Path',$np,'User')"
 	set "missing_prog_array="
 )
+:: scoop rustup sets CARGO_HOME/RUSTUP_HOME/PATH at user scope only, export them here so the device/python packages built next in this process reach cargo
+set "_RUSTUP_DIR=%SAFE_USERPROFILE%\scoop\apps\rustup\current"
+if exist "%_RUSTUP_DIR%\.cargo\bin\rustup.exe" if not defined CARGO_HOME set "CARGO_HOME=%_RUSTUP_DIR%\.cargo"
+if exist "%_RUSTUP_DIR%\.cargo\bin\rustup.exe" if not defined RUSTUP_HOME set "RUSTUP_HOME=%_RUSTUP_DIR%\.rustup"
+if exist "%_RUSTUP_DIR%\.cargo\bin\rustup.exe" where.exe /Q cargo >nul 2>&1 || set "PATH=%_RUSTUP_DIR%\.cargo\bin;%PATH%"
+set "_RUSTUP_DIR="
 exit /b 0
 
 :check_ffmpeg_shared
@@ -624,49 +594,21 @@ set "RC=%errorlevel%"
 endlocal & exit /b %RC%
 
 :check_uv
-where.exe /Q uv
-if errorlevel 1 (
-	echo Uv is not installed.
-	echo Installing Uv...
-	"%PS_EXE%" %PS_ARGS% -Command "iwr -useb %UV_INSTALLER_PS1% | iex"
-	where.exe /Q uv
-	if errorlevel 1 (
-		echo %ESC%[31m=============== uv failed.%ESC%[0m
-		goto :failed
-	)
-	echo %ESC%[32m=============== uv OK ===============%ESC%[0m
-	findstr /i /x "uv" "%INSTALLED_LOG%" >nul 2>&1
-	if errorlevel 1 (
-		echo uv>>"%INSTALLED_LOG%"
-	)
-	goto :restart_script
-)
-set "CURRENT_ENV="
-if defined VIRTUAL_ENV ( set "CURRENT_ENV=%VIRTUAL_ENV%" )
-if defined CONDA_PREFIX ( set "CURRENT_ENV=%CONDA_PREFIX%" )
-if defined CURRENT_ENV (
-	if /i not "%CURRENT_ENV%"=="%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" (
-		echo Current python virtual environment detected: "%CURRENT_ENV%".
-		echo This script runs with its own virtual env and must be out of any other virtual environment.
-		goto :failed
-	)
-)
-for /f "tokens=1,2 delims=." %%a in ("%PYTHON_VERSION%") do set /a "PY_CUR=%%a*100+%%b"
-for /f "tokens=1,2 delims=." %%a in ("%MIN_PYTHON_VERSION%") do set /a "PY_MIN=%%a*100+%%b"
-for /f "tokens=1,2 delims=." %%a in ("%MAX_PYTHON_VERSION%") do set /a "PY_MAX=%%a*100+%%b"
-if "%SCRIPT_MODE%"=="%NATIVE%" if %PY_CUR% lss %PY_MIN% set "PYTHON_VERSION=%MIN_PYTHON_VERSION%"
-if "%SCRIPT_MODE%"=="%NATIVE%" if %PY_CUR% gtr %PY_MAX% set "PYTHON_VERSION=%MAX_PYTHON_VERSION%"
 if "%SCRIPT_MODE%"=="%NATIVE%" (
-	set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
-	set "PATH=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts;%PATH%"
-	set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
+	rem python + uv ready, OS programs next, then venv + device/python packages
+	call :check_scoop
+	if errorlevel 1 goto :failed
+	call :check_programs
+	if errorlevel 1 goto :failed
+)
+if "%SCRIPT_MODE%"=="%NATIVE%" (
 	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" (
 		if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\pyvenv.cfg" (
 			echo %PYTHON_ENV% is not a virtualenv - removing...
 			rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 			if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" goto :failed
 		) else (
-			uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION% --allow-existing >nul 2>&1
+			uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python "%PY_CMD%" --allow-existing >nul 2>&1
 			if errorlevel 1 (
 				echo %PYTHON_ENV% is inconsistent - removing and recreating...
 				rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
@@ -676,14 +618,12 @@ if "%SCRIPT_MODE%"=="%NATIVE%" (
 	)
 	if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" (
 		echo Creating ./%PYTHON_ENV% with python %PYTHON_VERSION% via uv...
-		uv python find %PYTHON_VERSION% >nul 2>&1
-		if errorlevel 1 (
-			uv python install %PYTHON_VERSION%
-			if errorlevel 1 goto :failed
-		)
-		uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python %PYTHON_VERSION%
+		uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python "%PY_CMD%"
 		if errorlevel 1 goto :failed
 	)
+	set "VIRTUAL_ENV=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+	set "PATH=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts;%PATH%"
+	set "PY_CMD=%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\Scripts\python.exe"
 	if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" (
 		set "DEVICE_INFO_STR="
 		call :check_device_info "%SCRIPT_MODE%"
@@ -987,6 +927,26 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
+call :check_python
+if errorlevel 1 exit /b 1
+if defined ARGS (
+	setlocal EnableDelayedExpansion
+	for /f "delims=" %%V in ('call "%PY_CMD%" -c "from lib.conf import cli_options; print(' '.join(cli_options))"') do set "VALID_ARGS=%%V"
+	for %%A in (%*) do (
+		set "ARG=%%~A"
+		if "!ARG:~0,2!"=="--" (
+			set "FOUND=0"
+			for %%V in (!VALID_ARGS!) do (
+				if /i "!ARG!"=="%%V" set "FOUND=1"
+			)
+			if !FOUND! equ 0 (
+				echo ERROR: Unknown option "!ARG!"
+				exit /b 1
+			)
+		)
+	)
+	endlocal
+)
 if defined arguments.help (
 	if /i "%arguments.help%"=="true" (
 		call :check_docker
@@ -1002,7 +962,10 @@ if defined arguments.help (
 		goto :eof
 	)
 ) else (
-	call :check_uv
+	if not "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
+		call :check_uv
+		if errorlevel 1 exit /b 1
+	)
 	if "%SCRIPT_MODE%"=="%BUILD_DOCKER%" (
 		if "%DOCKER_DEVICE_STR%"=="" (
 			setlocal enabledelayedexpansion
@@ -1020,7 +983,6 @@ if defined arguments.help (
 			if errorlevel 1 goto :failed
 			call :check_device_info %SCRIPT_MODE%
 			if errorlevel 1 goto :failed
-			call :install_device_packages
 			if "!DEVICE_TAG!"=="" (
 				call :json_get tag
 				if errorlevel 1 goto :failed
@@ -1048,14 +1010,10 @@ if defined arguments.help (
 			echo The Docker image is only available with a Linux container
 		)
 	) else if "%SCRIPT_MODE%"=="%NATIVE%" (
-		call :check_scoop
-		if errorlevel 1 goto :failed
-		call :check_programs
-		if errorlevel 1 goto :failed
 		call :check_sitecustomized
 		if errorlevel 1 goto :failed
 		call :build_gui
-		call uv run --no-project -- "%PY_CMD%" -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+		call uv run --no-project -- "%%PY_CMD%%" -u "%SAFE_SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
 	) else if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		call :check_sitecustomized
 		if errorlevel 1 goto :failed
