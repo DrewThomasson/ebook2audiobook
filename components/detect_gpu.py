@@ -74,6 +74,8 @@ def main() -> None:
         # Run ROCm check & fallback before PyTorch loads
         if backend == 'rocm':
             result['hsa_override'] = handle_rocm_override()
+            if os.path.exists('/dev/kfd') and not os.access('/dev/kfd', os.R_OK | os.W_OK):
+                result['error'] = 'no read/write access to /dev/kfd: user not in its group (render or video), relaunch ebook2audiobook.command or log out and back in'
             
         import torch
         if backend in ('cuda', 'rocm') and torch.cuda.is_available():

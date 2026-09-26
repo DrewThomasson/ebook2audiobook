@@ -152,7 +152,7 @@ if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exist
 			exit 0
 		else
 			sudo usermod -aG "$APP_GROUP" "$USER"
-			exec sg "$APP_GROUP" -c "\"$0\" $*"
+			exec sg "$APP_GROUP" -c "exec $(printf '%q ' "$BASH" "$SCRIPT_DIR/$(basename "$script_path")" "${ARGS[@]}")"
 		fi
 	fi
 fi
@@ -690,6 +690,37 @@ EOF
 			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
 			echo -e "Run 'deactivate' and retry."
 			exit 1
+		fi
+		######## ROCm: torch needs rw on /dev/kfd + /dev/dri/renderD* (group render or video, distro dependent)
+		if [[ "${OSTYPE-}" == linux* && -c /dev/kfd && -f "$SCRIPT_DIR/.device_info.json" ]] && [[ "$("$PY_CMD" -c 'import json,sys; print(json.load(open(sys.argv[1])).get("name") or "")' "$SCRIPT_DIR/.device_info.json" 2>/dev/null || true)" == "rocm" ]]; then
+			ROCM_USER="${USER:-$(id -un)}"
+			ROCM_GROUPS=()
+			ROCM_GROUPS_MISSING=()
+			for node in /dev/kfd /dev/dri/renderD*; do
+				if [[ ! -c "$node" ]] || [[ -r "$node" && -w "$node" ]]; then continue; fi
+				grp="$(stat -c '%G' "$node" 2>/dev/null || true)"
+				if [[ -z "$grp" || "$grp" == "root" || " ${ROCM_GROUPS[*]-} " == *" $grp "* ]]; then continue; fi
+				ROCM_GROUPS+=("$grp")
+				if ! id -nG "$ROCM_USER" 2>/dev/null | tr ' ' '\n' | grep -qx "$grp"; then ROCM_GROUPS_MISSING+=("$grp"); fi
+			done
+			if (( ${#ROCM_GROUPS[@]} > 0 )); then
+				ROCM_OK="1"
+				if [[ -n "${E2A_ROCM_REEXEC-}" ]] || ! command -v sg &>/dev/null; then ROCM_OK="0"
+				elif (( ${#ROCM_GROUPS_MISSING[@]} > 0 )); then
+					if [[ -t 0 ]] || sudo -n true 2>/dev/null; then
+						echo "Adding $ROCM_USER to group(s) ${ROCM_GROUPS_MISSING[*]} for ROCm GPU access (requires sudo)…"
+						for grp in "${ROCM_GROUPS_MISSING[@]}"; do sudo gpasswd -a "$ROCM_USER" "$grp" >/dev/null || ROCM_OK="0"; done
+					else ROCM_OK="0"; fi
+				fi
+				if [[ "$ROCM_OK" == "1" ]]; then
+					# the login session keeps its old groups: re-exec through sg, innermost sg restores the current primary group
+					ROCM_CMD="$(printf '%q ' "$BASH" "$SCRIPT_DIR/$(basename "$script_path")" "${ARGS[@]}")"
+					for grp in "$(id -gn)" "${ROCM_GROUPS[@]}"; do ROCM_CMD="sg $(printf '%q' "$grp") -c $(printf '%q' "exec $ROCM_CMD")"; done
+					export E2A_ROCM_REEXEC="1"
+					eval "exec $ROCM_CMD"
+				fi
+				echo -e "\e[33m=============== No read/write access to the ROCm GPU, torch will fall back to CPU. Add $ROCM_USER to: ${ROCM_GROUPS[*]} (sudo gpasswd -a $ROCM_USER <group>) then log out and back in.\e[0m"
+			fi
 		fi
 		check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
 		check_sitecustomized || exit 1

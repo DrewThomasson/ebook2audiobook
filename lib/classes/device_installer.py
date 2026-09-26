@@ -506,6 +506,21 @@ class DeviceInstaller():
             elif has_rocm() and has_amd_gpu_pci():
                 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
                 os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
+                # HSA_OVERRIDE_GFX_VERSION is read once, when this process first initializes the HSA runtime:
+                # the ctypes hipGetDeviceCount() below does it, and torch later reuses that loaded libhsa-runtime64.so.1,
+                # so the override must be in os.environ before it. detect_gpu.py inherits it and reports it back unchanged.
+                if os.name == 'posix' and not os.environ.get('HSA_OVERRIDE_GFX_VERSION'):
+                    sys_path = list(sys.path)
+                    try:
+                        import importlib.util
+                        spec = importlib.util.spec_from_file_location('detect_gpu', detect_gpu_script)
+                        detect_gpu = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(detect_gpu)
+                        detect_gpu.handle_rocm_override()
+                    except Exception:
+                        pass  # never block device detection
+                    finally:
+                        sys.path[:] = sys_path  # handle_rocm_override() puts components/ first on sys.path
                 version = ()
                 msg = ''
                 hip_device_count = 0
@@ -1905,6 +1920,9 @@ class DeviceInstaller():
                             os.environ['CUDA_VISIBLE_DEVICES'] = idx
                         elif gpu_info['backend'] == 'rocm':
                             os.environ['HIP_VISIBLE_DEVICES'] = idx
+                            # detect_gpu.py resolved it in its own child process, count > 0 means torch found the GPU under it
+                            if gpu_info.get('hsa_override') and not os.environ.get('HSA_OVERRIDE_GFX_VERSION'):
+                                os.environ['HSA_OVERRIDE_GFX_VERSION'] = gpu_info['hsa_override']
                         elif gpu_info['backend'] == 'xpu':
                             os.environ['ONEAPI_DEVICE_SELECTOR'] = f'level_zero:{idx}'
                             os.environ['ZE_AFFINITY_MASK'] = idx
