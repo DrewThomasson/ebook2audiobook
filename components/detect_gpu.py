@@ -1,6 +1,7 @@
 import json
 import sys
 import os
+import glob
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(SCRIPT_DIR)
@@ -54,6 +55,16 @@ def handle_rocm_override()->str|None:
     except Exception:
         return None  # rocmfix missing, offline, or unwritable ~/.rocmfix: never block GPU detection
 
+def rocm_denied_nodes()->list[str]:
+    """Returns the ROCm device nodes this process cannot open read/write.
+    ROCm opens /dev/kfd plus the render node of every amdgpu device, and udev rules can put them in different groups."""
+    nodes:list[str] = ['/dev/kfd']
+    for sys_node in sorted(glob.glob('/sys/class/drm/renderD*')):
+        # hybrid boxes: skip Intel/NVIDIA render nodes, ROCm never opens them
+        if os.path.basename(os.path.realpath(os.path.join(sys_node, 'device', 'driver'))) == 'amdgpu':
+            nodes.append(os.path.join('/dev/dri', os.path.basename(sys_node)))
+    return [node for node in nodes if os.path.exists(node) and not os.access(node, os.R_OK | os.W_OK)]
+
 def main()->None:
     result = {'count': 0, 'backend': None, 'hsa_override': None, 'error': None}
     try:
@@ -71,8 +82,8 @@ def main()->None:
         # Run ROCm check & fallback before PyTorch loads
         if backend == 'rocm':
             result['hsa_override'] = handle_rocm_override()
-            if os.path.exists('/dev/kfd') and not os.access('/dev/kfd', os.R_OK | os.W_OK):
-                result['error'] = 'no read/write access to /dev/kfd: user not in its group (render or video), relaunch ebook2audiobook.command or log out and back in'
+            if (denied := rocm_denied_nodes()):
+                result['error'] = f"no read/write access to {', '.join(denied)}: user not in its group (render or video), relaunch ebook2audiobook.command or log out and back in"
 
         # torch import costs seconds: only pay it when there is a device count to read
         if backend in ('cuda', 'rocm', 'xpu') and result['error'] is None:
