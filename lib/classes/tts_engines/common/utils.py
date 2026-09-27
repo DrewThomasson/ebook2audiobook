@@ -342,13 +342,6 @@ class TTSUtils:
                         from gradio.context import LocalContext
                         msg = f'Loading {key} model…'
                         progress_bar((0, 3), desc=msg)
-                        # _start_conversion() declares no Progress arg, so gradio never sets
-                        # LocalContext.progress and its global tqdm patch stays inert. Set it
-                        # only around the constructor so coqui's ModelManager download bar
-                        # (first run) is forwarded, then reset so core.py's own tqdm loops
-                        # are not hijacked for the rest of the conversion. The tracker must be
-                        # a fresh instance, not core's: tqdm forwarding appends to the tracker's
-                        # iterables, and on the shared one that leaks into other sessions' bars.
                         tqdm_token = LocalContext.progress.set(gr.Progress(track_tqdm=True))
                     try:
                         engine = TTSEngine(model_path)
@@ -362,18 +355,9 @@ class TTSUtils:
                     try:
                         engine = engine.to(device)
                     except Exception as e:
-                        # keep only the message. `raise ... from e` (and even a bare
-                        # raise inside this except) carries the OOM traceback upward,
-                        # and its frames pin the half-moved model — multi-GB on
-                        # jetson unified memory — for as long as the exception chain
-                        # is alive, i.e. all the way up through gradio.
                         load_error = f'{e}'
                         engine = None
                     if load_error is not None:
-                        # leaving the except block dropped the last reference to the
-                        # failed model, so this flush actually frees it: gc +
-                        # malloc_trim + empty_cache. Then raise a fresh, chain-free
-                        # exception that carries nothing but the message.
                         self.cleanup_memory()
                         raise RuntimeError(f'TTSEngine({model_path}).to({device}) failed: {load_error}')
                 if not engine:
