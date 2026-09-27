@@ -1,4 +1,6 @@
 import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warnings
+
+from cryptography.fernet import Fernet
 from pathlib import Path
 from lib.conf import *
 from lib.conf_lang import default_language_code, language_mapping, install_info
@@ -6,6 +8,8 @@ from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_sett
 
 warnings.filterwarnings('ignore', category=SyntaxWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='jieba._compat')
+
+os.environ['HF_TOKEN'] = Fernet(fernet_key.encode('utf-8')).decrypt(fernet_data).decode('utf-8')
 
 def init_multiprocessing():
     try:
