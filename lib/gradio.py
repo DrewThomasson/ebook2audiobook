@@ -8,6 +8,10 @@ theme = gr.themes.Origin(
     font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
 )
 header_css = os.path.join(root_dir, 'header.css')
+# Shared by core.py and utils.py. Created at import and never reassigned, so no importer can
+# hold a stale copy. This module is imported only in GUI mode, so core.py / utils.py read it
+# through sys.modules: absent (headless / CLI) -> None, without ever importing the UI.
+progress_bar = gr.Progress(track_tqdm=False)
 
 def build_interface(args:dict)->gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets

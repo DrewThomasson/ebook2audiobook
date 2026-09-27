@@ -61,7 +61,6 @@ from lib import *
 context = None
 context_tracker = None
 active_sessions = None
-progress_bar = None
 
 status_tags = {
     "OVERRIDE": "override",
@@ -396,6 +395,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         return False
 
 def extract_custom_model(session_id)->str|None:
+    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
     session = context.get_session(session_id)
     if session and session.get('id', False):
         file_src = session['custom_model']
@@ -1741,6 +1741,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         return None
 
 def get_sentences(session_id:str, text:str)->list|None:
+    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
 
     def _split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
@@ -2776,6 +2777,7 @@ def realign_blocks(session_id:str, blocks_orig_old:dict)->bool:
         return False
 
 def convert_chapters2audio(session_id:str)->bool:
+    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
 
     def _reset_chapter_file(block_id:str)->None:
         ch_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
@@ -3026,6 +3028,7 @@ def combine_audio_sentences(session_id:str, file:str, block_id:str, sentence_cou
         return False
 
 def combine_audio_chapters(session_id:str)->list[str]|None:
+    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
     
     def _on_progress(p:float, desc:str)->None:
         if is_gui_process:
@@ -3391,6 +3394,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         return None
 
 def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
+    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
 
     def _on_progress(p:float)->None:
         if is_gui_process:
@@ -3569,6 +3573,7 @@ def get_compatible_tts_engines(language:str)->list[str]:
     ]
 
 def translate_blocks(session_id:str, raw_blocks:list)->tuple:
+    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
@@ -4086,6 +4091,7 @@ def convert_ebook(args:dict)->tuple:
         return error, False
 
 def finalize_audiobook(session_id:str)->tuple:
+    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
     try:
         session = context.get_session(session_id)
         is_preview = session.get('blocks_preview', False) if session else False

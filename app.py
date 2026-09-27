@@ -534,7 +534,6 @@ Default to config.json model.""")
             if passed_args_set.issubset(allowed_arguments):
                 try:
                     from lib.gradio import theme, header_css, build_interface
-                    c.progress_bar = c.gr.Progress(track_tqdm=False)
                     app = build_interface(args)
                     if app is not None:
                         gr_blocks_kwargs = {
