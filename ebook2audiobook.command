@@ -69,19 +69,6 @@ PACK_MGR_OPTIONS=""
 BUILD_NAME=""
 ISO3_LANG="eng"
 
-# Validate command arguments against conf.py
-if [ $# -gt 0 ]; then
-	VALID_ARGS=$($PY_CMD -c 'from lib.conf import cli_options; print(" ".join(cli_options))')
-	for arg in "$@"; do
-		if [ "${arg:0:2}" = "--" ]; then
-			if ! echo " $VALID_ARGS " | grep -q " $arg "; then
-				echo "ERROR: Unknown option \"$arg\""
-				exit 1
-			fi
-		fi
-	done
-fi
-
 ARGS=("$@")
 
 # Parse arguments
@@ -282,6 +269,53 @@ get_iso3_lang() {
 }
 
 check_python() {
+	if [[ "$SCRIPT_MODE" != "$FULL_DOCKER" ]] && ! command -v uv &>/dev/null; then
+		echo -e "\e[33mDownloading uv installer…\e[0m"
+		if command -v curl &>/dev/null; then curl -LsSf "$UV_INSTALLER_URL" | sh
+		elif [[ -n "$WGET" ]]; then $WGET -qO- "$UV_INSTALLER_URL" | sh
+		else echo -e "\e[31m=============== uv installation needs curl or wget.\e[0m"; return 1; fi
+		export PATH="$UV_INSTALL_DIR:$PATH"
+		if ! command -v uv &>/dev/null; then echo -e "\e[31m=============== uv installation failed.\e[0m"; return 1; fi
+		echo -e "\e[32m=============== uv OK! ===============\e[0m"
+		if ! grep -iqFx "uv" "$INSTALLED_LOG"; then echo "uv" >> "$INSTALLED_LOG"; fi
+	fi
+	######## native + build_docker host: python comes from uv (installed in uv's own dir), the OS python is never used
+	if [[ "$SCRIPT_MODE" == "$NATIVE" || ( "$SCRIPT_MODE" == "$BUILD_DOCKER" && -z "$DOCKER_DEVICE_STR" ) ]]; then
+		compare_versions() {
+			local ver1=$1; local ver2=$2
+			IFS='.' read -r v1_major v1_minor <<<"$ver1"
+			IFS='.' read -r v2_major v2_minor <<<"$ver2"
+			((v1_major < v2_major)) && return 1
+			((v1_major > v2_major)) && return 2
+			((v1_minor < v2_minor)) && return 1
+			((v1_minor > v2_minor)) && return 2
+			return 0
+		}
+		if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
+			model="other"
+			if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "amd64" ]]; then	
+				PYTHON_VERSION="3.11"
+			else
+				if [[ -r /proc/device-tree/model ]]; then
+					model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
+					if [[ "$model" == *jetson* ]]; then PYTHON_VERSION="$MIN_PYTHON_VERSION"; fi
+				else
+					compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
+					case $? in 1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;; esac
+					compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
+					case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
+				fi
+			fi
+		fi
+		if ! uv python find --system --python-preference only-managed "$PYTHON_VERSION" &>/dev/null; then
+			echo -e "\e[33mInstalling python $PYTHON_VERSION via uv…\e[0m"
+			uv python install "$PYTHON_VERSION" || return 1
+		fi
+		PY_CMD="$(uv python find --system --python-preference only-managed "$PYTHON_VERSION" 2>/dev/null)"
+		if [[ -z "$PY_CMD" || ! -x "$PY_CMD" ]]; then echo -e "\e[31m=============== python $PYTHON_VERSION from uv cannot be resolved.\e[0m"; return 1; fi
+		return 0
+	fi
+	######## full_docker + build_docker inside the image: the image python is the install target, nothing to fetch
 	if ! command -v $PY_CMD &>/dev/null; then echo 'Python is not installed.'; return 1; fi
 	if [[ "$SCRIPT_MODE" != "$NATIVE" ]]; then
 		local installed_version
@@ -381,13 +415,12 @@ EOF
 		if [[ "$program" == "calibre" ]]; then
 			if command -v $program >/dev/null 2>&1; then echo -e "\e[32m=============== Calibre OK! ===============\e[0m"
 			else
-				$PY_CMD -m pip uninstall -y lxml 2>/dev/null || true
 				echo -e "\e[33mInstalling Calibre…\e[0m"
 				if [[ "${OSTYPE-}" == darwin* ]]; then eval "$PACK_MGR --cask calibre"
 				else
 					tmp="$(mktemp)"
 					$WGET -nv -O "$tmp" "$CALIBRE_INSTALLER_URL" || return 1
-					if [[ "$SUDO" == "sudo" ]]; then $SUDO sh "$tmp"; else sh "$tmp"; fi
+					if [[ "$SUDO" == "sudo" ]]; then $SUDO env PATH="$(dirname "$PY_CMD"):$PATH" sh "$tmp"; else PATH="$(dirname "$PY_CMD"):$PATH" sh "$tmp"; fi
 					rm -f "$tmp"
 				fi
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
@@ -437,44 +470,12 @@ EOF
 }
 
 check_uv() {
-	compare_versions() {
-		local ver1=$1; local ver2=$2
-		IFS='.' read -r v1_major v1_minor <<<"$ver1"
-		IFS='.' read -r v2_major v2_minor <<<"$ver2"
-		((v1_major < v2_major)) && return 1
-		((v1_major > v2_major)) && return 2
-		((v1_minor < v2_minor)) && return 1
-		((v1_minor > v2_minor)) && return 2
-		return 0
-	}
-	if ! command -v uv &>/dev/null; then
-		echo -e "\e[33mDownloading uv installer…\e[0m"
-		curl -LsSf "$UV_INSTALLER_URL" | sh
-		export PATH="$UV_INSTALL_DIR:$PATH"
-		if ! command -v uv &>/dev/null; then echo -e "\e[31m=============== uv installation failed.\e[0m"; return 1; fi
-		echo -e "\e[32m=============== uv OK! ===============\e[0m"
-		if ! grep -iqFx "uv" "$INSTALLED_LOG"; then echo "uv" >> "$INSTALLED_LOG"; fi
-	fi
 	if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
-		local model="other"
-		if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "amd64" ]]; then	
-			PYTHON_VERSION="3.11"
-		else
-			if [[ -r /proc/device-tree/model ]]; then
-				model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
-				if [[ "$model" == *jetson* ]]; then PYTHON_VERSION="$MIN_PYTHON_VERSION"; fi
-			else
-				compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
-				case $? in 1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;; esac
-				compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
-				case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
-			fi
-		fi
 		if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
 			if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/pyvenv.cfg" ]]; then
 				echo -e "\e[33m$PYTHON_ENV is not a virtualenv — removing…\e[0m"
 				rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
-			elif ! uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" --allow-existing >/dev/null 2>&1; then
+			elif ! uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PY_CMD" --allow-existing >/dev/null 2>&1; then
 				echo -e "\e[33m$PYTHON_ENV is inconsistent — removing and recreating…\e[0m"
 				rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
 			fi
@@ -483,8 +484,10 @@ check_uv() {
 			echo -e "\e[33mCreating ./$PYTHON_ENV with python $PYTHON_VERSION…\e[0m"
 			chmod -R 775 "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
 			chmod g+s "$SCRIPT_DIR/audiobooks" "$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" 2>/dev/null || true
-			uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PYTHON_VERSION" || return 1
+			uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PY_CMD" || return 1
 		fi
+		######## uv + python ready, OS programs next (venv not on PATH yet, PY_CMD still uv's python), then device/python packages
+		check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || return 1
 		PY_CMD="$SCRIPT_DIR/$PYTHON_ENV/bin/python3"
 		export VIRTUAL_ENV="$SCRIPT_DIR/$PYTHON_ENV"
 		export PATH="$VIRTUAL_ENV/bin:$PATH"
@@ -644,12 +647,36 @@ build_docker_image() {
 
 ######################################## END of functions
 
+if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
+	chmod 777 "$TMPDIR"
+	if [[ -n "${VIRTUAL_ENV:-}" && "$VIRTUAL_ENV" != "$SCRIPT_DIR/$PYTHON_ENV" ]]; then CURRENT_PYVENV="$VIRTUAL_ENV"; fi
+	if [[ -n "$CURRENT_PYVENV" ]]; then
+		echo -e "\e[31m=============== Error: Current python virtual environment detected: $CURRENT_PYVENV.\e[0m"
+		echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
+		echo -e "Run 'deactivate' and retry."
+		exit 1
+	fi
+fi
+
 check_python || exit 1
+
+# Validate command arguments against conf.py
+if [ ${#ARGS[@]} -gt 0 ]; then
+	VALID_ARGS=$("$PY_CMD" -c 'from lib.conf import cli_options; print(" ".join(cli_options))')
+	for arg in "${ARGS[@]}"; do
+		if [ "${arg:0:2}" = "--" ]; then
+			if ! echo " $VALID_ARGS " | grep -q " $arg "; then
+				echo "ERROR: Unknown option \"$arg\""
+				exit 1
+			fi
+		fi
+	done
+fi
 
 if [[ -n "${arguments[help]+exists}" && ${arguments[help]} == true ]]; then
 	"$PY_CMD" -u "$SCRIPT_DIR/app.py" "${ARGS[@]}"
 else
-	check_uv || exit 1
+	if [[ "$SCRIPT_MODE" != "$FULL_DOCKER" ]]; then check_uv || exit 1; fi
 	if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 		if [[ "$DOCKER_DEVICE_STR" == "" ]]; then
 			check_docker || exit 1
@@ -683,14 +710,6 @@ EOF
 			check_sitecustomized || exit 1
 		fi
 	elif [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
-		chmod 777 "$TMPDIR"
-		if [[ -n "${VIRTUAL_ENV:-}" && "$VIRTUAL_ENV" != "$SCRIPT_DIR/$PYTHON_ENV" ]]; then CURRENT_PYVENV="$VIRTUAL_ENV"; fi
-		if [[ -n "$CURRENT_PYVENV" ]]; then
-			echo -e "\e[31m=============== Error: Current python virtual environment detected: $CURRENT_PYVENV.\e[0m"
-			echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
-			echo -e "Run 'deactivate' and retry."
-			exit 1
-		fi
 		######## ROCm: torch needs rw on /dev/kfd + /dev/dri/renderD* (group render or video, distro dependent)
 		if [[ "${OSTYPE-}" == linux* && -c /dev/kfd && -f "$SCRIPT_DIR/.device_info.json" ]] && [[ "$("$PY_CMD" -c 'import json,sys; print(json.load(open(sys.argv[1])).get("name") or "")' "$SCRIPT_DIR/.device_info.json" 2>/dev/null || true)" == "rocm" ]]; then
 			ROCM_USER="${USER:-$(id -un)}"
@@ -722,7 +741,6 @@ EOF
 				echo -e "\e[33m=============== No read/write access to the ROCm GPU, torch will fall back to CPU. Add $ROCM_USER to: ${ROCM_GROUPS[*]} (sudo gpasswd -a $ROCM_USER <group>) then log out and back in.\e[0m"
 			fi
 		fi
-		check_required_programs "${HOST_PROGRAMS[@]}" || install_programs || exit 1
 		check_sitecustomized || exit 1
 		check_desktop_app || exit 1
 		uv run --no-project -- "$PY_CMD" -u "$SCRIPT_DIR/app.py" --script_mode "$SCRIPT_MODE" "${ARGS[@]}" || exit 1

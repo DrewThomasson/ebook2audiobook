@@ -67,11 +67,20 @@ class DeviceInstaller():
         machine = platform.machine().lower()
         if machine not in (archs['X86_64'], archs['AMD64']):
             return True
-        cpuinfo_version = self.get_package_version('py-cpuinfo')
-        if not cpuinfo_version:
+        # probe in python_exec, the interpreter _uv_pip installs into. the running
+        # interpreter is not guaranteed to be it (conf.py lets PY_CMD win over
+        # sys.executable), and then an in-process import never sees the install.
+        # same pattern as _probe_gpus() and the torchcodec AudioDecoder probe.
+        probe = 'import json; from cpuinfo import get_cpu_info; print(json.dumps(get_cpu_info().get("flags", [])))'
+        try:
             subprocess.check_call(self._uv_pip('install', '--no-cache', 'py-cpuinfo'))
-        from cpuinfo import get_cpu_info
-        flags = set(get_cpu_info().get('flags', []))
+            out = subprocess.check_output([python_exec, '-c', probe], text=True, timeout=60)
+            flags = set(json.loads(out.strip().splitlines()[-1]))
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError, ValueError, IndexError) as e:
+            # conservative verdict: numpy<2.4.0 runs on any x86_64, never abort provisioning here
+            error = f'cpu_baseline() error: {e} (running {sys.executable}, target {python_exec}), assuming no x86-64-v2'
+            print(error)
+            return False
         return {'sse4_2', 'popcnt', 'ssse3'}.issubset(flags)
 
     def load_device_info(self)->Union[dict, None]:
@@ -1417,7 +1426,7 @@ class DeviceInstaller():
                             subprocess.check_call(base_cmd + self.apply_pins([raw_pkg], pins))
                         except subprocess.CalledProcessError:
                             try:
-                                subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins([raw_pkg], pins))
+                                subprocess.check_call(base_cmd + ['--reinstall-package', self.pkg_head(raw_pkg.split('@', 1)[0])] + self.apply_pins([raw_pkg], pins))
                             except subprocess.CalledProcessError as e:
                                 msg = f'Failed to install {raw_pkg}: {e}'
                                 print(msg)
@@ -1436,11 +1445,11 @@ class DeviceInstaller():
                     msg = f'\n{len(still_missing)} package(s) still invisible after install. Forcing --reinstall…\n'
                     print(msg)
                     try:
-                        subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins(still_missing, pins))
+                        subprocess.check_call(base_cmd + [arg for pkg in still_missing for arg in ('--reinstall-package', self.pkg_head(pkg.split('@', 1)[0]))] + self.apply_pins(still_missing, pins))
                     except subprocess.CalledProcessError:
                         for raw_pkg in still_missing:
                             try:
-                                subprocess.check_call(base_cmd + ['--reinstall'] + self.apply_pins([raw_pkg], pins))
+                                subprocess.check_call(base_cmd + ['--reinstall-package', self.pkg_head(raw_pkg.split('@', 1)[0])] + self.apply_pins([raw_pkg], pins))
                             except subprocess.CalledProcessError as e:
                                 msg = f'Failed to reinstall {raw_pkg}: {e}'
                                 print(msg)
@@ -1854,7 +1863,7 @@ class DeviceInstaller():
                                 torchaudio_url_tag = 'cu130' if tag_dir.startswith('cu') and tag_dir[2:].isdigit() and int(tag_dir[2:]) > 130 else tag_dir
                                 if self.system == systems['WINDOWS'] and tag.startswith('win-cu'):
                                     torch_url_tag = tag.replace('win-', '')
-                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}'))
+                                subprocess.check_call(self._uv_pip('install', '--reinstall-package', 'torch', '--no-cache', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}'))
                                 subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchaudio=={torchaudio_version_matrix}', '--index-url', f'{url}/{torchaudio_url_tag}'))
                             if not self.check_numpy():
                                 return 1
