@@ -1,14 +1,10 @@
 import os, sys, threading, gc, ctypes, tempfile, regex as re
 
 from typing import Any, TYPE_CHECKING
-from cryptography.fernet import Fernet
 from pathlib import Path
-
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
 from lib import *
-
-os.environ['HF_TOKEN'] = Fernet(fernet_key.encode('utf-8')).decrypt(fernet_data).decode('utf-8')
 
 _lock = threading.Lock()
 
@@ -25,10 +21,12 @@ def format_timestamp(seconds:float)->str:
 
 def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tuple:
     try:
-        import gradio as gr
         from tqdm import tqdm
+        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
         msg = 'VTT file creation started…'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(0.0, desc=msg)
         if vtt_path is None:
             vtt_path = os.path.join(session['process_dir'], Path(session['final_name']).stem + '.vtt')
         audio_sentences_dir = Path(session['sentences_dir'])
@@ -57,13 +55,15 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
         audio_files_length = len(audio_files)
         sentences_total_time = 0.0
         vtt_blocks = []
-        if session['is_gui_process']:
-            progress_bar = gr.Progress(track_tqdm=False)
         msg = 'Get duration of each sentence…'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(0.0, desc=msg)
         durations = get_audiolist_duration([str(p) for p in audio_files])
         msg = 'Create VTT blocks…'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(0.0, desc=msg)
         with tqdm(total=audio_files_length, unit='files') as t:
             for idx, file in enumerate(audio_files):
                 start_time = sentences_total_time
@@ -87,6 +87,8 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                 t.update(1)
         msg = 'Write VTT blocks into file…'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(1.0, desc=msg)
         with open(vtt_path, 'w', encoding='utf-8') as f:
             f.write('WEBVTT\n\n')
             f.write('\n'.join(vtt_blocks))
@@ -152,6 +154,9 @@ class TTSUtils:
             on_gpu = 'DmlExecutionProvider' in active
             msg = f'Piper: running on GPU via DirectML — {active}' if on_gpu else f'Piper: DirectML not engaged, providers={active}'
             print(msg)
+            progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+            if progress_bar is not None:
+                progress_bar((1, 2), desc=msg)
         except Exception as e:
             error = f'_try_dml(): DirectML GPU path unavailable ({e!r}); ONNX will run on CPU.'
             print(error)
@@ -339,28 +344,38 @@ class TTSUtils:
                 engine = loaded_tts.get(key)
                 target_dev = torch.device(device)
                 is_accel = target_dev.type != 'cpu'
+                progress_bar = None
                 if not engine:
-                    engine = TTSEngine(model_path)
+                    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+                    tqdm_token = None
+                    if progress_bar is not None:
+                        import gradio as gr
+                        from gradio.context import LocalContext
+                        msg = f'Loading {key} model…'
+                        progress_bar((0, 3), desc=msg)
+                        tqdm_token = LocalContext.progress.set(gr.Progress(track_tqdm=True))
+                    try:
+                        engine = TTSEngine(model_path)
+                    finally:
+                        if tqdm_token is not None:
+                            LocalContext.progress.reset(tqdm_token)
                     load_error = None
+                    if progress_bar is not None:
+                        msg = f'Moving {key} model to {device}…'
+                        progress_bar((1, 3), desc=msg)
                     try:
                         engine = engine.to(device)
                     except Exception as e:
-                        # keep only the message. `raise ... from e` (and even a bare
-                        # raise inside this except) carries the OOM traceback upward,
-                        # and its frames pin the half-moved model — multi-GB on
-                        # jetson unified memory — for as long as the exception chain
-                        # is alive, i.e. all the way up through gradio.
                         load_error = f'{e}'
                         engine = None
                     if load_error is not None:
-                        # leaving the except block dropped the last reference to the
-                        # failed model, so this flush actually frees it: gc +
-                        # malloc_trim + empty_cache. Then raise a fresh, chain-free
-                        # exception that carries nothing but the message.
                         self.cleanup_memory()
                         raise RuntimeError(f'TTSEngine({model_path}).to({device}) failed: {load_error}')
                 if not engine:
                     raise RuntimeError('TTSEngine returned None')
+                if progress_bar is not None:
+                    msg = f'Checking {key} weights on {device}…'
+                    progress_bar((2, 3), desc=msg)
                 for syn_attr in ('synthesizer', 'voice_converter'):
                     syn = getattr(engine, syn_attr, None)
                     if syn is None:
@@ -389,6 +404,9 @@ class TTSUtils:
                 models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
                 if self.session['free_vram_gb'] > models_loaded_size_gb:
                     loaded_tts[key] = engine
+                if progress_bar is not None:
+                    msg = f'{key} model loaded'
+                    progress_bar((3, 3), desc=msg)
                 return engine
         except Exception as e:
             error = f'_load_api() error: {e}'
@@ -404,18 +422,29 @@ class TTSUtils:
                 checkpoint_path = kwargs.get('checkpoint_path')
                 config_path = kwargs.get('config_path', None)
                 vocab_path = kwargs.get('vocab_path', None)
+                progress_bar = None
                 if engine_name == TTS_ENGINES['PIPER']:
                     from piper import PiperVoice
                     from piper.download_voices import download_voice
                     engine = loaded_tts.get(key, False)
                     if engine:
                         return engine
+                    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
                     if self.session['custom_model'] is None:
+                        if progress_bar is not None:
+                            msg = f'Downloading {key} voice…'
+                            progress_bar((0, 2), desc=msg)
                         download_voice(Path(self.model_path).stem, Path(self.model_path))
+                    if progress_bar is not None:
+                        msg = f'Loading {key} voice…'
+                        progress_bar((1, 2), desc=msg)
                     use_cuda = device == devices['CUDA']['proc']
                     engine = PiperVoice.load(checkpoint_path, config_path=config_path, use_cuda=use_cuda)
                     if device == devices['CPU']['proc']:
                         self._try_dml(engine, checkpoint_path)
+                    if progress_bar is not None:
+                        msg = f'{key} voice loaded'
+                        progress_bar((2, 2), desc=msg)
                 elif engine_name in tts_engines_from_coqui:
                     import torch
                     import torch.nn as nn
@@ -429,6 +458,10 @@ class TTSUtils:
                         if not config_path or not os.path.exists(config_path):
                             error = f'Missing or invalid config_path: {config_path}'
                             raise FileNotFoundError(error)
+                        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+                        if progress_bar is not None:
+                            msg = f'Reading {key} checkpoint…'
+                            progress_bar((0, 3), desc=msg)
                         if engine_name == TTS_ENGINES['XTTS']:
                             from TTS.tts.configs.xtts_config import XttsConfig
                             from TTS.tts.models.xtts import Xtts
@@ -468,8 +501,14 @@ class TTSUtils:
                             error = f'_load_checkpoint(): unsupported tts_engine {engine_name}'
                             raise ValueError(error)
                     if engine:
+                        if progress_bar is not None:
+                            msg = f'Moving {key} model to {device}…'
+                            progress_bar((1, 3), desc=msg)
                         engine.to(device)
                         engine.eval()
+                        if progress_bar is not None:
+                            msg = f'Checking {key} weights on {device}…'
+                            progress_bar((2, 3), desc=msg)
                         ## Walk the actual weight-bearing module(s).
                         ## XTTS / fairseq shim: engine itself is an nn.Module that owns the params.
                         ## VITS via TTS API: weights live inside engine.synthesizer (TTS class doesn't register it as a submodule).
@@ -504,6 +543,9 @@ class TTSUtils:
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
                     if self.session['free_vram_gb'] > models_loaded_size_gb:
                         loaded_tts[key] = engine
+                    if progress_bar is not None:
+                        msg = f'{key} model loaded'
+                        progress_bar((3, 3), desc=msg)
                 return engine
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
@@ -514,6 +556,9 @@ class TTSUtils:
         try:
             msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
+            progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+            if progress_bar is not None:
+                progress_bar(0.0, desc=msg)
             self.cleanup_memory()
             engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not engine_zs:
@@ -602,6 +647,9 @@ class TTSUtils:
                 if os.path.exists(default_text_file):
                     msg = f"Converting builtin eng voice to {self.language}…"
                     print(msg)
+                    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+                    if progress_bar is not None:
+                        progress_bar(0.0, desc=msg)
                     key = f'{xtts}-internal'
                     default_text = Path(default_text_file).read_text(encoding='utf-8')
                     self.cleanup_memory()
