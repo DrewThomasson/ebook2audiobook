@@ -8,7 +8,7 @@ theme = gr.themes.Origin(
     font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
 )
 header_css = os.path.join(root_dir, 'header.css')
-progress_bar = gr.Progress(track_tqdm=True)
+progress_bar = gr.Progress(track_tqdm=False)
 
 def build_interface(args:dict)->gr.Blocks:
     from lib.classes.tts_engines.common.preset_loader import load_engine_presets
