@@ -22,8 +22,11 @@ def format_timestamp(seconds:float)->str:
 def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tuple:
     try:
         from tqdm import tqdm
+        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
         msg = 'VTT file creation started…'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(0.0, desc=msg)
         if vtt_path is None:
             vtt_path = os.path.join(session['process_dir'], Path(session['final_name']).stem + '.vtt')
         audio_sentences_dir = Path(session['sentences_dir'])
@@ -52,12 +55,15 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
         audio_files_length = len(audio_files)
         sentences_total_time = 0.0
         vtt_blocks = []
-        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
         msg = 'Get duration of each sentence…'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(0.0, desc=msg)
         durations = get_audiolist_duration([str(p) for p in audio_files])
         msg = 'Create VTT blocks…'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(0.0, desc=msg)
         with tqdm(total=audio_files_length, unit='files') as t:
             for idx, file in enumerate(audio_files):
                 start_time = sentences_total_time
@@ -81,6 +87,8 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                 t.update(1)
         msg = 'Write VTT blocks into file…'
         print(msg)
+        if progress_bar is not None:
+            progress_bar(1.0, desc=msg)
         with open(vtt_path, 'w', encoding='utf-8') as f:
             f.write('WEBVTT\n\n')
             f.write('\n'.join(vtt_blocks))
@@ -146,6 +154,9 @@ class TTSUtils:
             on_gpu = 'DmlExecutionProvider' in active
             msg = f'Piper: running on GPU via DirectML — {active}' if on_gpu else f'Piper: DirectML not engaged, providers={active}'
             print(msg)
+            progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+            if progress_bar is not None:
+                progress_bar((1, 2), desc=msg)
         except Exception as e:
             error = f'_try_dml(): DirectML GPU path unavailable ({e!r}); ONNX will run on CPU.'
             print(error)
@@ -545,6 +556,9 @@ class TTSUtils:
         try:
             msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
             print(msg)
+            progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+            if progress_bar is not None:
+                progress_bar(0.0, desc=msg)
             self.cleanup_memory()
             engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not engine_zs:
@@ -633,6 +647,9 @@ class TTSUtils:
                 if os.path.exists(default_text_file):
                     msg = f"Converting builtin eng voice to {self.language}…"
                     print(msg)
+                    progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+                    if progress_bar is not None:
+                        progress_bar(0.0, desc=msg)
                     key = f'{xtts}-internal'
                     default_text = Path(default_text_file).read_text(encoding='utf-8')
                     self.cleanup_memory()
