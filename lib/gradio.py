@@ -1012,6 +1012,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 status, msg = extractor.extract_voice()
                                 if status:
                                     session['voice'] = final_voice_file
+                                    if session.get('ebook_mode') == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
+                                        voice_map = dict(session.get('voice_map') or {})
+                                        voice_map[session['ebook_selected']] = final_voice_file
+                                        session['voice_map'] = voice_map
                                     msg = f'Voice {voice_name} added to the voices list'
                                     state['type'] = 'success'
                                     state['msg'] = msg
@@ -1296,7 +1300,38 @@ def build_interface(args:dict)->gr.Blocks:
                                     session['voice'] = new_voice_path
                                 else:
                                     session['voice'] = voice_options[0][1]
-                        return gr.update(choices=voice_options, value=session['voice'])
+                        if session['status'] in [status_tags['READY'], status_tags['END']]:
+                            voice_values = {v[1] for v in voice_options}
+                            blocks_current = session.get('blocks_current') or {}
+                            blocks_changed = False
+                            for block in blocks_current.get('blocks') or []:
+                                if 'voice' in block and block['voice'] not in voice_values:
+                                    block['voice'] = session['voice']
+                                    blocks_changed = True
+                                if 'tts_engine' in block and block['tts_engine'] != session['tts_engine']:
+                                    block['tts_engine'] = session['tts_engine']
+                                    blocks_changed = True
+                                if 'fine_tuned' in block and block['fine_tuned'] != session['fine_tuned']:
+                                    block['fine_tuned'] = session['fine_tuned']
+                                    blocks_changed = True
+                            if 'voice' in blocks_current and blocks_current['voice'] not in voice_values:
+                                blocks_current['voice'] = session['voice']
+                                blocks_changed = True
+                            if blocks_changed:
+                                session['blocks_current'] = blocks_current
+                                save_db_blocks(session_id)
+                            voice_map = dict(session.get('voice_map') or {})
+                            voice_map_changed = False
+                            for ebook_path, ebook_voice in voice_map.items():
+                                if ebook_voice not in voice_values:
+                                    voice_map[ebook_path] = session['voice']
+                                    voice_map_changed = True
+                            if voice_map_changed:
+                                session['voice_map'] = voice_map
+                        selected_voice = session['voice']
+                        if session.get('ebook_mode') == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
+                            selected_voice = (session.get('voice_map') or {}).get(session['ebook_selected'], session['voice'])
+                        return gr.update(choices=voice_options, value=selected_voice)
                 except Exception as e:
                     error = f'_update_gr_voice_list(): {e}!'
                     exception_alert(session_id, error)
@@ -2495,6 +2530,11 @@ def build_interface(args:dict)->gr.Blocks:
                 fn=_change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
                 outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list],
+                show_progress_on=[gr_progress]
+            ).then(
+                fn=_update_gr_voice_list,
+                inputs=[gr_session],
+                outputs=[gr_voice_list],
                 show_progress_on=[gr_progress]
             )
             gr_tts_engine_list.change(
