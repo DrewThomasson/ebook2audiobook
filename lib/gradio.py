@@ -2420,6 +2420,8 @@ def build_interface(args:dict)->gr.Blocks:
                                                 session['status'] = status_tags['SKIP']
                                                 return gr.update(), (event + 1)
                                 else:
+                                    if session['cancellation_requested']:
+                                        error = 'Conversion cancelled'
                                     show_alert(session_id, {"type": "warning", "msg": error})
                                 session['status'] = status_tags['END']
                 except Exception as e:
