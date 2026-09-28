@@ -132,7 +132,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audiobook_edit_btn = gr.Button(elem_id='gr_audiobook_edit_btn', value='✎', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
-                                gr_audiobook_export_btn = gr.Button(elem_id='gr_audiobook_export_btn', value='📦', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                gr_audiobook_export_btn = gr.Button(elem_id='gr_audiobook_export_btn', value='⇄', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
                             gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
                             gr_audiobook_files_state = gr.State(False)
