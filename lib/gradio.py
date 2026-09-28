@@ -409,6 +409,7 @@ def build_interface(args:dict)->gr.Blocks:
                     outputs[outputs_disable_components.index(gr_audiobook_edit_player)] = gr.update(value=None)
                     outputs[outputs_disable_components.index(gr_audiobook_list)] = gr.update(interactive=True)
                     outputs[outputs_disable_components.index(gr_audiobook_del_btn)] = gr.update(interactive=True)
+                    outputs[outputs_disable_components.index(gr_audiobook_player)] = gr.update(visible=True)
                 return outputs
 
             def _enable_components(session_id:str)->tuple:
@@ -1293,14 +1294,15 @@ def build_interface(args:dict)->gr.Blocks:
                                                 gr.update(value=sentence, interactive=True), gr.update(visible=True), gr.update(value=None),
                                                 gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
                                                 gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False),
-                                                gr.update(visible=session['audiobook_edit_pending'], interactive=False), gr.update(interactive=False)
+                                                gr.update(visible=session['audiobook_edit_pending'], interactive=False), gr.update(interactive=False),
+                                                gr.update(visible='hidden')
                                             )
                         if error is not None:
                             show_alert(session_id, {"type": "warning", "msg": error})
                 except Exception as e:
                     error = f'_click_gr_audiobook_edit_btn(): {e}'
                     exception_alert(session_id, error)
-                return tuple(gr.update() for _ in range(11))
+                return tuple(gr.update() for _ in range(12))
 
             def _click_gr_audiobook_edit_convert_btn(session_id:str, text:str|None)->tuple:
                 try:
@@ -1449,18 +1451,19 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr.update(value=re.sub(r'\s+', ' ', SML_TAG_PATTERN.sub('', text)).strip() or '…', interactive=False), gr.update(visible=False), gr.update(value=None),
                                     gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
                                     gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
-                                    gr.update(visible=True, interactive=True), gr.update(interactive=enabled_convert_btn)
+                                    gr.update(visible=True, interactive=True), gr.update(interactive=enabled_convert_btn),
+                                    gr.update(visible=True)
                                 )
                         show_alert(session_id, {"type": "warning", "msg": error})
                         return (
                             gr.update(), gr.update(), gr.update(),
                             gr.update(interactive=True), gr.update(interactive=bool(session.get('audiobook_edit_preview'))), gr.update(interactive=True),
-                            gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                            gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                         )
                 except Exception as e:
                     error = f'_click_gr_audiobook_edit_save_btn(): {e}'
                     exception_alert(session_id, error)
-                return (gr.update(), gr.update(), gr.update(), gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True), gr.update(), gr.update(), gr.update(), gr.update(), gr.update())
+                return (gr.update(), gr.update(), gr.update(), gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update())
 
             def _click_gr_audiobook_edit_cancel_btn(session_id:str)->tuple:
                 sentence_update = gr.update(interactive=False)
@@ -1497,7 +1500,8 @@ def build_interface(args:dict)->gr.Blocks:
                     sentence_update, gr.update(visible=False), gr.update(value=None),
                     gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
                     gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
-                    gr.update(visible=pending, interactive=True), gr.update(interactive=enabled_convert_btn)
+                    gr.update(visible=pending, interactive=True), gr.update(interactive=enabled_convert_btn),
+                    gr.update(visible=True)
                 )
 
             def _click_gr_audiobook_export_btn(session_id:str)->tuple:
@@ -2825,7 +2829,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn,
                 gr_abs_upload_btn,
                 gr_audiobook_edit_btn, gr_audiobook_export_btn, gr_audiobook_sentence, gr_row_audiobook_edit, gr_audiobook_edit_player,
-                gr_audiobook_list, gr_audiobook_del_btn
+                gr_audiobook_list, gr_audiobook_del_btn, gr_audiobook_player
             ]
             outputs_enable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
@@ -2859,7 +2863,8 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_audiobook_edit = [
                 gr_audiobook_sentence, gr_row_audiobook_edit, gr_audiobook_edit_player,
                 gr_audiobook_edit_convert_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn,
-                gr_audiobook_edit_btn, gr_audiobook_list, gr_audiobook_del_btn, gr_audiobook_export_btn, gr_convert_btn
+                gr_audiobook_edit_btn, gr_audiobook_list, gr_audiobook_del_btn, gr_audiobook_export_btn, gr_convert_btn,
+                gr_audiobook_player
             ]
             outputs_on_voice_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
