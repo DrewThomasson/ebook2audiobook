@@ -81,7 +81,7 @@ span[data-testid="block-info"] {
 .gr-glass-mask.hide {
 	animation: fadeOut 2s ease-out 2s forwards !important;
 }
-.small-btn-red, .small-btn-purple, .small-btn-green {
+.small-btn-red, .small-btn-purple, .small-btn-green, .small-btn-orange, .small-btn-blue {
 	background: var(--block-background-fill) !important;
 	font-size: 18px !important;
 	width: 60px !important;
@@ -91,17 +91,25 @@ span[data-testid="block-info"] {
 }
 .small-btn-green:hover {
 	background: var(--button-primary-background-fill-hover) !important;
-	font-size: 28px !important;
+	font-size: 24px !important;
 }
 .small-btn-red:hover {
-	background-color: #ff5050 !important;
-	font-size: 28px !important;
+	background: #ff5050 !important;
+	font-size: 24px !important;
 }
 .small-btn-purple:hover {
-	background-color: #752eb2 !important;
-	font-size: 20px !important;
+	background: #752eb2 !important;
+	font-size: 24px !important;
 }
-.small-btn-green:active, .small-btn-red:active, .small-btn-purple:active {
+.small-btn-orange:hover {
+	background: #ff8c1a !important;
+	font-size: 24px !important;
+}
+.small-btn-blue:hover {
+	background: #2e7bff !important;
+	font-size: 24px !important;
+}
+.small-btn-green:active, .small-btn-red:active, .small-btn-purple:active, .small-btn-orange:active, .small-btn-blue:active {
 	background: var(--body-text-color) !important;
 	font-size: 24px !important;
 	color: var(--body-background-fill) !important;
