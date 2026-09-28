@@ -462,10 +462,23 @@ span[data-testid="block-info"] {
 #gr_row_voice_player, #gr_row_custom_model_list, #gr_row_session, #gr_row_audiobook_list {
 	height: 60px !important;
 }
-#gr_audiobook_player {
+#gr_audiobook_player, #gr_audiobook_edit_player {
 	border-style: none !important;
 }
+#gr_row_audiobook_edit {
+	min-height: 60px !important;
+	align-items: center !important;
+}
+#gr_audiobook_sentence textarea:not(:disabled) {
+	outline: 2px solid var(--button-primary-background-fill-hover) !important;
+	outline-offset: -2px !important;
+}
 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label), 
+#gr_audiobook_edit_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label),
+#gr_audiobook_edit_player button[aria-label="Download"],
+#gr_audiobook_edit_player button[aria-label="Share"],
+#gr_audiobook_edit_player .download-button,
+#gr_audiobook_edit_player .share-button,
 #gr_audiobook_player button[aria-label="Download"],
 #gr_audiobook_player button[aria-label="Share"],
 #gr_audiobook_player .download-button,
@@ -476,7 +489,7 @@ span[data-testid="block-info"] {
 #gr_audiobook_files label[data-testid="block-label"] {
 	display: none !important;
 }
-#gr_audiobook_player audio {
+#gr_audiobook_player audio, #gr_audiobook_edit_player audio {
 	width: 100% !important;
 	padding-top: 10px !important;
 	padding-bottom: 10px !important;
@@ -484,7 +497,7 @@ span[data-testid="block-info"] {
 	background-color: #ebedf0 !important;
 	color: #ffffff !important;
 }
-#gr_audiobook_player audio::-webkit-media-controls-panel {
+#gr_audiobook_player audio::-webkit-media-controls-panel, #gr_audiobook_edit_player audio::-webkit-media-controls-panel {
 	width: 100% !important;
 	padding-top: 10px !important;
 	padding-bottom: 10px !important;
@@ -495,6 +508,7 @@ span[data-testid="block-info"] {
 /* Firefox only: :-moz-read-only is Firefox's alias of :read-only (always true on audio/div), Chrome/Safari drop these rules.
    No @supports here: Gradio's prefix_css() silently discards @supports blocks from css_paths. */
 #gr_audiobook_player audio:-moz-read-only,
+#gr_audiobook_edit_player audio:-moz-read-only,
 audio:-moz-read-only {
 	background-color: var(--block-background-fill, #1f2937) !important;
 	border: none !important;
@@ -502,6 +516,7 @@ audio:-moz-read-only {
 	box-shadow: none !important;
 }
 #gr_audiobook_player:-moz-read-only,
+#gr_audiobook_edit_player:-moz-read-only,
 #gr_audiobook_player .block:-moz-read-only,
 #gr_audiobook_player .container:-moz-read-only,
 #gr_voice_player_hidden:-moz-read-only {

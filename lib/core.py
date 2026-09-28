@@ -215,6 +215,12 @@ class SessionContext:
             ####### Audiobook editor
             "audiobook": None,
             "audiobooks_dir": None,
+            "audiobook_edit_target": None,
+            "audiobook_edit_block_id": None,
+            "audiobook_edit_sentence_idx": None,
+            "audiobook_edit_preview": None,
+            "audiobook_edit_preview_text": None,
+            "audiobook_edit_pending": False,
             ####### Ebook conversion
             "ebook": None,
             "ebook_src": None,
@@ -4267,6 +4273,12 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "blocks_saved_json": None,
         "blocks_current_db": None,
         "audiobook_overridden": None,
+        "audiobook_edit_target": None,
+        "audiobook_edit_block_id": None,
+        "audiobook_edit_sentence_idx": None,
+        "audiobook_edit_preview": None,
+        "audiobook_edit_preview_text": None,
+        "audiobook_edit_pending": False,
         "metadata": {
             "title": None, 
             "creator": None,

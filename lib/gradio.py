@@ -120,11 +120,19 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=True)
                             gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=True, value=0.0)
                             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
+                            with gr.Row(elem_id='gr_row_audiobook_edit', visible=False) as gr_row_audiobook_edit:
+                                gr_audiobook_edit_convert_btn = gr.Button(elem_id='gr_audiobook_edit_convert_btn', value='🎙', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                gr_audio_edit_kwargs = {"elem_id": "gr_audiobook_edit_player", "label": "", "type": "filepath", "autoplay": True, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True, "scale": 2}
+                                gr_audiobook_edit_player = gr.Audio(**gr_audio_edit_kwargs)
+                                gr_audiobook_edit_save_btn = gr.Button(elem_id='gr_audiobook_edit_save_btn', value='✔', elem_classes=['small-btn'], variant='secondary', interactive=False, scale=0, min_width=60)
+                                gr_audiobook_edit_cancel_btn = gr.Button(elem_id='gr_audiobook_edit_cancel_btn', value='✖', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
                             gr_audio_kwargs = {"elem_id": "gr_audiobook_player", "label": "", "type": "filepath", "autoplay": False, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True}
                             gr_audiobook_player = gr.Audio(**gr_audio_kwargs)
                             with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
                                 gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                gr_audiobook_edit_btn = gr.Button(elem_id='gr_audiobook_edit_btn', value='✎', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
+                                gr_audiobook_export_btn = gr.Button(elem_id='gr_audiobook_export_btn', value='📦', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
                             gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
                             gr_audiobook_files_state = gr.State(False)
@@ -356,6 +364,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
             gr_data_field_hidden = gr.Textbox(elem_id='gr_data_field_hidden', visible=False)
+            gr_audiobook_edit_cue = gr.Textbox(elem_id='gr_audiobook_edit_cue', visible=False)
             
             gr_deletion_cancel_btn = gr.Button(elem_id='gr_deletion_cancel_btn', elem_classes=['hide-elem'], value='🡄', variant='stop', visible=True, scale=0, size='sm',  min_width=0)
             gr_deletion_confirm_btn = gr.Button(elem_id='gr_deletion_confirm_btn', elem_classes=['hide-elem'], value='🡆', variant='primary', visible=True, scale=0, size='sm', min_width=0)
@@ -1129,6 +1138,401 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'Could not delete the audiobook {selected_name}!'
                     exception_alert(session_id, error)
                 return gr.update(visible=False), gr.update()
+
+            def _click_gr_audiobook_edit_btn(session_id:str, audiobook:str|None, cue:str|None)->tuple:
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        error = None
+                        if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                            error = 'Sentence editor unavailable while a conversion or a chapters preview is running.'
+                        elif not audiobook or not os.path.exists(audiobook):
+                            error = 'No audiobook selected.'
+                        else:
+                            cue_data = json.loads(cue) if cue else {}
+                            cue_idx = int(cue_data['idx']) if cue_data.get('idx') is not None else -1
+                            cue_text = ''.join(str(cue_data.get('text', '')).split())
+                            if cue_idx < 0:
+                                error = 'No sentence at the current playback position. Seek into the sentence to edit first.'
+                            else:
+                                stem = Path(audiobook).stem
+                                ext = Path(audiobook).suffix.lstrip('.').lower()
+                                base_name = stem
+                                cue_offset = 0
+                                process_dir = os.path.join(session['session_dir'], hashlib.md5(stem.encode()).hexdigest())
+                                if not os.path.isdir(process_dir):
+                                    part_match = re.match(r'^(.*)_part(\d+)$', stem)
+                                    if part_match:
+                                        base_name = part_match.group(1)
+                                        process_dir = os.path.join(session['session_dir'], hashlib.md5(base_name.encode()).hexdigest())
+                                        part_width = len(part_match.group(2))
+                                        for part_num in range(1, int(part_match.group(2))):
+                                            part_vtt = Path(audiobook).with_name(f'{base_name}_part{part_num:0{part_width}d}.vtt')
+                                            if not part_vtt.exists():
+                                                error = f'{part_vtt.name} is missing, cannot locate the sentence.'
+                                                break
+                                            with open(part_vtt, 'r', encoding='utf-8-sig', errors='replace') as f:
+                                                cue_offset += sum(1 for line in f if '-->' in line)
+                                if error is None and not os.path.isdir(process_dir):
+                                    error = f'Conversion data of {stem} not found (process folder cleaned up?), editing is not possible.'
+                                if error is None:
+                                    audio_tags = {str(k).lower(): v for k, v in (mediainfo(audiobook).get('TAG') or {}).items()}
+                                    if session.get('audiobook_edit_target') != audiobook or session.get('process_dir') != process_dir or not session.get('blocks_current'):
+                                        saved_json = glob(os.path.join(process_dir, f"{file_prefixes['saved']}*.json"))
+                                        current_db = glob(os.path.join(process_dir, f"{file_prefixes['current']}*.db"))
+                                        blocks_saved = load_json_blocks(saved_json[0]) if saved_json else {}
+                                        filename_noext = Path(saved_json[0]).stem[len(file_prefixes['saved']):] if blocks_saved.get('blocks') else None
+                                        if filename_noext is None and current_db:
+                                            blocks_saved = load_db_blocks(current_db[0])
+                                            filename_noext = Path(current_db[0]).stem[len(file_prefixes['current']):]
+                                        kept = [b for b in blocks_saved.get('blocks', []) if b['keep'] and b['text'].strip()]
+                                        if not kept or not all(b.get('sentences') for b in kept):
+                                            error = f'Conversion data of {stem} is incomplete, editing is not possible.'
+                                        else:
+                                            epub_path = os.path.join(process_dir, f'__{filename_noext}.epub')
+                                            metadata = {key: None for key in session['metadata'].keys()}
+                                            if os.path.exists(epub_path):
+                                                epubBook = epub.read_epub(epub_path, {'ignore_ncx': True})
+                                                for key in metadata.keys():
+                                                    data = epubBook.get_metadata('DC', key)
+                                                    if data:
+                                                        for value, attributes in data:
+                                                            metadata[key] = value
+                                            metadata['language'] = audio_tags.get('language') or metadata['language']
+                                            metadata['title'] = metadata['title'] or base_name.replace('_', ' ')
+                                            metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                            cover_path = os.path.join(process_dir, f'{filename_noext}.jpg')
+                                            session['process_dir'] = process_dir
+                                            session['chapters_dir'] = os.path.join(process_dir, 'chapters')
+                                            session['sentences_dir'] = os.path.join(process_dir, 'chapters', 'sentences')
+                                            session['filename_noext'] = filename_noext
+                                            session['epub_path'] = epub_path
+                                            session['blocks_orig_json'] = os.path.join(process_dir, f"{file_prefixes['clone']}{filename_noext}.json")
+                                            session['blocks_saved_json'] = os.path.join(process_dir, f"{file_prefixes['saved']}{filename_noext}.json")
+                                            session['blocks_current_db'] = os.path.join(process_dir, f"{file_prefixes['current']}{filename_noext}.db")
+                                            session['final_name'] = f'{base_name}.{ext}'
+                                            session['metadata'] = metadata
+                                            session['cover'] = cover_path if os.path.exists(cover_path) else None
+                                            session['blocks_saved'] = blocks_saved
+                                            session['blocks_current'] = copy.deepcopy(blocks_saved)
+                                            session['audiobook_edit_target'] = audiobook
+                                    if error is None:
+                                        blocks_saved = session['blocks_saved']
+                                        target_idx = cue_offset + cue_idx
+                                        cue_count = 0
+                                        block_id = None
+                                        sentence_idx = None
+                                        sentence = None
+                                        chapter_mtime = 0.0
+                                        for block in blocks_saved.get('blocks', []):
+                                            if not (block['keep'] and block['text'].strip()):
+                                                continue
+                                            chapter_file = os.path.join(session['chapters_dir'], f"{block['id']}.{default_audio_proc_format}")
+                                            if os.path.exists(chapter_file):
+                                                chapter_mtime = max(chapter_mtime, os.path.getmtime(chapter_file))
+                                            if block_id is not None:
+                                                continue
+                                            for j, s in enumerate(block.get('sentences', [])):
+                                                if not any(c.isalnum() for c in str(s)):
+                                                    continue
+                                                if cue_count == target_idx:
+                                                    block_id, sentence_idx, sentence = block['id'], j, str(s)
+                                                    break
+                                                cue_count += 1
+                                        # a chapter newer than the audiobook means sentence edits saved but never exported
+                                        session['audiobook_edit_pending'] = chapter_mtime > os.path.getmtime(audiobook)
+                                        if block_id is None:
+                                            error = 'Sentence not found in the conversion data.'
+                                        elif cue_text and ''.join(SML_TAG_PATTERN.sub('', sentence).split()) != cue_text:
+                                            error = 'Subtitles (VTT) are out of sync with the conversion data, this sentence cannot be edited.'
+                                        elif not os.path.exists(os.path.join(session['sentences_dir'], block_id, f'{sentence_idx}.{default_audio_proc_format}')):
+                                            error = 'Sentence audio file not found, editing is not possible.'
+                                        else:
+                                            session['audiobook_edit_block_id'] = block_id
+                                            session['audiobook_edit_sentence_idx'] = sentence_idx
+                                            session['audiobook_edit_preview'] = None
+                                            session['audiobook_edit_preview_text'] = None
+                                            final_language = session['translate'] if session.get('translate_enabled') and session.get('translate') else session['language']
+                                            if audio_tags.get('language') and audio_tags['language'] != final_language:
+                                                msg = f"WARNING!!! language selected {final_language} differs from the audiobook language {audio_tags['language']}"
+                                                show_alert(session_id, {"type": "warning", "msg": msg})
+                                            if session['audiobook_edit_pending']:
+                                                msg = f'{Path(audiobook).name} has saved sentence edits not exported yet, click 📦 to rebuild it.'
+                                                show_alert(session_id, {"type": "info", "msg": msg})
+                                            return (
+                                                gr.update(value=sentence, interactive=True), gr.update(visible=True), gr.update(value=None),
+                                                gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
+                                                gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False),
+                                                gr.update(visible=session['audiobook_edit_pending'], interactive=False), gr.update(interactive=False)
+                                            )
+                        if error is not None:
+                            show_alert(session_id, {"type": "warning", "msg": error})
+                except Exception as e:
+                    error = f'_click_gr_audiobook_edit_btn(): {e}'
+                    exception_alert(session_id, error)
+                return tuple(gr.update() for _ in range(11))
+
+            def _click_gr_audiobook_edit_convert_btn(session_id:str, text:str|None)->tuple:
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        error = None
+                        text = ' '.join(str(text or '').split())
+                        res, text = normalize_sml_tags(text)
+                        block_id = session.get('audiobook_edit_block_id')
+                        blocks_saved = session.get('blocks_saved') or {}
+                        block = next((b for b in blocks_saved.get('blocks', []) if b['id'] == block_id), None)
+                        if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                            error = 'A conversion is running, try again later.'
+                        elif block is None or not session.get('process_dir'):
+                            error = 'Edit context lost, close the editor and open it again.'
+                        elif res is False:
+                            error = text
+                        elif not any(c.isalnum() for c in text):
+                            error = 'The sentence must contain at least one letter or digit.'
+                        else:
+                            preview_file = os.path.join(session['process_dir'], f'__edit_preview.{default_audio_proc_format}')
+                            if os.path.exists(preview_file):
+                                os.unlink(preview_file)
+                            session['audiobook_edit_preview'] = None
+                            # the edit must be spoken by the engine the book was converted with, or the
+                            # sentence files would not share the same stream params for the concat demuxer
+                            engine_backup = (session['tts_engine'], session['fine_tuned'], session['model_cache'])
+                            session['tts_engine'] = block.get('tts_engine') or session['tts_engine']
+                            session['fine_tuned'] = block.get('fine_tuned') or session['fine_tuned']
+                            session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
+                            session['status'] = status_tags['CONVERTING']
+                            session['cancellation_requested'] = False
+                            tts_manager = None
+                            converted = False
+                            try:
+                                msg = f"Converting the edited sentence with {session['tts_engine']}…"
+                                print(msg)
+                                progress_bar(0.0, desc=msg)
+                                tts_manager = TTSManager(session)
+                                block_voice = block.get('voice') or session.get('voice')
+                                converted, error = tts_manager.convert_sentence2audio(preview_file, text, block_voice=block_voice)
+                                if converted and not os.path.exists(preview_file):
+                                    converted, error = False, f'{Path(preview_file).name} was not created!'
+                                if converted:
+                                    session['audiobook_edit_preview'] = preview_file
+                                    session['audiobook_edit_preview_text'] = text
+                                    msg = 'Edited sentence converted, listen and validate with ✔'
+                                    print(msg)
+                                    progress_bar(1.0, desc=msg)
+                                    return gr.update(value=preview_file), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True)
+                            finally:
+                                if not converted:
+                                    unload_tts_manager(tts_manager)
+                                session['tts_engine'], session['fine_tuned'], session['model_cache'] = engine_backup
+                                session['status'] = status_tags['READY']
+                        if error is not None:
+                            show_alert(session_id, {"type": "warning", "msg": error})
+                        return gr.update(), gr.update(interactive=True), gr.update(interactive=bool(session.get('audiobook_edit_preview'))), gr.update(interactive=True)
+                except Exception as e:
+                    error = f'_click_gr_audiobook_edit_convert_btn(): {e}'
+                    exception_alert(session_id, error)
+                return gr.update(), gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True)
+
+            def _click_gr_audiobook_edit_save_btn(session_id:str, text:str|None)->tuple:
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        error = None
+                        text = ' '.join(str(text or '').split())
+                        res, text = normalize_sml_tags(text)
+                        block_id = session.get('audiobook_edit_block_id')
+                        sentence_idx = session.get('audiobook_edit_sentence_idx')
+                        preview_file = session.get('audiobook_edit_preview')
+                        blocks_saved = session.get('blocks_saved') or {}
+                        block = next((b for b in blocks_saved.get('blocks', []) if b['id'] == block_id), None)
+                        if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                            error = 'A conversion is running, try again later.'
+                        elif block is None or sentence_idx is None or sentence_idx >= len(block.get('sentences', [])):
+                            error = 'Edit context lost, close the editor and open it again.'
+                        elif not preview_file or not os.path.exists(preview_file):
+                            error = 'Convert the sentence first (🎙).'
+                        elif res is False or text != session.get('audiobook_edit_preview_text'):
+                            error = 'The text changed since the last conversion, convert it again (🎙).'
+                        else:
+                            sentence_count = len(block['sentences'])
+                            sentence_file = os.path.join(session['sentences_dir'], block_id, f'{sentence_idx}.{default_audio_proc_format}')
+                            backup_file = f'{sentence_file}.bak'
+                            chapter_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
+                            session['status'] = status_tags['CONVERTING']
+                            session['cancellation_requested'] = False
+                            try:
+                                msg = f'Replacing sentence {sentence_idx} of block {block_id}…'
+                                print(msg)
+                                progress_bar(0.0, desc=msg)
+                                os.replace(sentence_file, backup_file)
+                                os.replace(preview_file, sentence_file)
+                                session['audiobook_edit_preview'] = None
+                                if combine_audio_sentences(session_id, chapter_file, block_id, sentence_count):
+                                    # block_hash() covers the sentences: current and saved must get the very same
+                                    # edit, or the next resume sees a changed block and reconverts it
+                                    blocks_current = session['blocks_current']
+                                    for blocks_data in (blocks_saved, blocks_current):
+                                        for b in blocks_data.get('blocks', []):
+                                            if b['id'] == block_id:
+                                                sentences = list(b.get('sentences', []))
+                                                if sentence_idx < len(sentences):
+                                                    old_sentence = sentences[sentence_idx]
+                                                    sentences[sentence_idx] = text
+                                                    b['sentences'] = sentences
+                                                    if old_sentence and b.get('text', '').count(old_sentence) == 1:
+                                                        b['text'] = b['text'].replace(old_sentence, text, 1)
+                                                break
+                                    session['blocks_saved'] = blocks_saved
+                                    session['blocks_current'] = blocks_current
+                                    save_db_blocks(session_id)
+                                    save_json_blocks(session_id, 'blocks_saved')
+                                    os.unlink(backup_file)
+                                else:
+                                    os.replace(backup_file, sentence_file)
+                                    combine_audio_sentences(session_id, chapter_file, block_id, sentence_count)
+                                    error = 'combine_audio_sentences() failed! original sentence restored.'
+                            finally:
+                                session['status'] = status_tags['READY']
+                            if error is None:
+                                session['audiobook_edit_pending'] = True
+                                session['audiobook_edit_block_id'] = None
+                                session['audiobook_edit_sentence_idx'] = None
+                                session['audiobook_edit_preview_text'] = None
+                                msg = 'Sentence replaced. Click 📦 to rebuild the audiobook.'
+                                print(msg)
+                                show_alert(session_id, {"type": "success", "msg": msg})
+                                enabled_convert_btn = (
+                                    session['ebook_mode'] == ebook_modes['TEXT']
+                                    or (session['ebook_mode'] == ebook_modes['SINGLE'] and bool(session.get('ebook_src')))
+                                    or (session['ebook_mode'] == ebook_modes['DIRECTORY'] and bool(session.get('ebook_list')))
+                                )
+                                return (
+                                    gr.update(value=re.sub(r'\s+', ' ', SML_TAG_PATTERN.sub('', text)).strip() or '…', interactive=False), gr.update(visible=False), gr.update(value=None),
+                                    gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
+                                    gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                                    gr.update(visible=True, interactive=True), gr.update(interactive=enabled_convert_btn)
+                                )
+                        show_alert(session_id, {"type": "warning", "msg": error})
+                        return (
+                            gr.update(), gr.update(), gr.update(),
+                            gr.update(interactive=True), gr.update(interactive=bool(session.get('audiobook_edit_preview'))), gr.update(interactive=True),
+                            gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                        )
+                except Exception as e:
+                    error = f'_click_gr_audiobook_edit_save_btn(): {e}'
+                    exception_alert(session_id, error)
+                return (gr.update(), gr.update(), gr.update(), gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True), gr.update(), gr.update(), gr.update(), gr.update(), gr.update())
+
+            def _click_gr_audiobook_edit_cancel_btn(session_id:str)->tuple:
+                sentence_update = gr.update(interactive=False)
+                enabled_convert_btn = False
+                pending = False
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        preview_file = session.get('audiobook_edit_preview')
+                        if preview_file and os.path.exists(preview_file):
+                            os.unlink(preview_file)
+                        block_id = session.get('audiobook_edit_block_id')
+                        sentence_idx = session.get('audiobook_edit_sentence_idx')
+                        blocks_saved = session.get('blocks_saved') or {}
+                        block = next((b for b in blocks_saved.get('blocks', []) if b['id'] == block_id), None)
+                        if block is not None and sentence_idx is not None and sentence_idx < len(block.get('sentences', [])):
+                            sentence_update = gr.update(value=re.sub(r'\s+', ' ', SML_TAG_PATTERN.sub('', str(block['sentences'][sentence_idx]))).strip() or '…', interactive=False)
+                        session['audiobook_edit_block_id'] = None
+                        session['audiobook_edit_sentence_idx'] = None
+                        session['audiobook_edit_preview'] = None
+                        session['audiobook_edit_preview_text'] = None
+                        pending = bool(session.get('audiobook_edit_pending'))
+                        if not pending and session['status'] in [status_tags['READY'], status_tags['END']]:
+                            reset_ebook_session(session_id, force=True, filter_keys=False)
+                        enabled_convert_btn = (
+                            session['ebook_mode'] == ebook_modes['TEXT']
+                            or (session['ebook_mode'] == ebook_modes['SINGLE'] and bool(session.get('ebook_src')))
+                            or (session['ebook_mode'] == ebook_modes['DIRECTORY'] and bool(session.get('ebook_list')))
+                        )
+                except Exception as e:
+                    error = f'_click_gr_audiobook_edit_cancel_btn(): {e}'
+                    exception_alert(session_id, error)
+                return (
+                    sentence_update, gr.update(visible=False), gr.update(value=None),
+                    gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
+                    gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                    gr.update(visible=pending, interactive=True), gr.update(interactive=enabled_convert_btn)
+                )
+
+            def _click_gr_audiobook_export_btn(session_id:str)->tuple:
+                convert_update = gr.update()
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        error = None
+                        target = session.get('audiobook_edit_target')
+                        if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                            error = 'A conversion is running, try again later.'
+                        elif not session.get('audiobook_edit_pending') or not target:
+                            error = 'Nothing to export.'
+                        elif not session.get('blocks_current') or not session.get('process_dir') or not os.path.isdir(session['process_dir']):
+                            error = f'Edit context lost, open the sentence editor (✎) on {Path(target).name} again, then export.'
+                        elif Path(target).suffix.lstrip('.').lower() not in output_formats:
+                            error = f'{Path(target).suffix} is not a supported output format.'
+                        else:
+                            # rebuild with the audiobook's own format, channels and split mode, not the current UI settings
+                            ext = Path(target).suffix.lstrip('.').lower()
+                            is_split = Path(target).stem != Path(session['final_name']).stem
+                            audio_info = mediainfo(target) if os.path.exists(target) else {}
+                            channels = int(audio_info.get('channels') or (2 if session['output_channel'] == 'stereo' else 1))
+                            output_backup = (session['output_format'], session['output_channel'], session['output_split'])
+                            session['output_format'] = ext
+                            session['output_channel'] = 'stereo' if channels >= 2 else 'mono'
+                            session['output_split'] = is_split
+                            session['status'] = status_tags['CONVERTING']
+                            session['cancellation_requested'] = False
+                            exported_files = None
+                            try:
+                                msg = f"Rebuilding {Path(session['final_name']).name} with the edited sentences…"
+                                print(msg)
+                                progress_bar(0.0, desc=msg)
+                                exported_files = combine_audio_chapters(session_id)
+                            finally:
+                                session['output_format'], session['output_channel'], session['output_split'] = output_backup
+                                session['status'] = status_tags['READY']
+                            if not exported_files:
+                                error = 'combine_audio_chapters() failed!'
+                            else:
+                                if is_split:
+                                    part_pattern = re.compile(rf"^{re.escape(Path(session['final_name']).stem)}_part\d+\.{re.escape(ext)}$")
+                                    for f in os.listdir(session['audiobooks_dir']):
+                                        part_file = os.path.join(session['audiobooks_dir'], f)
+                                        if part_pattern.match(f) and part_file not in exported_files:
+                                            os.remove(part_file)
+                                            part_vtt = Path(part_file).with_suffix('.vtt')
+                                            if part_vtt.exists():
+                                                os.remove(part_vtt)
+                                session['audiobook'] = target if target in exported_files else exported_files[0]
+                                reset_ebook_session(session_id, force=True, filter_keys=False)
+                                msg = f"{Path(session['audiobook']).name} rebuilt with the edited sentences."
+                                print(msg)
+                                show_alert(session_id, {"type": "success", "msg": msg})
+                        if error is not None:
+                            show_alert(session_id, {"type": "warning", "msg": error})
+                        if session['status'] in [status_tags['READY'], status_tags['END']]:
+                            convert_update = gr.update(interactive=(
+                                session['ebook_mode'] == ebook_modes['TEXT']
+                                or (session['ebook_mode'] == ebook_modes['SINGLE'] and bool(session.get('ebook_src')))
+                                or (session['ebook_mode'] == ebook_modes['DIRECTORY'] and bool(session.get('ebook_list')))
+                            ))
+                        list_update = _update_gr_audiobook_list(session_id)
+                        list_update['interactive'] = True
+                        return (
+                            gr.update(visible=bool(session.get('audiobook_edit_pending')), interactive=True),
+                            gr.update(interactive=True), list_update, gr.update(interactive=True), convert_update
+                        )
+                except Exception as e:
+                    error = f'_click_gr_audiobook_export_btn(): {e}'
+                    exception_alert(session_id, error)
+                return gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), convert_update
 
             def _click_gr_deletion(session_id:str, voice_path:str, custom_model:str, audiobook:str, method:str|None=None)->tuple:
                 try:
@@ -2411,6 +2815,11 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_src, gr_ebook_textarea, gr_device, gr_audiobook_player, gr_audiobook_list,
                 gr_voice_list, gr_voice_highlight_css, gr_progress
             ]
+            outputs_audiobook_edit = [
+                gr_audiobook_sentence, gr_row_audiobook_edit, gr_audiobook_edit_player,
+                gr_audiobook_edit_convert_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn,
+                gr_audiobook_edit_btn, gr_audiobook_list, gr_audiobook_del_btn, gr_audiobook_export_btn, gr_convert_btn
+            ]
             outputs_on_voice_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
                 gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_session_switch_btn,
@@ -2721,12 +3130,95 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs=[gr_audiobook_files, gr_audiobook_files_state],
                 show_progress_on=[gr_audiobook_list],
                 js='()=>{window.load_vtt();}'
+            ).then(
+                fn=lambda session_id, selected: gr.update(visible=bool(context.get_session(session_id).get('audiobook_edit_pending')) and context.get_session(session_id).get('audiobook_edit_target') == selected),
+                inputs=[gr_session, gr_audiobook_list],
+                outputs=[gr_audiobook_export_btn],
+                show_progress_on=[gr_audiobook_list]
             )
             gr_audiobook_del_btn.click(
                 fn=_click_gr_audiobook_del_btn,
                 inputs=[gr_session, gr_audiobook_list],
                 outputs=[gr_modal, gr_data_field_hidden],
                 show_progress_on=[gr_audiobook_list]
+            )
+            gr_audiobook_edit_btn.click(
+                fn=_click_gr_audiobook_edit_btn,
+                inputs=[gr_session, gr_audiobook_list, gr_audiobook_edit_cue],
+                outputs=outputs_audiobook_edit,
+                show_progress_on=[gr_audiobook_list],
+                js='''
+                    (session_id, audiobook, cue)=>{
+                        try{
+                            const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                            const player = gr_root.querySelector("#gr_audiobook_player audio");
+                            const sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                            let time = 0;
+                            if(player){
+                                player.pause();
+                                time = parseFloat(player.currentTime) || 0;
+                            }
+                            const found = window.findCue(time);
+                            if(found && sentence){
+                                sentence.value = found.text;
+                                sentence.dispatchEvent(new Event("input", {bubbles: true}));
+                            }
+                            cue = JSON.stringify(found ? {idx: found.idx, text: found.text} : {idx: -1, text: ""});
+                        }catch(e){
+                            console.warn("gr_audiobook_edit_btn error:", e);
+                        }
+                        return [session_id, audiobook, cue];
+                    }
+                '''
+            )
+            gr_audiobook_edit_convert_btn.click(
+                fn=lambda: (gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False)),
+                inputs=None,
+                outputs=[gr_audiobook_edit_convert_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                queue=False
+            ).then(
+                fn=_click_gr_audiobook_edit_convert_btn,
+                inputs=[gr_session, gr_audiobook_sentence],
+                outputs=[gr_audiobook_edit_player, gr_audiobook_edit_convert_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                show_progress_on=[gr_progress]
+            )
+            gr_audiobook_edit_save_btn.click(
+                fn=lambda: (gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False)),
+                inputs=None,
+                outputs=[gr_audiobook_edit_convert_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                queue=False
+            ).then(
+                fn=_click_gr_audiobook_edit_save_btn,
+                inputs=[gr_session, gr_audiobook_sentence],
+                outputs=outputs_audiobook_edit,
+                show_progress_on=[gr_progress]
+            )
+            gr_audiobook_edit_cancel_btn.click(
+                fn=_click_gr_audiobook_edit_cancel_btn,
+                inputs=[gr_session],
+                outputs=outputs_audiobook_edit,
+                show_progress_on=[gr_audiobook_list]
+            )
+            gr_audiobook_export_btn.click(
+                fn=lambda: tuple(gr.update(interactive=False) for _ in range(5)),
+                inputs=None,
+                outputs=[gr_audiobook_export_btn, gr_audiobook_edit_btn, gr_audiobook_list, gr_audiobook_del_btn, gr_convert_btn],
+                queue=False
+            ).then(
+                fn=_click_gr_audiobook_export_btn,
+                inputs=[gr_session],
+                outputs=[gr_audiobook_export_btn, gr_audiobook_edit_btn, gr_audiobook_list, gr_audiobook_del_btn, gr_convert_btn],
+                show_progress_on=[gr_progress]
+            ).then(
+                fn=_update_gr_audiobook_player,
+                inputs=[gr_session],
+                outputs=[gr_playback_time, gr_audiobook_player, gr_audiobook_vtt],
+                show_progress_on=[gr_audiobook_list]
+            ).then(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='()=>{window.load_vtt();}'
             )
 
             ########### XTTS Params
