@@ -481,21 +481,17 @@ span[data-testid="block-info"] {
 #gr_audiobook_sentence textarea:not(:disabled) {
 	outline: 2px solid var(--button-primary-background-fill-hover) !important;
 	outline-offset: -2px !important;
-	background: #2b0d1d !important;
-	color: #ffe3f1 !important;
 	caret-color: #ff007f !important;
 }
+#gr_audiobook_sentence textarea:not(:disabled),
 #gr_audiobook_sentence:has(textarea:not(:disabled)),
 #gr_audiobook_sentence:has(textarea:not(:disabled)) label,
-#gr_row_audiobook_edit {
-	background: #2b0d1d !important;
+#gr_row_audiobook_edit,
+#gr_row_audiobook_edit :is(.small-btn, .small-btn-red):not(:hover):not(:active) {
+	background: color-mix(in srgb, var(--block-background-fill) 80%, #ff007f) !important;
 }
 #gr_audiobook_edit_player, #gr_audiobook_edit_player :is(.block, .container) {
 	background: transparent !important;
-}
-#gr_row_audiobook_edit :is(.small-btn, .small-btn-red):not(:hover):not(:active) {
-	background: #2b0d1d !important;
-	color: #ffe3f1 !important;
 }
 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label), 
 #gr_audiobook_edit_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label),

@@ -441,11 +441,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 and session.get('abs_library')
                             )
                             outputs[25] = gr.update(interactive=enabled_upload_btn)
-                            editing = session.get('audiobook_edit_block_id') is not None
-                            outputs[26] = gr.update(interactive=not editing)
+                            enabled_edit_btn = bool(session.get('audiobook')) and session.get('audiobook_edit_block_id') is None
+                            outputs[26] = gr.update(interactive=enabled_edit_btn)
                             outputs[27] = gr.update(
                                 visible=bool(session.get('audiobook_edit_pending')) and session.get('audiobook_edit_target') == session.get('audiobook'),
-                                interactive=not editing
+                                interactive=enabled_edit_btn
                             )
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             return tuple(outputs)
@@ -1164,10 +1164,10 @@ def build_interface(args:dict)->gr.Blocks:
             def _change_gr_audiobook_edit_btns(session_id:str, selected:str|None)->tuple:
                 session = context.get_session(session_id)
                 if session and session.get('id', False):
-                    idle = session['status'] in [status_tags['READY'], status_tags['END']]
-                    editing = session.get('audiobook_edit_block_id') is not None
+                    busy = session['status'] in [status_tags['CONVERTING'], status_tags['EDIT']]
+                    enabled = bool(selected) and not busy
                     pending = bool(session.get('audiobook_edit_pending')) and session.get('audiobook_edit_target') == selected
-                    return gr.update(visible=pending, interactive=idle and not editing), gr.update(interactive=idle and not editing)
+                    return gr.update(visible=pending, interactive=enabled), gr.update(interactive=enabled)
                 return gr.update(), gr.update()
 
             def _click_gr_audiobook_edit_btn(session_id:str, audiobook:str|None, cue:str|None)->tuple:
@@ -2420,8 +2420,6 @@ def build_interface(args:dict)->gr.Blocks:
                                                 session['status'] = status_tags['SKIP']
                                                 return gr.update(), (event + 1)
                                 else:
-                                    if session['cancellation_requested']:
-                                        error = 'Conversion cancelled'
                                     show_alert(session_id, {"type": "warning", "msg": error})
                                 session['status'] = status_tags['END']
                 except Exception as e:
@@ -2674,6 +2672,12 @@ def build_interface(args:dict)->gr.Blocks:
                     if isinstance(session.get('audiobook'), str):
                         if not os.path.exists(session['audiobook']):
                             session['audiobook'] = None
+                    if session.get('audiobook_edit_preview') and os.path.exists(session['audiobook_edit_preview']):
+                        os.unlink(session['audiobook_edit_preview'])
+                    session['audiobook_edit_block_id'] = None
+                    session['audiobook_edit_sentence_idx'] = None
+                    session['audiobook_edit_preview'] = None
+                    session['audiobook_edit_preview_text'] = None
                     session['status'] = status_tags['READY']
                     session['is_gui_process'] = is_gui_process
                     session['system'] = DEVICE_SYSTEM
