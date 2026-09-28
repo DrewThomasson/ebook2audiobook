@@ -394,6 +394,21 @@ def build_interface(args:dict)->gr.Blocks:
                     outputs = [gr.update(interactive=False) for _ in range(len(outputs_disable_components))]
                     if 'gr_session_switch_btn' in exceptions:
                         outputs[outputs_disable_components.index(gr_session_switch_btn)] = gr.update(interactive=True)
+                    # a conversion supersedes the sentence editor: close it, drop its preview and give back
+                    # the audiobook list/delete button it had locked (✎ and 📦 stay disabled until _enable_components())
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        preview_file = session.get('audiobook_edit_preview')
+                        if preview_file and os.path.exists(preview_file):
+                            os.unlink(preview_file)
+                        session['audiobook_edit_block_id'] = None
+                        session['audiobook_edit_sentence_idx'] = None
+                        session['audiobook_edit_preview'] = None
+                        session['audiobook_edit_preview_text'] = None
+                    outputs[outputs_disable_components.index(gr_row_audiobook_edit)] = gr.update(visible=False)
+                    outputs[outputs_disable_components.index(gr_audiobook_edit_player)] = gr.update(value=None)
+                    outputs[outputs_disable_components.index(gr_audiobook_list)] = gr.update(interactive=True)
+                    outputs[outputs_disable_components.index(gr_audiobook_del_btn)] = gr.update(interactive=True)
                 return outputs
 
             def _enable_components(session_id:str)->tuple:
@@ -403,7 +418,7 @@ def build_interface(args:dict)->gr.Blocks:
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
-                            outputs = list(gr.update(interactive=True) for _ in range(26))
+                            outputs = list(gr.update(interactive=True) for _ in range(len(outputs_enable_components)))
                             outputs[23] = gr.update()
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             enabled_convert_btn = False
@@ -425,12 +440,18 @@ def build_interface(args:dict)->gr.Blocks:
                                 and session.get('abs_library')
                             )
                             outputs[25] = gr.update(interactive=enabled_upload_btn)
+                            editing = session.get('audiobook_edit_block_id') is not None
+                            outputs[26] = gr.update(interactive=not editing)
+                            outputs[27] = gr.update(
+                                visible=bool(session.get('audiobook_edit_pending')) and session.get('audiobook_edit_target') == session.get('audiobook'),
+                                interactive=not editing
+                            )
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             return tuple(outputs)
                 except Exception as e:
                     error = f'_enable_components(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple(gr.update() for _ in range(26))
+                outputs = tuple(gr.update() for _ in range(len(outputs_enable_components)))
                 return outputs
 
             def _disable_on_voice_upload()->tuple:
@@ -1138,6 +1159,15 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'Could not delete the audiobook {selected_name}!'
                     exception_alert(session_id, error)
                 return gr.update(visible=False), gr.update()
+
+            def _change_gr_audiobook_edit_btns(session_id:str, selected:str|None)->tuple:
+                session = context.get_session(session_id)
+                if session and session.get('id', False):
+                    idle = session['status'] in [status_tags['READY'], status_tags['END']]
+                    editing = session.get('audiobook_edit_block_id') is not None
+                    pending = bool(session.get('audiobook_edit_pending')) and session.get('audiobook_edit_target') == selected
+                    return gr.update(visible=pending, interactive=idle and not editing), gr.update(interactive=idle and not editing)
+                return gr.update(), gr.update()
 
             def _click_gr_audiobook_edit_btn(session_id:str, audiobook:str|None, cue:str|None)->tuple:
                 try:
@@ -2793,7 +2823,9 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate,
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn,
-                gr_abs_upload_btn
+                gr_abs_upload_btn,
+                gr_audiobook_edit_btn, gr_audiobook_export_btn, gr_audiobook_sentence, gr_row_audiobook_edit, gr_audiobook_edit_player,
+                gr_audiobook_list, gr_audiobook_del_btn
             ]
             outputs_enable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
@@ -2801,7 +2833,8 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate,
                 gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn,
-                gr_abs_upload_btn
+                gr_abs_upload_btn,
+                gr_audiobook_edit_btn, gr_audiobook_export_btn
             ]
             outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
@@ -3139,9 +3172,9 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_audiobook_list],
                 js='()=>{window.load_vtt();}'
             ).then(
-                fn=lambda session_id, selected: gr.update(visible=bool(context.get_session(session_id).get('audiobook_edit_pending')) and context.get_session(session_id).get('audiobook_edit_target') == selected),
+                fn=_change_gr_audiobook_edit_btns,
                 inputs=[gr_session, gr_audiobook_list],
-                outputs=[gr_audiobook_export_btn],
+                outputs=[gr_audiobook_export_btn, gr_audiobook_edit_btn],
                 show_progress_on=[gr_audiobook_list]
             )
             gr_audiobook_del_btn.click(
