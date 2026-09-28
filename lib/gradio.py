@@ -441,12 +441,22 @@ def build_interface(args:dict)->gr.Blocks:
                                 and session.get('abs_library')
                             )
                             outputs[25] = gr.update(interactive=enabled_upload_btn)
-                            enabled_edit_btn = bool(session.get('audiobook')) and session.get('audiobook_edit_block_id') is None
+                            enabled_edit_btn = bool(audiobook) and session.get('audiobook_edit_block_id') is None
+                            visible_export_btn = False
+                            if audiobook and os.path.isfile(str(audiobook)) and session.get('session_dir'):
+                                stem = Path(audiobook).stem
+                                process_dir = os.path.join(session['session_dir'], hashlib.md5(stem.encode()).hexdigest())
+                                if not os.path.isdir(process_dir):
+                                    part_match = re.match(r'^(.*)_part(\d+)$', stem)
+                                    if part_match:
+                                        process_dir = os.path.join(session['session_dir'], hashlib.md5(part_match.group(1).encode()).hexdigest())
+                                chapters_dir = os.path.join(process_dir, 'chapters')
+                                visible_export_btn = os.path.isdir(chapters_dir) and any(
+                                    f.endswith(f'.{default_audio_proc_format}') and os.path.getmtime(os.path.join(chapters_dir, f)) > os.path.getmtime(audiobook)
+                                    for f in os.listdir(chapters_dir)
+                                )
                             outputs[26] = gr.update(interactive=enabled_edit_btn)
-                            outputs[27] = gr.update(
-                                visible=bool(session.get('audiobook_edit_pending')) and session.get('audiobook_edit_target') == session.get('audiobook'),
-                                interactive=enabled_edit_btn
-                            )
+                            outputs[27] = gr.update(visible=visible_export_btn, interactive=enabled_edit_btn)
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             return tuple(outputs)
                 except Exception as e:
@@ -1162,12 +1172,29 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(visible=False), gr.update()
 
             def _change_gr_audiobook_edit_btns(session_id:str, selected:str|None)->tuple:
-                session = context.get_session(session_id)
-                if session and session.get('id', False):
-                    busy = session['status'] in [status_tags['CONVERTING'], status_tags['EDIT']]
-                    enabled = bool(selected) and not busy
-                    pending = bool(session.get('audiobook_edit_pending')) and session.get('audiobook_edit_target') == selected
-                    return gr.update(visible=pending, interactive=enabled), gr.update(interactive=enabled)
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        busy = session['status'] in [status_tags['CONVERTING'], status_tags['EDIT']]
+                        enabled = bool(selected) and not busy
+                        # unexported edits = a chapter rebuilt after the audiobook file was written
+                        pending = False
+                        if selected and os.path.isfile(str(selected)) and session.get('session_dir'):
+                            stem = Path(selected).stem
+                            process_dir = os.path.join(session['session_dir'], hashlib.md5(stem.encode()).hexdigest())
+                            if not os.path.isdir(process_dir):
+                                part_match = re.match(r'^(.*)_part(\d+)$', stem)
+                                if part_match:
+                                    process_dir = os.path.join(session['session_dir'], hashlib.md5(part_match.group(1).encode()).hexdigest())
+                            chapters_dir = os.path.join(process_dir, 'chapters')
+                            pending = os.path.isdir(chapters_dir) and any(
+                                f.endswith(f'.{default_audio_proc_format}') and os.path.getmtime(os.path.join(chapters_dir, f)) > os.path.getmtime(selected)
+                                for f in os.listdir(chapters_dir)
+                            )
+                        return gr.update(visible=pending, interactive=enabled), gr.update(interactive=enabled)
+                except Exception as e:
+                    error = f'_change_gr_audiobook_edit_btns(): {e}'
+                    exception_alert(session_id, error)
                 return gr.update(), gr.update()
 
             def _click_gr_audiobook_edit_btn(session_id:str, audiobook:str|None, cue:str|None)->tuple:
@@ -1504,59 +1531,116 @@ def build_interface(args:dict)->gr.Blocks:
                     gr.update(visible=True)
                 )
 
-            def _click_gr_audiobook_export_btn(session_id:str)->tuple:
+            def _click_gr_audiobook_export_btn(session_id:str, audiobook:str|None)->tuple:
                 convert_update = gr.update()
+                visible_export = False
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         error = None
-                        target = session.get('audiobook_edit_target')
+                        target = audiobook
                         if session['status'] not in [status_tags['READY'], status_tags['END']]:
                             error = 'A conversion is running, try again later.'
-                        elif not session.get('audiobook_edit_pending') or not target:
-                            error = 'Nothing to export.'
-                        elif not session.get('blocks_current') or not session.get('process_dir') or not os.path.isdir(session['process_dir']):
-                            error = f'Edit context lost, open the sentence editor (✎) on {Path(target).name} again, then export.'
+                        elif not target or not os.path.exists(target):
+                            error = 'No audiobook selected.'
                         elif Path(target).suffix.lstrip('.').lower() not in output_formats:
                             error = f'{Path(target).suffix} is not a supported output format.'
                         else:
-                            # rebuild with the audiobook's own format, channels and split mode, not the current UI settings
+                            stem = Path(target).stem
                             ext = Path(target).suffix.lstrip('.').lower()
-                            is_split = Path(target).stem != Path(session['final_name']).stem
-                            audio_info = mediainfo(target) if os.path.exists(target) else {}
-                            channels = int(audio_info.get('channels') or (2 if session['output_channel'] == 'stereo' else 1))
-                            output_backup = (session['output_format'], session['output_channel'], session['output_split'])
-                            session['output_format'] = ext
-                            session['output_channel'] = 'stereo' if channels >= 2 else 'mono'
-                            session['output_split'] = is_split
-                            session['status'] = status_tags['CONVERTING']
-                            session['cancellation_requested'] = False
-                            exported_files = None
-                            try:
-                                msg = f"Rebuilding {Path(session['final_name']).name} with the edited sentences…"
-                                print(msg)
-                                progress_bar(0.0, desc=msg)
-                                exported_files = combine_audio_chapters(session_id)
-                            finally:
-                                session['output_format'], session['output_channel'], session['output_split'] = output_backup
-                                session['status'] = status_tags['READY']
-                            if not exported_files:
-                                error = 'combine_audio_chapters() failed!'
-                            else:
-                                if is_split:
-                                    part_pattern = re.compile(rf"^{re.escape(Path(session['final_name']).stem)}_part\d+\.{re.escape(ext)}$")
-                                    for f in os.listdir(session['audiobooks_dir']):
-                                        part_file = os.path.join(session['audiobooks_dir'], f)
-                                        if part_pattern.match(f) and part_file not in exported_files:
-                                            os.remove(part_file)
-                                            part_vtt = Path(part_file).with_suffix('.vtt')
-                                            if part_vtt.exists():
-                                                os.remove(part_vtt)
-                                session['audiobook'] = target if target in exported_files else exported_files[0]
-                                reset_ebook_session(session_id, force=True, filter_keys=False)
-                                msg = f"{Path(session['audiobook']).name} rebuilt with the edited sentences."
-                                print(msg)
-                                show_alert(session_id, {"type": "success", "msg": msg})
+                            base_name = stem
+                            process_dir = os.path.join(session['session_dir'], hashlib.md5(stem.encode()).hexdigest())
+                            if not os.path.isdir(process_dir):
+                                part_match = re.match(r'^(.*)_part(\d+)$', stem)
+                                if part_match:
+                                    base_name = part_match.group(1)
+                                    process_dir = os.path.join(session['session_dir'], hashlib.md5(base_name.encode()).hexdigest())
+                            chapters_dir = os.path.join(process_dir, 'chapters')
+                            visible_export = os.path.isdir(chapters_dir) and any(
+                                f.endswith(f'.{default_audio_proc_format}') and os.path.getmtime(os.path.join(chapters_dir, f)) > os.path.getmtime(target)
+                                for f in os.listdir(chapters_dir)
+                            )
+                            audio_info = mediainfo(target)
+                            if not visible_export:
+                                error = 'Nothing to export.'
+                            elif session.get('audiobook_edit_target') != target or session.get('process_dir') != process_dir or not session.get('blocks_current'):
+                                # 📦 without ✎ first (other audiobook edited meanwhile, reload, restart): attach the conversion data
+                                saved_json = glob(os.path.join(process_dir, f"{file_prefixes['saved']}*.json"))
+                                current_db = glob(os.path.join(process_dir, f"{file_prefixes['current']}*.db"))
+                                blocks_saved = load_json_blocks(saved_json[0]) if saved_json else {}
+                                filename_noext = Path(saved_json[0]).stem[len(file_prefixes['saved']):] if blocks_saved.get('blocks') else None
+                                if filename_noext is None and current_db:
+                                    blocks_saved = load_db_blocks(current_db[0])
+                                    filename_noext = Path(current_db[0]).stem[len(file_prefixes['current']):]
+                                kept = [b for b in blocks_saved.get('blocks', []) if b['keep'] and b['text'].strip()]
+                                if not kept or not all(b.get('sentences') for b in kept):
+                                    error = f'Conversion data of {stem} is incomplete, export is not possible.'
+                                else:
+                                    audio_tags = {str(k).lower(): v for k, v in (audio_info.get('TAG') or {}).items()}
+                                    epub_path = os.path.join(process_dir, f'__{filename_noext}.epub')
+                                    metadata = {key: None for key in session['metadata'].keys()}
+                                    if os.path.exists(epub_path):
+                                        epubBook = epub.read_epub(epub_path, {'ignore_ncx': True})
+                                        for key in metadata.keys():
+                                            data = epubBook.get_metadata('DC', key)
+                                            if data:
+                                                for value, attributes in data:
+                                                    metadata[key] = value
+                                    metadata['language'] = audio_tags.get('language') or metadata['language']
+                                    metadata['title'] = metadata['title'] or base_name.replace('_', ' ')
+                                    metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                    cover_path = os.path.join(process_dir, f'{filename_noext}.jpg')
+                                    session['process_dir'] = process_dir
+                                    session['chapters_dir'] = chapters_dir
+                                    session['sentences_dir'] = os.path.join(chapters_dir, 'sentences')
+                                    session['filename_noext'] = filename_noext
+                                    session['epub_path'] = epub_path
+                                    session['blocks_orig_json'] = os.path.join(process_dir, f"{file_prefixes['clone']}{filename_noext}.json")
+                                    session['blocks_saved_json'] = os.path.join(process_dir, f"{file_prefixes['saved']}{filename_noext}.json")
+                                    session['blocks_current_db'] = os.path.join(process_dir, f"{file_prefixes['current']}{filename_noext}.db")
+                                    session['final_name'] = f'{base_name}.{ext}'
+                                    session['metadata'] = metadata
+                                    session['cover'] = cover_path if os.path.exists(cover_path) else None
+                                    session['blocks_saved'] = blocks_saved
+                                    session['blocks_current'] = copy.deepcopy(blocks_saved)
+                                    session['audiobook_edit_target'] = target
+                            if error is None:
+                                # rebuild with the audiobook's own format, channels and split mode, not the current UI settings
+                                is_split = Path(target).stem != Path(session['final_name']).stem
+                                channels = int(audio_info.get('channels') or (2 if session['output_channel'] == 'stereo' else 1))
+                                output_backup = (session['output_format'], session['output_channel'], session['output_split'])
+                                session['output_format'] = ext
+                                session['output_channel'] = 'stereo' if channels >= 2 else 'mono'
+                                session['output_split'] = is_split
+                                session['status'] = status_tags['CONVERTING']
+                                session['cancellation_requested'] = False
+                                exported_files = None
+                                try:
+                                    msg = f"Rebuilding {Path(session['final_name']).name} with the edited sentences…"
+                                    print(msg)
+                                    progress_bar(0.0, desc=msg)
+                                    exported_files = combine_audio_chapters(session_id)
+                                finally:
+                                    session['output_format'], session['output_channel'], session['output_split'] = output_backup
+                                    session['status'] = status_tags['READY']
+                                if not exported_files:
+                                    error = 'combine_audio_chapters() failed!'
+                                else:
+                                    if is_split:
+                                        part_pattern = re.compile(rf"^{re.escape(Path(session['final_name']).stem)}_part\d+\.{re.escape(ext)}$")
+                                        for f in os.listdir(session['audiobooks_dir']):
+                                            part_file = os.path.join(session['audiobooks_dir'], f)
+                                            if part_pattern.match(f) and part_file not in exported_files:
+                                                os.remove(part_file)
+                                                part_vtt = Path(part_file).with_suffix('.vtt')
+                                                if part_vtt.exists():
+                                                    os.remove(part_vtt)
+                                    session['audiobook'] = target if target in exported_files else exported_files[0]
+                                    reset_ebook_session(session_id, force=True, filter_keys=False)
+                                    visible_export = False
+                                    msg = f"{Path(session['audiobook']).name} rebuilt with the edited sentences."
+                                    print(msg)
+                                    show_alert(session_id, {"type": "success", "msg": msg})
                         if error is not None:
                             show_alert(session_id, {"type": "warning", "msg": error})
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
@@ -1568,7 +1652,7 @@ def build_interface(args:dict)->gr.Blocks:
                         list_update = _update_gr_audiobook_list(session_id)
                         list_update['interactive'] = True
                         return (
-                            gr.update(visible=bool(session.get('audiobook_edit_pending')), interactive=True),
+                            gr.update(visible=visible_export, interactive=True),
                             gr.update(interactive=True), list_update, gr.update(interactive=True), convert_update
                         )
                 except Exception as e:
@@ -3258,7 +3342,7 @@ def build_interface(args:dict)->gr.Blocks:
                 queue=False
             ).then(
                 fn=_click_gr_audiobook_export_btn,
-                inputs=[gr_session],
+                inputs=[gr_session, gr_audiobook_list],
                 outputs=[gr_audiobook_export_btn, gr_audiobook_edit_btn, gr_audiobook_list, gr_audiobook_del_btn, gr_convert_btn],
                 show_progress_on=[gr_progress]
             ).then(
