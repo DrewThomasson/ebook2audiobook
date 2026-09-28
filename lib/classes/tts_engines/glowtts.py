@@ -107,9 +107,9 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
-                if use_zs:
-                    proc_dir = os.path.join(self.session['voice_dir'], 'proc')
-                    os.makedirs(proc_dir, exist_ok=True)
+                # always ready: an inline [voice:…] tag can switch to zero-shot in the middle of the sentence
+                proc_dir = os.path.join(self.session['voice_dir'], 'proc')
+                os.makedirs(proc_dir, exist_ok=True)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -117,6 +117,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
                         if success:
+                             self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                              use_zs = self.params['current_voice'] is not None
                         else:
                             return False, error

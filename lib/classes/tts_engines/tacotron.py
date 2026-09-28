@@ -138,6 +138,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
                         if success:
+                             self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
                              use_zs = self.params['current_voice'] is not None
                         else:
                             return False, error
