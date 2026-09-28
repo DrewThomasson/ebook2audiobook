@@ -81,31 +81,7 @@ span[data-testid="block-info"] {
 .gr-glass-mask.hide {
 	animation: fadeOut 2s ease-out 2s forwards !important;
 }
-.small-btn{
-	background: var(--block-background-fill) !important;
-	font-size: 22px !important;
-	width: 60px !important;
-	height: 100% !important;
-	margin: 0 !important;
-	padding: 0 !important;
-}
-.small-btn:hover {
-	background: var(--button-primary-background-fill-hover) !important;
-	font-size: 28px !important;
-}
-.small-btn-red{
-	background: var(--block-background-fill) !important;
-	font-size: 22px !important;
-	width: 60px !important;
-	height: 60px !important;
-	margin: 0 !important;
-	padding: 0 !important;
-}
-.small-btn-red:hover {
-	background-color: #ff5050 !important;
-	font-size: 28px !important;
-}
-.small-btn-lock {
+.small-btn-red, .small-btn-purple, .small-btn-green {
 	background: var(--block-background-fill) !important;
 	font-size: 18px !important;
 	width: 60px !important;
@@ -113,18 +89,21 @@ span[data-testid="block-info"] {
 	margin: 0 !important;
 	padding: 0 !important;
 }
-.small-btn-lock:hover {
+.small-btn-green:hover {
+	background: var(--button-primary-background-fill-hover) !important;
+	font-size: 28px !important;
+}
+.small-btn-red:hover {
+	background-color: #ff5050 !important;
+	font-size: 28px !important;
+}
+.small-btn-purple:hover {
 	background-color: #752eb2 !important;
 	font-size: 20px !important;
 }
-.small-btn-lock:active {
+.small-btn-green:active, .small-btn-red:active, .small-btn-purple:active {
 	background: var(--body-text-color) !important;
-	font-size: 20px !important;
-	color: var(--body-background-fill) !important;
-}
-.small-btn:active, .small-btn-red:active {
-	background: var(--body-text-color) !important;
-	font-size: 30px !important;
+	font-size: 24px !important;
 	color: var(--body-background-fill) !important;
 }
 .micro-btn{
@@ -487,7 +466,7 @@ span[data-testid="block-info"] {
 #gr_audiobook_sentence:has(textarea:not(:disabled)),
 #gr_audiobook_sentence:has(textarea:not(:disabled)) label,
 #gr_row_audiobook_edit,
-#gr_row_audiobook_edit :is(.small-btn, .small-btn-red):not(:hover):not(:active) {
+#gr_row_audiobook_edit :is(.small-btn-green, .small-btn-red):not(:hover):not(:active) {
 	background: color-mix(in srgb, var(--block-background-fill) 80%, #ff007f) !important;
 }
 #gr_audiobook_edit_player, #gr_audiobook_edit_player :is(.block, .container) {

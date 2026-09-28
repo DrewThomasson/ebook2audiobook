@@ -70,7 +70,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_voice_file = gr.File(show_label=False, label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                     with gr.Row(elem_id='gr_row_voice_player') as gr_row_voice_player:
                                         gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), container=False, visible=True, show_label=False, scale=0, min_width=60)
-                                        gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                        gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn-green'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                         gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                         gr_voice_selected_filename = gr.Markdown(value='', elem_id='gr_voice_selected_filename', elem_classes=['gr-markdown'], visible=False)
                                         gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
@@ -108,7 +108,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_session_switch_enable_state = gr.State(None)
                                     with gr.Row(elem_id='gr_row_session'):
                                         gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
-                                        gr_session_switch_btn = gr.Button('🔒︎', elem_id='gr_session_switch_btn', elem_classes=['small-btn-lock'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
+                                        gr_session_switch_btn = gr.Button('🔒︎', elem_id='gr_session_switch_btn', elem_classes=['small-btn-purple'], variant='secondary', visible=True, interactive=True, scale=0, min_width=60)
 
                         with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-no-col']):
                             gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
@@ -121,18 +121,18 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=True, value=0.0)
                             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
                             with gr.Row(elem_id='gr_row_audiobook_edit', visible=False) as gr_row_audiobook_edit:
-                                gr_audiobook_edit_convert_btn = gr.Button(elem_id='gr_audiobook_edit_convert_btn', value='◉', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                gr_audiobook_edit_preview_btn = gr.Button(elem_id='gr_audiobook_edit_preview_btn', value='◉', elem_classes=['small-btn-green'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audio_edit_kwargs = {"elem_id": "gr_audiobook_edit_player", "label": "", "type": "filepath", "autoplay": True, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True, "scale": 2}
                                 gr_audiobook_edit_player = gr.Audio(**gr_audio_edit_kwargs)
-                                gr_audiobook_edit_save_btn = gr.Button(elem_id='gr_audiobook_edit_save_btn', value='✔', elem_classes=['small-btn'], variant='secondary', interactive=False, scale=0, min_width=60)
+                                gr_audiobook_edit_save_btn = gr.Button(elem_id='gr_audiobook_edit_save_btn', value='✔', elem_classes=['small-btn-green'], variant='secondary', interactive=False, scale=0, min_width=60)
                                 gr_audiobook_edit_cancel_btn = gr.Button(elem_id='gr_audiobook_edit_cancel_btn', value='✖', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
                             gr_audio_kwargs = {"elem_id": "gr_audiobook_player", "label": "", "type": "filepath", "autoplay": False, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True}
                             gr_audiobook_player = gr.Audio(**gr_audio_kwargs)
                             with gr.Row(elem_id='gr_row_audiobook_list', visible=True) as gr_row_audiobook_list:
-                                gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
-                                gr_audiobook_edit_btn = gr.Button(elem_id='gr_audiobook_edit_btn', value='✎', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn-blue'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                gr_audiobook_edit_btn = gr.Button(elem_id='gr_audiobook_edit_btn', value='✎', elem_classes=['small-btn-orange'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
-                                gr_audiobook_export_btn = gr.Button(elem_id='gr_audiobook_export_btn', value='⇄', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                gr_audiobook_export_btn = gr.Button(elem_id='gr_audiobook_export_btn', value='⇄', elem_classes=['small-btn-purple'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, scale=0, min_width=60)
                             gr_audiobook_files = gr.Files(label='', elem_id='gr_audiobook_files', visible=False)
                             gr_audiobook_files_state = gr.State(False)
@@ -1320,7 +1320,7 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return tuple(gr.update() for _ in range(12))
 
-            def _click_gr_audiobook_edit_convert_btn(session_id:str, text:str|None)->tuple:
+            def _click_gr_audiobook_edit_sentence_btn(session_id:str, text:str|None)->tuple:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
@@ -1386,7 +1386,7 @@ def build_interface(args:dict)->gr.Blocks:
                             show_alert(session_id, {"type": "warning", "msg": error})
                         return gr.update(), gr.update(interactive=True), gr.update(interactive=bool(session.get('audiobook_edit_preview'))), gr.update(interactive=True)
                 except Exception as e:
-                    error = f'_click_gr_audiobook_edit_convert_btn(): {e}'
+                    error = f'_click_gr_audiobook_edit_sentence_btn(): {e}'
                     exception_alert(session_id, error)
                 return gr.update(), gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True)
 
@@ -2942,7 +2942,7 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_audiobook_edit = [
                 gr_audiobook_sentence, gr_row_audiobook_edit, gr_audiobook_edit_player,
-                gr_audiobook_edit_convert_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn,
+                gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn,
                 gr_audiobook_edit_btn, gr_audiobook_list, gr_audiobook_del_btn, gr_audiobook_export_btn, gr_convert_btn,
                 gr_audiobook_player
             ]
@@ -3297,21 +3297,21 @@ def build_interface(args:dict)->gr.Blocks:
                     }
                 '''
             )
-            gr_audiobook_edit_convert_btn.click(
+            gr_audiobook_edit_preview_btn.click(
                 fn=lambda: (gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False)),
                 inputs=None,
-                outputs=[gr_audiobook_edit_convert_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                outputs=[gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
                 queue=False
             ).then(
-                fn=_click_gr_audiobook_edit_convert_btn,
+                fn=_click_gr_audiobook_edit_sentence_btn,
                 inputs=[gr_session, gr_audiobook_sentence],
-                outputs=[gr_audiobook_edit_player, gr_audiobook_edit_convert_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                outputs=[gr_audiobook_edit_player, gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
                 show_progress_on=[gr_progress]
             )
             gr_audiobook_edit_save_btn.click(
                 fn=lambda: (gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False)),
                 inputs=None,
-                outputs=[gr_audiobook_edit_convert_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                outputs=[gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
                 queue=False
             ).then(
                 fn=_click_gr_audiobook_edit_save_btn,
