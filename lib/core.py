@@ -2534,7 +2534,20 @@ def normalize_sml_tags(text:str)->tuple[bool, str]:
             if close:
                 error = f'normalize_sml_tags() error: non-paired tag [/{tag}] is invalid'
                 return False, error
-            out.append(info['static'])
+            # keep a duration ([pause:10], [pause:10s], [pause:1,5 sec], [pause:500ms]) normalized to seconds:
+            # the engines' _convert_sml() reads it with float(). anything else falls back to the static tag,
+            # as before, so a stray "[pause: xyz]" in an ebook never aborts the conversion.
+            seconds = None
+            if value is not None and value.strip():
+                duration = re.fullmatch(r'\s*(\d+(?:[.,]\d+)?)\s*(ms|s|sec|secs|second|seconds)?\s*', value, flags=re.IGNORECASE)
+                if duration:
+                    seconds = float(duration.group(1).replace(',', '.'))
+                    if (duration.group(2) or '').lower() == 'ms':
+                        seconds /= 1000
+            if seconds is not None and math.isfinite(seconds) and seconds > 0:
+                out.append(f"[{tag}:{seconds:g}]")
+            else:
+                out.append(info['static'])
         last = end
     out.append(text[last:])
     if stack:

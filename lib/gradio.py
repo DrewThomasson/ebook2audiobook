@@ -1277,8 +1277,8 @@ def build_interface(args:dict)->gr.Blocks:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         error = None
-                        text = ' '.join(str(text or '').split())
-                        res, text = normalize_sml_tags(text)
+                        raw_text = ' '.join(str(text or '').split())
+                        res, text = normalize_sml_tags(raw_text)
                         block_id = session.get('audiobook_edit_block_id')
                         blocks_saved = session.get('blocks_saved') or {}
                         block = next((b for b in blocks_saved.get('blocks', []) if b['id'] == block_id), None)
@@ -1291,6 +1291,14 @@ def build_interface(args:dict)->gr.Blocks:
                         elif not any(c.isalnum() for c in text):
                             error = 'The sentence must contain at least one letter or digit.'
                         else:
+                            # a duration normalize_sml_tags() could not read falls back to the default one: say so
+                            dropped = (
+                                sum(1 for m in SML_TAG_PATTERN.finditer(raw_text) if not TTS_SML.get(m.group('tag'), {}).get('paired') and (m.group('value') or '').strip())
+                                - sum(1 for m in SML_TAG_PATTERN.finditer(text) if not TTS_SML.get(m.group('tag'), {}).get('paired') and (m.group('value') or '').strip())
+                            )
+                            if dropped > 0:
+                                msg = f'{dropped} SML duration(s) not understood, default length used. Use e.g. [pause:10], [pause:2.5s] or [pause:500ms].'
+                                show_alert(session_id, {"type": "warning", "msg": msg})
                             preview_file = os.path.join(session['process_dir'], f'__edit_preview.{default_audio_proc_format}')
                             if os.path.exists(preview_file):
                                 os.unlink(preview_file)
@@ -1306,7 +1314,7 @@ def build_interface(args:dict)->gr.Blocks:
                             tts_manager = None
                             converted = False
                             try:
-                                msg = f"Converting the edited sentence with {session['tts_engine']}…"
+                                msg = f"Converting the edited sentence with {session['tts_engine']}: {text}"
                                 print(msg)
                                 progress_bar(0.0, desc=msg)
                                 tts_manager = TTSManager(session)
