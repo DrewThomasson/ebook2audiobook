@@ -460,14 +460,13 @@ span[data-testid="block-info"] {
 #gr_tts_rating {
 	overflow: hidden !important;
 }
-#gr_row_voice_player, #gr_row_custom_model_list, #gr_row_session, #gr_row_audiobook_list {
+#gr_row_voice_player, #gr_row_custom_model_list, #gr_row_session, #gr_row_audiobook_list, #gr_row_audiobook_edit {
 	height: 60px !important;
 }
 #gr_audiobook_player, #gr_audiobook_edit_player {
 	border-style: none !important;
 }
 #gr_row_audiobook_edit {
-	min-height: 60px !important;
 	align-items: center !important;
 }
 #gr_audiobook_edit_btn, #gr_audiobook_edit_save_btn, #gr_audiobook_edit_cancel_btn {
