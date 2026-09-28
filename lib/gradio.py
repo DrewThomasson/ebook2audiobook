@@ -1304,7 +1304,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 msg = f"WARNING!!! language selected {final_language} differs from the audiobook language {audio_tags['language']}"
                                                 show_alert(session_id, {"type": "warning", "msg": msg})
                                             if session['audiobook_edit_pending']:
-                                                msg = f'{Path(audiobook).name} has saved sentence edits not exported yet, click 📦 to rebuild it.'
+                                                msg = f'{Path(audiobook).name} has saved sentence edits not exported yet, click ⇄ to rebuild it.'
                                                 show_alert(session_id, {"type": "info", "msg": msg})
                                             return (
                                                 gr.update(value=sentence, interactive=True), gr.update(visible=True), gr.update(value=None),
@@ -1456,7 +1456,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['audiobook_edit_block_id'] = None
                                 session['audiobook_edit_sentence_idx'] = None
                                 session['audiobook_edit_preview_text'] = None
-                                msg = 'Sentence replaced. Click 📦 to rebuild the audiobook.'
+                                msg = 'Sentence replaced. Click ⇄ to rebuild the audiobook.'
                                 print(msg)
                                 show_alert(session_id, {"type": "success", "msg": msg})
                                 enabled_convert_btn = (
