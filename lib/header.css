@@ -338,7 +338,8 @@ span[data-testid="block-info"] {
 	background: none !important;
 	border: none !important;
 }
-#gr_audiobook_player label, #gr_audiobook_player div.top-panel {
+#gr_audiobook_player label, #gr_audiobook_player div.top-panel,
+#gr_audiobook_edit_player label, #gr_audiobook_edit_player div.top-panel {
 	display: none !important;
 }
 #gr_ebook_src, #gr_custom_model_file, #gr_voice_file {
@@ -469,16 +470,21 @@ span[data-testid="block-info"] {
 	min-height: 60px !important;
 	align-items: center !important;
 }
+#gr_audiobook_edit_btn, #gr_audiobook_edit_save_btn, #gr_audiobook_edit_cancel_btn {
+	font-size: 18px !important;
+}
+#gr_audiobook_edit_btn:hover, #gr_audiobook_edit_save_btn:hover, #gr_audiobook_edit_cancel_btn:hover {
+	font-size: 22px !important;
+}
+#gr_audiobook_edit_btn:active, #gr_audiobook_edit_save_btn:active, #gr_audiobook_edit_cancel_btn:active {
+	font-size: 24px !important;
+}
 #gr_audiobook_sentence textarea:not(:disabled) {
 	outline: 2px solid var(--button-primary-background-fill-hover) !important;
 	outline-offset: -2px !important;
 }
 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label), 
 #gr_audiobook_edit_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label),
-#gr_audiobook_edit_player button[aria-label="Download"],
-#gr_audiobook_edit_player button[aria-label="Share"],
-#gr_audiobook_edit_player .download-button,
-#gr_audiobook_edit_player .share-button,
 #gr_audiobook_player button[aria-label="Download"],
 #gr_audiobook_player button[aria-label="Share"],
 #gr_audiobook_player .download-button,
@@ -519,6 +525,8 @@ audio:-moz-read-only {
 #gr_audiobook_edit_player:-moz-read-only,
 #gr_audiobook_player .block:-moz-read-only,
 #gr_audiobook_player .container:-moz-read-only,
+#gr_audiobook_edit_player .block:-moz-read-only,
+#gr_audiobook_edit_player .container:-moz-read-only,
 #gr_voice_player_hidden:-moz-read-only {
 	background-color: transparent !important;
 	border: none !important;

@@ -121,7 +121,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=True, value=0.0)
                             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
                             with gr.Row(elem_id='gr_row_audiobook_edit', visible=False) as gr_row_audiobook_edit:
-                                gr_audiobook_edit_convert_btn = gr.Button(elem_id='gr_audiobook_edit_convert_btn', value='🎙', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
+                                gr_audiobook_edit_convert_btn = gr.Button(elem_id='gr_audiobook_edit_convert_btn', value='◉', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audio_edit_kwargs = {"elem_id": "gr_audiobook_edit_player", "label": "", "type": "filepath", "autoplay": True, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True, "scale": 2}
                                 gr_audiobook_edit_player = gr.Audio(**gr_audio_edit_kwargs)
                                 gr_audiobook_edit_save_btn = gr.Button(elem_id='gr_audiobook_edit_save_btn', value='✔', elem_classes=['small-btn'], variant='secondary', interactive=False, scale=0, min_width=60)
@@ -1391,9 +1391,9 @@ def build_interface(args:dict)->gr.Blocks:
                         elif block is None or sentence_idx is None or sentence_idx >= len(block.get('sentences', [])):
                             error = 'Edit context lost, close the editor and open it again.'
                         elif not preview_file or not os.path.exists(preview_file):
-                            error = 'Convert the sentence first (🎙).'
+                            error = 'Convert the sentence first (◉).'
                         elif res is False or text != session.get('audiobook_edit_preview_text'):
-                            error = 'The text changed since the last conversion, convert it again (🎙).'
+                            error = 'The text changed since the last conversion, convert it again (◉).'
                         else:
                             sentence_count = len(block['sentences'])
                             sentence_file = os.path.join(session['sentences_dir'], block_id, f'{sentence_idx}.{default_audio_proc_format}')
