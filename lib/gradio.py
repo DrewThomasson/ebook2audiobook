@@ -444,17 +444,14 @@ def build_interface(args:dict)->gr.Blocks:
                             enabled_edit_btn = bool(audiobook) and session.get('audiobook_edit_block_id') is None
                             visible_export_btn = False
                             if audiobook and os.path.isfile(str(audiobook)) and session.get('session_dir'):
-                                stem = Path(audiobook).stem
-                                process_dir = os.path.join(session['session_dir'], hashlib.md5(stem.encode()).hexdigest())
+                                base_name = Path(audiobook).stem
+                                process_dir = os.path.join(session['session_dir'], hashlib.md5(base_name.encode()).hexdigest())
                                 if not os.path.isdir(process_dir):
-                                    part_match = re.match(r'^(.*)_part(\d+)$', stem)
+                                    part_match = re.match(r'^(.*)_part(\d+)$', base_name)
                                     if part_match:
-                                        process_dir = os.path.join(session['session_dir'], hashlib.md5(part_match.group(1).encode()).hexdigest())
-                                chapters_dir = os.path.join(process_dir, 'chapters')
-                                visible_export_btn = os.path.isdir(chapters_dir) and any(
-                                    f.endswith(f'.{default_audio_proc_format}') and os.path.getmtime(os.path.join(chapters_dir, f)) > os.path.getmtime(audiobook)
-                                    for f in os.listdir(chapters_dir)
-                                )
+                                        base_name = part_match.group(1)
+                                        process_dir = os.path.join(session['session_dir'], hashlib.md5(base_name.encode()).hexdigest())
+                                visible_export_btn = os.path.exists(os.path.join(process_dir, f"__edit_pending_{base_name}{Path(audiobook).suffix.lower()}"))
                             outputs[26] = gr.update(interactive=enabled_edit_btn)
                             outputs[27] = gr.update(visible=visible_export_btn, interactive=enabled_edit_btn)
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
@@ -1177,20 +1174,17 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         busy = session['status'] in [status_tags['CONVERTING'], status_tags['EDIT']]
                         enabled = bool(selected) and not busy
-                        # unexported edits = a chapter rebuilt after the audiobook file was written
+                        # unexported edits = the marker ✔ writes and 📦 removes
                         pending = False
                         if selected and os.path.isfile(str(selected)) and session.get('session_dir'):
-                            stem = Path(selected).stem
-                            process_dir = os.path.join(session['session_dir'], hashlib.md5(stem.encode()).hexdigest())
+                            base_name = Path(selected).stem
+                            process_dir = os.path.join(session['session_dir'], hashlib.md5(base_name.encode()).hexdigest())
                             if not os.path.isdir(process_dir):
-                                part_match = re.match(r'^(.*)_part(\d+)$', stem)
+                                part_match = re.match(r'^(.*)_part(\d+)$', base_name)
                                 if part_match:
-                                    process_dir = os.path.join(session['session_dir'], hashlib.md5(part_match.group(1).encode()).hexdigest())
-                            chapters_dir = os.path.join(process_dir, 'chapters')
-                            pending = os.path.isdir(chapters_dir) and any(
-                                f.endswith(f'.{default_audio_proc_format}') and os.path.getmtime(os.path.join(chapters_dir, f)) > os.path.getmtime(selected)
-                                for f in os.listdir(chapters_dir)
-                            )
+                                    base_name = part_match.group(1)
+                                    process_dir = os.path.join(session['session_dir'], hashlib.md5(base_name.encode()).hexdigest())
+                            pending = os.path.exists(os.path.join(process_dir, f"__edit_pending_{base_name}{Path(selected).suffix.lower()}"))
                         return gr.update(visible=pending, interactive=enabled), gr.update(interactive=enabled)
                 except Exception as e:
                     error = f'_change_gr_audiobook_edit_btns(): {e}'
@@ -1281,14 +1275,10 @@ def build_interface(args:dict)->gr.Blocks:
                                         block_id = None
                                         sentence_idx = None
                                         sentence = None
-                                        chapter_mtime = 0.0
                                         for block in blocks_saved.get('blocks', []):
-                                            if not (block['keep'] and block['text'].strip()):
-                                                continue
-                                            chapter_file = os.path.join(session['chapters_dir'], f"{block['id']}.{default_audio_proc_format}")
-                                            if os.path.exists(chapter_file):
-                                                chapter_mtime = max(chapter_mtime, os.path.getmtime(chapter_file))
                                             if block_id is not None:
+                                                break
+                                            if not (block['keep'] and block['text'].strip()):
                                                 continue
                                             for j, s in enumerate(block.get('sentences', [])):
                                                 if not any(c.isalnum() for c in str(s)):
@@ -1297,8 +1287,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                     block_id, sentence_idx, sentence = block['id'], j, str(s)
                                                     break
                                                 cue_count += 1
-                                        # a chapter newer than the audiobook means sentence edits saved but never exported
-                                        session['audiobook_edit_pending'] = chapter_mtime > os.path.getmtime(audiobook)
+                                        session['audiobook_edit_pending'] = os.path.exists(os.path.join(session['process_dir'], f"__edit_pending_{session['final_name']}"))
                                         if block_id is None:
                                             error = 'Sentence not found in the conversion data.'
                                         elif cue_text and ''.join(SML_TAG_PATTERN.sub('', sentence).split()) != cue_text:
@@ -1462,6 +1451,7 @@ def build_interface(args:dict)->gr.Blocks:
                             finally:
                                 session['status'] = status_tags['READY']
                             if error is None:
+                                Path(os.path.join(session['process_dir'], f"__edit_pending_{session['final_name']}")).touch()
                                 session['audiobook_edit_pending'] = True
                                 session['audiobook_edit_block_id'] = None
                                 session['audiobook_edit_sentence_idx'] = None
@@ -1556,10 +1546,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     base_name = part_match.group(1)
                                     process_dir = os.path.join(session['session_dir'], hashlib.md5(base_name.encode()).hexdigest())
                             chapters_dir = os.path.join(process_dir, 'chapters')
-                            visible_export = os.path.isdir(chapters_dir) and any(
-                                f.endswith(f'.{default_audio_proc_format}') and os.path.getmtime(os.path.join(chapters_dir, f)) > os.path.getmtime(target)
-                                for f in os.listdir(chapters_dir)
-                            )
+                            pending_marker = os.path.join(process_dir, f'__edit_pending_{base_name}.{ext}')
+                            visible_export = os.path.exists(pending_marker)
                             audio_info = mediainfo(target)
                             if not visible_export:
                                 error = 'Nothing to export.'
@@ -1636,6 +1624,8 @@ def build_interface(args:dict)->gr.Blocks:
                                                 if part_vtt.exists():
                                                     os.remove(part_vtt)
                                     session['audiobook'] = target if target in exported_files else exported_files[0]
+                                    if os.path.exists(pending_marker):
+                                        os.unlink(pending_marker)
                                     reset_ebook_session(session_id, force=True, filter_keys=False)
                                     visible_export = False
                                     msg = f"{Path(session['audiobook']).name} rebuilt with the edited sentences."
