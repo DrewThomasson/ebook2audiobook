@@ -119,7 +119,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=True)
                             gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=True, value=0.0)
-                            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3)
+                            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3, max_length=500)
                             with gr.Row(elem_id='gr_row_audiobook_edit', visible=False) as gr_row_audiobook_edit:
                                 gr_audiobook_edit_preview_btn = gr.Button(elem_id='gr_audiobook_edit_preview_btn', value='◉', elem_classes=['small-btn-green'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audio_edit_kwargs = {"elem_id": "gr_audiobook_edit_player", "label": "", "type": "filepath", "autoplay": True, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True, "scale": 2}
@@ -1174,7 +1174,6 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         busy = session['status'] in [status_tags['CONVERTING'], status_tags['EDIT']]
                         enabled = bool(selected) and not busy
-                        # unexported edits = the marker ✔ writes and 📦 removes
                         pending = False
                         if selected and os.path.isfile(str(selected)) and session.get('session_dir'):
                             base_name = Path(selected).stem
@@ -1190,6 +1189,23 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'_change_gr_audiobook_edit_btns(): {e}'
                     exception_alert(session_id, error)
                 return gr.update(), gr.update()
+
+            def _update_audiobook_edit_lock(session_id:str)->tuple:
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        if session.get('audiobook_edit_block_id') is not None:
+                            return tuple(gr.update(interactive=False) for _ in range(len(outputs_audiobook_edit_lock)))
+                        enabled = _enable_components(session_id)
+                        enabled_index = {id(component): i for i, component in enumerate(outputs_enable_components)}
+                        return tuple(
+                            enabled[enabled_index[id(component)]] if id(component) in enabled_index else gr.update(interactive=True)
+                            for component in outputs_audiobook_edit_lock
+                        )
+                except Exception as e:
+                    error = f'_update_audiobook_edit_lock(): {e}'
+                    exception_alert(session_id, error)
+                return tuple(gr.update() for _ in range(len(outputs_audiobook_edit_lock)))
 
             def _click_gr_audiobook_edit_btn(session_id:str, audiobook:str|None, cue:str|None)->tuple:
                 try:
@@ -1330,14 +1346,23 @@ def build_interface(args:dict)->gr.Blocks:
                         block_id = session.get('audiobook_edit_block_id')
                         blocks_saved = session.get('blocks_saved') or {}
                         block = next((b for b in blocks_saved.get('blocks', []) if b['id'] == block_id), None)
+                        lang = session['language']
+                        if session.get('translate_enabled') and session.get('translate'):
+                            lang = session['translate']
+                        max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
+                        sentence_len = len(' '.join(SML_TAG_PATTERN.sub('', text).split()))
                         if session['status'] not in [status_tags['READY'], status_tags['END']]:
                             error = 'A conversion is running, try again later.'
                         elif block is None or not session.get('process_dir'):
                             error = 'Edit context lost, close the editor and open it again.'
+                        elif len(raw_text) > 500:
+                            error = 'The sentence field is limited to 500 characters.'
                         elif res is False:
                             error = text
                         elif not any(c.isalnum() for c in text):
                             error = 'The sentence must contain at least one letter or digit.'
+                        elif sentence_len > max_chars:
+                            error = f'The sentence is too long for {lang}: {sentence_len} characters without SML tags, {max_chars} maximum.'
                         else:
                             # a duration normalize_sml_tags() could not read falls back to the default one: say so
                             dropped = (
@@ -2946,6 +2971,16 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_audiobook_edit_btn, gr_audiobook_list, gr_audiobook_del_btn, gr_audiobook_export_btn, gr_convert_btn,
                 gr_audiobook_player
             ]
+            outputs_audiobook_edit_lock = [
+                gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_translate_enabled, gr_translate,
+                gr_voice_file, gr_voice_play, gr_voice_list, gr_voice_del_btn, gr_device, gr_tts_engine_list, gr_fine_tuned_list,
+                gr_custom_model_file, gr_custom_model_list, gr_custom_model_del_btn,
+                gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
+                gr_session_switch_btn, gr_audiobook_download_btn,
+                gr_abs_url, gr_abs_api_token, gr_abs_library, gr_abs_search_btn, gr_abs_upload_btn,
+                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
+                gr_bark_text_temp, gr_bark_waveform_temp
+            ]
             outputs_on_voice_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
                 gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_session_switch_btn,
@@ -3296,6 +3331,11 @@ def build_interface(args:dict)->gr.Blocks:
                         return [session_id, audiobook, cue];
                     }
                 '''
+            ).then(
+                fn=_update_audiobook_edit_lock,
+                inputs=[gr_session],
+                outputs=outputs_audiobook_edit_lock,
+                show_progress_on=[gr_audiobook_list]
             )
             gr_audiobook_edit_preview_btn.click(
                 fn=lambda: (gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False)),
@@ -3318,11 +3358,21 @@ def build_interface(args:dict)->gr.Blocks:
                 inputs=[gr_session, gr_audiobook_sentence],
                 outputs=outputs_audiobook_edit,
                 show_progress_on=[gr_progress]
+            ).then(
+                fn=_update_audiobook_edit_lock,
+                inputs=[gr_session],
+                outputs=outputs_audiobook_edit_lock,
+                show_progress_on=[gr_audiobook_list]
             )
             gr_audiobook_edit_cancel_btn.click(
                 fn=_click_gr_audiobook_edit_cancel_btn,
                 inputs=[gr_session],
                 outputs=outputs_audiobook_edit,
+                show_progress_on=[gr_audiobook_list]
+            ).then(
+                fn=_update_audiobook_edit_lock,
+                inputs=[gr_session],
+                outputs=outputs_audiobook_edit_lock,
                 show_progress_on=[gr_audiobook_list]
             )
             gr_audiobook_export_btn.click(
