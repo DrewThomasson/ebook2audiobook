@@ -306,6 +306,9 @@ Default to config.json model.""")
         from cryptography.fernet import Fernet
         os.environ['HF_TOKEN'] = Fernet(fernet_key.encode('utf-8')).decrypt(fernet_data).decode('utf-8')
         args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
+        if args['script_mode'] in [NATIVE, FULL_DOCKER]:
+            from lib.classes.bug_reporter import bug_reporter
+            bug_reporter.install(bug_report_url, prog_version, args['script_mode'], bug_reports_dir, voices_dir, bug_report_enabled and not bug_report_env_opt_out)
         args['share'] =  args['share'] if args['share'] else False
         args['ebook_mode'] = 'single'
         args['ebook_list'] = None

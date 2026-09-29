@@ -140,6 +140,7 @@ tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
 tempfile.tempdir = run_dir
 detect_gpu_script = os.path.join(components_dir, './detect_gpu.py')
+bug_reports_dir = os.path.join(tmp_dir, 'bug_reports')
 
 # ---------------------------------------------------------------------
 # Environment setup
@@ -154,6 +155,7 @@ os.environ['CALIBRE_CACHE_DIRECTORY'] = run_dir
 os.environ['CALIBRE_CONFIG_DIRECTORY'] = run_dir
 os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
+bug_report_env_opt_out = os.environ.get('E2A_BUG_REPORT', '1') == '0' or os.environ.get('DO_NOT_TRACK', '0').strip().lower() in ('1', 'true', 'yes')
 os.environ['DO_NOT_TRACK'] = 'True'
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
 os.environ['HF_HOME'] = tts_dir
@@ -206,6 +208,8 @@ max_upload_size = '6GB' # MB or GB
 tmp_expire = 60 # days
 max_ebook_textarea_length = 1024 # chars
 default_vram_flush_ratio = 0.85 # flush the device cache when used/total VRAM crosses this ratio (0 disables the check)
+bug_report_enabled = True # automatic anonymized crash/exception reports (E2A_BUG_REPORT=0 or DO_NOT_TRACK=1 also disables)
+bug_report_url = '' # https endpoint receiving the JSON bug report (POST), empty disables the reporter
 
 # ---------------------------------------------------------------------
 # Interface configuration

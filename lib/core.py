@@ -41,6 +41,7 @@ from phonemizer import phonemize
 from pypinyin import pinyin, Style
 
 from lib.classes.subprocess_pipe import SubprocessPipe
+from lib.classes.bug_reporter import bug_reporter
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.non_text_filter import NonTextFilter
@@ -104,6 +105,7 @@ class DependencyError(Exception):
     def handle_exception(self)->None:
         # Print the full traceback of the exception
         traceback.print_exc()      
+        bug_reporter.report()
         # Print the exception message
         error = f'Caught DependencyError: {self}'
         print(error)
@@ -4399,6 +4401,7 @@ def show_alert(session_id:str|None, state:dict|None)->None:
 def exception_alert(session_id:str|None, error:str|None)->None:
     if error is not None:
         print(error.replace('<br/>', '\n'))
+        bug_reporter.report(error.replace('<br/>', '\n'), context.get_session(session_id) if session_id is not None and context is not None else None)
         if session_id is not None:
             session = context.get_session(session_id)
             if session and session.get('id', False):

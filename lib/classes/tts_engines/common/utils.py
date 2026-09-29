@@ -3,6 +3,7 @@ import os, sys, threading, gc, ctypes, tempfile, regex as re
 from typing import Any, TYPE_CHECKING
 from pathlib import Path
 from lib.classes.vram_detector import VRAMDetector
+from lib.classes.bug_reporter import bug_reporter
 from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
 from lib import *
 
@@ -939,4 +940,5 @@ class TTSUtils:
     def log_exception(self,where:str, e:Exception)->str:
         import traceback
         traceback.print_exc()
+        bug_reporter.report(f'{where}: {e}', getattr(self, 'session', None))
         return f'{where}: {e}'
