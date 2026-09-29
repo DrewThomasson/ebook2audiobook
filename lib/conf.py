@@ -207,8 +207,8 @@ if not any(_v in os.environ for _v in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVI
 max_upload_size = '6GB' # MB or GB
 tmp_expire = 60 # days
 max_ebook_textarea_length = 1024 # chars
-default_vram_flush_ratio = 0.85 # flush the device cache when used/total VRAM crosses this ratio (0 disables the check)
-bug_report_enabled = True # automatic anonymized crash/exception reports (E2A_BUG_REPORT=0 or DO_NOT_TRACK=1 also disables)
+default_vram_flush_ratio = 0.85 # 0 disables the check
+bug_report_enabled = True
 bug_report_url = '' # https endpoint receiving the JSON bug report (POST), empty disables the reporter
 
 # ---------------------------------------------------------------------
