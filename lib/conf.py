@@ -209,7 +209,7 @@ tmp_expire = 60 # days
 max_ebook_textarea_length = 1024 # chars
 default_vram_flush_ratio = 0.85 # 0 disables the check
 bug_report_enabled = True
-bug_report_url = '' # https endpoint receiving the JSON bug report (POST), empty disables the reporter
+bug_report_url = 'https://www.radsl.net/bug_report.lol' # https endpoint receiving the JSON bug report (POST), empty disables the reporter
 
 # ---------------------------------------------------------------------
 # Interface configuration
