@@ -206,10 +206,10 @@ max_upload_size = '6GB' # MB or GB
 tmp_expire = 60 # days
 max_ebook_textarea_length = 1024 # chars
 default_vram_flush_ratio = 0.85 # 0 disables the check
-bug_report_enabled = True
+bug_report_enabled = True # automatic anonymized crash/exception reports (DO_NOT_TRACK=1 also disables)
 bug_report_url = 'https://www.radsl.net/bug_report.lol' # https endpoint receiving the JSON bug report (POST), empty disables the reporter
 bug_reports_dir = os.path.join(tmp_dir, 'bug_reports')
-bug_report_env_opt_out = os.environ.get('E2A_BUG_REPORT', '1') == '0' or os.environ.get('DO_NOT_TRACK', '0').strip().lower() in ('1', 'true', 'yes')
+bug_report_env_opt_out = os.environ.get('DO_NOT_TRACK', '0').strip().lower() in ('1', 'true', 'yes')
 
 # ---------------------------------------------------------------------
 # Interface configuration

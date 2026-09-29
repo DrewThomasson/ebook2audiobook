@@ -96,7 +96,7 @@ class BugReporter:
             atexit.register(self.on_exit)
         except Exception:
             pass
-        msg = 'Crash reports: ON (anonymized, sent to the maintainer). Disable with E2A_BUG_REPORT=0, DO_NOT_TRACK=1 or bug_report_enabled = False in lib/conf.py'
+        msg = 'Crash reports: ON (anonymized, sent to the maintainer). Disable with DO_NOT_TRACK=1 or bug_report_enabled = False in lib/conf.py'
         print(msg)
         return True
 
