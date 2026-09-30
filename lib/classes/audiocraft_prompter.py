@@ -21,6 +21,13 @@ class AudiocraftPrompter:
         }
         self.candidate_labels = list(self.prompt_map.keys())
 
+    def _get_venv_python(self)->str:
+        """Returns the absolute path to the python executable inside the target venv."""
+        if os.name == 'nt': # Windows
+            return str(Path(self.uv_project_path) / '.venv' / 'Scripts' / 'python.exe')
+        else: # Linux/Mac
+            return str(Path(self.uv_project_path) / '.venv' / 'bin' / 'python')
+
     def _ensure_audiocraft_env(self)->None:
         project_dir = Path(self.uv_project_path)
         venv_dir = project_dir / '.venv'
@@ -35,63 +42,67 @@ class AudiocraftPrompter:
                 print(f'Warning: Could not fully clean up old env: {e}')
 
         # 2. Create fresh environment if missing
-        if not project_dir.exists():
+        if not project_dir.exists() or not venv_dir.exists():
             msg = 'Setting up Audiocraft uv environment (Python 3.10)...'
             print(msg)
             os.makedirs(project_dir, exist_ok=True)
             
             try:
-                # Helper to run pip install within the venv context
-                # We use --no-build-isolation for all steps after torch to allow 
-                # xformers to see torch during compilation
-                def _install(pkgs:list[str], isolation:bool=False)->None:
-                    cmd = ['uv', 'pip', 'install']
-                    if not isolation:
-                        cmd.append('--no-build-isolation')
-                    cmd.extend(pkgs)
-                    subprocess.run(cmd, cwd=project_dir, check=True)
-
                 # Step A: Create venv with explicit Python 3.10
-                # Note: Ensure python3.10 is installed on your system or accessible by uv
                 subprocess.run(['uv', 'venv', '--python', '3.10'], cwd=project_dir, check=True)
                 
-                # Step B: Install Torch/Torchaudio FIRST (with build isolation enabled initially 
-                # to get core wheels, though usually safe without. But crucially, they MUST be present 
-                # before xformers builds).
-                # Actually, standard practice for xformers issues is to install torch normally, 
-                # then install the rest with --no-build-isolation.
-                subprocess.run([
-                    'uv', 'pip', 'install', 
-                    'torch==2.1.0', 
-                    'torchaudio==2.1.0'
-                ], cwd=project_dir, check=True)
+                # Get the path to the new venv's python interpreter
+                venv_python = self._get_venv_python()
+                
+                # Helper to run pip install INSIDE the specific venv
+                # We use --python <path> to force uv to target that specific interpreter
+                def _install(pkgs:list[str])->None:
+                    cmd = ['uv', 'pip', 'install', '--python', venv_python] + pkgs
+                    # capture_output=False so we see progress/errors in real-time if needed, 
+                    # but check=True ensures failure stops execution
+                    subprocess.run(cmd, check=True)
 
-                # Step C: Install av and transformers (dependencies for audiocraft)
-                # Using --no-build-isolation ensures they link against the existing torch
+                # Step B: Install Build Dependencies FIRST
+                # sphn requires maturin. xformers requires torch (installed next).
+                # Installing these globally in the venv ensures they are available during compilation
+                print('Installing build dependencies (maturin)...')
+                _install(['maturin'])
+
+                # Step C: Install Torch/Torchaudio
+                # Must be present before xformers/audiocraft build
+                print('Installing torch/torchaudio...')
+                _install([
+                    'torch==2.1.0',
+                    'torchaudio==2.1.0'
+                ])
+                
+                # Step D: Install av and transformers
+                print('Installing av/transformers...')
                 _install([
                     'av==12.3.0',
                     'transformers==4.39.3'
-                ], isolation=False)
-
-                # Step D: Install audiocraft LAST
-                # This triggers xformers compilation, which will now succeed because torch is visible
+                ])
+                
+                # Step E: Install audiocraft LAST
+                # Now that torch, maturin, and other deps are in the venv, this will succeed
+                print('Installing audiocraft...')
                 _install([
                     'audiocraft'
-                ], isolation=False)
+                ])
                 
                 # Mark success
                 marker_file.touch()
                 print('Audiocraft environment setup complete.')
                 
             except subprocess.CalledProcessError as e:
-                error_msg = f'Failed to setup Audiocraft env: {e.stderr}'
+                error_msg = f'Failed to setup Audiocraft env: {e}'
                 print(error_msg)
                 # Clean up the half-installed mess so next run tries again cleanly
                 if project_dir.exists():
                     shutil.rmtree(project_dir, ignore_errors=True)
                 raise RuntimeError(error_msg)
             except FileNotFoundError:
-                error_msg = 'uv command not found. Please install uv (https://docs.astral.sh/uv/) to use Audiocraft interludes.'
+                error_msg = 'uv command not found. Please install uv.'
                 print(error_msg)
                 raise RuntimeError(error_msg)
 
@@ -115,14 +126,23 @@ class AudiocraftPrompter:
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
 
     def generate_interlude(self, prompt:str, output_path:str, duration:int=60)->Optional[str]:
+        # Ensure we run the script using the SPECIFIC venv python, not the system python
+        venv_python = self._get_venv_python()
+        script_path = Path(self.uv_project_path) / 'audiocraft.py'
+        
+        if not script_path.exists():
+            raise FileNotFoundError(f'Audiocraft script not found at {script_path}')
+
         cmd = [
-            'uv', 'run', '--project', self.uv_project_path,
-            'python', 'audiocraft.py',
+            venv_python,
+            str(script_path),
             '--prompt', prompt,
             '--duration', str(duration),
             '--output', output_path
         ]
         try:
+            # Run directly with the venv python. No need for 'uv run' if we invoke the binary directly.
+            # This is faster and more reliable than relying on uv's project detection.
             subprocess.run(cmd, capture_output=True, text=True, check=True)
             if os.path.exists(output_path):
                 return output_path
