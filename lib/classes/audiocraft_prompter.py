@@ -6,10 +6,9 @@ from typing import Optional
 from pathlib import Path
 from transformers import pipeline
 from lib.conf import root_dir
-
 class AudiocraftPrompter:
     def __init__(self)->None:
-        self.uv_project_path = os.path.join(root_dir, 'components', 'audiocraft')
+        self.uv_project_path = os.path.join(root_dir, 'lib', 'components', 'audiocraft')
         self._ensure_audiocraft_env()
         self.classifier = None
         self.prompt_map = {
@@ -20,77 +19,57 @@ class AudiocraftPrompter:
             'sci-fi and electronic': 'synthwave, pulsing bass, atmospheric synth pads, futuristic, blade runner vibe'
         }
         self.candidate_labels = list(self.prompt_map.keys())
-
     def _get_venv_python(self)->str:
         if os.name == 'nt':
             return str(Path(self.uv_project_path) / 'python_env' / 'Scripts' / 'python.exe')
         return str(Path(self.uv_project_path) / 'python_env' / 'bin' / 'python')
-
     def _ensure_audiocraft_env(self)->None:
         project_dir = Path(self.uv_project_path)
         venv_dir = project_dir / 'python_env'
         marker_file = project_dir / '.audiocraft_installed'
-        
-        # 1. Check if environment is incomplete (failed install)
         if venv_dir.exists() and not marker_file.exists():
             print('Detected incomplete Audiocraft installation. Cleaning up python_env...')
             try:
                 shutil.rmtree(venv_dir)
             except Exception as e:
                 print(f'Warning: Could not fully clean up old env: {e}')
-                
-        # 2. Create fresh environment if missing
         if not venv_dir.exists():
             msg = 'Setting up Audiocraft uv environment (Python 3.10)...'
             print(msg)
             os.makedirs(project_dir, exist_ok=True)
-            
             try:
-                # Step A: Create visible python_env with explicit Python 3.10
                 subprocess.run(['uv', 'venv', 'python_env', '--python', '3.10'], cwd=project_dir, check=True)
-                
-                venv_python = self._get_venv_python()
-                
-                # Step B: Prepare isolated environment variables for uv
                 env_vars = os.environ.copy()
                 env_vars['VIRTUAL_ENV'] = str(venv_dir)
                 venv_bin = str(venv_dir / 'bin') if os.name != 'nt' else str(venv_dir / 'Scripts')
                 env_vars['PATH'] = venv_bin + os.pathsep + env_vars.get('PATH', '')
                 for key in ('PYTHONPATH', 'PYTHONHOME', 'PYTHONSTARTUP', 'UV_PYTHON'):
                     env_vars.pop(key, None)
-
                 def _install(pkgs:list[str], no_isolation:bool=False)->None:
                     cmd = ['uv', 'pip', 'install']
                     if no_isolation:
                         cmd.append('--no-build-isolation')
                     cmd.extend(pkgs)
                     subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
-
-                # Step C: Install Build Dependencies FIRST
-                # CRITICAL: setuptools and wheel are strictly required when using --no-build-isolation
-                print('Installing build dependencies (Cython, maturin, setuptools, wheel)...')
-                _install(['Cython', 'maturin', 'setuptools', 'wheel'])
-                
-                # Step D: Install Torch/Torchaudio
-                print('Installing torch/torchaudio...')
+                print('Step 1/6: Installing build tools...')
+                _install(['setuptools<75', 'wheel', 'Cython', 'maturin', 'ninja'])
+                print('Step 2/6: Installing numpy (must be <2 for torch 2.1.0)...')
+                _install(['numpy==1.26.4'])
+                print('Step 3/6: Installing torch/torchaudio...')
                 _install(['torch==2.1.0', 'torchaudio==2.1.0'])
-                
-                # Step E: Install av and transformers
-                print('Installing av/transformers...')
+                print('Step 4/6: Installing av/transformers...')
                 _install(['av==12.3.0', 'transformers==4.39.3'])
-                
-                # Step F: Install audiocraft LAST
-                print('Installing audiocraft (no-build-isolation)...')
-                # We force av==12.3.0 here to prevent uv from downgrading it to 11.x during resolution
-                _install(['audiocraft', 'av==12.3.0'], no_isolation=True)
-                
+                print('Step 5/6: Creating xformers override...')
+                override_file = project_dir / 'override.txt'
+                override_file.write_text('xformers ; python_version < "0"\n')
+                print('Step 6/6: Installing audiocraft (skipping xformers)...')
+                cmd = ['uv', 'pip', 'install', '--no-build-isolation', '--override', str(override_file), 'audiocraft', 'av==12.3.0']
+                subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
                 marker_file.touch()
                 print('Audiocraft environment setup complete.')
-                
             except subprocess.CalledProcessError as e:
                 error_msg = f'Failed to setup Audiocraft env: {e}'
                 print(error_msg)
-                # Clean up only the python_env folder on failure
                 if venv_dir.exists():
                     shutil.rmtree(venv_dir, ignore_errors=True)
                 raise RuntimeError(error_msg)
@@ -98,32 +77,27 @@ class AudiocraftPrompter:
                 error_msg = 'uv command not found. Please install uv.'
                 print(error_msg)
                 raise RuntimeError(error_msg)
-
     def load_model(self)->None:
         if self.classifier is None:
             import torch
-            # Force float32 to avoid "LayerNormKernelImpl not implemented for Half" on CPU/macOS
             self.classifier = pipeline(
                 'zero-shot-classification',
                 model='MoritzLaurer/mDeBERTa-v3-base-mnli-xnli',
-                device=-1, # CPU
+                device=-1,
                 torch_dtype=torch.float32,
                 trust_remote_code=True
             )
-
     def generate_prompt(self, text:str)->str:
         self.load_model()
         truncated_text = text[:1000]
         result = self.classifier(truncated_text, self.candidate_labels)
         best_vibe = result['labels'][0]
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
-
     def generate_interlude(self, prompt:str, output_path:str, duration:int=60)->Optional[str]:
         venv_python = self._get_venv_python()
         script_path = Path(self.uv_project_path) / 'audiocraft.py'
         if not script_path.exists():
             raise FileNotFoundError(f'Audiocraft script not found at {script_path}')
-        
         cmd = [
             venv_python,
             str(script_path),
