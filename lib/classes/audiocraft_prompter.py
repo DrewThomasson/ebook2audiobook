@@ -2,6 +2,8 @@ import os
 import subprocess
 import shutil
 import logging
+import json
+import platform
 
 from typing import Optional
 from pathlib import Path
@@ -10,8 +12,9 @@ from lib.conf import components_dir
 
 class AudiocraftPrompter:
 
-    def __init__(self)->None:
+    def __init__(self, device_info_str:str='')->None:
         self.uv_project_path = os.path.join(components_dir, 'audiocraft')
+        self.device_info_str = device_info_str or ''
         venv_dir = Path(self.uv_project_path) / 'python_env'
         # subprocess env built from scratch instead of inherited: only OS/network essentials pass, nothing from the e2a process (HF_HOME, XDG_*, TMPDIR, OMP_NUM_THREADS, PYTHON*...)
         keep_vars = ('PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TERM', 'SYSTEMROOT', 'SYSTEMDRIVE', 'WINDIR', 'COMSPEC', 'PATHEXT', 'USERPROFILE', 'USERNAME', 'HOMEDRIVE', 'HOMEPATH', 'APPDATA', 'LOCALAPPDATA', 'PROGRAMDATA', 'PROGRAMFILES', 'TEMP', 'TMP', 'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'REQUESTS_CA_BUNDLE')
@@ -38,7 +41,18 @@ class AudiocraftPrompter:
         project_dir = Path(self.uv_project_path)
         venv_dir = project_dir / 'python_env'
         marker_file = project_dir / '.audiocraft_installed'
-        env_version = '2'
+        try:
+            device_info = json.loads(self.device_info_str) if self.device_info_str else {}
+        except json.JSONDecodeError:
+            device_info = {}
+        name = str(device_info.get('name') or 'cpu').lower()
+        tag = str(device_info.get('tag') or 'cpu').lower()
+        pyvenv = device_info.get('pyvenv') or [3, 11]
+        py_version = f'{pyvenv[0]}.{pyvenv[1]}'
+        is_macos = platform.system() == 'Darwin'
+        is_intel_mac = is_macos and platform.machine() == 'x86_64'
+        # the venv is rebuilt whenever the recipe or the hardware it was built for changes
+        env_version = f'3|{name}|{tag}|{py_version}'
         if venv_dir.exists() and (not marker_file.exists() or marker_file.read_text().strip() != env_version):
             print('Detected incomplete or outdated Audiocraft installation. Cleaning up python_env...')
             try:
@@ -46,48 +60,47 @@ class AudiocraftPrompter:
             except Exception as e:
                 print(f'Warning: Could not fully clean up old env: {e}')
         if not venv_dir.exists():
-            msg = 'Setting up Audiocraft uv environment (Python 3.10)...'
+            msg = f'Setting up Audiocraft uv environment (Python {py_version}, {name}/{tag})...'
             print(msg)
             os.makedirs(project_dir, exist_ok=True)
             marker_file.unlink(missing_ok=True)
+            (project_dir / 'override.txt').unlink(missing_ok=True)
             try:
                 env_vars = self.env_vars
-                subprocess.run(['uv', 'venv', 'python_env', '--python', '3.10'], cwd=project_dir, check=True, env=env_vars)
-                def _install(pkgs:list[str], no_isolation:bool=False)->None:
+                subprocess.run(['uv', 'venv', 'python_env', '--python', py_version], cwd=project_dir, check=True, env=env_vars)
+                def _install(pkgs:list[str], index_url:str|None=None)->None:
                     cmd = ['uv', 'pip', 'install']
-                    if no_isolation:
-                        cmd.append('--no-build-isolation')
+                    if index_url:
+                        cmd.extend(['--index-url', index_url])
                     cmd.extend(pkgs)
                     subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
-                print('Step 1/6: Installing build tools...')
-                _install(['setuptools<75', 'wheel', 'Cython', 'maturin', 'ninja'])
-                print('Step 2/6: Installing numpy (must be <2 for torch 2.1.0)...')
-                _install(['numpy==1.26.4'])
-                print('Step 3/6: Installing torch/torchaudio...')
-                _install(['torch==2.1.0', 'torchaudio==2.1.0'])
-                print('Step 4/6: Installing av/transformers...')
-                _install(['av==12.3.0', 'transformers==4.39.3'])
-                print('Step 5/6: Creating xformers/gradio override and xformers stub...')
-                override_file = project_dir / 'override.txt'
-                override_file.write_text('xformers ; python_version < "0"\ngradio ; python_version < "0"\n')
-                # audiocraft imports xformers.ops at module level but only runs it on the torch backend: unbind + LowerTriangularMask (used as a causal flag)
-                site_packages = subprocess.run([self._get_venv_python(), '-I', '-c', "import sysconfig;print(sysconfig.get_paths()['purelib'])"], capture_output=True, text=True, check=True, env=env_vars).stdout.strip()
-                xformers_dir = Path(site_packages) / 'xformers'
-                os.makedirs(xformers_dir, exist_ok=True)
-                (xformers_dir / '__init__.py').write_text('')
-                (xformers_dir / 'ops.py').write_text(
-                    'import torch\n'
-                    'class LowerTriangularMask:\n'
-                    '    pass\n'
-                    'def unbind(x:torch.Tensor, dim:int=0)->tuple:\n'
-                    '    return torch.unbind(x, dim=dim)\n'
-                    'def memory_efficient_attention(*args, **kwargs)->torch.Tensor:\n'
-                    "    raise NotImplementedError('xformers stub: audiocraft must stay on its torch attention backend')\n"
-                )
-                print('Step 6/6: Installing audiocraft (skipping xformers)...')
-                # native deps must come as wheels: macOS x86_64 has none past llvmlite 0.45.1/numba 0.62.1 and none for sphn (demucs 4.1.0), so uv backtracks instead of compiling
-                cmd = ['uv', 'pip', 'install', '--no-build-isolation', '--override', str(override_file), '--only-binary', 'llvmlite', '--only-binary', 'numba', '--only-binary', 'sphn', 'audiocraft', 'av==12.3.0', 'numpy==1.26.4', 'torch==2.1.0', 'torchaudio==2.1.0', 'transformers==4.39.3']
-                subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
+                # torch build picked from e2a's hardware detection: PyPI on macOS (Intel stops at 2.2.2), the matching PyTorch index
+                # for CUDA/ROCm/XPU/CPU, and the CPU build where e2a relies on custom wheels (Jetson, Windows ROCm)
+                torch_index = 'https://download.pytorch.org/whl/cpu'
+                torch_pkgs = ['torch']
+                if is_intel_mac:
+                    torch_index = None
+                    torch_pkgs = ['torch==2.2.2', 'numpy<2']
+                elif is_macos:
+                    torch_index = None
+                elif name == 'cuda' and tag.replace('win-', '').startswith('cu'):
+                    torch_index = f"https://download.pytorch.org/whl/{tag.replace('win-', '')}"
+                elif name == 'rocm' and tag.startswith('rocm'):
+                    torch_index = f'https://download.pytorch.org/whl/{tag}'
+                elif name == 'xpu':
+                    torch_index = 'https://download.pytorch.org/whl/xpu'
+                elif name != 'cpu':
+                    print(f'No standard PyTorch index for {name}/{tag}: interludes will be generated on CPU.')
+                print('Step 1/3: Installing torch...')
+                _install(torch_pkgs, torch_index)
+                torch_version = subprocess.run([self._get_venv_python(), '-I', '-c', 'import torch;print(torch.__version__)'], capture_output=True, text=True, check=True, env=env_vars).stdout.strip()
+                torch_base = tuple(int(v) for v in torch_version.split('+')[0].split('.')[:2])
+                # transformers silently disables torch below its minimum (install still succeeds), so it is capped by the installed torch
+                transformers_pkg = 'transformers<5.1' if torch_base < (2, 5) else 'transformers<5.8' if torch_base < (2, 6) else 'transformers'
+                print(f'Step 2/3: Installing {transformers_pkg} for torch {torch_version}...')
+                _install([transformers_pkg, 'soundfile', 'scipy', 'sentencepiece', 'protobuf'] + (['numpy<2'] if torch_base < (2, 3) else []))
+                print('Step 3/3: Checking the environment...')
+                subprocess.run([self._get_venv_python(), '-I', '-c', 'import sys, scipy, soundfile, transformers.utils as u; sys.exit(0 if u.is_torch_available() else 1)'], check=True, env=env_vars)
                 marker_file.write_text(env_version)
                 print('Audiocraft environment setup complete.')
             except subprocess.CalledProcessError as e:
@@ -126,12 +139,12 @@ class AudiocraftPrompter:
         best_vibe = result['labels'][0]
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
 
-    def generate_interlude(self, prompt:str, output_path:str, duration:int=60, samplerate:int=24000, channels:int=1)->Optional[str]:
+    def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, channels:int=2)->Optional[str]:
         venv_python = self._get_venv_python()
         script_path = Path(self.uv_project_path) / 'audiocraft.py'
         if not script_path.exists():
             raise FileNotFoundError(f'Audiocraft script not found at {script_path}')
-        # -I drops the script dir from sys.path (audiocraft.py would shadow the audiocraft package) and ignores the parent's PYTHON* vars, -u streams download/progress output live
+        # -I keeps the script dir off sys.path and ignores the parent's PYTHON* vars, -u streams download/progress output live
         cmd = [
             venv_python,
             '-I',
@@ -141,7 +154,8 @@ class AudiocraftPrompter:
             '--duration', str(duration),
             '--output', output_path,
             '--samplerate', str(samplerate),
-            '--channels', str(channels)
+            '--channels', str(channels),
+            '--device_info', self.device_info_str
         ]
         try:
             subprocess.run(cmd, check=True, env=self.env_vars)

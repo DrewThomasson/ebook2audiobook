@@ -2808,26 +2808,34 @@ def generate_interludes(session_id:str)->None:
             return
         from lib.classes.audiocraft_prompter import AudiocraftPrompter
         os.makedirs(interludes_dir, exist_ok=True)
-        blocks = [b for b in session['blocks_current']['blocks'] if b['keep'] and b['text'].strip()]
-        if len(blocks) < 2:
+        blocks = session['blocks_current']['blocks']
+        # same chapter selection and global positions as combine_audio_chapters(), so the interlude file names always match
+        positions = [x for x, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
+        if not positions:
             return
-        prompter = AudiocraftPrompter()
-        msg = f'Generating {len(blocks) - 1} interludes via Audiocraft...'
+        device_info_str = ''
+        if os.path.isfile(device_info_json):
+            with open(device_info_json, 'r', encoding='utf-8') as f:
+                device_info_str = f.read().strip()
+        if not device_info_str:
+            device_info_str = os.environ.get('DOCKER_DEVICE_STR', '')
+        prompter = AudiocraftPrompter(device_info_str)
+        msg = f'Generating {len(positions)} interludes via Audiocraft...'
         show_alert(session_id, {'type': 'info', 'msg': msg})
-        for i in range(len(blocks) - 1):
+        for n, x in enumerate(positions):
             if session['cancellation_requested']:
                 return
-            fname = f'{i}-{i + 1}.{default_audio_proc_format}'
+            fname = f'{x}-{x + 1}.{default_audio_proc_format}'
             fpath = os.path.join(interludes_dir, fname)
             if not os.path.exists(fpath):
-                text_prev = blocks[i]['text'][-500:]
-                text_next = blocks[i + 1]['text'][:500]
-                prompt = prompter.generate_prompt(f'{text_prev} {text_next}')
-                duration = random.randint(40, 60)
-                prompter.generate_interlude(prompt, fpath, duration=duration)
+                text_prev = blocks[x]['text'][-500:]
+                # the last chapter always gets one too: it closes the audiobook
+                text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''
+                prompt = prompter.generate_prompt(f'{text_prev} {text_next}'.strip())
+                duration = random.randint(20, 30)
+                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, channels=2)
     except Exception as e:
         error = f'generate_interludes() error: {e}'
-        print(error)
         exception_alert(session_id, error)
 
 def convert_chapters2audio(session_id:str)->bool:
@@ -3392,95 +3400,139 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             return None
         interludes_dir = session.get('interludes_dir')
         interlude_durations = {}
-        if interludes_dir and os.path.isdir(interludes_dir):
-            for i in range(len(chapter_files) - 1):
-                global_idx = chapter_positions[i]
-                interlude_file = f'{global_idx}-{global_idx + 1}.{default_audio_proc_format}'
-                interlude_path = os.path.join(interludes_dir, interlude_file)
-                if os.path.exists(interlude_path):
-                    dur = get_audio_duration(interlude_path)
-                    interlude_durations[global_idx] = dur
-                    total_duration += dur
         exported_files = []
         concat_dir = session['process_dir']
+        ffmpeg = shutil.which('ffmpeg')
+        ffprobe = shutil.which('ffprobe')
+        # parts: split by duration when output_split is on, otherwise a single part with every chapter
+        part_chapter_indices = []
         if session.get('output_split'):
-            part_files = []
-            part_chapter_indices = []
-            cur_part = []
             cur_indices = []
             cur_duration = 0
             max_part_duration = int(session['output_split_hours']) * 3600
-            for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
+            for idx, dur in enumerate(durations):
                 if session['cancellation_requested']:
                     return None
-                if cur_part and (cur_duration + dur > max_part_duration):
-                    part_files.append(cur_part)
+                if cur_indices and (cur_duration + dur > max_part_duration):
                     part_chapter_indices.append(cur_indices)
-                    cur_part = []
                     cur_indices = []
                     cur_duration = 0
-                cur_part.append(file)
                 cur_indices.append(idx)
                 cur_duration += dur
-            if cur_part:
-                part_files.append(cur_part)
+            if cur_indices:
                 part_chapter_indices.append(cur_indices)
-            pad_width = len(str(len(part_files)))
-            is_multi_part = len(part_files) > 1
-            for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:0{pad_width}d}.txt')
-                with open(concat_list, 'w') as f:
-                    for local_idx, file in enumerate(part_file_list):
-                        if session['cancellation_requested']:
-                            return None
-                        path = Path(session['chapters_dir']) / file
-                        f.write(f"file '{path.as_posix()}'\n")
-                        global_idx = chapter_positions[indices[local_idx]]
-                        if global_idx in interlude_durations:
-                            interlude_path = Path(interludes_dir) / f'{global_idx}-{global_idx + 1}.{default_audio_proc_format}'
-                            if interlude_path.exists():
-                                f.write(f"file '{interlude_path.as_posix()}'\n")
-                merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1:0{pad_width}d}.{default_audio_proc_format}"
-                result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
-                if not result:
-                    error = f'assemble_audio_chunks() Final merge failed for part {part_idx+1}.'
-                    print(error)
-                    return None
-                metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
-                part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                part_global_indices = [chapter_positions[i] for i in indices]
-                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format, part_num=part_idx+1, interlude_durations=interlude_durations, chapter_global_indices=part_global_indices)
-                final_file = os.path.join(
-                    session['audiobooks_dir'],
-                    f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
-                    if is_multi_part else session['final_name']
-                )
-                block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
-                if _export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1, interlude_durations=interlude_durations, chapter_global_indices=part_global_indices):
-                    exported_files.append(final_file)
         else:
-            concat_list = os.path.join(concat_dir, 'concat_list_chapters_1.txt')
-            merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
-            with open(concat_list, 'w') as f:
-                for idx, file in enumerate(chapter_files):
+            part_chapter_indices.append(list(range(len(chapter_files))))
+        pad_width = len(str(len(part_chapter_indices)))
+        is_multi_part = len(part_chapter_indices) > 1
+        for part_idx, indices in enumerate(part_chapter_indices):
+            part_num = part_idx + 1 if is_multi_part else None
+            part_suffix = f'_part{part_idx + 1:0{pad_width}d}' if is_multi_part else ''
+            merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}{part_suffix}.{default_audio_proc_format}"
+            # two tracks mixed into one stereo file: voice = chapters + silent gaps, music = faded interludes at their offsets.
+            # each interlude fades in 5-10 s before the chapter's last sentence ends and fades out 4-6 s into the next chapter;
+            # the part's last chapter gets the same fade in, then the interlude plays out and fades out at the very end
+            mix_dir = os.path.join(concat_dir, f'interludes_mix{part_suffix}')
+            shutil.rmtree(mix_dir, ignore_errors=True)
+            os.makedirs(mix_dir, exist_ok=True)
+            probe = subprocess.run([ffprobe, '-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=codec_name,sample_rate,channels,sample_fmt,bits_per_raw_sample', '-of', 'json', os.path.join(session['chapters_dir'], chapter_files[indices[0]])], capture_output=True, text=True)
+            stream = (json.loads(probe.stdout or '{}').get('streams') or [{}])[0]
+            voice_rate = int(stream.get('sample_rate', default_audio_proc_samplerate))
+            voice_layout = 'mono' if int(stream.get('channels', 1)) == 1 else 'stereo'
+            # silent gaps go through the same concat demuxer/decoder as the chapters, so they must share codec and bit depth exactly
+            voice_codec = {'opus': 'libopus', 'vorbis': 'libvorbis'}.get(stream.get('codec_name', 'flac'), stream.get('codec_name', 'flac'))
+            voice_codec_args = ['-c:a', voice_codec]
+            if voice_codec == 'flac' or voice_codec.startswith('pcm_'):
+                voice_codec_args += ['-sample_fmt', str(stream.get('sample_fmt', 's16')).rstrip('p')]
+                if str(stream.get('bits_per_raw_sample', '')).isdigit():
+                    voice_codec_args += ['-bits_per_raw_sample', str(stream['bits_per_raw_sample'])]
+            voice_list = os.path.join(mix_dir, 'voice.txt')
+            music_list = os.path.join(mix_dir, 'music.txt')
+            voice_pos = 0
+            music_pos = 0
+            with open(voice_list, 'w') as fv, open(music_list, 'w') as fm:
+                for n, idx in enumerate(indices):
                     if session['cancellation_requested']:
                         return None
-                    path = Path(session['chapters_dir']) / file
-                    f.write(f"file '{path.as_posix()}'\n")
+                    chapter_path = Path(session['chapters_dir']) / chapter_files[idx]
+                    fv.write(f"file '{chapter_path.as_posix()}'\n")
+                    chapter_start = voice_pos
+                    voice_pos += round(durations[idx] * voice_rate)
                     global_idx = chapter_positions[idx]
-                    if global_idx in interlude_durations:
-                        interlude_path = Path(interludes_dir) / f'{global_idx}-{global_idx + 1}.{default_audio_proc_format}'
-                        if interlude_path.exists():
-                            f.write(f"file '{interlude_path.as_posix()}'\n")
-            result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
-            if not result:
-                print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
+                    interlude_path = Path(interludes_dir) / f'{global_idx}-{global_idx + 1}.{default_audio_proc_format}' if interludes_dir else None
+                    if interlude_path is None or not interlude_path.exists():
+                        continue
+                    interlude_len = get_audio_duration(str(interlude_path))
+                    if not interlude_len or interlude_len <= 0:
+                        continue
+                    # seeded per chapter so a re-run gives the same timeline
+                    rnd = random.Random(global_idx)
+                    fade_in = rnd.uniform(5.0, 10.0)
+                    fade_out = rnd.uniform(4.0, 6.0)
+                    # end of the last sentence = chapter end minus its trailing silence
+                    window = min(20.0, durations[idx])
+                    detect = subprocess.run([ffmpeg, '-hide_banner', '-nostats', '-sseof', f'-{window:.3f}', '-i', str(chapter_path), '-af', 'silencedetect=noise=-50dB:d=0.3', '-f', 'null', '-'], capture_output=True, text=True)
+                    silence_starts = [float(v) for v in re.findall(r'silence_start: (-?[\d.]+)', detect.stderr)]
+                    silence_ends = [float(v) for v in re.findall(r'silence_end: (-?[\d.]+)', detect.stderr)]
+                    trailing = 0.0
+                    if silence_starts and (len(silence_ends) < len(silence_starts) or silence_ends[-1] >= window - 0.05):
+                        trailing = max(0.0, window - silence_starts[-1])
+                    speech_end = max(0.0, durations[idx] - trailing)
+                    fade_in = max(0.1, min(fade_in, speech_end))
+                    fade_out = max(0.1, min(fade_out, interlude_len - fade_in))
+                    interlude_samples = round(interlude_len * voice_rate)
+                    is_last = n == len(indices) - 1
+                    if is_last:
+                        gap_samples = 0
+                        music_start = chapter_start + round((speech_end - fade_in) * voice_rate)
+                    else:
+                        gap_samples = max(0, round((interlude_len - fade_in - fade_out - trailing) * voice_rate))
+                        music_start = voice_pos + gap_samples + round(fade_out * voice_rate) - interlude_samples
+                    floor = max(music_pos, chapter_start)
+                    if music_start < floor:
+                        # very short chapter: delay the next chapter so interludes never overlap each other
+                        if not is_last:
+                            gap_samples += floor - music_start
+                        music_start = floor
+                    if gap_samples > 0:
+                        gap_path = os.path.join(mix_dir, f'gap_{n}.{default_audio_proc_format}')
+                        subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-f', 'lavfi', '-i', f'anullsrc=r={voice_rate}:cl={voice_layout}', '-af', f'atrim=end_sample={gap_samples}', *voice_codec_args, '-y', gap_path], check=True)
+                        fv.write(f"file '{Path(gap_path).as_posix()}'\n")
+                        voice_pos += gap_samples
+                        interlude_durations[global_idx] = gap_samples / voice_rate
+                    if music_start > music_pos:
+                        pad_path = os.path.join(mix_dir, f'pad_{n}.flac')
+                        subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-f', 'lavfi', '-i', f'anullsrc=r={voice_rate}:cl=stereo', '-af', f'atrim=end_sample={music_start - music_pos}', '-c:a', 'flac', '-sample_fmt', 's16', '-y', pad_path], check=True)
+                        fm.write(f"file '{Path(pad_path).as_posix()}'\n")
+                    music_path = os.path.join(mix_dir, f'music_{n}.flac')
+                    subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-i', str(interlude_path), '-af', f'aresample={voice_rate},aformat=channel_layouts=stereo,afade=t=in:st=0:d={fade_in:.3f},afade=t=out:st={interlude_len - fade_out:.3f}:d={fade_out:.3f},atrim=end_sample={interlude_samples},apad=whole_len={interlude_samples}', '-c:a', 'flac', '-sample_fmt', 's16', '-y', music_path], check=True)
+                    fm.write(f"file '{Path(music_path).as_posix()}'\n")
+                    music_pos = music_start + interlude_samples
+            voice_to_stereo = 'pan=stereo|c0=c0|c1=c0' if voice_layout == 'mono' else 'aformat=channel_layouts=stereo'
+            cmd = [ffmpeg, '-hide_banner', '-nostats', '-safe', '0', '-f', 'concat', '-i', voice_list]
+            if music_pos > 0:
+                cmd += ['-safe', '0', '-f', 'concat', '-i', music_list, '-filter_complex', f'[0:a]{voice_to_stereo}[v];[1:a]aformat=sample_rates={voice_rate}:channel_layouts=stereo[m];[v][m]amix=inputs=2:duration=longest:normalize=0[out]']
+            else:
+                cmd += ['-filter_complex', f'[0:a]{voice_to_stereo}[out]']
+            cmd += ['-map', '[out]', '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '0', '-progress', 'pipe:2', '-y', str(merged_audio)]
+            progress_desc = f'Assemble Part {part_num}' if part_num is not None else 'Assemble'
+            proc_pipe = SubprocessPipe(cmd=cmd, is_gui_process=is_gui_process, total_duration=max(voice_pos, music_pos) / voice_rate, msg='Assemble', on_progress=lambda p: _on_progress(p, progress_desc))
+            if not (proc_pipe.result and os.path.exists(merged_audio)):
+                error = f'combine_audio_chapters() final merge failed for {merged_audio}'
+                print(error)
                 return None
-            metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-            chapters_zip = list(zip(chapter_files, chapter_titles))
-            _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format, interlude_durations=interlude_durations, chapter_global_indices=chapter_positions)
-            final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-            if _export_audio(merged_audio, metadata_file, final_file, interlude_durations=interlude_durations, chapter_global_indices=chapter_positions):
+            shutil.rmtree(mix_dir, ignore_errors=True)
+            metadata_file = Path(session['process_dir']) / f'metadata{part_suffix}.txt'
+            part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
+            part_global_indices = [chapter_positions[i] for i in indices]
+            _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format, part_num=part_num, interlude_durations=interlude_durations, chapter_global_indices=part_global_indices)
+            final_file = os.path.join(
+                session['audiobooks_dir'],
+                f"{Path(session['final_name']).stem}{part_suffix}.{session['output_format']}"
+                if is_multi_part else session['final_name']
+            )
+            block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
+            if _export_audio(merged_audio, str(metadata_file), final_file, block_indices=block_indices, part_num=part_num, interlude_durations=interlude_durations, chapter_global_indices=part_global_indices):
                 exported_files.append(final_file)
         return exported_files if exported_files else None
     except Exception as e:
