@@ -23,62 +23,64 @@ class AudiocraftPrompter:
 
     def _get_venv_python(self)->str:
         if os.name == 'nt':
-            return str(Path(self.uv_project_path) / '.venv' / 'Scripts' / 'python.exe')
-        return str(Path(self.uv_project_path) / '.venv' / 'bin' / 'python')
+            return str(Path(self.uv_project_path) / 'python_env' / 'Scripts' / 'python.exe')
+        return str(Path(self.uv_project_path) / 'python_env' / 'bin' / 'python')
 
     def _ensure_audiocraft_env(self)->None:
         project_dir = Path(self.uv_project_path)
-        venv_dir = project_dir / '.venv'
+        venv_dir = project_dir / 'python_env'
         marker_file = project_dir / '.audiocraft_installed'
         
+        # 1. Check if environment is incomplete (failed install)
+        # Note: We ONLY delete the python_env folder, NOT the whole project_dir, 
+        # to avoid accidentally deleting audiocraft.py
         if venv_dir.exists() and not marker_file.exists():
-            print('Detected incomplete Audiocraft installation. Cleaning up...')
+            print('Detected incomplete Audiocraft installation. Cleaning up python_env...')
             try:
-                shutil.rmtree(project_dir)
+                shutil.rmtree(venv_dir)
             except Exception as e:
                 print(f'Warning: Could not fully clean up old env: {e}')
-
-        if not project_dir.exists() or not venv_dir.exists():
+                
+        # 2. Create fresh environment if missing
+        if not venv_dir.exists():
             msg = 'Setting up Audiocraft uv environment (Python 3.10)...'
             print(msg)
             os.makedirs(project_dir, exist_ok=True)
             
             try:
-                # 1. Create the isolated venv
-                subprocess.run(['uv', 'venv', '--python', '3.10'], cwd=project_dir, check=True)
+                # Step A: Create visible python_env with explicit Python 3.10
+                subprocess.run(['uv', 'venv', 'python_env', '--python', '3.10'], cwd=project_dir, check=True)
                 
-                venv_python = self._get_venv_python()
-                
-                # 2. CRITICAL: Build a sanitized environment for the subprocess
-                # We MUST override VIRTUAL_ENV so uv doesn't inherit the parent E2A 'python_env'
+                # Step B: Prepare isolated environment variables for uv
                 env_vars = os.environ.copy()
                 env_vars['VIRTUAL_ENV'] = str(venv_dir)
-                
-                # Prepend the venv bin to PATH
                 venv_bin = str(venv_dir / 'bin') if os.name != 'nt' else str(venv_dir / 'Scripts')
                 env_vars['PATH'] = venv_bin + os.pathsep + env_vars.get('PATH', '')
-                
-                # Remove variables that might confuse uv or python subprocesses
                 for key in ('PYTHONPATH', 'PYTHONHOME', 'PYTHONSTARTUP', 'UV_PYTHON'):
                     env_vars.pop(key, None)
-
+                    
                 def _install(pkgs:list[str], no_isolation:bool=False)->None:
                     cmd = ['uv', 'pip', 'install']
                     if no_isolation:
                         cmd.append('--no-build-isolation')
                     cmd.extend(pkgs)
-                    # Pass the sanitized env_vars to force uv into the correct venv
                     subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
-
-                print('Installing build dependencies (maturin)...')
-                _install(['maturin'])
+                    
+                # Step C: Install Build Dependencies FIRST
+                # Cython is strictly required to compile 'av' (PyAV) from source
+                # maturin is required to compile 'sphn' (Rust extension)
+                print('Installing build dependencies (Cython, maturin)...')
+                _install(['Cython', 'maturin'])
                 
+                # Step D: Install Torch/Torchaudio
                 print('Installing torch/torchaudio...')
                 _install(['torch==2.1.0', 'torchaudio==2.1.0'])
                 
+                # Step E: Install av and transformers
                 print('Installing av/transformers...')
                 _install(['av==12.3.0', 'transformers==4.39.3'])
                 
+                # Step F: Install audiocraft LAST
                 print('Installing audiocraft (no-build-isolation)...')
                 _install(['audiocraft'], no_isolation=True)
                 
@@ -88,11 +90,12 @@ class AudiocraftPrompter:
             except subprocess.CalledProcessError as e:
                 error_msg = f'Failed to setup Audiocraft env: {e}'
                 print(error_msg)
-                if project_dir.exists():
-                    shutil.rmtree(project_dir, ignore_errors=True)
+                # Clean up only the python_env folder on failure
+                if venv_dir.exists():
+                    shutil.rmtree(venv_dir, ignore_errors=True)
                 raise RuntimeError(error_msg)
             except FileNotFoundError:
-                error_msg = 'uv command not found.'
+                error_msg = 'uv command not found. Please install uv.'
                 print(error_msg)
                 raise RuntimeError(error_msg)
 
@@ -119,8 +122,6 @@ class AudiocraftPrompter:
         script_path = Path(self.uv_project_path) / 'audiocraft.py'
         if not script_path.exists():
             raise FileNotFoundError(f'Audiocraft script not found at {script_path}')
-        
-        # Direct execution using the venv's python guarantees isolation
         cmd = [
             venv_python,
             str(script_path),
