@@ -20,9 +20,11 @@ def format_timestamp(seconds:float)->str:
     h, m = divmod(m, 60)
     return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
-def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tuple:
+def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None, offsets:dict=None)->tuple:
     try:
         from tqdm import tqdm
+        if offsets is None:
+            offsets = {}
         progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
         msg = 'VTT file creation started…'
         print(msg)
@@ -34,6 +36,7 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
         blocks = session['blocks_current']['blocks']
         audio_files = []
         sentences_to_use = []
+        sentence_block_indices = []
         for i, block in enumerate(blocks):
             if not (block['keep'] and block['text'].strip()):
                 continue
@@ -53,6 +56,7 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                     return False, error
                 audio_files.append(audio_file)
                 sentences_to_use.append(sentence)
+                sentence_block_indices.append(i)
         audio_files_length = len(audio_files)
         sentences_total_time = 0.0
         vtt_blocks = []
@@ -71,8 +75,10 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                 duration = durations.get(os.path.realpath(file), 0.0)
                 end_time = start_time + duration
                 sentences_total_time = end_time
-                start = format_timestamp(start_time)
-                end = format_timestamp(end_time)
+                block_idx = sentence_block_indices[idx]
+                block_offset = offsets.get(block_idx, 0.0)
+                start = format_timestamp(start_time + block_offset)
+                end = format_timestamp(end_time + block_offset)
                 text = re.sub(
                     r'\s+',
                     ' ',

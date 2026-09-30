@@ -341,6 +341,7 @@ def prepare_dirs(session_id:str)->bool:
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
+            os.makedirs(session['interludes_dir'], exist_ok=True)
             return True
     except Exception as e:
         DependencyError(e)
@@ -2797,6 +2798,39 @@ def realign_blocks(session_id:str, blocks_orig_old:dict)->bool:
         exception_alert(session_id, f'realign_blocks() error: {e}')
         return False
 
+def generate_interludes(session_id:str)->None:
+    try:
+        session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return
+        interludes_dir = session.get('interludes_dir')
+        if not interludes_dir:
+            return
+        from lib.classes.audiocraft_prompter import AudiocraftPrompter
+        os.makedirs(interludes_dir, exist_ok=True)
+        blocks = [b for b in session['blocks_current']['blocks'] if b['keep'] and b['text'].strip()]
+        if len(blocks) < 2:
+            return
+        prompter = AudiocraftPrompter()
+        msg = f'Generating {len(blocks) - 1} interludes via Audiocraft...'
+        print(msg)
+        show_alert(session_id, {'type': 'info', 'msg': msg})
+        for i in range(len(blocks) - 1):
+            if session['cancellation_requested']:
+                return
+            fname = f'{i}-{i + 1}.{default_audio_proc_format}'
+            fpath = os.path.join(interludes_dir, fname)
+            if not os.path.exists(fpath):
+                text_prev = blocks[i]['text'][-500:]
+                text_next = blocks[i + 1]['text'][:500]
+                prompt = prompter.generate_prompt(f'{text_prev} {text_next}')
+                duration = random.randint(40, 60)
+                prompter.generate_interlude(prompt, fpath, duration=duration)
+    except Exception as e:
+        error = f'generate_interludes() error: {e}'
+        print(error)
+        exception_alert(session_id, error)
+
 def convert_chapters2audio(session_id:str)->bool:
     progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
 
@@ -3055,7 +3089,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         if is_gui_process:
             progress_bar(p / 100.0, desc=desc)
 
-    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str, part_num:int=None)->str|bool:
+    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str, part_num:int=None, interlude_durations:dict=None, chapter_global_indices:list=None)->str|bool:
         try:
             out_fmt = session['output_format']
             is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
@@ -3096,7 +3130,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     asin = session['metadata']['identifiers'].get('mobi-asin')
                     if asin:
                         ffmpeg_metadata += f"{tag('asin')}={asin}\n"
+            if interlude_durations is None:
+                interlude_durations = {}
+            if chapter_global_indices is None:
+                chapter_global_indices = list(range(len(part_chapters)))
             start_time = 0
+            cumulative_offset = 0
             total = len(part_chapters)
             progress_desc = f'Metadata Part {part_num}' if part_num is not None else 'Metadata'
             bar = None if is_gui_process else tqdm(total=total, desc=progress_desc, unit='ch', file=sys.stdout, dynamic_ncols=True, leave=True)
@@ -3111,11 +3150,17 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     error = f'Could not determine audio duration: {filepath}'
                     print(error)
                     return False
+                global_idx = chapter_global_indices[i]
+                adjusted_start = start_time + cumulative_offset
+                adjusted_end = adjusted_start + duration_ms
                 clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), sanitize_meta_chapter_title(chapter_title))
                 ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
-                ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
+                ffmpeg_metadata += f'START={int(adjusted_start)}\nEND={int(adjusted_end)}\n'
                 ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
                 start_time += duration_ms
+                if global_idx in interlude_durations:
+                    cumulative_offset += int(interlude_durations[global_idx] * 1000)
+                    
                 if is_gui_process:
                     _on_progress((((i + 1) / total) * 100.0), progress_desc)
                 else:
@@ -3130,7 +3175,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             print(error)
             return False
 
-    def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
+    def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None, interlude_durations:dict=None, chapter_global_indices:list=None)->bool:
         try:
             if session['cancellation_requested']:
                 return False
@@ -3282,8 +3327,15 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         tags.save(final_file, v1=ID3v1SaveOptions.REMOVE, v2_version=3)
                     if audio is not None:
                         audio.save()
+            vtt_offsets = {}
+            if interlude_durations and chapter_global_indices:
+                cumulative_ms = 0
+                for idx in chapter_global_indices:
+                    vtt_offsets[idx] = cumulative_ms / 1000.0
+                    if idx in interlude_durations:
+                        cumulative_ms += int(interlude_durations[idx] * 1000)
             final_vtt = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
-            vtt_built, error = build_vtt_file(session, vtt_path=final_vtt, block_indices=block_indices)
+            vtt_built, error = build_vtt_file(session, vtt_path=final_vtt, block_indices=block_indices, offsets=vtt_offsets)
             if not vtt_built:
                 error = f'build_vtt_file() error: {error}'
                 print(error)
@@ -3339,6 +3391,17 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             error = f'Duration count mismatch: {len(durations)} durations vs {len(chapter_files)} chapter files'
             print(error)
             return None
+        interludes_dir = session.get('interludes_dir')
+        interlude_durations = {}
+        if interludes_dir and os.path.isdir(interludes_dir):
+            for i in range(len(chapter_files) - 1):
+                global_idx = chapter_positions[i]
+                interlude_file = f'{global_idx}-{global_idx + 1}.{default_audio_proc_format}'
+                interlude_path = os.path.join(interludes_dir, interlude_file)
+                if os.path.exists(interlude_path):
+                    dur = get_audio_duration(interlude_path)
+                    interlude_durations[global_idx] = dur
+                    total_duration += dur
         exported_files = []
         concat_dir = session['process_dir']
         if session.get('output_split'):
@@ -3368,11 +3431,16 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
                 concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:0{pad_width}d}.txt')
                 with open(concat_list, 'w') as f:
-                    for file in part_file_list:
+                    for local_idx, file in enumerate(part_file_list):
                         if session['cancellation_requested']:
                             return None
                         path = Path(session['chapters_dir']) / file
                         f.write(f"file '{path.as_posix()}'\n")
+                        global_idx = chapter_positions[indices[local_idx]]
+                        if global_idx in interlude_durations:
+                            interlude_path = Path(interludes_dir) / f'{global_idx}-{global_idx + 1}.{default_audio_proc_format}'
+                            if interlude_path.exists():
+                                f.write(f"file '{interlude_path.as_posix()}'\n")
                 merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1:0{pad_width}d}.{default_audio_proc_format}"
                 result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
                 if not result:
@@ -3381,33 +3449,39 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     return None
                 metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
                 part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
+                part_global_indices = [chapter_positions[i] for i in indices]
+                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format, part_num=part_idx+1, interlude_durations=interlude_durations, chapter_global_indices=part_global_indices)
                 final_file = os.path.join(
                     session['audiobooks_dir'],
                     f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
                     if is_multi_part else session['final_name']
                 )
                 block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
-                if _export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
+                if _export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1, interlude_durations=interlude_durations, chapter_global_indices=part_global_indices):
                     exported_files.append(final_file)
         else:
             concat_list = os.path.join(concat_dir, 'concat_list_chapters_1.txt')
             merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
             with open(concat_list, 'w') as f:
-                for file in chapter_files:
+                for idx, file in enumerate(chapter_files):
                     if session['cancellation_requested']:
                         return None
                     path = Path(session['chapters_dir']) / file
                     f.write(f"file '{path.as_posix()}'\n")
+                    global_idx = chapter_positions[idx]
+                    if global_idx in interlude_durations:
+                        interlude_path = Path(interludes_dir) / f'{global_idx}-{global_idx + 1}.{default_audio_proc_format}'
+                        if interlude_path.exists():
+                            f.write(f"file '{interlude_path.as_posix()}'\n")
             result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
             if not result:
                 print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
                 return None
             metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
             chapters_zip = list(zip(chapter_files, chapter_titles))
-            _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
+            _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format, interlude_durations=interlude_durations, chapter_global_indices=chapter_positions)
             final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-            if _export_audio(merged_audio, metadata_file, final_file):
+            if _export_audio(merged_audio, metadata_file, final_file, interlude_durations=interlude_durations, chapter_global_indices=chapter_positions):
                 exported_files.append(final_file)
         return exported_files if exported_files else None
     except Exception as e:
@@ -4167,6 +4241,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 if session['cancellation_requested']:
                     error = 'Conversion cancelled'
             return _fail(error)
+        generate_interludes(session_id)
         show_alert(session_id, {'type': 'info', 'msg': 'Combining sentences and chapters…'})
         exported_files = combine_audio_chapters(session_id)
         if exported_files is None:
