@@ -1,4 +1,3 @@
-# components/audiocraft/audiocraft.py
 import argparse
 import os
 import torch
