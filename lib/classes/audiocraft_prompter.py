@@ -1,11 +1,12 @@
-# lib/classes/audiocraft_prompter.py
 import os
 import subprocess
 import shutil
+
 from typing import Optional
 from pathlib import Path
 from transformers import pipeline
 from lib.conf import root_dir
+
 class AudiocraftPrompter:
     def __init__(self)->None:
         self.uv_project_path = os.path.join(root_dir, 'lib', 'components', 'audiocraft')
@@ -19,10 +20,12 @@ class AudiocraftPrompter:
             'sci-fi and electronic': 'synthwave, pulsing bass, atmospheric synth pads, futuristic, blade runner vibe'
         }
         self.candidate_labels = list(self.prompt_map.keys())
+
     def _get_venv_python(self)->str:
         if os.name == 'nt':
             return str(Path(self.uv_project_path) / 'python_env' / 'Scripts' / 'python.exe')
         return str(Path(self.uv_project_path) / 'python_env' / 'bin' / 'python')
+
     def _ensure_audiocraft_env(self)->None:
         project_dir = Path(self.uv_project_path)
         venv_dir = project_dir / 'python_env'
@@ -51,18 +54,20 @@ class AudiocraftPrompter:
                         cmd.append('--no-build-isolation')
                     cmd.extend(pkgs)
                     subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
-                print('Step 1/6: Installing build tools...')
+                print('Step 1/7: Installing build tools...')
                 _install(['setuptools<75', 'wheel', 'Cython', 'maturin', 'ninja'])
-                print('Step 2/6: Installing numpy (must be <2 for torch 2.1.0)...')
+                print('Step 2/7: Installing numpy (must be <2 for torch 2.1.0)...')
                 _install(['numpy==1.26.4'])
-                print('Step 3/6: Installing torch/torchaudio...')
+                print('Step 3/7: Installing torch/torchaudio...')
                 _install(['torch==2.1.0', 'torchaudio==2.1.0'])
-                print('Step 4/6: Installing av/transformers...')
+                print('Step 4/7: Installing av/transformers...')
                 _install(['av==12.3.0', 'transformers==4.39.3'])
-                print('Step 5/6: Creating xformers override...')
+                print('Step 5/7: Installing numba/llvmlite (pre-built wheels, avoids LLVM build)...')
+                _install(['llvmlite==0.43.0', 'numba==0.60.0'])
+                print('Step 6/7: Creating override file...')
                 override_file = project_dir / 'override.txt'
-                override_file.write_text('xformers ; python_version < "0"\n')
-                print('Step 6/6: Installing audiocraft (skipping xformers)...')
+                override_file.write_text('xformers ; python_version < "0"\nnumba==0.60.0\nllvmlite==0.43.0\n')
+                print('Step 7/7: Installing audiocraft (skipping xformers, pinning numba/llvmlite)...')
                 cmd = ['uv', 'pip', 'install', '--no-build-isolation', '--override', str(override_file), 'audiocraft', 'av==12.3.0']
                 subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
                 marker_file.touch()
@@ -77,6 +82,7 @@ class AudiocraftPrompter:
                 error_msg = 'uv command not found. Please install uv.'
                 print(error_msg)
                 raise RuntimeError(error_msg)
+
     def load_model(self)->None:
         if self.classifier is None:
             import torch
@@ -87,12 +93,14 @@ class AudiocraftPrompter:
                 torch_dtype=torch.float32,
                 trust_remote_code=True
             )
+
     def generate_prompt(self, text:str)->str:
         self.load_model()
         truncated_text = text[:1000]
         result = self.classifier(truncated_text, self.candidate_labels)
         best_vibe = result['labels'][0]
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
+
     def generate_interlude(self, prompt:str, output_path:str, duration:int=60)->Optional[str]:
         venv_python = self._get_venv_python()
         script_path = Path(self.uv_project_path) / 'audiocraft.py'
