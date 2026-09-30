@@ -1,6 +1,7 @@
 # lib/classes/audiocraft_prompter.py
 import os
 import subprocess
+import shutil
 from typing import Optional
 from pathlib import Path
 from transformers import pipeline
@@ -23,49 +24,60 @@ class AudiocraftPrompter:
     def _ensure_audiocraft_env(self)->None:
         project_dir = Path(self.uv_project_path)
         venv_dir = project_dir / '.venv'
-        
-        # Check if environment exists AND has the correct marker file to avoid re-installation loops
         marker_file = project_dir / '.audiocraft_installed'
-        
-        if not venv_dir.exists() or not marker_file.exists():
-            msg = 'Audiocraft uv environment not found or incomplete. Setting up...'
+
+        # 1. Check if environment is incomplete (failed install)
+        if venv_dir.exists() and not marker_file.exists():
+            print('Detected incomplete Audiocraft installation. Cleaning up...')
+            try:
+                shutil.rmtree(project_dir)
+            except Exception as e:
+                print(f'Warning: Could not fully clean up old env: {e}')
+
+        # 2. Create fresh environment if missing
+        if not project_dir.exists():
+            msg = 'Setting up Audiocraft uv environment (Python 3.10)...'
             print(msg)
             os.makedirs(project_dir, exist_ok=True)
             
             try:
-                # 1. Create virtual environment with Python 3.10 explicitly if possible, 
-                # otherwise rely on system python but warn. 
-                # Note: uv venv defaults to current python. To force 3.10, you might need 
-                # --python 3.10 if installed. Assuming standard behavior for now.
-                subprocess.run(['uv', 'venv'], cwd=project_dir, check=True)
-                
                 # Helper to run pip install within the venv context
-                def _install(pkgs:list[str])->None:
-                    cmd = ['uv', 'pip', 'install', '--no-build-isolation'] + pkgs
+                # We use --no-build-isolation for all steps after torch to allow 
+                # xformers to see torch during compilation
+                def _install(pkgs:list[str], isolation:bool=False)->None:
+                    cmd = ['uv', 'pip', 'install']
+                    if not isolation:
+                        cmd.append('--no-build-isolation')
+                    cmd.extend(pkgs)
                     subprocess.run(cmd, cwd=project_dir, check=True)
 
-                # 2. Install Torch and Torchaudio FIRST (pinned versions)
-                # This satisfies the build-time dependency for xformers later
-                _install([
-                    'torch==2.1.0',
+                # Step A: Create venv with explicit Python 3.10
+                # Note: Ensure python3.10 is installed on your system or accessible by uv
+                subprocess.run(['uv', 'venv', '--python', '3.10'], cwd=project_dir, check=True)
+                
+                # Step B: Install Torch/Torchaudio FIRST (with build isolation enabled initially 
+                # to get core wheels, though usually safe without. But crucially, they MUST be present 
+                # before xformers builds).
+                # Actually, standard practice for xformers issues is to install torch normally, 
+                # then install the rest with --no-build-isolation.
+                subprocess.run([
+                    'uv', 'pip', 'install', 
+                    'torch==2.1.0', 
                     'torchaudio==2.1.0'
-                ])
-                
-                # 3. Install av (required by audiocraft)
+                ], cwd=project_dir, check=True)
+
+                # Step C: Install av and transformers (dependencies for audiocraft)
+                # Using --no-build-isolation ensures they link against the existing torch
                 _install([
-                    'av==12.3.0'
-                ])
-                
-                # 4. Install transformers (pinned version required by audiocraft ecosystem stability)
-                _install([
+                    'av==12.3.0',
                     'transformers==4.39.3'
-                ])
-                
-                # 5. Install audiocraft LAST
-                # With torch and other deps already present, xformers will compile correctly
+                ], isolation=False)
+
+                # Step D: Install audiocraft LAST
+                # This triggers xformers compilation, which will now succeed because torch is visible
                 _install([
                     'audiocraft'
-                ])
+                ], isolation=False)
                 
                 # Mark success
                 marker_file.touch()
@@ -74,6 +86,9 @@ class AudiocraftPrompter:
             except subprocess.CalledProcessError as e:
                 error_msg = f'Failed to setup Audiocraft env: {e.stderr}'
                 print(error_msg)
+                # Clean up the half-installed mess so next run tries again cleanly
+                if project_dir.exists():
+                    shutil.rmtree(project_dir, ignore_errors=True)
                 raise RuntimeError(error_msg)
             except FileNotFoundError:
                 error_msg = 'uv command not found. Please install uv (https://docs.astral.sh/uv/) to use Audiocraft interludes.'
