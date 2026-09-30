@@ -2799,6 +2799,7 @@ def realign_blocks(session_id:str, blocks_orig_old:dict)->bool:
         return False
 
 def generate_interludes(session_id:str)->None:
+    prompter = None
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
@@ -2813,15 +2814,10 @@ def generate_interludes(session_id:str)->None:
         positions = [x for x, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
         if not positions:
             return
-        device_info_str = ''
-        if os.path.isfile(device_info_json):
-            with open(device_info_json, 'r', encoding='utf-8') as f:
-                device_info_str = f.read().strip()
-        if not device_info_str:
-            device_info_str = os.environ.get('DOCKER_DEVICE_STR', '')
-        prompter = AudiocraftPrompter(device_info_str)
+        prompter = AudiocraftPrompter(session['device'])
         msg = f'Generating {len(positions)} interludes via Audiocraft...'
         show_alert(session_id, {'type': 'info', 'msg': msg})
+        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
         for n, x in enumerate(positions):
             if session['cancellation_requested']:
                 return
@@ -2833,10 +2829,30 @@ def generate_interludes(session_id:str)->None:
                 text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''
                 prompt = prompter.generate_prompt(f'{text_prev} {text_next}'.strip())
                 duration = random.randint(20, 30)
-                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, channels=2)
+                desc = f'Interlude {n + 1}/{len(positions)}'
+                on_progress = (lambda p, desc=desc: progress_bar(p, desc=desc)) if session['is_gui_process'] and progress_bar else None
+                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, channels=2, on_progress=on_progress)
     except Exception as e:
         error = f'generate_interludes() error: {e}'
         exception_alert(session_id, error)
+    finally:
+        if prompter is not None:
+            # MusicGen and the classifier live in e2a's process: release them before the final merge
+            prompter = None
+            gc.collect()
+            if sys.platform == 'linux':
+                try:
+                    import ctypes
+                    ctypes.CDLL('libc.so.6').malloc_trim(0)
+                except Exception:
+                    pass
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
+            except Exception:
+                pass
 
 def convert_chapters2audio(session_id:str)->bool:
     progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)

@@ -1,28 +1,22 @@
 import os
-import subprocess
-import shutil
 import logging
-import json
-import platform
+import numpy as np
+import soundfile as sf
+import torch
 
-from typing import Optional
-from pathlib import Path
-from transformers import pipeline
-from lib.conf import components_dir
+from math import gcd
+from typing import Optional, Callable
+from scipy.signal import resample_poly
+from transformers import pipeline, AutoProcessor, MusicgenForConditionalGeneration, StoppingCriteriaList
 
 class AudiocraftPrompter:
 
-    def __init__(self, device_info_str:str='')->None:
-        self.uv_project_path = os.path.join(components_dir, 'audiocraft')
-        self.device_info_str = device_info_str or ''
-        venv_dir = Path(self.uv_project_path) / 'python_env'
-        # subprocess env built from scratch instead of inherited: only OS/network essentials pass, nothing from the e2a process (HF_HOME, XDG_*, TMPDIR, OMP_NUM_THREADS, PYTHON*...)
-        keep_vars = ('PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TERM', 'SYSTEMROOT', 'SYSTEMDRIVE', 'WINDIR', 'COMSPEC', 'PATHEXT', 'USERPROFILE', 'USERNAME', 'HOMEDRIVE', 'HOMEPATH', 'APPDATA', 'LOCALAPPDATA', 'PROGRAMDATA', 'PROGRAMFILES', 'TEMP', 'TMP', 'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'REQUESTS_CA_BUNDLE')
-        self.env_vars = {key: value for key, value in os.environ.items() if key.upper() in keep_vars}
-        self.env_vars['VIRTUAL_ENV'] = str(venv_dir)
-        self.env_vars['PATH'] = str(venv_dir / ('Scripts' if os.name == 'nt' else 'bin')) + os.pathsep + self.env_vars.get('PATH', '')
-        self._ensure_audiocraft_env()
+    def __init__(self, device:str='cpu')->None:
+        self.device = str(device or 'cpu').lower()
+        self.torch_device = None
         self.classifier = None
+        self.processor = None
+        self.model = None
         self.prompt_map = {
             'action and suspense': 'fast tempo, cinematic percussion, tense strings, dramatic trailer music',
             'melancholic and emotional': 'slow piano, melancholic cello, ambient reverb, emotional cinematic score',
@@ -32,91 +26,8 @@ class AudiocraftPrompter:
         }
         self.candidate_labels = list(self.prompt_map.keys())
 
-    def _get_venv_python(self)->str:
-        if os.name == 'nt':
-            return str(Path(self.uv_project_path) / 'python_env' / 'Scripts' / 'python.exe')
-        return str(Path(self.uv_project_path) / 'python_env' / 'bin' / 'python')
-
-    def _ensure_audiocraft_env(self)->None:
-        project_dir = Path(self.uv_project_path)
-        venv_dir = project_dir / 'python_env'
-        marker_file = project_dir / '.audiocraft_installed'
-        try:
-            device_info = json.loads(self.device_info_str) if self.device_info_str else {}
-        except json.JSONDecodeError:
-            device_info = {}
-        name = str(device_info.get('name') or 'cpu').lower()
-        tag = str(device_info.get('tag') or 'cpu').lower()
-        pyvenv = device_info.get('pyvenv') or [3, 11]
-        py_version = f'{pyvenv[0]}.{pyvenv[1]}'
-        is_macos = platform.system() == 'Darwin'
-        is_intel_mac = is_macos and platform.machine() == 'x86_64'
-        # the venv is rebuilt whenever the recipe or the hardware it was built for changes
-        env_version = f'3|{name}|{tag}|{py_version}'
-        if venv_dir.exists() and (not marker_file.exists() or marker_file.read_text().strip() != env_version):
-            print('Detected incomplete or outdated Audiocraft installation. Cleaning up python_env...')
-            try:
-                shutil.rmtree(venv_dir)
-            except Exception as e:
-                print(f'Warning: Could not fully clean up old env: {e}')
-        if not venv_dir.exists():
-            msg = f'Setting up Audiocraft uv environment (Python {py_version}, {name}/{tag})...'
-            print(msg)
-            os.makedirs(project_dir, exist_ok=True)
-            marker_file.unlink(missing_ok=True)
-            (project_dir / 'override.txt').unlink(missing_ok=True)
-            try:
-                env_vars = self.env_vars
-                subprocess.run(['uv', 'venv', 'python_env', '--python', py_version], cwd=project_dir, check=True, env=env_vars)
-                def _install(pkgs:list[str], index_url:str|None=None)->None:
-                    cmd = ['uv', 'pip', 'install']
-                    if index_url:
-                        cmd.extend(['--index-url', index_url])
-                    cmd.extend(pkgs)
-                    subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
-                # torch build picked from e2a's hardware detection: PyPI on macOS (Intel stops at 2.2.2), the matching PyTorch index
-                # for CUDA/ROCm/XPU/CPU, and the CPU build where e2a relies on custom wheels (Jetson, Windows ROCm)
-                torch_index = 'https://download.pytorch.org/whl/cpu'
-                torch_pkgs = ['torch']
-                if is_intel_mac:
-                    torch_index = None
-                    torch_pkgs = ['torch==2.2.2', 'numpy<2']
-                elif is_macos:
-                    torch_index = None
-                elif name == 'cuda' and tag.replace('win-', '').startswith('cu'):
-                    torch_index = f"https://download.pytorch.org/whl/{tag.replace('win-', '')}"
-                elif name == 'rocm' and tag.startswith('rocm'):
-                    torch_index = f'https://download.pytorch.org/whl/{tag}'
-                elif name == 'xpu':
-                    torch_index = 'https://download.pytorch.org/whl/xpu'
-                elif name != 'cpu':
-                    print(f'No standard PyTorch index for {name}/{tag}: interludes will be generated on CPU.')
-                print('Step 1/3: Installing torch...')
-                _install(torch_pkgs, torch_index)
-                torch_version = subprocess.run([self._get_venv_python(), '-I', '-c', 'import torch;print(torch.__version__)'], capture_output=True, text=True, check=True, env=env_vars).stdout.strip()
-                torch_base = tuple(int(v) for v in torch_version.split('+')[0].split('.')[:2])
-                # transformers silently disables torch below its minimum (install still succeeds), so it is capped by the installed torch
-                transformers_pkg = 'transformers<5.1' if torch_base < (2, 5) else 'transformers<5.8' if torch_base < (2, 6) else 'transformers'
-                print(f'Step 2/3: Installing {transformers_pkg} for torch {torch_version}...')
-                _install([transformers_pkg, 'soundfile', 'scipy', 'sentencepiece', 'protobuf'] + (['numpy<2'] if torch_base < (2, 3) else []))
-                print('Step 3/3: Checking the environment...')
-                subprocess.run([self._get_venv_python(), '-I', '-c', 'import sys, scipy, soundfile, transformers.utils as u; sys.exit(0 if u.is_torch_available() else 1)'], check=True, env=env_vars)
-                marker_file.write_text(env_version)
-                print('Audiocraft environment setup complete.')
-            except subprocess.CalledProcessError as e:
-                error_msg = f'Failed to setup Audiocraft env: {e}'
-                print(error_msg)
-                if venv_dir.exists():
-                    shutil.rmtree(venv_dir, ignore_errors=True)
-                raise RuntimeError(error_msg)
-            except FileNotFoundError:
-                error_msg = 'uv command not found. Please install uv.'
-                print(error_msg)
-                raise RuntimeError(error_msg)
-
     def load_model(self)->None:
         if self.classifier is None:
-            import torch
             # the checkpoint carries a legacy position_ids buffer that transformers 5 reports as UNEXPECTED, harmless: mute that report for this load only
             report_logger = logging.getLogger('transformers.utils.loading_report')
             report_level = report_logger.level
@@ -139,32 +50,99 @@ class AudiocraftPrompter:
         best_vibe = result['labels'][0]
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
 
-    def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, channels:int=2)->Optional[str]:
-        venv_python = self._get_venv_python()
-        script_path = Path(self.uv_project_path) / 'audiocraft.py'
-        if not script_path.exists():
-            raise FileNotFoundError(f'Audiocraft script not found at {script_path}')
-        # -I keeps the script dir off sys.path and ignores the parent's PYTHON* vars, -u streams download/progress output live
-        cmd = [
-            venv_python,
-            '-I',
-            '-u',
-            str(script_path),
-            '--prompt', prompt,
-            '--duration', str(duration),
-            '--output', output_path,
-            '--samplerate', str(samplerate),
-            '--channels', str(channels),
-            '--device_info', self.device_info_str
-        ]
+    def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, channels:int=2, on_progress:Optional[Callable[[float], None]]=None)->Optional[str]:
         try:
-            subprocess.run(cmd, check=True, env=self.env_vars)
-            if os.path.exists(output_path):
-                return output_path
-            return None
-        except subprocess.CalledProcessError as e:
-            print(f'Audiocraft error: exit code {e.returncode}')
-            return None
+            if self.model is None:
+                # e2a device -> torch device, checked against what the installed torch can really use
+                if self.device in ('cuda', 'rocm', 'jetson') and torch.cuda.is_available():
+                    self.torch_device = 'cuda'
+                elif self.device == 'mps' and torch.backends.mps.is_available():
+                    self.torch_device = 'mps'
+                elif self.device == 'xpu' and hasattr(torch, 'xpu') and torch.xpu.is_available():
+                    self.torch_device = 'xpu'
+                else:
+                    self.torch_device = 'cpu'
+                # generation settings per device: fp16 on CUDA/ROCm/XPU, medium only when the GPU has the room, small fp32 on MPS/CPU
+                size = 'small'
+                dtype = torch.float32
+                if self.torch_device == 'cuda':
+                    dtype = torch.float16
+                    if torch.cuda.mem_get_info()[0] >= 8 * 1024 ** 3:
+                        size = 'medium'
+                elif self.torch_device == 'xpu':
+                    dtype = torch.float16
+                model_name = f"facebook/musicgen-{'stereo-' if channels == 2 else ''}{size}"
+                msg = f"Loading {model_name} on {self.torch_device} ({str(dtype).replace('torch.', '')})..."
+                print(msg)
+                # MusicGen's pad/bos ids sit one past its vocabulary by design (extra embedding row): newer transformers warn about it, mute that check for this load only
+                config_logger = logging.getLogger('transformers.configuration_utils')
+                config_level = config_logger.level
+                config_logger.setLevel(logging.ERROR)
+                try:
+                    try:
+                        self.processor = AutoProcessor.from_pretrained(model_name)
+                        self.model = MusicgenForConditionalGeneration.from_pretrained(model_name, dtype=dtype).to(self.torch_device)
+                    except Exception as e:
+                        if size == 'small':
+                            raise
+                        print(f'{model_name} failed ({e}), falling back to small...')
+                        model_name = model_name.replace('-medium', '-small')
+                        self.processor = AutoProcessor.from_pretrained(model_name)
+                        self.model = MusicgenForConditionalGeneration.from_pretrained(model_name, dtype=dtype).to(self.torch_device)
+                finally:
+                    config_logger.setLevel(config_level)
+                self.model.eval()
+            # MusicGen is trained on 30 s windows: transformers hard-caps generation there
+            max_new_tokens = int(max(1, min(duration, 30)) * self.model.config.audio_encoder.frame_rate)
+            inputs = self.processor(text=[prompt], padding=True, return_tensors='pt')
+            step = [0]
+            def _progress(input_ids:torch.LongTensor, scores:torch.FloatTensor, **kwargs)->torch.BoolTensor:
+                # never stops generation, only reports the step counter
+                step[0] += 1
+                done = min(step[0], max_new_tokens)
+                print(f'{done: 6d} / {max_new_tokens: 6d}', end='\r', flush=True)
+                if on_progress is not None:
+                    on_progress(done / max_new_tokens)
+                return torch.zeros(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
+            threads = torch.get_num_threads()
+            try:
+                if self.torch_device == 'cpu':
+                    # the e2a process runs torch on one thread (OMP_NUM_THREADS=1): MusicGen gets every core for this call only
+                    torch.set_num_threads(os.cpu_count() or 1)
+                try:
+                    with torch.inference_mode():
+                        audio = self.model.generate(**inputs.to(self.torch_device), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, stopping_criteria=StoppingCriteriaList([_progress]))
+                except Exception as e:
+                    if self.torch_device == 'cpu':
+                        raise
+                    print(f'\nGeneration on {self.torch_device} failed ({e}), retrying on cpu...')
+                    self.torch_device = 'cpu'
+                    self.model = self.model.to('cpu', dtype=torch.float32)
+                    step[0] = 0
+                    torch.set_num_threads(os.cpu_count() or 1)
+                    with torch.inference_mode():
+                        audio = self.model.generate(**inputs.to('cpu'), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, stopping_criteria=StoppingCriteriaList([_progress]))
+            finally:
+                torch.set_num_threads(threads)
+            print()
+            sample_rate = self.model.config.audio_encoder.sampling_rate
+            audio = audio[0].float().cpu().numpy()
+            if audio.shape[0] != channels:
+                audio = audio.mean(axis=0, keepdims=True) if channels == 1 else np.repeat(audio, 2, axis=0)
+            # match the chapters' sample rate: the final merge expects one uniform rate
+            if sample_rate != samplerate:
+                g = gcd(sample_rate, samplerate)
+                audio = resample_poly(audio, samplerate // g, sample_rate // g, axis=1)
+            # MusicGen levels vary a lot between prompts: peak-normalize to -1 dBFS
+            peak = float(np.abs(audio).max())
+            if peak > 0:
+                audio = audio * (0.89 / peak)
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            sf.write(output_path, np.clip(audio.T, -1.0, 1.0), samplerate, subtype='PCM_16')
+            msg = f'Saved interlude to {output_path}'
+            print(msg)
+            return output_path
         except Exception as e:
-            print(f'Audiocraft exception: {e}')
+            error = f'Audiocraft error: {e}'
+            print(error)
             return None
