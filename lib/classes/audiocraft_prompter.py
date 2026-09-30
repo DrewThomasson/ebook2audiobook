@@ -1,4 +1,3 @@
-# lib/classes/audiocraft_prompter.py
 import os
 import subprocess
 import shutil
@@ -49,22 +48,25 @@ class AudiocraftPrompter:
             
             try:
                 # Step A: Create venv with explicit Python 3.10
+                # We run this in the project dir so .venv is created there
                 subprocess.run(['uv', 'venv', '--python', '3.10'], cwd=project_dir, check=True)
                 
                 # Get the path to the new venv's python interpreter
                 venv_python = self._get_venv_python()
                 
-                # Helper to run pip install INSIDE the specific venv
-                # We use --python <path> to force uv to target that specific interpreter
+                # Prepare environment variables for subsequent commands
+                # UV_PYTHON forces uv to use this specific interpreter/venv
+                env_vars = os.environ.copy()
+                env_vars['UV_PYTHON'] = venv_python
+                
+                # Helper to run pip install INSIDE the specific venv using UV_PYTHON
                 def _install(pkgs:list[str])->None:
-                    cmd = ['uv', 'pip', 'install', '--python', venv_python] + pkgs
-                    # capture_output=False so we see progress/errors in real-time if needed, 
-                    # but check=True ensures failure stops execution
-                    subprocess.run(cmd, check=True)
+                    cmd = ['uv', 'pip', 'install'] + pkgs
+                    # Pass the custom env vars to ensure uv targets the correct venv
+                    subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
 
                 # Step B: Install Build Dependencies FIRST
                 # sphn requires maturin. xformers requires torch (installed next).
-                # Installing these globally in the venv ensures they are available during compilation
                 print('Installing build dependencies (maturin)...')
                 _install(['maturin'])
 
