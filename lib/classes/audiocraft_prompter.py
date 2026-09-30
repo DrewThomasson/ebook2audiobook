@@ -27,21 +27,46 @@ class AudiocraftPrompter:
             print(msg)
             os.makedirs(project_dir, exist_ok=True)
             try:
+                # 1. Create the virtual environment
                 subprocess.run(['uv', 'venv'], cwd=project_dir, check=True)
-                subprocess.run(['uv', 'pip', 'install', 'audiocraft'], cwd=project_dir, check=True)
+                
+                # 2. Install torch FIRST (required for xformers build)
+                # We pin to a stable version compatible with audiocraft
+                subprocess.run(['uv', 'pip', 'install', 'torch', 'torchaudio'], cwd=project_dir, check=True)
+                
+                # 3. Install audiocraft with --no-build-isolation
+                # This allows xformers to see the already-installed torch during compilation
+                subprocess.run([
+                    'uv', 'pip', 'install', 
+                    '--no-build-isolation', 
+                    'audiocraft'
+                ], cwd=project_dir, check=True)
+                
                 print('Audiocraft environment setup complete.')
             except subprocess.CalledProcessError as e:
                 print(f'Failed to setup Audiocraft env: {e}')
+                raise RuntimeError(f'Audiocraft setup failed: {e.stderr}')
             except FileNotFoundError:
-                print('uv command not found. Please install uv to use Audiocraft interludes.')
+                error_msg = 'uv command not found. Please install uv (https://docs.astral.sh/uv/) to use Audiocraft interludes.'
+                print(error_msg)
+                raise RuntimeError(error_msg)
 
     def load_model(self)->None:
         if self.classifier is None:
-            self.classifier = pipeline('zero-shot-classification', model='MoritzLaurer/mDeBERTa-v3-base-mnli-xnli', device=-1)
+            import torch
+            # Force float32 to avoid "LayerNormKernelImpl not implemented for Half" on CPU/macOS
+            self.classifier = pipeline(
+                'zero-shot-classification', 
+                model='MoritzLaurer/mDeBERTa-v3-base-mnli-xnli', 
+                device=-1, # CPU
+                torch_dtype=torch.float32,
+                trust_remote_code=True
+            )
 
     def generate_prompt(self, text:str)->str:
         self.load_model()
         truncated_text = text[:1000]
+        # Ensure input is processed in float32
         result = self.classifier(truncated_text, self.candidate_labels)
         best_vibe = result['labels'][0]
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
