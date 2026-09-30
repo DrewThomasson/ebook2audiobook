@@ -1,3 +1,4 @@
+# lib/classes/audiocraft_prompter.py
 import os
 import subprocess
 from typing import Optional
@@ -22,30 +23,58 @@ class AudiocraftPrompter:
     def _ensure_audiocraft_env(self)->None:
         project_dir = Path(self.uv_project_path)
         venv_dir = project_dir / '.venv'
-        if not venv_dir.exists():
-            msg = 'Audiocraft uv environment not found. Setting up...'
+        
+        # Check if environment exists AND has the correct marker file to avoid re-installation loops
+        marker_file = project_dir / '.audiocraft_installed'
+        
+        if not venv_dir.exists() or not marker_file.exists():
+            msg = 'Audiocraft uv environment not found or incomplete. Setting up...'
             print(msg)
             os.makedirs(project_dir, exist_ok=True)
+            
             try:
-                # 1. Create the virtual environment
+                # 1. Create virtual environment with Python 3.10 explicitly if possible, 
+                # otherwise rely on system python but warn. 
+                # Note: uv venv defaults to current python. To force 3.10, you might need 
+                # --python 3.10 if installed. Assuming standard behavior for now.
                 subprocess.run(['uv', 'venv'], cwd=project_dir, check=True)
                 
-                # 2. Install torch FIRST (required for xformers build)
-                # We pin to a stable version compatible with audiocraft
-                subprocess.run(['uv', 'pip', 'install', 'torch', 'torchaudio'], cwd=project_dir, check=True)
+                # Helper to run pip install within the venv context
+                def _install(pkgs:list[str])->None:
+                    cmd = ['uv', 'pip', 'install', '--no-build-isolation'] + pkgs
+                    subprocess.run(cmd, cwd=project_dir, check=True)
+
+                # 2. Install Torch and Torchaudio FIRST (pinned versions)
+                # This satisfies the build-time dependency for xformers later
+                _install([
+                    'torch==2.1.0',
+                    'torchaudio==2.1.0'
+                ])
                 
-                # 3. Install audiocraft with --no-build-isolation
-                # This allows xformers to see the already-installed torch during compilation
-                subprocess.run([
-                    'uv', 'pip', 'install', 
-                    '--no-build-isolation', 
+                # 3. Install av (required by audiocraft)
+                _install([
+                    'av==12.3.0'
+                ])
+                
+                # 4. Install transformers (pinned version required by audiocraft ecosystem stability)
+                _install([
+                    'transformers==4.39.3'
+                ])
+                
+                # 5. Install audiocraft LAST
+                # With torch and other deps already present, xformers will compile correctly
+                _install([
                     'audiocraft'
-                ], cwd=project_dir, check=True)
+                ])
                 
+                # Mark success
+                marker_file.touch()
                 print('Audiocraft environment setup complete.')
+                
             except subprocess.CalledProcessError as e:
-                print(f'Failed to setup Audiocraft env: {e}')
-                raise RuntimeError(f'Audiocraft setup failed: {e.stderr}')
+                error_msg = f'Failed to setup Audiocraft env: {e.stderr}'
+                print(error_msg)
+                raise RuntimeError(error_msg)
             except FileNotFoundError:
                 error_msg = 'uv command not found. Please install uv (https://docs.astral.sh/uv/) to use Audiocraft interludes.'
                 print(error_msg)
@@ -66,7 +95,6 @@ class AudiocraftPrompter:
     def generate_prompt(self, text:str)->str:
         self.load_model()
         truncated_text = text[:1000]
-        # Ensure input is processed in float32
         result = self.classifier(truncated_text, self.candidate_labels)
         best_vibe = result['labels'][0]
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')

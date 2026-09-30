@@ -17,7 +17,6 @@ def main()->None:
     try:
         model = MusicGen.get_pretrained(model_name, device=device)
     except Exception as e:
-        # Fallback to small if medium fails due to resource limits
         print(f'Medium model failed ({e}), falling back to small...')
         model_name = 'facebook/musicgen-small'
         model = MusicGen.get_pretrained(model_name, device=device)
