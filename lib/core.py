@@ -2813,7 +2813,6 @@ def generate_interludes(session_id:str)->None:
             return
         prompter = AudiocraftPrompter()
         msg = f'Generating {len(blocks) - 1} interludes via Audiocraft...'
-        print(msg)
         show_alert(session_id, {'type': 'info', 'msg': msg})
         for i in range(len(blocks) - 1):
             if session['cancellation_requested']:

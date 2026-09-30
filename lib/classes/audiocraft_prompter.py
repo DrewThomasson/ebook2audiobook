@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shutil
+import logging
 
 from typing import Optional
 from pathlib import Path
@@ -103,13 +104,20 @@ class AudiocraftPrompter:
     def load_model(self)->None:
         if self.classifier is None:
             import torch
-            self.classifier = pipeline(
-                'zero-shot-classification',
-                model='MoritzLaurer/mDeBERTa-v3-base-mnli-xnli',
-                device=-1,
-                dtype=torch.float32,
-                trust_remote_code=True
-            )
+            # the checkpoint carries a legacy position_ids buffer that transformers 5 reports as UNEXPECTED, harmless: mute that report for this load only
+            report_logger = logging.getLogger('transformers.utils.loading_report')
+            report_level = report_logger.level
+            report_logger.setLevel(logging.ERROR)
+            try:
+                self.classifier = pipeline(
+                    'zero-shot-classification',
+                    model='MoritzLaurer/mDeBERTa-v3-base-mnli-xnli',
+                    device=-1,
+                    dtype=torch.float32,
+                    trust_remote_code=True
+                )
+            finally:
+                report_logger.setLevel(report_level)
 
     def generate_prompt(self, text:str)->str:
         self.load_model()

@@ -1,5 +1,7 @@
+# components/audiocraft/audiocraft.py
 import argparse
 import os
+import warnings
 import torch
 import torchaudio
 from audiocraft.models import MusicGen
@@ -10,6 +12,8 @@ def main()->None:
     parser.add_argument('--duration', type=int, default=60, help='Duration of the audio in seconds.')
     parser.add_argument('--output', type=str, required=True, help='Output file path (e.g., .flac).')
     args = parser.parse_args()
+    # torch 2.1 deprecation notice triggered by audiocraft's EnCodec layers, harmless
+    warnings.filterwarnings('ignore', message='torch.nn.utils.weight_norm is deprecated')
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # medium (1.5B) is loaded as fp32 on CPU (~6GB, swaps on low-RAM hosts) so CPU uses small (300M, ~1.2GB); medium stays for CUDA
     model_name = 'facebook/musicgen-medium' if device == 'cuda' else 'facebook/musicgen-small'
