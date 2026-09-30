@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Steps to Run](#docker)
   
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
-  - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
@@ -439,10 +439,9 @@ The built-in cloned voices list is mainly in English. If you need voices in othe
 added to the list, please contact us and we'll add them after review.
 
 ## Fine Tuned TTS models
-#### Fine Tune your own XTTSv2 model
+#### Fine Tune your own TTS model
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### De-noise training data
 
