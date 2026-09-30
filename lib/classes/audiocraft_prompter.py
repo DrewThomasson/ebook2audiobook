@@ -31,8 +31,9 @@ class AudiocraftPrompter:
         project_dir = Path(self.uv_project_path)
         venv_dir = project_dir / 'python_env'
         marker_file = project_dir / '.audiocraft_installed'
-        if venv_dir.exists() and not marker_file.exists():
-            print('Detected incomplete Audiocraft installation. Cleaning up python_env...')
+        env_version = '2'
+        if venv_dir.exists() and (not marker_file.exists() or marker_file.read_text().strip() != env_version):
+            print('Detected incomplete or outdated Audiocraft installation. Cleaning up python_env...')
             try:
                 shutil.rmtree(venv_dir)
             except Exception as e:
@@ -64,14 +65,28 @@ class AudiocraftPrompter:
                 _install(['torch==2.1.0', 'torchaudio==2.1.0'])
                 print('Step 4/6: Installing av/transformers...')
                 _install(['av==12.3.0', 'transformers==4.39.3'])
-                print('Step 5/6: Creating xformers override...')
+                print('Step 5/6: Creating xformers/gradio override and xformers stub...')
                 override_file = project_dir / 'override.txt'
-                override_file.write_text('xformers ; python_version < "0"\n')
+                override_file.write_text('xformers ; python_version < "0"\ngradio ; python_version < "0"\n')
+                # audiocraft imports xformers.ops at module level but only runs it on the torch backend: unbind + LowerTriangularMask (used as a causal flag)
+                site_packages = subprocess.run([self._get_venv_python(), '-I', '-c', "import sysconfig;print(sysconfig.get_paths()['purelib'])"], capture_output=True, text=True, check=True).stdout.strip()
+                xformers_dir = Path(site_packages) / 'xformers'
+                os.makedirs(xformers_dir, exist_ok=True)
+                (xformers_dir / '__init__.py').write_text('')
+                (xformers_dir / 'ops.py').write_text(
+                    'import torch\n'
+                    'class LowerTriangularMask:\n'
+                    '    pass\n'
+                    'def unbind(x:torch.Tensor, dim:int=0)->tuple:\n'
+                    '    return torch.unbind(x, dim=dim)\n'
+                    'def memory_efficient_attention(*args, **kwargs)->torch.Tensor:\n'
+                    "    raise NotImplementedError('xformers stub: audiocraft must stay on its torch attention backend')\n"
+                )
                 print('Step 6/6: Installing audiocraft (skipping xformers)...')
                 # native deps must come as wheels: macOS x86_64 has none past llvmlite 0.45.1/numba 0.62.1 and none for sphn (demucs 4.1.0), so uv backtracks instead of compiling
-                cmd = ['uv', 'pip', 'install', '--no-build-isolation', '--override', str(override_file), '--only-binary', 'llvmlite', '--only-binary', 'numba', '--only-binary', 'sphn', 'audiocraft', 'av==12.3.0']
+                cmd = ['uv', 'pip', 'install', '--no-build-isolation', '--override', str(override_file), '--only-binary', 'llvmlite', '--only-binary', 'numba', '--only-binary', 'sphn', 'audiocraft', 'av==12.3.0', 'numpy==1.26.4', 'torch==2.1.0', 'torchaudio==2.1.0', 'transformers==4.39.3']
                 subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
-                marker_file.touch()
+                marker_file.write_text(env_version)
                 print('Audiocraft environment setup complete.')
             except subprocess.CalledProcessError as e:
                 error_msg = f'Failed to setup Audiocraft env: {e}'
@@ -91,7 +106,7 @@ class AudiocraftPrompter:
                 'zero-shot-classification',
                 model='MoritzLaurer/mDeBERTa-v3-base-mnli-xnli',
                 device=-1,
-                torch_dtype=torch.float32,
+                dtype=torch.float32,
                 trust_remote_code=True
             )
 
