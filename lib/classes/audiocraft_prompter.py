@@ -126,7 +126,7 @@ class AudiocraftPrompter:
         best_vibe = result['labels'][0]
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
 
-    def generate_interlude(self, prompt:str, output_path:str, duration:int=60)->Optional[str]:
+    def generate_interlude(self, prompt:str, output_path:str, duration:int=60, samplerate:int=24000, channels:int=1)->Optional[str]:
         venv_python = self._get_venv_python()
         script_path = Path(self.uv_project_path) / 'audiocraft.py'
         if not script_path.exists():
@@ -139,7 +139,9 @@ class AudiocraftPrompter:
             str(script_path),
             '--prompt', prompt,
             '--duration', str(duration),
-            '--output', output_path
+            '--output', output_path,
+            '--samplerate', str(samplerate),
+            '--channels', str(channels)
         ]
         try:
             subprocess.run(cmd, check=True, env=self.env_vars)
