@@ -2831,7 +2831,7 @@ def generate_interludes(session_id:str)->None:
                 duration = random.randint(20, 30)
                 desc = f'Interlude {n + 1}/{len(positions)}'
                 on_progress = (lambda p, desc=desc: progress_bar(p, desc=desc)) if session['is_gui_process'] and progress_bar else None
-                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, channels=2, on_progress=on_progress)
+                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, channels=2 if session['output_channel'] == 'stereo' else 1, on_progress=on_progress)
     except Exception as e:
         error = f'generate_interludes() error: {e}'
         exception_alert(session_id, error)
@@ -3445,7 +3445,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             part_num = part_idx + 1 if is_multi_part else None
             part_suffix = f'_part{part_idx + 1:0{pad_width}d}' if is_multi_part else ''
             merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}{part_suffix}.{default_audio_proc_format}"
-            # two tracks mixed into one stereo file: voice = chapters + silent gaps, music = faded interludes at their offsets.
+            # two tracks mixed into one file in the output's channel layout: voice = chapters + silent gaps, music = faded interludes at their offsets.
             # each interlude fades in 5-10 s before the chapter's last sentence ends and fades out 4-6 s into the next chapter;
             # the part's last chapter gets the same fade in, then the interlude plays out and fades out at the very end
             mix_dir = os.path.join(concat_dir, f'interludes_mix{part_suffix}')
@@ -3455,6 +3455,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             stream = (json.loads(probe.stdout or '{}').get('streams') or [{}])[0]
             voice_rate = int(stream.get('sample_rate', default_audio_proc_samplerate))
             voice_layout = 'mono' if int(stream.get('channels', 1)) == 1 else 'stereo'
+            out_layout = 'stereo' if session['output_channel'] == 'stereo' else 'mono'
             # silent gaps go through the same concat demuxer/decoder as the chapters, so they must share codec and bit depth exactly
             voice_codec = {'opus': 'libopus', 'vorbis': 'libvorbis'}.get(stream.get('codec_name', 'flac'), stream.get('codec_name', 'flac'))
             voice_codec_args = ['-c:a', voice_codec]
@@ -3518,18 +3519,19 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         interlude_durations[global_idx] = gap_samples / voice_rate
                     if music_start > music_pos:
                         pad_path = os.path.join(mix_dir, f'pad_{n}.flac')
-                        subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-f', 'lavfi', '-i', f'anullsrc=r={voice_rate}:cl=stereo', '-af', f'atrim=end_sample={music_start - music_pos}', '-c:a', 'flac', '-sample_fmt', 's16', '-y', pad_path], check=True)
+                        subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-f', 'lavfi', '-i', f'anullsrc=r={voice_rate}:cl={out_layout}', '-af', f'atrim=end_sample={music_start - music_pos}', '-c:a', 'flac', '-sample_fmt', 's16', '-y', pad_path], check=True)
                         fm.write(f"file '{Path(pad_path).as_posix()}'\n")
                     music_path = os.path.join(mix_dir, f'music_{n}.flac')
-                    subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-i', str(interlude_path), '-af', f'aresample={voice_rate},aformat=channel_layouts=stereo,afade=t=in:st=0:d={fade_in:.3f},afade=t=out:st={interlude_len - fade_out:.3f}:d={fade_out:.3f},atrim=end_sample={interlude_samples},apad=whole_len={interlude_samples}', '-c:a', 'flac', '-sample_fmt', 's16', '-y', music_path], check=True)
+                    subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-i', str(interlude_path), '-af', f'aresample={voice_rate},aformat=channel_layouts={out_layout},afade=t=in:st=0:d={fade_in:.3f},afade=t=out:st={interlude_len - fade_out:.3f}:d={fade_out:.3f},atrim=end_sample={interlude_samples},apad=whole_len={interlude_samples}', '-c:a', 'flac', '-sample_fmt', 's16', '-y', music_path], check=True)
                     fm.write(f"file '{Path(music_path).as_posix()}'\n")
                     music_pos = music_start + interlude_samples
-            voice_to_stereo = 'pan=stereo|c0=c0|c1=c0' if voice_layout == 'mono' else 'aformat=channel_layouts=stereo'
+            # explicit pan keeps the voice level (a plain mono->stereo upmix drops it by 3 dB)
+            voice_to_out = 'anull' if voice_layout == out_layout else 'pan=stereo|c0=c0|c1=c0' if out_layout == 'stereo' else 'pan=mono|c0=0.5*c0+0.5*c1'
             cmd = [ffmpeg, '-hide_banner', '-nostats', '-safe', '0', '-f', 'concat', '-i', voice_list]
             if music_pos > 0:
-                cmd += ['-safe', '0', '-f', 'concat', '-i', music_list, '-filter_complex', f'[0:a]{voice_to_stereo}[v];[1:a]aformat=sample_rates={voice_rate}:channel_layouts=stereo[m];[v][m]amix=inputs=2:duration=longest:normalize=0[out]']
+                cmd += ['-safe', '0', '-f', 'concat', '-i', music_list, '-filter_complex', f'[0:a]{voice_to_out}[v];[1:a]aformat=sample_rates={voice_rate}:channel_layouts={out_layout}[m];[v][m]amix=inputs=2:duration=longest:normalize=0[out]']
             else:
-                cmd += ['-filter_complex', f'[0:a]{voice_to_stereo}[out]']
+                cmd += ['-filter_complex', f'[0:a]{voice_to_out}[out]']
             cmd += ['-map', '[out]', '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '0', '-progress', 'pipe:2', '-y', str(merged_audio)]
             progress_desc = f'Assemble Part {part_num}' if part_num is not None else 'Assemble'
             proc_pipe = SubprocessPipe(cmd=cmd, is_gui_process=is_gui_process, total_duration=max(voice_pos, music_pos) / voice_rate, msg='Assemble', on_progress=lambda p: _on_progress(p, progress_desc))
