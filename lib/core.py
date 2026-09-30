@@ -3863,6 +3863,7 @@ def convert_ebook(args:dict)->tuple:
             session['process_dir'] = os.path.join(session['session_dir'], hashlib.md5((ebook_name + lang_prfx).encode()).hexdigest())
             session['chapters_dir'] = os.path.join(session['process_dir'], 'chapters')
             session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+            session['interludes_dir'] = os.path.join(session['chapters_dir'], 'interludes')
             cleanup_models_cache()
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + lang_prfx + '.' + session['output_format']
