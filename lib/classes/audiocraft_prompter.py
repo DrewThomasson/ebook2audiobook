@@ -123,22 +123,23 @@ class AudiocraftPrompter:
         script_path = Path(self.uv_project_path) / 'audiocraft.py'
         if not script_path.exists():
             raise FileNotFoundError(f'Audiocraft script not found at {script_path}')
-        # -I drops the script dir from sys.path (audiocraft.py would shadow the audiocraft package) and ignores the parent's PYTHON* vars
+        # -I drops the script dir from sys.path (audiocraft.py would shadow the audiocraft package) and ignores the parent's PYTHON* vars, -u streams download/progress output live
         cmd = [
             venv_python,
             '-I',
+            '-u',
             str(script_path),
             '--prompt', prompt,
             '--duration', str(duration),
             '--output', output_path
         ]
         try:
-            subprocess.run(cmd, capture_output=True, text=True, check=True, env=self.env_vars)
+            subprocess.run(cmd, check=True, env=self.env_vars)
             if os.path.exists(output_path):
                 return output_path
             return None
         except subprocess.CalledProcessError as e:
-            print(f'Audiocraft error: {e.stderr}')
+            print(f'Audiocraft error: exit code {e.returncode}')
             return None
         except Exception as e:
             print(f'Audiocraft exception: {e}')

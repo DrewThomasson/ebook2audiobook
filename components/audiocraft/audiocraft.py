@@ -12,16 +12,19 @@ def main()->None:
     parser.add_argument('--output', type=str, required=True, help='Output file path (e.g., .flac).')
     args = parser.parse_args()
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    # Note: musicgen-medium is ~2GB. If VRAM/RAM is tight, consider 'facebook/musicgen-small'
-    model_name = 'facebook/musicgen-medium'
+    # medium (1.5B) is loaded as fp32 on CPU (~6GB, swaps on low-RAM hosts) so CPU uses small (300M, ~1.2GB); medium stays for CUDA
+    model_name = 'facebook/musicgen-medium' if device == 'cuda' else 'facebook/musicgen-small'
+    print(f'Loading {model_name} on {device}...')
     try:
         model = MusicGen.get_pretrained(model_name, device=device)
     except Exception as e:
+        if model_name == 'facebook/musicgen-small':
+            raise
         print(f'Medium model failed ({e}), falling back to small...')
         model_name = 'facebook/musicgen-small'
         model = MusicGen.get_pretrained(model_name, device=device)
     model.set_generation_params(duration=args.duration)
-    wav = model.generate([args.prompt])
+    wav = model.generate([args.prompt], progress=True)
     audio_tensor = wav[0].cpu()
     sample_rate = model.sample_rate
     output_path = args.output
