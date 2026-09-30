@@ -32,8 +32,6 @@ class AudiocraftPrompter:
         marker_file = project_dir / '.audiocraft_installed'
         
         # 1. Check if environment is incomplete (failed install)
-        # Note: We ONLY delete the python_env folder, NOT the whole project_dir, 
-        # to avoid accidentally deleting audiocraft.py
         if venv_dir.exists() and not marker_file.exists():
             print('Detected incomplete Audiocraft installation. Cleaning up python_env...')
             try:
@@ -51,6 +49,8 @@ class AudiocraftPrompter:
                 # Step A: Create visible python_env with explicit Python 3.10
                 subprocess.run(['uv', 'venv', 'python_env', '--python', '3.10'], cwd=project_dir, check=True)
                 
+                venv_python = self._get_venv_python()
+                
                 # Step B: Prepare isolated environment variables for uv
                 env_vars = os.environ.copy()
                 env_vars['VIRTUAL_ENV'] = str(venv_dir)
@@ -66,23 +66,19 @@ class AudiocraftPrompter:
                     cmd.extend(pkgs)
                     subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
                     
-                # Step C: Install Build Dependencies FIRST
-                # Cython is strictly required to compile 'av' (PyAV) from source
-                # maturin is required to compile 'sphn' (Rust extension)
                 print('Installing build dependencies (Cython, maturin)...')
                 _install(['Cython', 'maturin'])
                 
-                # Step D: Install Torch/Torchaudio
                 print('Installing torch/torchaudio...')
                 _install(['torch==2.1.0', 'torchaudio==2.1.0'])
                 
-                # Step E: Install av and transformers
                 print('Installing av/transformers...')
                 _install(['av==12.3.0', 'transformers==4.39.3'])
                 
-                # Step F: Install audiocraft LAST
                 print('Installing audiocraft (no-build-isolation)...')
-                _install(['audiocraft'], no_isolation=True)
+                # CRITICAL FIX: Force av==12.3.0 here to prevent uv from downgrading to av 11.x,
+                # which fails to compile from source against FFmpeg 8.0+ headers on macOS.
+                _install(['audiocraft', 'av==12.3.0'], no_isolation=True)
                 
                 marker_file.touch()
                 print('Audiocraft environment setup complete.')
@@ -90,7 +86,6 @@ class AudiocraftPrompter:
             except subprocess.CalledProcessError as e:
                 error_msg = f'Failed to setup Audiocraft env: {e}'
                 print(error_msg)
-                # Clean up only the python_env folder on failure
                 if venv_dir.exists():
                     shutil.rmtree(venv_dir, ignore_errors=True)
                 raise RuntimeError(error_msg)
@@ -122,6 +117,7 @@ class AudiocraftPrompter:
         script_path = Path(self.uv_project_path) / 'audiocraft.py'
         if not script_path.exists():
             raise FileNotFoundError(f'Audiocraft script not found at {script_path}')
+        
         cmd = [
             venv_python,
             str(script_path),
