@@ -11,6 +11,12 @@ class AudiocraftPrompter:
 
     def __init__(self)->None:
         self.uv_project_path = os.path.join(components_dir, 'audiocraft')
+        venv_dir = Path(self.uv_project_path) / 'python_env'
+        # subprocess env built from scratch instead of inherited: only OS/network essentials pass, nothing from the e2a process (HF_HOME, XDG_*, TMPDIR, OMP_NUM_THREADS, PYTHON*...)
+        keep_vars = ('PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TERM', 'SYSTEMROOT', 'SYSTEMDRIVE', 'WINDIR', 'COMSPEC', 'PATHEXT', 'USERPROFILE', 'USERNAME', 'HOMEDRIVE', 'HOMEPATH', 'APPDATA', 'LOCALAPPDATA', 'PROGRAMDATA', 'PROGRAMFILES', 'TEMP', 'TMP', 'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'REQUESTS_CA_BUNDLE')
+        self.env_vars = {key: value for key, value in os.environ.items() if key.upper() in keep_vars}
+        self.env_vars['VIRTUAL_ENV'] = str(venv_dir)
+        self.env_vars['PATH'] = str(venv_dir / ('Scripts' if os.name == 'nt' else 'bin')) + os.pathsep + self.env_vars.get('PATH', '')
         self._ensure_audiocraft_env()
         self.classifier = None
         self.prompt_map = {
@@ -44,13 +50,8 @@ class AudiocraftPrompter:
             os.makedirs(project_dir, exist_ok=True)
             marker_file.unlink(missing_ok=True)
             try:
-                subprocess.run(['uv', 'venv', 'python_env', '--python', '3.10'], cwd=project_dir, check=True)
-                env_vars = os.environ.copy()
-                env_vars['VIRTUAL_ENV'] = str(venv_dir)
-                venv_bin = str(venv_dir / 'bin') if os.name != 'nt' else str(venv_dir / 'Scripts')
-                env_vars['PATH'] = venv_bin + os.pathsep + env_vars.get('PATH', '')
-                for key in ('PYTHONPATH', 'PYTHONHOME', 'PYTHONSTARTUP', 'UV_PYTHON'):
-                    env_vars.pop(key, None)
+                env_vars = self.env_vars
+                subprocess.run(['uv', 'venv', 'python_env', '--python', '3.10'], cwd=project_dir, check=True, env=env_vars)
                 def _install(pkgs:list[str], no_isolation:bool=False)->None:
                     cmd = ['uv', 'pip', 'install']
                     if no_isolation:
@@ -69,7 +70,7 @@ class AudiocraftPrompter:
                 override_file = project_dir / 'override.txt'
                 override_file.write_text('xformers ; python_version < "0"\ngradio ; python_version < "0"\n')
                 # audiocraft imports xformers.ops at module level but only runs it on the torch backend: unbind + LowerTriangularMask (used as a causal flag)
-                site_packages = subprocess.run([self._get_venv_python(), '-I', '-c', "import sysconfig;print(sysconfig.get_paths()['purelib'])"], capture_output=True, text=True, check=True).stdout.strip()
+                site_packages = subprocess.run([self._get_venv_python(), '-I', '-c', "import sysconfig;print(sysconfig.get_paths()['purelib'])"], capture_output=True, text=True, check=True, env=env_vars).stdout.strip()
                 xformers_dir = Path(site_packages) / 'xformers'
                 os.makedirs(xformers_dir, exist_ok=True)
                 (xformers_dir / '__init__.py').write_text('')
@@ -132,7 +133,7 @@ class AudiocraftPrompter:
             '--output', output_path
         ]
         try:
-            subprocess.run(cmd, capture_output=True, text=True, check=True)
+            subprocess.run(cmd, capture_output=True, text=True, check=True, env=self.env_vars)
             if os.path.exists(output_path):
                 return output_path
             return None
