@@ -58,26 +58,30 @@ class AudiocraftPrompter:
                 env_vars['PATH'] = venv_bin + os.pathsep + env_vars.get('PATH', '')
                 for key in ('PYTHONPATH', 'PYTHONHOME', 'PYTHONSTARTUP', 'UV_PYTHON'):
                     env_vars.pop(key, None)
-                    
+
                 def _install(pkgs:list[str], no_isolation:bool=False)->None:
                     cmd = ['uv', 'pip', 'install']
                     if no_isolation:
                         cmd.append('--no-build-isolation')
                     cmd.extend(pkgs)
                     subprocess.run(cmd, cwd=project_dir, check=True, env=env_vars)
-                    
-                print('Installing build dependencies (Cython, maturin)...')
-                _install(['Cython', 'maturin'])
+
+                # Step C: Install Build Dependencies FIRST
+                # CRITICAL: setuptools and wheel are strictly required when using --no-build-isolation
+                print('Installing build dependencies (Cython, maturin, setuptools, wheel)...')
+                _install(['Cython', 'maturin', 'setuptools', 'wheel'])
                 
+                # Step D: Install Torch/Torchaudio
                 print('Installing torch/torchaudio...')
                 _install(['torch==2.1.0', 'torchaudio==2.1.0'])
                 
+                # Step E: Install av and transformers
                 print('Installing av/transformers...')
                 _install(['av==12.3.0', 'transformers==4.39.3'])
                 
+                # Step F: Install audiocraft LAST
                 print('Installing audiocraft (no-build-isolation)...')
-                # CRITICAL FIX: Force av==12.3.0 here to prevent uv from downgrading to av 11.x,
-                # which fails to compile from source against FFmpeg 8.0+ headers on macOS.
+                # We force av==12.3.0 here to prevent uv from downgrading it to 11.x during resolution
                 _install(['audiocraft', 'av==12.3.0'], no_isolation=True)
                 
                 marker_file.touch()
@@ -86,6 +90,7 @@ class AudiocraftPrompter:
             except subprocess.CalledProcessError as e:
                 error_msg = f'Failed to setup Audiocraft env: {e}'
                 print(error_msg)
+                # Clean up only the python_env folder on failure
                 if venv_dir.exists():
                     shutil.rmtree(venv_dir, ignore_errors=True)
                 raise RuntimeError(error_msg)
@@ -97,10 +102,11 @@ class AudiocraftPrompter:
     def load_model(self)->None:
         if self.classifier is None:
             import torch
+            # Force float32 to avoid "LayerNormKernelImpl not implemented for Half" on CPU/macOS
             self.classifier = pipeline(
                 'zero-shot-classification',
                 model='MoritzLaurer/mDeBERTa-v3-base-mnli-xnli',
-                device=-1,
+                device=-1, # CPU
                 torch_dtype=torch.float32,
                 trust_remote_code=True
             )
