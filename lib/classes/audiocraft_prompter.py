@@ -84,7 +84,7 @@ class AudiocraftPrompter:
                 snapshot_download(repo_id, allow_patterns=['*.json', '*.model', '*.txt', '*.safetensors'], tqdm_class=_GuiTqdm)
             except Exception as e:
                 # offline or an older huggingface_hub: from_pretrained still resolves the files itself
-                print(f'Pre-download of {repo_id} skipped ({e})')
+                print(f'Pre-download of {repo_id} skipped ({str(e).splitlines()[0] if str(e) else type(e).__name__})')
         if report is not None:
             if self.classifier is None:
                 _fetch(self.classifier_repo)
@@ -146,7 +146,7 @@ class AudiocraftPrompter:
         best_vibe = result['labels'][0]
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
 
-    def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, desc:str='Interlude')->Optional[str]:
+    def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, desc:str='Interlude', is_cancelled:Optional[Callable[[], bool]]=None)->Optional[str]:
         bar = None
         try:
             self.load_model()
@@ -155,8 +155,12 @@ class AudiocraftPrompter:
             inputs = self.processor(text=[prompt], padding=True, return_tensors='pt')
             bar = tqdm(total=max_new_tokens, desc=desc, unit='step', file=sys.stdout, dynamic_ncols=True, leave=False) if self.progress_bar is None else None
             step = [0]
+            cancelled = [False]
             def _progress(input_ids:torch.LongTensor, scores:torch.FloatTensor, **kwargs)->torch.BoolTensor:
-                # never stops generation, only reports the step counter (terminal bar in CLI, progress_bar in GUI)
+                # reports the step counter (terminal bar in CLI, progress_bar in GUI) and stops generation only on a cancel request
+                if is_cancelled is not None and is_cancelled():
+                    cancelled[0] = True
+                    return torch.ones(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
                 step[0] += 1
                 if bar is not None:
                     bar.update(1)
@@ -172,19 +176,25 @@ class AudiocraftPrompter:
                     with torch.inference_mode():
                         audio = self.model.generate(**inputs.to(self.torch_device), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, stopping_criteria=StoppingCriteriaList([_progress]))
                 except Exception as e:
-                    if self.torch_device == 'cpu':
-                        raise
-                    print(f'Generation on {self.torch_device} failed ({e}), retrying on cpu...')
-                    self.torch_device = 'cpu'
-                    self.model = self.model.to('cpu', dtype=torch.float32)
-                    step[0] = 0
-                    if bar is not None:
-                        bar.reset()
-                    torch.set_num_threads(os.cpu_count() or 1)
-                    with torch.inference_mode():
-                        audio = self.model.generate(**inputs.to('cpu'), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, stopping_criteria=StoppingCriteriaList([_progress]))
+                    # a cancel stops generation mid-way and MusicGen may fail decoding the partial codes: that is not an error
+                    if not cancelled[0]:
+                        if self.torch_device == 'cpu':
+                            raise
+                        print(f'Generation on {self.torch_device} failed ({e}), retrying on cpu...')
+                        self.torch_device = 'cpu'
+                        self.model = self.model.to('cpu', dtype=torch.float32)
+                        step[0] = 0
+                        if bar is not None:
+                            bar.reset()
+                        torch.set_num_threads(os.cpu_count() or 1)
+                        with torch.inference_mode():
+                            audio = self.model.generate(**inputs.to('cpu'), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, stopping_criteria=StoppingCriteriaList([_progress]))
             finally:
                 torch.set_num_threads(threads)
+            if cancelled[0]:
+                msg = f'{desc} cancelled, nothing saved'
+                print(msg)
+                return None
             sample_rate = self.model.config.audio_encoder.sampling_rate
             audio = audio[0].float().cpu().numpy()
             if audio.shape[0] != self.channels:
@@ -198,7 +208,11 @@ class AudiocraftPrompter:
             if peak > 0:
                 audio = audio * (0.89 / peak)
             os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-            sf.write(output_path, np.clip(audio.T, -1.0, 1.0), samplerate, subtype='PCM_16')
+            # written next to the target then renamed: a crash or kill mid-write never leaves a truncated interlude for the next run to reuse
+            root, ext = os.path.splitext(output_path)
+            tmp_path = f'{root}.part{ext}'
+            sf.write(tmp_path, np.clip(audio.T, -1.0, 1.0), samplerate, subtype='PCM_16' if ext.lower() in ('.flac', '.wav') else None)
+            os.replace(tmp_path, output_path)
             if bar is not None:
                 bar.close()
                 bar = None

@@ -2830,7 +2830,7 @@ def generate_interludes(session_id:str)->None:
                 text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''
                 prompt = prompter.generate_prompt(f'{text_prev} {text_next}'.strip())
                 duration = random.randint(20, 30)
-                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}')
+                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}', is_cancelled=lambda: session['cancellation_requested'])
     except Exception as e:
         error = f'generate_interludes() error: {e}'
         exception_alert(session_id, error)
