@@ -1,5 +1,6 @@
 import io
 import os
+import json
 import sys
 import time
 import importlib
@@ -38,8 +39,9 @@ class InterludeGenerator:
         }
         self.candidate_labels = list(self.prompt_map.keys())
 
-    def load_model(self)->None:
-        if self.classifier is not None and self.model is not None:
+    def load_model(self, with_classifier:bool=True)->None:
+        # with_classifier=False: MusicGen only (editor regeneration from a prompt the user typed)
+        if self.model is not None and (self.classifier is not None or not with_classifier):
             return
         # e2a device -> torch device, checked against what the installed torch can really use
         if self.device in ('cuda', 'rocm', 'jetson') and torch.cuda.is_available():
@@ -116,7 +118,7 @@ class InterludeGenerator:
                 # offline or an older huggingface_hub: from_pretrained still resolves the files itself
                 print(f'Pre-download of {repo_id} skipped ({str(e).splitlines()[0] if str(e) else type(e).__name__})')
         if report is not None:
-            if self.classifier is None:
+            if with_classifier and self.classifier is None:
                 _fetch(self.classifier_repo)
             if self.model is None:
                 _fetch(model_name)
@@ -145,7 +147,7 @@ class InterludeGenerator:
             for module, _ in loading_bars:
                 module.tqdm = _LoadTqdm
         try:
-            if self.classifier is None:
+            if with_classifier and self.classifier is None:
                 state['desc'] = 'Loading the text classifier'
                 if report is not None:
                     report(0.0, desc=state['desc'])
@@ -193,7 +195,7 @@ class InterludeGenerator:
     def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, desc:str='Interlude', is_cancelled:Optional[Callable[[], bool]]=None)->Optional[str]:
         bar = None
         try:
-            self.load_model()
+            self.load_model(with_classifier=False)
             # MusicGen is trained on 30 s windows: transformers hard-caps generation there
             max_new_tokens = int(max(1, min(duration, 30)) * self.model.config.audio_encoder.frame_rate)
             inputs = self.processor(text=[prompt], padding=True, return_tensors='pt')
@@ -256,6 +258,10 @@ class InterludeGenerator:
             tmp_path = f'{root}.part{ext}'
             sf.write(tmp_path, np.clip(audio.T, -1.0, 1.0), samplerate, subtype='PCM_16' if ext.lower() in ('.flac', '.wav') else None)
             os.replace(tmp_path, output_path)
+            # sidecar <name>.json keeps the prompt: the subtitles show it and the audiobook editor reopens it for regeneration
+            with open(f'{root}.part.json', 'w', encoding='utf-8') as f:
+                json.dump({'prompt': prompt, 'duration': duration}, f, ensure_ascii=False)
+            os.replace(f'{root}.part.json', f'{root}.json')
             if bar is not None:
                 bar.close()
                 bar = None

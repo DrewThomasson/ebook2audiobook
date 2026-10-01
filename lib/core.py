@@ -49,7 +49,7 @@ from lib.classes.non_text_filter import NonTextFilter
 from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
-from lib.classes.tts_engines.common.utils import build_vtt_file
+from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp
 
 from lib import *
 
@@ -220,6 +220,7 @@ class SessionContext:
             "audiobook_edit_target": None,
             "audiobook_edit_block_id": None,
             "audiobook_edit_sentence_idx": None,
+            "audiobook_edit_interlude": None,
             "audiobook_edit_preview": None,
             "audiobook_edit_preview_text": None,
             "audiobook_edit_pending": False,
@@ -3413,7 +3414,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             error = f'Duration count mismatch: {len(durations)} durations vs {len(chapter_files)} chapter files'
             print(error)
             return None
-        interludes_dir = session.get('interludes_dir')
+        # always the chapters' own interludes: the audiobook editor rebuild (⇄) runs this on a session that may still carry another book's interludes_dir
+        interludes_dir = os.path.join(session['chapters_dir'], 'interludes')
         interlude_durations = {}
         exported_files = []
         concat_dir = session['process_dir']
@@ -3466,6 +3468,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             music_list = os.path.join(mix_dir, 'music.txt')
             voice_pos = 0
             music_pos = 0
+            part_cues = []
             with open(voice_list, 'w') as fv, open(music_list, 'w') as fm:
                 for n, idx in enumerate(indices):
                     if session['cancellation_requested']:
@@ -3510,6 +3513,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         if not is_last:
                             gap_samples += floor - music_start
                         music_start = floor
+                    chapter_end = voice_pos
                     if gap_samples > 0:
                         gap_path = os.path.join(mix_dir, f'gap_{n}.{default_audio_proc_format}')
                         subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-f', 'lavfi', '-i', f'anullsrc=r={voice_rate}:cl={voice_layout}', '-af', f'atrim=end_sample={gap_samples}', *voice_codec_args, '-y', gap_path], check=True)
@@ -3524,6 +3528,16 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-i', str(interlude_path), '-af', f'aresample={voice_rate},aformat=channel_layouts={out_layout},afade=t=in:st=0:d={fade_in:.3f},afade=t=out:st={interlude_len - fade_out:.3f}:d={fade_out:.3f},atrim=end_sample={interlude_samples},apad=whole_len={interlude_samples}', '-c:a', 'flac', '-sample_fmt', 's16', '-y', music_path], check=True)
                     fm.write(f"file '{Path(music_path).as_posix()}'\n")
                     music_pos = music_start + interlude_samples
+                    # subtitle cue over the music-only stretch: chapter end -> next chapter start, or -> the end for the part's last one
+                    cue_end = music_pos if is_last else voice_pos
+                    if cue_end - chapter_end >= voice_rate // 2:
+                        cue_text = 'Interlude'
+                        try:
+                            with open(interlude_path.with_suffix('.json'), 'r', encoding='utf-8') as f:
+                                cue_text = ' '.join(str(json.load(f).get('prompt') or cue_text).split())
+                        except (OSError, ValueError):
+                            pass
+                        part_cues.append((chapter_end / voice_rate, cue_end / voice_rate, global_idx, f'♪ {cue_text}'))
             # explicit pan keeps the voice level (a plain mono->stereo upmix drops it by 3 dB)
             voice_to_out = 'anull' if voice_layout == out_layout else 'pan=stereo|c0=c0|c1=c0' if out_layout == 'stereo' else 'pan=mono|c0=0.5*c0+0.5*c1'
             cmd = [ffmpeg, '-hide_banner', '-nostats', '-safe', '0', '-f', 'concat', '-i', voice_list]
@@ -3552,6 +3566,26 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
             if _export_audio(merged_audio, str(metadata_file), final_file, block_indices=block_indices, part_num=part_num, interlude_durations=interlude_durations, chapter_global_indices=part_global_indices):
                 exported_files.append(final_file)
+                final_vtt = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
+                if part_cues and os.path.exists(final_vtt):
+                    # interludes become subtitle cues too, with the WebVTT cue id "interlude <block index>": the player shows
+                    # their prompt and the audiobook editor opens them like a sentence. Each one is kept between the sentence
+                    # cues, never across one, since the player finds the current cue with a binary search
+                    with open(final_vtt, 'r', encoding='utf-8') as f:
+                        vtt_cues = [c.strip('\n') for c in f.read().split('\n\n') if '-->' in c]
+                    spans = []
+                    for c in vtt_cues:
+                        start_ts, end_ts = [t.strip().split(' ')[0] for t in next(l for l in c.split('\n') if '-->' in l).split('-->')]
+                        spans.append((sum(float(v) * 60 ** k for k, v in enumerate(reversed(start_ts.split(':')))), sum(float(v) * 60 ** k for k, v in enumerate(reversed(end_ts.split(':'))))))
+                    entries = list(zip(spans, vtt_cues))
+                    for cue_start, cue_end, global_idx, cue_text in part_cues:
+                        cue_start = max([cue_start] + [e for s, e in spans if s <= cue_start])
+                        cue_end = min([cue_end] + [s for s, e in spans if s >= cue_start])
+                        if cue_end - cue_start >= 0.5:
+                            entries.append(((cue_start, cue_end), f'interlude {global_idx}\n{format_timestamp(cue_start)} --> {format_timestamp(cue_end)}\n{cue_text}'))
+                    entries.sort(key=lambda e: e[0][0])
+                    with open(final_vtt, 'w', encoding='utf-8') as f:
+                        f.write('WEBVTT\n\n' + '\n\n'.join(c for _, c in entries) + '\n')
         return exported_files if exported_files else None
     except Exception as e:
         DependencyError(e)
@@ -4437,6 +4471,7 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "audiobook_edit_target": None,
         "audiobook_edit_block_id": None,
         "audiobook_edit_sentence_idx": None,
+        "audiobook_edit_interlude": None,
         "audiobook_edit_preview": None,
         "audiobook_edit_preview_text": None,
         "audiobook_edit_pending": False,

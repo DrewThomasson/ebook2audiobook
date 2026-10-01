@@ -403,6 +403,7 @@ def build_interface(args:dict)->gr.Blocks:
                             os.unlink(preview_file)
                         session['audiobook_edit_block_id'] = None
                         session['audiobook_edit_sentence_idx'] = None
+                        session['audiobook_edit_interlude'] = None
                         session['audiobook_edit_preview'] = None
                         session['audiobook_edit_preview_text'] = None
                     outputs[outputs_disable_components.index(gr_row_audiobook_edit)] = gr.update(visible=False)
@@ -1220,8 +1221,10 @@ def build_interface(args:dict)->gr.Blocks:
                             cue_data = json.loads(cue) if cue else {}
                             cue_idx = int(cue_data['idx']) if cue_data.get('idx') is not None else -1
                             cue_text = ''.join(str(cue_data.get('text', '')).split())
-                            if cue_idx < 0:
-                                error = 'No sentence at the current playback position. Seek into the sentence to edit first.'
+                            # interlude cues carry the WebVTT id "interlude <block index>", see combine_audio_chapters()
+                            interlude = int(cue_data['interlude']) if cue_data.get('interlude') is not None else None
+                            if cue_idx < 0 and interlude is None:
+                                error = 'No sentence or interlude at the current playback position. Seek into the one to edit first.'
                             else:
                                 stem = Path(audiobook).stem
                                 ext = Path(audiobook).suffix.lstrip('.').lower()
@@ -1240,7 +1243,9 @@ def build_interface(args:dict)->gr.Blocks:
                                                 error = f'{part_vtt.name} is missing, cannot locate the sentence.'
                                                 break
                                             with open(part_vtt, 'r', encoding='utf-8-sig', errors='replace') as f:
-                                                cue_offset += sum(1 for line in f if '-->' in line)
+                                                part_lines = f.read().splitlines()
+                                            # sentence cues only: interlude cues (id "interlude <block index>") are not sentences
+                                            cue_offset += sum(1 for line in part_lines if '-->' in line) - sum(1 for line in part_lines if re.match(r'^interlude \d+$', line.strip()))
                                 if error is None and not os.path.isdir(process_dir):
                                     error = f'Conversion data of {stem} not found (process folder cleaned up?), editing is not possible.'
                                 if error is None:
@@ -1273,6 +1278,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             session['process_dir'] = process_dir
                                             session['chapters_dir'] = os.path.join(process_dir, 'chapters')
                                             session['sentences_dir'] = os.path.join(process_dir, 'chapters', 'sentences')
+                                            session['interludes_dir'] = os.path.join(process_dir, 'chapters', 'interludes')
                                             session['filename_noext'] = filename_noext
                                             session['epub_path'] = epub_path
                                             session['blocks_orig_json'] = os.path.join(process_dir, f"{file_prefixes['clone']}{filename_noext}.json")
@@ -1284,6 +1290,35 @@ def build_interface(args:dict)->gr.Blocks:
                                             session['blocks_saved'] = blocks_saved
                                             session['blocks_current'] = copy.deepcopy(blocks_saved)
                                             session['audiobook_edit_target'] = audiobook
+                                    if error is None and interlude is not None:
+                                        blocks = session['blocks_saved'].get('blocks', [])
+                                        interlude_file = os.path.join(session['chapters_dir'], 'interludes', f'{interlude}-{interlude + 1}.{default_audio_proc_format}')
+                                        session['audiobook_edit_pending'] = os.path.exists(os.path.join(session['process_dir'], f"__edit_pending_{session['final_name']}"))
+                                        if not (0 <= interlude < len(blocks)) or not os.path.exists(interlude_file):
+                                            error = 'Interlude audio file not found, editing is not possible.'
+                                        else:
+                                            # the prompt that made it (sidecar <name>.json), else the subtitle text without its ♪
+                                            prompt = re.sub(r'^\s*♪\s*', '', str(cue_data.get('text', ''))).strip() or 'Interlude'
+                                            try:
+                                                with open(f'{os.path.splitext(interlude_file)[0]}.json', 'r', encoding='utf-8') as f:
+                                                    prompt = ' '.join(str(json.load(f).get('prompt') or prompt).split())
+                                            except (OSError, ValueError):
+                                                pass
+                                            session['audiobook_edit_block_id'] = blocks[interlude]['id']
+                                            session['audiobook_edit_sentence_idx'] = None
+                                            session['audiobook_edit_interlude'] = interlude
+                                            session['audiobook_edit_preview'] = None
+                                            session['audiobook_edit_preview_text'] = None
+                                            if session['audiobook_edit_pending']:
+                                                msg = f'{Path(audiobook).name} has saved edits not exported yet, click ⇄ to rebuild it.'
+                                                show_alert(session_id, {"type": "info", "msg": msg})
+                                            return (
+                                                gr.update(value=prompt, interactive=True), gr.update(visible=True), gr.update(value=None),
+                                                gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
+                                                gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False),
+                                                gr.update(visible=session['audiobook_edit_pending'], interactive=False), gr.update(interactive=False),
+                                                gr.update(visible='hidden')
+                                            )
                                     if error is None:
                                         blocks_saved = session['blocks_saved']
                                         target_idx = cue_offset + cue_idx
@@ -1313,6 +1348,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         else:
                                             session['audiobook_edit_block_id'] = block_id
                                             session['audiobook_edit_sentence_idx'] = sentence_idx
+                                            session['audiobook_edit_interlude'] = None
                                             session['audiobook_edit_preview'] = None
                                             session['audiobook_edit_preview_text'] = None
                                             final_language = session['translate'] if session.get('translate_enabled') and session.get('translate') else session['language']
@@ -1339,6 +1375,61 @@ def build_interface(args:dict)->gr.Blocks:
             def _click_gr_audiobook_edit_sentence_btn(session_id:str, text:str|None)->tuple:
                 try:
                     session = context.get_session(session_id)
+                    if session and session.get('id', False) and session.get('audiobook_edit_interlude') is not None:
+                        # interlude: the text is its MusicGen prompt, ◉ generates a new take (unchanged prompt = another variation)
+                        error = None
+                        prompt = ' '.join(str(text or '').split())
+                        interlude = session['audiobook_edit_interlude']
+                        interlude_file = os.path.join(session['chapters_dir'], 'interludes', f'{interlude}-{interlude + 1}.{default_audio_proc_format}') if session.get('chapters_dir') else ''
+                        if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                            error = 'A conversion is running, try again later.'
+                        elif not session.get('process_dir') or not os.path.exists(interlude_file):
+                            error = 'Edit context lost, close the editor and open it again.'
+                        elif len(prompt) > 500:
+                            error = 'The interlude prompt is limited to 500 characters.'
+                        elif not any(c.isalnum() for c in prompt):
+                            error = 'Describe the music with at least one word.'
+                        else:
+                            preview_file = os.path.join(session['process_dir'], f'__edit_preview_interlude.{default_audio_proc_format}')
+                            for f in (preview_file, f'{os.path.splitext(preview_file)[0]}.json'):
+                                if os.path.exists(f):
+                                    os.unlink(f)
+                            session['audiobook_edit_preview'] = None
+                            # same length and channel count as the interlude it replaces
+                            interlude_info = mediainfo(interlude_file)
+                            duration = int(min(30, max(20, round(float(interlude_info.get('duration') or 30)))))
+                            channels = 1 if int(interlude_info.get('channels') or 2) == 1 else 2
+                            from lib.classes.interlude_generator import InterludeGenerator
+                            generator = None
+                            session['status'] = status_tags['CONVERTING']
+                            session['cancellation_requested'] = False
+                            try:
+                                msg = f'Generating the interlude: {prompt}'
+                                print(msg)
+                                progress_bar(0.0, desc=msg)
+                                generator = InterludeGenerator(session['device'], channels, progress_bar)
+                                if generator.generate_interlude(prompt, preview_file, duration=duration, samplerate=default_audio_proc_samplerate, desc='Interlude', is_cancelled=lambda: session['cancellation_requested']):
+                                    session['audiobook_edit_preview'] = preview_file
+                                    session['audiobook_edit_preview_text'] = prompt
+                                    msg = 'Interlude generated, listen and validate with ✔ (◉ again for another take)'
+                                    print(msg)
+                                    progress_bar(1.0, desc=msg)
+                                    return gr.update(value=preview_file), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True)
+                                error = 'Interlude generation failed, see the terminal.'
+                            finally:
+                                # MusicGen runs in this process: release it right away
+                                generator = None
+                                import gc
+                                gc.collect()
+                                try:
+                                    import torch
+                                    if torch.cuda.is_available():
+                                        torch.cuda.empty_cache()
+                                except Exception:
+                                    pass
+                                session['status'] = status_tags['READY']
+                        show_alert(session_id, {"type": "warning", "msg": error})
+                        return gr.update(), gr.update(interactive=True), gr.update(interactive=bool(session.get('audiobook_edit_preview'))), gr.update(interactive=True)
                     if session and session.get('id', False):
                         error = None
                         raw_text = ' '.join(str(text or '').split())
@@ -1418,6 +1509,53 @@ def build_interface(args:dict)->gr.Blocks:
             def _click_gr_audiobook_edit_save_btn(session_id:str, text:str|None)->tuple:
                 try:
                     session = context.get_session(session_id)
+                    if session and session.get('id', False) and session.get('audiobook_edit_interlude') is not None:
+                        error = None
+                        prompt = ' '.join(str(text or '').split())
+                        interlude = session['audiobook_edit_interlude']
+                        preview_file = session.get('audiobook_edit_preview')
+                        interlude_file = os.path.join(session['chapters_dir'], 'interludes', f'{interlude}-{interlude + 1}.{default_audio_proc_format}') if session.get('chapters_dir') else ''
+                        if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                            error = 'A conversion is running, try again later.'
+                        elif not os.path.exists(interlude_file):
+                            error = 'Edit context lost, close the editor and open it again.'
+                        elif not preview_file or not os.path.exists(preview_file):
+                            error = 'Generate the interlude first (◉).'
+                        elif prompt != session.get('audiobook_edit_preview_text'):
+                            error = 'The prompt changed since the last generation, generate it again (◉).'
+                        else:
+                            os.replace(preview_file, interlude_file)
+                            preview_json = f'{os.path.splitext(preview_file)[0]}.json'
+                            if os.path.exists(preview_json):
+                                os.replace(preview_json, f'{os.path.splitext(interlude_file)[0]}.json')
+                            Path(os.path.join(session['process_dir'], f"__edit_pending_{session['final_name']}")).touch()
+                            session['audiobook_edit_pending'] = True
+                            session['audiobook_edit_block_id'] = None
+                            session['audiobook_edit_sentence_idx'] = None
+                            session['audiobook_edit_interlude'] = None
+                            session['audiobook_edit_preview'] = None
+                            session['audiobook_edit_preview_text'] = None
+                            msg = 'Interlude replaced. Click ⇄ to rebuild the audiobook.'
+                            print(msg)
+                            show_alert(session_id, {"type": "success", "msg": msg})
+                            enabled_convert_btn = (
+                                session['ebook_mode'] == ebook_modes['TEXT']
+                                or (session['ebook_mode'] == ebook_modes['SINGLE'] and bool(session.get('ebook_src')))
+                                or (session['ebook_mode'] == ebook_modes['DIRECTORY'] and bool(session.get('ebook_list')))
+                            )
+                            return (
+                                gr.update(value=f'♪ {prompt}', interactive=False), gr.update(visible=False), gr.update(value=None),
+                                gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
+                                gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
+                                gr.update(visible=True, interactive=True), gr.update(interactive=enabled_convert_btn),
+                                gr.update(visible=True)
+                            )
+                        show_alert(session_id, {"type": "warning", "msg": error})
+                        return (
+                            gr.update(), gr.update(), gr.update(),
+                            gr.update(interactive=True), gr.update(interactive=bool(session.get('audiobook_edit_preview'))), gr.update(interactive=True),
+                            gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                        )
                     if session and session.get('id', False):
                         error = None
                         text = ' '.join(str(text or '').split())
@@ -1517,14 +1655,26 @@ def build_interface(args:dict)->gr.Blocks:
                         preview_file = session.get('audiobook_edit_preview')
                         if preview_file and os.path.exists(preview_file):
                             os.unlink(preview_file)
+                        if preview_file and os.path.exists(f'{os.path.splitext(preview_file)[0]}.json'):
+                            os.unlink(f'{os.path.splitext(preview_file)[0]}.json')
                         block_id = session.get('audiobook_edit_block_id')
                         sentence_idx = session.get('audiobook_edit_sentence_idx')
                         blocks_saved = session.get('blocks_saved') or {}
                         block = next((b for b in blocks_saved.get('blocks', []) if b['id'] == block_id), None)
                         if block is not None and sentence_idx is not None and sentence_idx < len(block.get('sentences', [])):
                             sentence_update = gr.update(value=re.sub(r'\s+', ' ', SML_TAG_PATTERN.sub('', str(block['sentences'][sentence_idx]))).strip() or '…', interactive=False)
+                        interlude = session.get('audiobook_edit_interlude')
+                        if interlude is not None and session.get('chapters_dir'):
+                            prompt = 'Interlude'
+                            try:
+                                with open(os.path.join(session['chapters_dir'], 'interludes', f'{interlude}-{interlude + 1}.json'), 'r', encoding='utf-8') as f:
+                                    prompt = ' '.join(str(json.load(f).get('prompt') or prompt).split())
+                            except (OSError, ValueError):
+                                pass
+                            sentence_update = gr.update(value=f'♪ {prompt}', interactive=False)
                         session['audiobook_edit_block_id'] = None
                         session['audiobook_edit_sentence_idx'] = None
+                        session['audiobook_edit_interlude'] = None
                         session['audiobook_edit_preview'] = None
                         session['audiobook_edit_preview_text'] = None
                         pending = bool(session.get('audiobook_edit_pending'))
@@ -1606,6 +1756,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     session['process_dir'] = process_dir
                                     session['chapters_dir'] = chapters_dir
                                     session['sentences_dir'] = os.path.join(chapters_dir, 'sentences')
+                                    session['interludes_dir'] = os.path.join(chapters_dir, 'interludes')
                                     session['filename_noext'] = filename_noext
                                     session['epub_path'] = epub_path
                                     session['blocks_orig_json'] = os.path.join(process_dir, f"{file_prefixes['clone']}{filename_noext}.json")
@@ -2775,6 +2926,7 @@ def build_interface(args:dict)->gr.Blocks:
                         os.unlink(session['audiobook_edit_preview'])
                     session['audiobook_edit_block_id'] = None
                     session['audiobook_edit_sentence_idx'] = None
+                    session['audiobook_edit_interlude'] = None
                     session['audiobook_edit_preview'] = None
                     session['audiobook_edit_preview_text'] = None
                     session['status'] = status_tags['READY']
@@ -3324,7 +3476,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 sentence.value = found.text;
                                 sentence.dispatchEvent(new Event("input", {bubbles: true}));
                             }
-                            cue = JSON.stringify(found ? {idx: found.idx, text: found.text} : {idx: -1, text: ""});
+                            cue = JSON.stringify(found ? {idx: (found.sentence_idx ?? found.idx), text: found.text, interlude: (found.interlude ?? null)} : {idx: -1, text: "", interlude: null});
                         }catch(e){
                             console.warn("gr_audiobook_edit_btn error:", e);
                         }
