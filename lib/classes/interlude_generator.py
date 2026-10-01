@@ -3,6 +3,7 @@ import os
 import json
 import sys
 import time
+import ctypes
 import importlib
 import contextvars
 import logging
@@ -15,7 +16,7 @@ from typing import Optional, Callable
 from scipy.signal import resample_poly
 from tqdm import tqdm
 from huggingface_hub import snapshot_download
-from transformers import pipeline, AutoProcessor, MusicgenForConditionalGeneration, StoppingCriteriaList
+from transformers import pipeline, AutoProcessor, MusicgenForConditionalGeneration, StoppingCriteriaList, LogitsProcessorList
 
 class InterludeGenerator:
 
@@ -27,6 +28,27 @@ class InterludeGenerator:
         self.progress_bar = progress_bar
         self.classifier_repo = 'MoritzLaurer/mDeBERTa-v3-base-mnli-xnli'
         self.torch_device = None
+        # set once non-finite logits showed up: the following generations go straight to the safe settings
+        self.safe_mode = False
+        # torch's intra-op threads call BLAS concurrently: fine with MKL, Accelerate or an OpenMP OpenBLAS (PyPI wheels),
+        # not with a pthreads or sequential OpenBLAS, which is what the Jetson torch builds link (the system libopenblas.so.0,
+        # 0.3.8 pthreads on JetPack 5): there concurrent GEMMs return NaN/garbage now and then. On such builds torch keeps
+        # its single thread and a pthreads OpenBLAS gets the cores instead, inside each GEMM (its safe way to go parallel)
+        self.raise_threads = True
+        self.openblas = None
+        if sys.platform.startswith('linux'):
+            try:
+                with open('/proc/self/maps', 'r') as f:
+                    blas = next((line.split()[-1] for line in f if 'libopenblas' in line), None)
+                if blas:
+                    openblas = ctypes.CDLL(blas)
+                    parallel = openblas.openblas_get_parallel()
+                    if parallel != 2:
+                        self.raise_threads = False
+                    if parallel == 1:
+                        self.openblas = openblas
+            except Exception:
+                pass
         self.classifier = None
         self.processor = None
         self.model = None
@@ -212,30 +234,69 @@ class InterludeGenerator:
                 if self.progress_bar is not None:
                     self.progress_bar(min(step[0], max_new_tokens) / max_new_tokens, desc=desc)
                 return torch.zeros(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
+            guarded = [0]
+            def _finite_logits(input_ids:torch.LongTensor, scores:torch.FloatTensor)->torch.FloatTensor:
+                # runs before classifier-free guidance: a non-finite logit would make torch.multinomial fail
+                # ("probability tensor contains either inf, nan or element < 0"), so it is neutralized and the step counted
+                if not torch.isfinite(scores).all():
+                    guarded[0] += 1
+                    scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+                return scores
             threads = torch.get_num_threads()
-            try:
-                if self.torch_device == 'cpu':
-                    # the e2a process runs torch on one thread (OMP_NUM_THREADS=1): MusicGen gets every core for this call only
-                    torch.set_num_threads(os.cpu_count() or 1)
+            blas_threads = self.openblas.openblas_get_num_threads() if self.openblas is not None else None
+            audio = None
+            # attempt 1 only when attempt 0 failed: GPU failure -> CPU, or non-finite logits on CPU -> safe settings
+            # (torch's own thread count, eager attention); autocast leaking from the caller is always switched off
+            for attempt in range(2):
+                step[0] = 0
+                guarded[0] = 0
+                if bar is not None:
+                    bar.reset()
                 try:
-                    with torch.inference_mode():
-                        audio = self.model.generate(**inputs.to(self.torch_device), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, stopping_criteria=StoppingCriteriaList([_progress]))
+                    if self.torch_device == 'cpu' and not self.safe_mode:
+                        # the e2a process runs torch on one thread (OMP_NUM_THREADS=1): MusicGen gets every core for this call only
+                        if self.raise_threads:
+                            torch.set_num_threads(os.cpu_count() or 1)
+                        elif self.openblas is not None:
+                            # pthreads OpenBLAS read OMP_NUM_THREADS=1 when it loaded: give its own pool every core instead
+                            self.openblas.openblas_set_num_threads(os.cpu_count() or 1)
+                    with torch.inference_mode(), torch.autocast(device_type='cuda' if self.torch_device == 'cuda' else 'cpu', enabled=False):
+                        audio = self.model.generate(**inputs.to(self.torch_device), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, logits_processor=LogitsProcessorList([_finite_logits]), stopping_criteria=StoppingCriteriaList([_progress]))
                 except Exception as e:
                     # a cancel stops generation mid-way and MusicGen may fail decoding the partial codes: that is not an error
-                    if not cancelled[0]:
-                        if self.torch_device == 'cpu':
-                            raise
+                    if cancelled[0]:
+                        break
+                    if attempt == 1:
+                        raise
+                    audio = None
+                    if self.torch_device != 'cpu':
                         print(f'Generation on {self.torch_device} failed ({e}), retrying on cpu...')
                         self.torch_device = 'cpu'
                         self.model = self.model.to('cpu', dtype=torch.float32)
-                        step[0] = 0
-                        if bar is not None:
-                            bar.reset()
-                        torch.set_num_threads(os.cpu_count() or 1)
-                        with torch.inference_mode():
-                            audio = self.model.generate(**inputs.to('cpu'), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, stopping_criteria=StoppingCriteriaList([_progress]))
-            finally:
-                torch.set_num_threads(threads)
+                    else:
+                        print(f'{desc} failed ({e}), retrying with safe settings...')
+                        self.safe_mode = True
+                        try:
+                            self.model.set_attn_implementation('eager')
+                        except Exception:
+                            pass
+                    continue
+                finally:
+                    torch.set_num_threads(threads)
+                    if blas_threads is not None:
+                        self.openblas.openblas_set_num_threads(blas_threads)
+                # a couple of neutralized steps are harmless; more means the run is unreliable: redo it once in safe mode
+                if cancelled[0] or attempt == 1 or self.torch_device != 'cpu' or guarded[0] <= max(2, max_new_tokens // 100):
+                    break
+                print(f'{desc}: {guarded[0]} steps produced non-finite logits, retrying with safe settings...')
+                audio = None
+                self.safe_mode = True
+                try:
+                    self.model.set_attn_implementation('eager')
+                except Exception:
+                    pass
+            if guarded[0] and not cancelled[0]:
+                print(f'{desc}: {guarded[0]} step(s) with non-finite logits were neutralized')
             if cancelled[0]:
                 msg = f'{desc} cancelled, nothing saved'
                 print(msg)
