@@ -59,20 +59,26 @@ class AudiocraftPrompter:
             dtype = torch.float16
         model_name = f"facebook/musicgen-{'stereo-' if self.channels == 2 else ''}{size}"
         report = self.progress_bar
-        state = {'desc': '', 'fractions': {}, 'shown': 0.0}
+        state = {'desc': '', 'bars': [], 'shown': 0.0}
         class _GuiTqdm(tqdm):
             # huggingface_hub download bars: drawn in the terminal as usual, byte progress also forwarded to gradio
             def __init__(self, *args, **kwargs):
                 kwargs.pop('name', None)
                 kwargs['disable'] = False
                 super().__init__(*args, **kwargs)
+                if self.unit == 'B':
+                    state['bars'].append(self)
             def update(self, n=1):
                 shown = super().update(n)
-                if self.unit == 'B' and self.total:
-                    state['fractions'][id(self)] = min(1.0, self.n / self.total)
-                    # totals grow as each file registers: never let the bar step back
-                    state['shown'] = max(state['shown'], max(state['fractions'].values()))
-                    report(state['shown'], desc=state['desc'])
+                if self.unit == 'B':
+                    # xet transfers count bytes on a bar with no total, while the bar that knows the size (reconstruction)
+                    # only moves at the end: the furthest byte count is measured against the largest total known so far
+                    total = max((b.total or 0) for b in state['bars'])
+                    if total > 0:
+                        done = max(b.n for b in state['bars'])
+                        # totals grow as each file registers: never let the bar step back
+                        state['shown'] = max(state['shown'], min(1.0, done / total))
+                        report(state['shown'], desc=f"{state['desc']} ({min(done, total) / 1e6:.0f}/{total / 1e6:.0f} MB)")
                 return shown
         class _LoadTqdm(tqdm):
             # transformers' "Loading weights" bar in GUI mode: not drawn in the terminal, progress sent to gradio instead
@@ -85,13 +91,14 @@ class AudiocraftPrompter:
                     report(min(1.0, self.n / self.total), desc=state['desc'])
                 return shown
         def _fetch(repo_id:str)->None:
-            # GUI only: pre-download what transformers loads (MusicGen repos also carry audiocraft-format .bin weights)
+            # GUI only: pre-download exactly what transformers loads. The repos also hold weights it never reads:
+            # MusicGen's model.fp32.safetensors (2.4 GB) and pytorch_model.bin, audiocraft-format .bin files, DeBERTa's onnx/ folder
             state['desc'] = f'Downloading {repo_id}'
-            state['fractions'] = {}
+            state['bars'] = []
             state['shown'] = 0.0
             report(0.0, desc=state['desc'])
             try:
-                snapshot_download(repo_id, allow_patterns=['*.json', '*.model', '*.txt', '*.safetensors'], tqdm_class=_GuiTqdm)
+                snapshot_download(repo_id, allow_patterns=['*.json', '*.model', '*.txt', 'model.safetensors', 'model-*-of-*.safetensors'], ignore_patterns=['*/*'], tqdm_class=_GuiTqdm)
             except Exception as e:
                 # offline or an older huggingface_hub: from_pretrained still resolves the files itself
                 print(f'Pre-download of {repo_id} skipped ({str(e).splitlines()[0] if str(e) else type(e).__name__})')
