@@ -3531,7 +3531,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cmd += ['-safe', '0', '-f', 'concat', '-i', music_list, '-filter_complex', f'[0:a]{voice_to_out}[v];[1:a]aformat=sample_rates={voice_rate}:channel_layouts={out_layout}[m];[v][m]amix=inputs=2:duration=longest:normalize=0[out]']
             else:
                 cmd += ['-filter_complex', f'[0:a]{voice_to_out}[out]']
-            cmd += ['-map', '[out]', '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '0', '-progress', 'pipe:2', '-y', str(merged_audio)]
+            # default_audio_proc_format is a container name: only 'flac' is also an encoder name, 'wav'/'ogg' need theirs
+            cmd += ['-map', '[out]', '-c:a', {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(default_audio_proc_format, default_audio_proc_format), '-map_metadata', '-1', '-threads', '0', '-progress', 'pipe:2', '-y', str(merged_audio)]
             progress_desc = f'Assemble Part {part_num}' if part_num is not None else 'Assemble'
             proc_pipe = SubprocessPipe(cmd=cmd, is_gui_process=is_gui_process, total_duration=max(voice_pos, music_pos) / voice_rate, msg='Assemble', on_progress=lambda p: _on_progress(p, progress_desc))
             if not (proc_pipe.result and os.path.exists(merged_audio)):
@@ -3597,7 +3598,8 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             '-safe', '0',
             '-f', 'concat',
             '-i', txt_file,
-            '-c:a', default_audio_proc_format,
+            # default_audio_proc_format is a container name: only 'flac' is also an encoder name, 'wav'/'ogg' need theirs
+            '-c:a', {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(default_audio_proc_format, default_audio_proc_format),
             '-map_metadata', '-1',
             '-threads', '0',
             '-progress', 'pipe:2',
