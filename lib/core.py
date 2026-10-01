@@ -2831,9 +2831,37 @@ def generate_interludes(session_id:str)->None:
         except (OSError, ValueError):
             pass
         genre_saved = generator.genre is not None
+        # genre excerpts: the metadata (title, subject, description) counts double; then the middle three fifths of the book,
+        # since its first and last fifth hold the title page, copyright, contents, dedication, acknowledgements or appendices.
+        # That middle is read as one continuous text so short chapters count too (poetry, picture books, books split into
+        # many small parts): 8 windows of about 1200 characters, evenly spread and cut on whole words; a short book is
+        # simply covered by consecutive windows
+        # language guard: the classifier only understands the languages it was pretrained on. The chapter text is in the
+        # translation's language when translation is on, the metadata always stays in the book's own language
+        text_language = session['translate'] if session.get('translate_enabled') and session.get('translate') else session['language']
+        text_iso1 = session.get('translate_iso1') if session.get('translate_enabled') and session.get('translate') else session.get('language_iso1')
+        text_supported = text_iso1 in generator.classifier_languages
+        meta_supported = session.get('language_iso1') in generator.classifier_languages
+        if not text_supported:
+            msg = f"Interludes: the mood classifier does not know {text_language}, calm and reflective moods are used instead{'' if generator.genre or meta_supported else ', with a neutral genre (set one in book_genre.json to choose it)'}"
+            print(msg)
         metadata = session.get('metadata') or {}
-        book_text = re.sub(r'<[^>]+>', ' ', '. '.join(str(metadata.get(k)) for k in ('title', 'subject', 'description') if metadata.get(k)))
-        book_text = ' '.join(f"{book_text}. {' '.join(blocks[x]['text'][:1500] for x in positions[:2])}".split())
+        meta_text = ' '.join(re.sub(r'<[^>]+>', ' ', '. '.join(str(metadata.get(k)) for k in ('title', 'subject', 'description') if metadata.get(k))).split())
+        book_text = [(meta_text, 2.0)] if meta_text and meta_supported else []
+        middle = positions[len(positions) // 5:len(positions) - len(positions) // 5] or positions
+        stream = ' '.join(' '.join(blocks[x]['text'].split()) for x in middle)
+        span = 1200
+        for i in range(8 if text_supported else 0):
+            start = i * span if len(stream) <= span * 8 else max(0, int(len(stream) * (i + 0.5) / 8) - span // 2)
+            if start >= len(stream):
+                break
+            excerpt = stream[start:start + span]
+            if start > 0:
+                excerpt = excerpt.split(' ', 1)[-1]
+            if start + span < len(stream):
+                excerpt = excerpt.rsplit(' ', 1)[0]
+            if excerpt.strip():
+                book_text.append((excerpt, 1.0))
         for n, x in enumerate(positions):
             if session['cancellation_requested']:
                 return
@@ -2843,10 +2871,10 @@ def generate_interludes(session_id:str)->None:
                 text_prev = blocks[x]['text'][-500:]
                 # the last chapter always gets one too: it closes the audiobook
                 text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''
-                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text)
+                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text, text_supported)
                 if not genre_saved and generator.genre:
                     with open(genre_file, 'w', encoding='utf-8') as f:
-                        json.dump({'genre': generator.genre, 'available': list(generator.genre_styles.keys())}, f, ensure_ascii=False, indent=1)
+                        json.dump({'genre': generator.genre, 'scores': generator.genre_scores, 'available': list(generator.genre_styles.keys())}, f, ensure_ascii=False, indent=1)
                     genre_saved = True
                 duration = random.randint(20, 30)
                 generator.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}', is_cancelled=lambda: session['cancellation_requested'])

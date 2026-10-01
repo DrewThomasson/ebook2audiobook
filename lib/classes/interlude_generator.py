@@ -247,8 +247,28 @@ class InterludeGenerator:
             'self-help and business': ('modern ambient, light piano, soft electronic pulse', ['joyful and uplifting', 'calm and peaceful', 'triumphant and victorious']),
             'poetry': ('sparse piano, solo cello, intimate', ['calm and peaceful', 'melancholic and sad', 'romantic and tender'])
         }
-        # set by generate_prompt() on its first call, or beforehand by the caller (e.g. a genre stored for the book)
+        # ISO 639-1 codes of the ~100 languages the classifier's mDeBERTa base was pretrained on (CC100); it reads others
+        # without failing but scores them at random, so the caller passes text_supported=False to generate_prompt() then
+        self.classifier_languages = {
+            'af', 'am', 'ar', 'as', 'az', 'be', 'bg', 'bn', 'br', 'bs', 'ca', 'cs', 'cy', 'da', 'de', 'el', 'en', 'eo', 'es', 'et',
+            'eu', 'fa', 'fi', 'fr', 'fy', 'ga', 'gd', 'gl', 'gu', 'ha', 'he', 'hi', 'hr', 'hu', 'hy', 'id', 'is', 'it', 'ja', 'jv',
+            'ka', 'kk', 'km', 'kn', 'ko', 'ku', 'ky', 'la', 'lo', 'lt', 'lv', 'mg', 'mk', 'ml', 'mn', 'mr', 'ms', 'my', 'nb', 'ne',
+            'nl', 'nn', 'no', 'om', 'or', 'pa', 'pl', 'ps', 'pt', 'ro', 'ru', 'sa', 'sd', 'si', 'sk', 'sl', 'so', 'sq', 'sr', 'su',
+            'sv', 'sw', 'ta', 'te', 'th', 'tl', 'tr', 'ug', 'uk', 'ur', 'uz', 'vi', 'xh', 'yi', 'zh'
+        }
+        # unclassifiable text: neutral instruments (unless a genre is known) and calm, reflective moods in turn
+        self.neutral_style = ('piano and strings, cinematic, understated', [])
+        self.neutral_moods = [
+            ('nostalgic and reflective', 'the passing of time'), ('calm and peaceful', 'quiet contemplation'),
+            ('nostalgic and reflective', 'a wistful daydream'), ('calm and peaceful', 'a still night'),
+            ('nostalgic and reflective', 'autumn reflection'), ('calm and peaceful', 'serene water'),
+            ('nostalgic and reflective', 'looking back on life'), ('calm and peaceful', 'meditative stillness')
+        ]
+        self.neutral_turn = 0
+        # set by generate_prompt() on its first call, or beforehand by the caller (e.g. a genre stored for the book);
+        # genre_scores: the averaged classifier score of every genre when it was detected here
         self.genre = None
+        self.genre_scores = None
         # prompt -> what it was built from (mood, family, genre, display label), written into the interlude's sidecar json
         self.prompt_info = {}
 
@@ -398,8 +418,17 @@ class InterludeGenerator:
             modeling_logger.removeFilter(_report_filter)
             config_logger.setLevel(config_level)
 
-    def generate_prompt(self, text:str, book_text:str|None=None)->str:
-        self.load_model()
+    def generate_prompt(self, text:str, book_text:str|list|None=None, text_supported:bool=True)->str:
+        # book_text: one text, or a list of excerpts, each a str or (str, weight); text_supported=False: the chapter text is
+        # in a language the classifier does not know, so only the excerpts given (e.g. metadata in a known language) are used
+        samples = book_text if isinstance(book_text, list) else ([book_text] if book_text else [])
+        samples = [(s, 1.0) if isinstance(s, str) else (s[0], float(s[1])) for s in samples]
+        samples = [(' '.join(str(s).split())[:2000], w) for s, w in samples if str(s).strip() and w > 0]
+        if not samples and text_supported:
+            samples = [(' '.join(str(text).split())[:2000], 1.0)]
+        detect_genre = self.genre is None and bool(samples)
+        if text_supported or detect_genre:
+            self.load_model()
         threads = torch.get_num_threads()
         blas_threads = self.openblas.openblas_get_num_threads() if self.openblas is not None else None
         try:
@@ -408,26 +437,46 @@ class InterludeGenerator:
                 torch.set_num_threads(os.cpu_count() or 1)
             elif self.openblas is not None:
                 self.openblas.openblas_set_num_threads(os.cpu_count() or 1)
-            if self.genre is None:
-                # once per book: title, subject, description and its opening pages
-                book_sample = ' '.join(str(book_text or text).split())[:2000]
-                result = self.classifier(book_sample, list(self.genre_styles.keys()), hypothesis_template='This book belongs to the {} genre.', batch_size=8)
-                self.genre = result['labels'][0]
-                msg = f'Interludes: book genre detected as {self.genre}'
+            if detect_genre:
+                # once per book: every excerpt is classified on its own and the genre with the best weighted average
+                # score wins, so one odd chapter cannot decide alone
+                totals = dict.fromkeys(self.genre_styles, 0.0)
+                genre_bar = tqdm(total=len(samples), desc='Book genre', unit='excerpt', file=sys.stdout, dynamic_ncols=True, leave=False)
+                try:
+                    for k, (sample, weight) in enumerate(samples):
+                        if self.progress_bar is not None:
+                            self.progress_bar(k / len(samples), desc=f'Detecting the book genre ({k + 1}/{len(samples)})')
+                        result = self.classifier(sample, list(self.genre_styles.keys()), hypothesis_template='This book belongs to the {} genre.', batch_size=8)
+                        for label, score in zip(result['labels'], result['scores']):
+                            totals[label] += weight * score
+                        genre_bar.update(1)
+                finally:
+                    genre_bar.close()
+                weight_sum = sum(w for _, w in samples)
+                self.genre_scores = {g: round(v / weight_sum, 4) for g, v in sorted(totals.items(), key=lambda i: -i[1])}
+                ranking = list(self.genre_scores.items())
+                self.genre = ranking[0][0]
+                msg = f'Interludes: book genre detected as {self.genre} ({ranking[0][1]:.0%}, then {ranking[1][0]} {ranking[1][1]:.0%}) from {len(samples)} excerpts'
                 print(msg)
-            palette, favoured = self.genre_styles[self.genre]
-            passage = ' '.join(str(text).split())[:1000]
-            result = self.classifier(passage, list(self.moods.keys()), hypothesis_template='The mood of this passage is {}.', batch_size=8)
-            family_scores = {label: score * (1.3 if label in favoured else 1.0) for label, score in zip(result['labels'], result['scores'])}
-            family = max(family_scores, key=family_scores.get)
-            result = self.classifier(passage, list(self.moods[family].keys()), hypothesis_template='This passage evokes {}.', batch_size=8)
-            mood = result['labels'][0]
+                if self.progress_bar is not None:
+                    self.progress_bar(1.0, desc=msg)
+            palette, favoured = self.genre_styles[self.genre] if self.genre in self.genre_styles else self.neutral_style
+            if text_supported:
+                passage = ' '.join(str(text).split())[:1000]
+                result = self.classifier(passage, list(self.moods.keys()), hypothesis_template='The mood of this passage is {}.', batch_size=8)
+                family_scores = {label: score * (1.3 if label in favoured else 1.0) for label, score in zip(result['labels'], result['scores'])}
+                family = max(family_scores, key=family_scores.get)
+                result = self.classifier(passage, list(self.moods[family].keys()), hypothesis_template='This passage evokes {}.', batch_size=8)
+                mood = result['labels'][0]
+            else:
+                family, mood = self.neutral_moods[self.neutral_turn % len(self.neutral_moods)]
+                self.neutral_turn += 1
         finally:
             torch.set_num_threads(threads)
             if blas_threads is not None:
                 self.openblas.openblas_set_num_threads(blas_threads)
         prompt = f'{self.moods[family][mood]}, {palette}, instrumental'
-        self.prompt_info[prompt] = {'mood': mood, 'family': family, 'genre': self.genre, 'label': f'{mood} · {self.genre}'}
+        self.prompt_info[prompt] = {'mood': mood, 'family': family, 'genre': self.genre or 'neutral', 'label': f"{mood} · {self.genre or 'neutral'}"}
         return prompt
 
     def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, desc:str='Interlude', is_cancelled:Optional[Callable[[], bool]]=None)->Optional[str]:
