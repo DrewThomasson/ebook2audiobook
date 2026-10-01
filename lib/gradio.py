@@ -1524,10 +1524,24 @@ def build_interface(args:dict)->gr.Blocks:
                         elif prompt != session.get('audiobook_edit_preview_text'):
                             error = 'The prompt changed since the last generation, generate it again (◉).'
                         else:
+                            interlude_json = f'{os.path.splitext(interlude_file)[0]}.json'
+                            previous = {}
+                            try:
+                                with open(interlude_json, 'r', encoding='utf-8') as f:
+                                    previous = json.load(f)
+                            except (OSError, ValueError):
+                                pass
                             os.replace(preview_file, interlude_file)
                             preview_json = f'{os.path.splitext(preview_file)[0]}.json'
                             if os.path.exists(preview_json):
-                                os.replace(preview_json, f'{os.path.splitext(interlude_file)[0]}.json')
+                                os.replace(preview_json, interlude_json)
+                                # same prompt, new take: it keeps its "mood · genre" label and origin
+                                if previous.get('prompt') == prompt and previous.get('label'):
+                                    with open(interlude_json, 'r', encoding='utf-8') as f:
+                                        interlude_data = json.load(f)
+                                    interlude_data.update({k: previous[k] for k in ('mood', 'family', 'genre', 'label') if k in previous})
+                                    with open(interlude_json, 'w', encoding='utf-8') as f:
+                                        json.dump(interlude_data, f, ensure_ascii=False)
                             Path(os.path.join(session['process_dir'], f"__edit_pending_{session['final_name']}")).touch()
                             session['audiobook_edit_pending'] = True
                             session['audiobook_edit_block_id'] = None
@@ -1543,8 +1557,9 @@ def build_interface(args:dict)->gr.Blocks:
                                 or (session['ebook_mode'] == ebook_modes['SINGLE'] and bool(session.get('ebook_src')))
                                 or (session['ebook_mode'] == ebook_modes['DIRECTORY'] and bool(session.get('ebook_list')))
                             )
+                            shown = previous.get('label') if previous.get('prompt') == prompt and previous.get('label') else prompt
                             return (
-                                gr.update(value=f'♪ {prompt}', interactive=False), gr.update(visible=False), gr.update(value=None),
+                                gr.update(value=f'♪ {shown}', interactive=False), gr.update(visible=False), gr.update(value=None),
                                 gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
                                 gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True),
                                 gr.update(visible=True, interactive=True), gr.update(interactive=enabled_convert_btn),
@@ -1668,7 +1683,9 @@ def build_interface(args:dict)->gr.Blocks:
                             prompt = 'Interlude'
                             try:
                                 with open(os.path.join(session['chapters_dir'], 'interludes', f'{interlude}-{interlude + 1}.json'), 'r', encoding='utf-8') as f:
-                                    prompt = ' '.join(str(json.load(f).get('prompt') or prompt).split())
+                                    interlude_data = json.load(f)
+                                # same text as its subtitle cue: "mood · genre", or the prompt typed in the editor
+                                prompt = ' '.join(str(interlude_data.get('label') or interlude_data.get('prompt') or prompt).split())
                             except (OSError, ValueError):
                                 pass
                             sentence_update = gr.update(value=f'♪ {prompt}', interactive=False)

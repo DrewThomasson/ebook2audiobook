@@ -2820,6 +2820,20 @@ def generate_interludes(session_id:str)->None:
         generator = InterludeGenerator(session['device'], 2 if session['output_channel'] == 'stereo' else 1, progress_bar if session['is_gui_process'] else None)
         msg = f'Generating {len(positions)} interludes via MusicGen...'
         show_alert(session_id, {'type': 'info', 'msg': msg})
+        # book genre: detected once from the metadata and the opening pages, then kept in book_genre.json so every
+        # run of this book uses the same one. Set "genre" there to one of the "available" values to force another
+        genre_file = os.path.join(interludes_dir, 'book_genre.json')
+        try:
+            with open(genre_file, 'r', encoding='utf-8') as f:
+                stored_genre = json.load(f).get('genre')
+            if stored_genre in generator.genre_styles:
+                generator.genre = stored_genre
+        except (OSError, ValueError):
+            pass
+        genre_saved = generator.genre is not None
+        metadata = session.get('metadata') or {}
+        book_text = re.sub(r'<[^>]+>', ' ', '. '.join(str(metadata.get(k)) for k in ('title', 'subject', 'description') if metadata.get(k)))
+        book_text = ' '.join(f"{book_text}. {' '.join(blocks[x]['text'][:1500] for x in positions[:2])}".split())
         for n, x in enumerate(positions):
             if session['cancellation_requested']:
                 return
@@ -2829,7 +2843,11 @@ def generate_interludes(session_id:str)->None:
                 text_prev = blocks[x]['text'][-500:]
                 # the last chapter always gets one too: it closes the audiobook
                 text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''
-                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip())
+                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text)
+                if not genre_saved and generator.genre:
+                    with open(genre_file, 'w', encoding='utf-8') as f:
+                        json.dump({'genre': generator.genre, 'available': list(generator.genre_styles.keys())}, f, ensure_ascii=False, indent=1)
+                    genre_saved = True
                 duration = random.randint(20, 30)
                 generator.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}', is_cancelled=lambda: session['cancellation_requested'])
     except Exception as e:
@@ -3534,7 +3552,9 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         cue_text = 'Interlude'
                         try:
                             with open(interlude_path.with_suffix('.json'), 'r', encoding='utf-8') as f:
-                                cue_text = ' '.join(str(json.load(f).get('prompt') or cue_text).split())
+                                cue_data = json.load(f)
+                                # "mood · genre" when the prompt was chosen automatically, the prompt itself when typed in the editor
+                                cue_text = ' '.join(str(cue_data.get('label') or cue_data.get('prompt') or cue_text).split())
                         except (OSError, ValueError):
                             pass
                         part_cues.append((chapter_end / voice_rate, cue_end / voice_rate, global_idx, f'♪ {cue_text}'))

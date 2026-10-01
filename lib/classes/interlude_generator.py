@@ -52,14 +52,205 @@ class InterludeGenerator:
         self.classifier = None
         self.processor = None
         self.model = None
-        self.prompt_map = {
-            'action and suspense': 'fast tempo, cinematic percussion, tense strings, dramatic trailer music',
-            'melancholic and emotional': 'slow piano, melancholic cello, ambient reverb, emotional cinematic score',
-            'peaceful and ambient': 'lo-fi beats, soft acoustic guitar, relaxing nature sounds, calm background music',
-            'epic and orchestral': 'massive brass, epic choir, soaring strings, hans zimmer style, 120 bpm',
-            'sci-fi and electronic': 'synthwave, pulsing bass, atmospheric synth pads, futuristic, blade runner vibe'
+        # 128 moods in 16 families of 8: the family is picked first, then the mood inside it (16 + 8 classifier passes
+        # per interlude instead of 128). Each mood only describes emotion, tempo and texture: the instruments come from the
+        # book genre below, so the same mood sounds like a thriller in a thriller and like a fairy tale in a fairy tale
+        self.moods = {
+            'calm and peaceful': {
+                'a tranquil dawn': 'serene, slow tempo, soft sustained chords, gentle rising melody',
+                'the pastoral countryside': 'relaxed, slow tempo, airy pastoral melody, light ornaments',
+                'quiet contemplation': 'still, very slow tempo, sparse notes, long pauses',
+                'a lullaby': 'soothing, slow lullaby in three, soft and tender',
+                'a still night': 'hushed nocturne, slow tempo, distant soft tones',
+                'serene water': 'flowing, calm, gentle rippling arpeggios',
+                'cozy warmth at home': 'warm, cozy, unhurried, soft major harmonies',
+                'meditative stillness': 'meditative, drone based, slowly evolving texture'
+            },
+            'joyful and uplifting': {
+                'carefree joy': 'bright, upbeat, light bouncy rhythm, major key',
+                'a festive celebration': 'festive, lively tempo, celebratory rhythm',
+                'bright optimism': 'optimistic, medium tempo, rising major melody',
+                'warm friendship': 'warm, friendly, heartfelt major melody, medium tempo',
+                'a joyful reunion': 'joyous, swelling, emotional uplift, major key',
+                'springtime renewal': 'fresh, light, blossoming melody, medium tempo',
+                'exuberant dancing': 'exuberant, fast dance rhythm, energetic',
+                'a hopeful new beginning': 'hopeful, gradually building, uplifting major key'
+            },
+            'romantic and tender': {
+                'first love': 'tender, innocent, sweet melody, medium slow tempo',
+                'intimate tenderness': 'intimate, soft, delicate, slow tempo',
+                'longing': 'yearning, slow, aching melody, suspended chords',
+                'passionate romance': 'passionate, sweeping melody, swelling dynamics',
+                'bittersweet love': 'bittersweet, slow, shifting between minor and major',
+                'devotion': 'devoted, warm, stately slow tempo, heartfelt',
+                'flirtatious charm': 'playful, charming, light swing, coy',
+                'lovers reunited': 'emotional, soaring, building to a warm climax'
+            },
+            'melancholic and sad': {
+                'grief': 'grieving, very slow, heavy minor chords, mournful',
+                'loneliness': 'lonely, sparse, slow solitary melody, empty space',
+                'heartbreak': 'heartbroken, slow, aching minor melody',
+                'quiet sorrow': 'sorrowful, gentle, slow, subdued',
+                'rainy melancholy': 'melancholic, slow, soft falling patterns, grey mood',
+                'a farewell': 'wistful farewell, slow, gently fading',
+                'despair': 'despairing, dark, slow, heavy, hopeless',
+                'resignation': 'resigned, quiet, slow, descending phrases'
+            },
+            'nostalgic and reflective': {
+                'childhood memories': 'nostalgic, innocent, music box like, gentle',
+                'bittersweet nostalgia': 'bittersweet, warm, slow, wistful',
+                'looking back on life': 'reflective, introspective, medium slow tempo',
+                'faded photographs': 'faded, hazy, warm lo-fi texture, slow',
+                'autumn reflection': 'autumnal, mellow, golden warmth, slow',
+                'letters from the past': 'tender, intimate, reminiscent, slow',
+                'the passing of time': 'contemplative, steady ticking pulse, timeless',
+                'a wistful daydream': 'dreamy, floating, soft haze, slow'
+            },
+            'mysterious and curious': {
+                'an enigmatic puzzle': 'enigmatic, curious staccato, unresolved harmonies, medium tempo',
+                'a secret discovery': 'mysterious, building curiosity, shimmering textures',
+                'a foggy unknown': 'foggy, ambiguous harmonies, hazy atmosphere, slow',
+                'an investigation': 'investigative, steady pulse, curious motif',
+                'hidden clues': 'sneaky, light staccato, inquisitive',
+                'curious exploration': 'curious, wandering melody, medium tempo',
+                'a strange encounter': 'uncanny, unusual intervals, sparse',
+                'ancient secrets': 'ancient, modal, mysterious drones, slow'
+            },
+            'suspense and tension': {
+                'creeping dread': 'creeping, slowly building tension, low pulses',
+                'a ticking clock': 'urgent ticking rhythm, rising tension',
+                'stealth': 'stealthy, quiet staccato, tiptoeing rhythm',
+                'an interrogation': 'tense, sparse, cold, unresolved',
+                'impending danger': 'ominous build, rising tension, swelling',
+                'paranoia': 'anxious, unstable rhythm, dissonant',
+                'nervous anticipation': 'nervous, restless pulse, held breath',
+                'a cliffhanger': 'tense crescendo, suspended, unresolved ending'
+            },
+            'fear and horror': {
+                'terror': 'terrifying, harsh dissonance, sudden stabs',
+                'a haunted house': 'eerie, creaking textures, ghostly',
+                'a lurking monster': 'menacing, low growling drones, slow',
+                'a nightmare': 'nightmarish, distorted, disorienting',
+                'panic': 'panicked, fast, frantic, chaotic',
+                'eerie silence': 'eerie near silence, thin high tones',
+                'a curse': 'cursed, dark ritualistic, slow minor',
+                'psychological horror': 'unsettling, detuned, creeping, claustrophobic'
+            },
+            'action and chase': {
+                'a high speed chase': 'fast tempo, driving rhythm, adrenaline',
+                'an escape': 'urgent, fast, breathless momentum',
+                'a heist': 'cool, rhythmic, slick groove, tension',
+                'a fight': 'aggressive, hard hitting percussion, fast',
+                'a pursuit through the city': 'relentless, pulsing, fast tempo',
+                'a race against time': 'racing, accelerating, high energy',
+                'a rooftop run': 'agile, fast, syncopated rhythm',
+                'a getaway': 'propulsive, fast, triumphant energy'
+            },
+            'battle and conflict': {
+                'war drums': 'thunderous drums, marching rhythm, martial',
+                'a siege': 'heavy, relentless, brooding power',
+                'a clash of armies': 'massive, chaotic, epic battle intensity',
+                'a duel': 'tense, focused, rhythmic clashes',
+                'the aftermath of battle': 'somber, slow, devastated, mournful',
+                'a rebellion': 'defiant, rising, driving rhythm',
+                'a call to arms': 'rallying, heroic fanfare, stirring',
+                'a last stand': 'desperate, heroic, intense, climactic'
+            },
+            'epic and heroic': {
+                "a hero's journey": 'adventurous heroic theme, building',
+                'a quest beginning': 'adventurous, hopeful, setting out, medium tempo',
+                'a legendary saga': 'grand, sweeping, legendary',
+                'a noble sacrifice': 'noble, slow, heartbreaking grandeur',
+                'a rising hero': 'ascending, inspiring, building to a climax',
+                'vast landscapes': 'majestic, wide open, slow and sweeping',
+                'an ancient kingdom': 'regal, stately, ancient grandeur',
+                'destiny': 'fateful, powerful, building intensity'
+            },
+            'triumphant and victorious': {
+                'victory': 'triumphant, bold, celebratory fanfare',
+                'triumph over adversity': 'triumphant, emotional, soaring',
+                'a coronation': 'regal, majestic, ceremonial',
+                "a hero's homecoming": 'warm, triumphant, emotional',
+                'an achievement': 'proud, bright, uplifting',
+                'a rescue': 'relieved, rising, joyful release',
+                'sunrise after the storm': 'hopeful, gradually brightening, radiant',
+                'a happy ending': 'resolved, warm, satisfying final cadence'
+            },
+            'dark and ominous': {
+                'a looming threat': 'ominous, low, slow, heavy',
+                'a villain': 'sinister, menacing theme, dark',
+                'a dark ritual': 'ritualistic, chant like, dark',
+                'corruption': 'decaying, dissonant, slowly twisting',
+                'a gathering storm': 'brooding, rumbling, building',
+                'oppression': 'oppressive, cold, mechanical, bleak',
+                'betrayal': 'shocking, bitter, dark turn',
+                'menace': 'threatening, stalking pulse, dark'
+            },
+            'wonder and magical': {
+                'an enchanted forest': 'enchanted, shimmering, magical, gentle',
+                'a fairy tale': 'storybook, whimsical, magical',
+                'a magic spell': 'sparkling, mystical, rising shimmer',
+                'a new world discovered': 'awe inspiring, wide, blossoming',
+                'a starry sky': 'cosmic, twinkling, vast, slow',
+                'a dreamlike fantasy': 'dreamlike, floating, ethereal',
+                'mythical creatures': 'majestic, mysterious, wondrous',
+                'awe': 'awestruck, swelling, luminous'
+            },
+            'playful and humorous': {
+                'mischief': 'mischievous, sneaky playful staccato',
+                'whimsy': 'whimsical, light, quirky',
+                'slapstick comedy': 'comedic, bouncy, exaggerated',
+                'light-hearted banter': 'light, breezy, conversational rhythm',
+                'a quirky character': 'quirky, odd meter, playful',
+                'a cheeky prank': 'cheeky, tiptoeing, playful',
+                'cartoonish antics': 'cartoonish, zany, fast',
+                'bouncy fun': 'bouncy, upbeat, fun'
+            },
+            'solemn and spiritual': {
+                'a funeral': 'solemn, slow funeral march, grave',
+                'a prayer': 'prayerful, slow, reverent',
+                'a sacred ritual': 'sacred, chant like, timeless',
+                'redemption': 'redemptive, slowly rising, emotional release',
+                'forgiveness': 'gentle, warm, healing',
+                'mortality': 'contemplative, slow, profound',
+                'a cathedral': 'reverberant, majestic, sacred',
+                'transcendence': 'transcendent, ethereal, ascending'
+            }
         }
-        self.candidate_labels = list(self.prompt_map.keys())
+        # book genre: its instrumentation goes into every prompt, and it favours the mood families that suit it
+        # (their classifier scores weigh 1.3x). Detected once per book, see generate_prompt()
+        self.genre_styles = {
+            'fantasy': ('orchestral, celtic harp, flutes, choir, folk instruments', ['wonder and magical', 'epic and heroic', 'battle and conflict']),
+            'science fiction': ('synthesizers, electronic textures, ambient pads, futuristic sound design', ['wonder and magical', 'mysterious and curious', 'suspense and tension']),
+            'cyberpunk and dystopian': ('dark synthwave, industrial textures, distorted bass, cold electronics', ['dark and ominous', 'action and chase', 'suspense and tension']),
+            'horror': ('dissonant strings, low drones, prepared piano, unsettling sound design', ['fear and horror', 'dark and ominous', 'suspense and tension']),
+            'gothic': ('pipe organ, harpsichord, dark strings, choir', ['dark and ominous', 'mysterious and curious', 'melancholic and sad']),
+            'thriller': ('dark cinematic score, pulsing synth bass, staccato strings', ['suspense and tension', 'action and chase', 'dark and ominous']),
+            'mystery and detective': ('pizzicato strings, muted piano, clarinet, soft percussion', ['mysterious and curious', 'suspense and tension']),
+            'crime and noir': ('smoky jazz, muted trumpet, upright bass, brushed drums', ['dark and ominous', 'suspense and tension', 'mysterious and curious']),
+            'romance': ('piano, warm strings, acoustic guitar', ['romantic and tender', 'joyful and uplifting', 'melancholic and sad']),
+            'historical fiction': ('chamber strings, harpsichord, period instruments', ['nostalgic and reflective', 'epic and heroic', 'romantic and tender']),
+            'war': ('military snare, brass, low strings, timpani', ['battle and conflict', 'melancholic and sad', 'solemn and spiritual']),
+            'western': ('acoustic guitar, harmonica, whistling, banjo', ['action and chase', 'nostalgic and reflective', 'calm and peaceful']),
+            'adventure': ('full orchestra, bold brass, adventurous percussion', ['epic and heroic', 'action and chase', 'wonder and magical']),
+            'mythology and fairy tales': ('harp, celesta, woodwinds, enchanted orchestra', ['wonder and magical', 'epic and heroic', 'playful and humorous']),
+            "children's": ('glockenspiel, ukulele, pizzicato strings, toy piano', ['playful and humorous', 'joyful and uplifting', 'wonder and magical']),
+            'young adult': ('indie instrumental, piano, light electronic beats', ['joyful and uplifting', 'romantic and tender', 'suspense and tension']),
+            'literary fiction': ('solo piano, chamber strings, minimalist', ['nostalgic and reflective', 'melancholic and sad', 'calm and peaceful']),
+            'comedy and humor': ('bouncy pizzicato, bassoon, light percussion', ['playful and humorous', 'joyful and uplifting']),
+            'drama': ('piano and strings, cinematic', ['melancholic and sad', 'romantic and tender', 'nostalgic and reflective']),
+            'biography and memoir': ('acoustic guitar, gentle piano, soft strings, documentary style', ['nostalgic and reflective', 'triumphant and victorious']),
+            'history': ('documentary orchestral score, strings, timpani', ['epic and heroic', 'solemn and spiritual', 'nostalgic and reflective']),
+            'religion and spirituality': ('ambient pads, choir, singing bowls', ['solemn and spiritual', 'calm and peaceful']),
+            'philosophy': ('minimalist piano, ambient strings', ['calm and peaceful', 'nostalgic and reflective', 'mysterious and curious']),
+            'science and nature': ('documentary score, ambient pads, marimba, organic textures', ['wonder and magical', 'calm and peaceful', 'mysterious and curious']),
+            'self-help and business': ('modern ambient, light piano, soft electronic pulse', ['joyful and uplifting', 'calm and peaceful', 'triumphant and victorious']),
+            'poetry': ('sparse piano, solo cello, intimate', ['calm and peaceful', 'melancholic and sad', 'romantic and tender'])
+        }
+        # set by generate_prompt() on its first call, or beforehand by the caller (e.g. a genre stored for the book)
+        self.genre = None
+        # prompt -> what it was built from (mood, family, genre, display label), written into the interlude's sidecar json
+        self.prompt_info = {}
 
     def load_model(self, with_classifier:bool=True)->None:
         # with_classifier=False: MusicGen only (editor regeneration from a prompt the user typed)
@@ -207,12 +398,37 @@ class InterludeGenerator:
             modeling_logger.removeFilter(_report_filter)
             config_logger.setLevel(config_level)
 
-    def generate_prompt(self, text:str)->str:
+    def generate_prompt(self, text:str, book_text:str|None=None)->str:
         self.load_model()
-        truncated_text = text[:1000]
-        result = self.classifier(truncated_text, self.candidate_labels)
-        best_vibe = result['labels'][0]
-        return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
+        threads = torch.get_num_threads()
+        blas_threads = self.openblas.openblas_get_num_threads() if self.openblas is not None else None
+        try:
+            # the classifier runs on CPU: same core policy as MusicGen on CPU (see __init__)
+            if self.raise_threads:
+                torch.set_num_threads(os.cpu_count() or 1)
+            elif self.openblas is not None:
+                self.openblas.openblas_set_num_threads(os.cpu_count() or 1)
+            if self.genre is None:
+                # once per book: title, subject, description and its opening pages
+                book_sample = ' '.join(str(book_text or text).split())[:2000]
+                result = self.classifier(book_sample, list(self.genre_styles.keys()), hypothesis_template='This book belongs to the {} genre.', batch_size=8)
+                self.genre = result['labels'][0]
+                msg = f'Interludes: book genre detected as {self.genre}'
+                print(msg)
+            palette, favoured = self.genre_styles[self.genre]
+            passage = ' '.join(str(text).split())[:1000]
+            result = self.classifier(passage, list(self.moods.keys()), hypothesis_template='The mood of this passage is {}.', batch_size=8)
+            family_scores = {label: score * (1.3 if label in favoured else 1.0) for label, score in zip(result['labels'], result['scores'])}
+            family = max(family_scores, key=family_scores.get)
+            result = self.classifier(passage, list(self.moods[family].keys()), hypothesis_template='This passage evokes {}.', batch_size=8)
+            mood = result['labels'][0]
+        finally:
+            torch.set_num_threads(threads)
+            if blas_threads is not None:
+                self.openblas.openblas_set_num_threads(blas_threads)
+        prompt = f'{self.moods[family][mood]}, {palette}, instrumental'
+        self.prompt_info[prompt] = {'mood': mood, 'family': family, 'genre': self.genre, 'label': f'{mood} · {self.genre}'}
+        return prompt
 
     def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, desc:str='Interlude', is_cancelled:Optional[Callable[[], bool]]=None)->Optional[str]:
         bar = None
@@ -321,7 +537,7 @@ class InterludeGenerator:
             os.replace(tmp_path, output_path)
             # sidecar <name>.json keeps the prompt: the subtitles show it and the audiobook editor reopens it for regeneration
             with open(f'{root}.part.json', 'w', encoding='utf-8') as f:
-                json.dump({'prompt': prompt, 'duration': duration}, f, ensure_ascii=False)
+                json.dump({'prompt': prompt, 'duration': duration, **self.prompt_info.get(prompt, {})}, f, ensure_ascii=False)
             os.replace(f'{root}.part.json', f'{root}.json')
             if bar is not None:
                 bar.close()
