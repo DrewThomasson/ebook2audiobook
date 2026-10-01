@@ -2799,7 +2799,7 @@ def realign_blocks(session_id:str, blocks_orig_old:dict)->bool:
         return False
 
 def generate_interludes(session_id:str)->None:
-    prompter = None
+    generator = None
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
@@ -2807,7 +2807,7 @@ def generate_interludes(session_id:str)->None:
         interludes_dir = session.get('interludes_dir')
         if not interludes_dir:
             return
-        from lib.classes.audiocraft_prompter import AudiocraftPrompter
+        from lib.classes.interlude_generator import InterludeGenerator
         os.makedirs(interludes_dir, exist_ok=True)
         blocks = session['blocks_current']['blocks']
         # same chapter selection and global positions as combine_audio_chapters(), so the interlude file names always match
@@ -2815,9 +2815,9 @@ def generate_interludes(session_id:str)->None:
         if not positions:
             return
         progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
-        # GUI: downloads, model loading and generation report to progress_bar; CLI: terminal bars
-        prompter = AudiocraftPrompter(session['device'], 2 if session['output_channel'] == 'stereo' else 1, progress_bar if session['is_gui_process'] else None)
-        msg = f'Generating {len(positions)} interludes via Audiocraft...'
+        # terminal bars always (Loading weights: terminal in headless mode only), progress_bar too in GUI mode
+        generator = InterludeGenerator(session['device'], 2 if session['output_channel'] == 'stereo' else 1, progress_bar if session['is_gui_process'] else None)
+        msg = f'Generating {len(positions)} interludes via MusicGen...'
         show_alert(session_id, {'type': 'info', 'msg': msg})
         for n, x in enumerate(positions):
             if session['cancellation_requested']:
@@ -2828,16 +2828,16 @@ def generate_interludes(session_id:str)->None:
                 text_prev = blocks[x]['text'][-500:]
                 # the last chapter always gets one too: it closes the audiobook
                 text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''
-                prompt = prompter.generate_prompt(f'{text_prev} {text_next}'.strip())
+                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip())
                 duration = random.randint(20, 30)
-                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}', is_cancelled=lambda: session['cancellation_requested'])
+                generator.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}', is_cancelled=lambda: session['cancellation_requested'])
     except Exception as e:
         error = f'generate_interludes() error: {e}'
         exception_alert(session_id, error)
     finally:
-        if prompter is not None:
+        if generator is not None:
             # MusicGen and the classifier live in e2a's process: release them before the final merge
-            prompter = None
+            generator = None
             gc.collect()
             if sys.platform == 'linux':
                 try:
