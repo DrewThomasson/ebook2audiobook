@@ -2814,10 +2814,11 @@ def generate_interludes(session_id:str)->None:
         positions = [x for x, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
         if not positions:
             return
-        prompter = AudiocraftPrompter(session['device'])
+        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+        # GUI: downloads, model loading and generation report to progress_bar; CLI: terminal bars
+        prompter = AudiocraftPrompter(session['device'], 2 if session['output_channel'] == 'stereo' else 1, progress_bar if session['is_gui_process'] else None)
         msg = f'Generating {len(positions)} interludes via Audiocraft...'
         show_alert(session_id, {'type': 'info', 'msg': msg})
-        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
         for n, x in enumerate(positions):
             if session['cancellation_requested']:
                 return
@@ -2829,9 +2830,7 @@ def generate_interludes(session_id:str)->None:
                 text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''
                 prompt = prompter.generate_prompt(f'{text_prev} {text_next}'.strip())
                 duration = random.randint(20, 30)
-                desc = f'Interlude {n + 1}/{len(positions)}'
-                on_progress = (lambda p, desc=desc: progress_bar(p, desc=desc)) if session['is_gui_process'] and progress_bar else None
-                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, channels=2 if session['output_channel'] == 'stereo' else 1, on_progress=on_progress)
+                prompter.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}')
     except Exception as e:
         error = f'generate_interludes() error: {e}'
         exception_alert(session_id, error)

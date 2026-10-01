@@ -1,4 +1,6 @@
+import io
 import os
+import sys
 import logging
 import numpy as np
 import soundfile as sf
@@ -7,12 +9,19 @@ import torch
 from math import gcd
 from typing import Optional, Callable
 from scipy.signal import resample_poly
+from tqdm import tqdm
+from huggingface_hub import snapshot_download
 from transformers import pipeline, AutoProcessor, MusicgenForConditionalGeneration, StoppingCriteriaList
+from transformers.utils import logging as hf_logging
 
 class AudiocraftPrompter:
 
-    def __init__(self, device:str='cpu')->None:
+    def __init__(self, device:str='cpu', channels:int=2, progress_bar:Optional[Callable]=None)->None:
         self.device = str(device or 'cpu').lower()
+        self.channels = channels
+        # gradio progress in GUI mode (downloads, loading and generation report there), None in CLI mode (terminal bars)
+        self.progress_bar = progress_bar
+        self.classifier_repo = 'MoritzLaurer/mDeBERTa-v3-base-mnli-xnli'
         self.torch_device = None
         self.classifier = None
         self.processor = None
@@ -27,21 +36,108 @@ class AudiocraftPrompter:
         self.candidate_labels = list(self.prompt_map.keys())
 
     def load_model(self)->None:
-        if self.classifier is None:
-            # the checkpoint carries a legacy position_ids buffer that transformers 5 reports as UNEXPECTED, harmless: mute that report for this load only
-            report_logger = logging.getLogger('transformers.utils.loading_report')
-            report_level = report_logger.level
-            report_logger.setLevel(logging.ERROR)
+        if self.classifier is not None and self.model is not None:
+            return
+        # e2a device -> torch device, checked against what the installed torch can really use
+        if self.device in ('cuda', 'rocm', 'jetson') and torch.cuda.is_available():
+            self.torch_device = 'cuda'
+        elif self.device == 'mps' and torch.backends.mps.is_available():
+            self.torch_device = 'mps'
+        elif self.device == 'xpu' and hasattr(torch, 'xpu') and torch.xpu.is_available():
+            self.torch_device = 'xpu'
+        else:
+            self.torch_device = 'cpu'
+        # generation settings per device: fp16 on CUDA/ROCm/XPU, medium only when the GPU has the room, small fp32 on MPS/CPU
+        size = 'small'
+        dtype = torch.float32
+        if self.torch_device == 'cuda':
+            dtype = torch.float16
+            if torch.cuda.mem_get_info()[0] >= 8 * 1024 ** 3:
+                size = 'medium'
+        elif self.torch_device == 'xpu':
+            dtype = torch.float16
+        model_name = f"facebook/musicgen-{'stereo-' if self.channels == 2 else ''}{size}"
+        report = self.progress_bar
+        state = {'desc': '', 'fractions': {}, 'shown': 0.0}
+        class _GuiTqdm(tqdm):
+            # huggingface_hub download bars forwarded to gradio: nothing printed, byte progress reported
+            def __init__(self, *args, **kwargs):
+                kwargs.pop('name', None)
+                kwargs['disable'] = False
+                kwargs['file'] = io.StringIO()
+                super().__init__(*args, **kwargs)
+            def update(self, n=1):
+                shown = super().update(n)
+                if self.unit == 'B' and self.total:
+                    state['fractions'][id(self)] = min(1.0, self.n / self.total)
+                    # totals grow as each file registers: never let the bar step back
+                    state['shown'] = max(state['shown'], max(state['fractions'].values()))
+                    report(state['shown'], desc=state['desc'])
+                return shown
+        def _fetch(repo_id:str)->None:
+            # GUI only: pre-download what transformers loads (MusicGen repos also carry audiocraft-format .bin weights)
+            state['desc'] = f'Downloading {repo_id}'
+            state['fractions'] = {}
+            state['shown'] = 0.0
+            report(0.0, desc=state['desc'])
             try:
+                snapshot_download(repo_id, allow_patterns=['*.json', '*.model', '*.txt', '*.safetensors'], tqdm_class=_GuiTqdm)
+            except Exception as e:
+                # offline or an older huggingface_hub: from_pretrained still resolves the files itself
+                print(f'Pre-download of {repo_id} skipped ({e})')
+        if report is not None:
+            if self.classifier is None:
+                _fetch(self.classifier_repo)
+            if self.model is None:
+                _fetch(model_name)
+        bars_enabled = hf_logging.is_progress_bar_enabled()
+        modeling_logger = logging.getLogger('transformers.modeling_utils')
+        config_logger = logging.getLogger('transformers.configuration_utils')
+        config_level = config_logger.level
+        # a load report listing only UNEXPECTED keys (tensors the checkpoint stores but the model rebuilds itself) is noise:
+        # drop it, keep any report that flags MISSING, MISMATCH or CONVERSION problems
+        def _report_filter(record:logging.LogRecord)->bool:
+            msg = record.getMessage()
+            return 'LOAD REPORT' not in msg or any(s in msg for s in ('MISSING', 'MISMATCH', 'CONVERSION'))
+        modeling_logger.addFilter(_report_filter)
+        # MusicGen's pad/bos ids sit one past its vocabulary by design (extra embedding row): newer transformers warn about it
+        config_logger.setLevel(logging.ERROR)
+        if report is not None:
+            hf_logging.disable_progress_bar()
+        try:
+            if self.classifier is None:
+                if report is not None:
+                    report(0.0, desc='Loading the text classifier')
                 self.classifier = pipeline(
                     'zero-shot-classification',
-                    model='MoritzLaurer/mDeBERTa-v3-base-mnli-xnli',
+                    model=self.classifier_repo,
                     device=-1,
                     dtype=torch.float32,
                     trust_remote_code=True
                 )
-            finally:
-                report_logger.setLevel(report_level)
+            if self.model is None:
+                msg = f"Loading {model_name} on {self.torch_device} ({str(dtype).replace('torch.', '')})..."
+                print(msg)
+                if report is not None:
+                    report(0.0, desc=msg)
+                try:
+                    self.processor = AutoProcessor.from_pretrained(model_name)
+                    self.model = MusicgenForConditionalGeneration.from_pretrained(model_name, dtype=dtype).to(self.torch_device)
+                except Exception as e:
+                    if size == 'small':
+                        raise
+                    print(f'{model_name} failed ({e}), falling back to small...')
+                    model_name = model_name.replace('-medium', '-small')
+                    self.processor = AutoProcessor.from_pretrained(model_name)
+                    self.model = MusicgenForConditionalGeneration.from_pretrained(model_name, dtype=dtype).to(self.torch_device)
+                self.model.eval()
+                if report is not None:
+                    report(1.0, desc=msg)
+        finally:
+            modeling_logger.removeFilter(_report_filter)
+            config_logger.setLevel(config_level)
+            if bars_enabled and not hf_logging.is_progress_bar_enabled():
+                hf_logging.enable_progress_bar()
 
     def generate_prompt(self, text:str)->str:
         self.load_model()
@@ -50,59 +146,22 @@ class AudiocraftPrompter:
         best_vibe = result['labels'][0]
         return self.prompt_map.get(best_vibe, 'neutral ambient background music, seamless loop')
 
-    def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, channels:int=2, on_progress:Optional[Callable[[float], None]]=None)->Optional[str]:
+    def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, desc:str='Interlude')->Optional[str]:
+        bar = None
         try:
-            if self.model is None:
-                # e2a device -> torch device, checked against what the installed torch can really use
-                if self.device in ('cuda', 'rocm', 'jetson') and torch.cuda.is_available():
-                    self.torch_device = 'cuda'
-                elif self.device == 'mps' and torch.backends.mps.is_available():
-                    self.torch_device = 'mps'
-                elif self.device == 'xpu' and hasattr(torch, 'xpu') and torch.xpu.is_available():
-                    self.torch_device = 'xpu'
-                else:
-                    self.torch_device = 'cpu'
-                # generation settings per device: fp16 on CUDA/ROCm/XPU, medium only when the GPU has the room, small fp32 on MPS/CPU
-                size = 'small'
-                dtype = torch.float32
-                if self.torch_device == 'cuda':
-                    dtype = torch.float16
-                    if torch.cuda.mem_get_info()[0] >= 8 * 1024 ** 3:
-                        size = 'medium'
-                elif self.torch_device == 'xpu':
-                    dtype = torch.float16
-                model_name = f"facebook/musicgen-{'stereo-' if channels == 2 else ''}{size}"
-                msg = f"Loading {model_name} on {self.torch_device} ({str(dtype).replace('torch.', '')})..."
-                print(msg)
-                # MusicGen's pad/bos ids sit one past its vocabulary by design (extra embedding row): newer transformers warn about it, mute that check for this load only
-                config_logger = logging.getLogger('transformers.configuration_utils')
-                config_level = config_logger.level
-                config_logger.setLevel(logging.ERROR)
-                try:
-                    try:
-                        self.processor = AutoProcessor.from_pretrained(model_name)
-                        self.model = MusicgenForConditionalGeneration.from_pretrained(model_name, dtype=dtype).to(self.torch_device)
-                    except Exception as e:
-                        if size == 'small':
-                            raise
-                        print(f'{model_name} failed ({e}), falling back to small...')
-                        model_name = model_name.replace('-medium', '-small')
-                        self.processor = AutoProcessor.from_pretrained(model_name)
-                        self.model = MusicgenForConditionalGeneration.from_pretrained(model_name, dtype=dtype).to(self.torch_device)
-                finally:
-                    config_logger.setLevel(config_level)
-                self.model.eval()
+            self.load_model()
             # MusicGen is trained on 30 s windows: transformers hard-caps generation there
             max_new_tokens = int(max(1, min(duration, 30)) * self.model.config.audio_encoder.frame_rate)
             inputs = self.processor(text=[prompt], padding=True, return_tensors='pt')
+            bar = tqdm(total=max_new_tokens, desc=desc, unit='step', file=sys.stdout, dynamic_ncols=True, leave=False) if self.progress_bar is None else None
             step = [0]
             def _progress(input_ids:torch.LongTensor, scores:torch.FloatTensor, **kwargs)->torch.BoolTensor:
-                # never stops generation, only reports the step counter
+                # never stops generation, only reports the step counter (terminal bar in CLI, progress_bar in GUI)
                 step[0] += 1
-                done = min(step[0], max_new_tokens)
-                print(f'{done: 6d} / {max_new_tokens: 6d}', end='\r', flush=True)
-                if on_progress is not None:
-                    on_progress(done / max_new_tokens)
+                if bar is not None:
+                    bar.update(1)
+                else:
+                    self.progress_bar(min(step[0], max_new_tokens) / max_new_tokens, desc=desc)
                 return torch.zeros(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
             threads = torch.get_num_threads()
             try:
@@ -115,20 +174,21 @@ class AudiocraftPrompter:
                 except Exception as e:
                     if self.torch_device == 'cpu':
                         raise
-                    print(f'\nGeneration on {self.torch_device} failed ({e}), retrying on cpu...')
+                    print(f'Generation on {self.torch_device} failed ({e}), retrying on cpu...')
                     self.torch_device = 'cpu'
                     self.model = self.model.to('cpu', dtype=torch.float32)
                     step[0] = 0
+                    if bar is not None:
+                        bar.reset()
                     torch.set_num_threads(os.cpu_count() or 1)
                     with torch.inference_mode():
                         audio = self.model.generate(**inputs.to('cpu'), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, stopping_criteria=StoppingCriteriaList([_progress]))
             finally:
                 torch.set_num_threads(threads)
-            print()
             sample_rate = self.model.config.audio_encoder.sampling_rate
             audio = audio[0].float().cpu().numpy()
-            if audio.shape[0] != channels:
-                audio = audio.mean(axis=0, keepdims=True) if channels == 1 else np.repeat(audio, 2, axis=0)
+            if audio.shape[0] != self.channels:
+                audio = audio.mean(axis=0, keepdims=True) if self.channels == 1 else np.repeat(audio, 2, axis=0)
             # match the chapters' sample rate: the final merge expects one uniform rate
             if sample_rate != samplerate:
                 g = gcd(sample_rate, samplerate)
@@ -139,6 +199,9 @@ class AudiocraftPrompter:
                 audio = audio * (0.89 / peak)
             os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
             sf.write(output_path, np.clip(audio.T, -1.0, 1.0), samplerate, subtype='PCM_16')
+            if bar is not None:
+                bar.close()
+                bar = None
             msg = f'Saved interlude to {output_path}'
             print(msg)
             return output_path
@@ -146,3 +209,6 @@ class AudiocraftPrompter:
             error = f'Audiocraft error: {e}'
             print(error)
             return None
+        finally:
+            if bar is not None:
+                bar.close()
