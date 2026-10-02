@@ -53,168 +53,171 @@ class InterludeGenerator:
         self.processor = None
         self.model = None
         # 128 moods in 16 families of 8: the family is picked first, then the mood inside it (16 + 8 classifier passes
-        # per interlude instead of 128). Each mood only describes emotion, tempo and texture: the instruments come from the
-        # book genre below, so the same mood sounds like a thriller in a thriller and like a fairy tale in a fairy tale
+        # per interlude instead of 128). Each mood is (emotion and tempo, cinematic style, percussion); the melodic
+        # instruments come from the book genre below, so the same mood sounds like a thriller in a thriller and like a
+        # fairy tale in a fairy tale. The original five moods live on inside their families: action and suspense,
+        # melancholic and emotional, peaceful and ambient, epic and orchestral, sci-fi and electronic.
+        # 'beatless' is used instead of 'no percussion': MusicGen's text encoder does not handle negations
         self.moods = {
             'calm and peaceful': {
-                'a tranquil dawn': 'serene, slow tempo, soft sustained chords, gentle rising melody',
-                'the pastoral countryside': 'relaxed, slow tempo, airy pastoral melody, light ornaments',
-                'quiet contemplation': 'still, very slow tempo, sparse notes, long pauses',
-                'a lullaby': 'soothing, slow lullaby in three, soft and tender',
-                'a still night': 'hushed nocturne, slow tempo, distant soft tones',
-                'serene water': 'flowing, calm, gentle rippling arpeggios',
-                'cozy warmth at home': 'warm, cozy, unhurried, soft major harmonies',
-                'meditative stillness': 'meditative, drone based, slowly evolving texture'
+                'a tranquil dawn': ('serene, slow tempo, soft sustained chords, gentle rising melody', 'cinematic ambient score', 'beatless'),
+                'the pastoral countryside': ('relaxed, slow tempo, airy pastoral melody, light ornaments', 'gentle cinematic underscore', 'soft hand percussion'),
+                'quiet contemplation': ('still, very slow tempo, sparse notes, long pauses', 'minimalist cinematic score', 'beatless'),
+                'a lullaby': ('soothing, slow lullaby in three, soft and tender', 'intimate cinematic underscore', 'beatless'),
+                'a still night': ('hushed nocturne, slow tempo, distant soft tones', 'atmospheric cinematic score', 'faint distant timpani rolls'),
+                'serene water': ('flowing, calm, gentle rippling arpeggios', 'cinematic ambient score', 'soft shakers'),
+                'cozy warmth at home': ('warm, cozy, unhurried, soft major harmonies', 'heartwarming cinematic underscore', 'light brushed percussion'),
+                'peaceful and ambient': ('relaxing, calm background music, soft acoustic guitar, relaxing nature sounds', 'ambient cinematic score', 'lo-fi beats')
             },
             'joyful and uplifting': {
-                'carefree joy': 'bright, upbeat, light bouncy rhythm, major key',
-                'a festive celebration': 'festive, lively tempo, celebratory rhythm',
-                'bright optimism': 'optimistic, medium tempo, rising major melody',
-                'warm friendship': 'warm, friendly, heartfelt major melody, medium tempo',
-                'a joyful reunion': 'joyous, swelling, emotional uplift, major key',
-                'springtime renewal': 'fresh, light, blossoming melody, medium tempo',
-                'exuberant dancing': 'exuberant, fast dance rhythm, energetic',
-                'a hopeful new beginning': 'hopeful, gradually building, uplifting major key'
+                'carefree joy': ('bright, upbeat, light bouncy rhythm, major key', 'feel-good cinematic score', 'claps and light drums'),
+                'a festive celebration': ('festive, lively tempo, celebratory rhythm', 'joyful cinematic score', 'festive percussion and tambourine'),
+                'bright optimism': ('optimistic, medium tempo, rising major melody', 'uplifting cinematic score', 'steady light drums'),
+                'warm friendship': ('warm, friendly, heartfelt major melody, medium tempo', 'heartwarming cinematic score', 'soft brushed drums'),
+                'a joyful reunion': ('joyous, swelling, emotional uplift, major key', 'emotional cinematic score', 'swelling cymbals and timpani'),
+                'springtime renewal': ('fresh, light, blossoming melody, medium tempo', 'bright cinematic score', 'light shakers'),
+                'exuberant dancing': ('exuberant, fast dance rhythm, energetic', 'lively cinematic score', 'driving dance percussion'),
+                'a hopeful new beginning': ('hopeful, gradually building, uplifting major key', 'inspirational cinematic score', 'building toms and cymbal swells')
             },
             'romantic and tender': {
-                'first love': 'tender, innocent, sweet melody, medium slow tempo',
-                'intimate tenderness': 'intimate, soft, delicate, slow tempo',
-                'longing': 'yearning, slow, aching melody, suspended chords',
-                'passionate romance': 'passionate, sweeping melody, swelling dynamics',
-                'bittersweet love': 'bittersweet, slow, shifting between minor and major',
-                'devotion': 'devoted, warm, stately slow tempo, heartfelt',
-                'flirtatious charm': 'playful, charming, light swing, coy',
-                'lovers reunited': 'emotional, soaring, building to a warm climax'
+                'first love': ('tender, innocent, sweet melody, medium slow tempo', 'romantic cinematic score', 'beatless'),
+                'intimate tenderness': ('intimate, soft, delicate, slow tempo', 'intimate cinematic underscore', 'beatless'),
+                'longing': ('yearning, slow, aching melody, suspended chords', 'emotional cinematic score', 'soft heartbeat pulse'),
+                'passionate romance': ('passionate, sweeping melody, swelling dynamics', 'lush romantic cinematic score', 'timpani swells'),
+                'bittersweet love': ('bittersweet, slow, shifting between minor and major', 'emotional cinematic score', 'beatless'),
+                'devotion': ('devoted, warm, stately slow tempo, heartfelt', 'romantic cinematic score', 'gentle timpani'),
+                'flirtatious charm': ('playful, charming, light swing, coy', 'romantic comedy score', 'brushed snare and finger snaps'),
+                'lovers reunited': ('emotional, soaring, building to a warm climax', 'sweeping cinematic score', 'cymbal swells and timpani')
             },
             'melancholic and sad': {
-                'grief': 'grieving, very slow, heavy minor chords, mournful',
-                'loneliness': 'lonely, sparse, slow solitary melody, empty space',
-                'heartbreak': 'heartbroken, slow, aching minor melody',
-                'quiet sorrow': 'sorrowful, gentle, slow, subdued',
-                'rainy melancholy': 'melancholic, slow, soft falling patterns, grey mood',
-                'a farewell': 'wistful farewell, slow, gently fading',
-                'despair': 'despairing, dark, slow, heavy, hopeless',
-                'resignation': 'resigned, quiet, slow, descending phrases'
+                'grief': ('grieving, very slow, heavy minor chords, mournful', 'mournful cinematic score', 'beatless'),
+                'loneliness': ('lonely, sparse, slow solitary melody, empty space', 'minimalist cinematic score', 'beatless'),
+                'heartbreak': ('heartbroken, slow, aching minor melody', 'emotional cinematic score', 'distant low drum'),
+                'melancholic and emotional': ('melancholic, slow piano, melancholic cello, ambient reverb', 'emotional cinematic score', 'beatless'),
+                'rainy melancholy': ('melancholic, slow, soft falling patterns, grey mood', 'atmospheric cinematic score', 'soft rain-like brushes'),
+                'a farewell': ('wistful farewell, slow, gently fading', 'bittersweet cinematic score', 'beatless'),
+                'despair': ('despairing, dark, slow, heavy, hopeless', 'dark cinematic score', 'slow heavy low drums'),
+                'resignation': ('resigned, quiet, slow, descending phrases', 'subdued cinematic underscore', 'beatless')
             },
             'nostalgic and reflective': {
-                'childhood memories': 'nostalgic, innocent, music box like, gentle',
-                'bittersweet nostalgia': 'bittersweet, warm, slow, wistful',
-                'looking back on life': 'reflective, introspective, medium slow tempo',
-                'faded photographs': 'faded, hazy, warm lo-fi texture, slow',
-                'autumn reflection': 'autumnal, mellow, golden warmth, slow',
-                'letters from the past': 'tender, intimate, reminiscent, slow',
-                'the passing of time': 'contemplative, steady ticking pulse, timeless',
-                'a wistful daydream': 'dreamy, floating, soft haze, slow'
+                'childhood memories': ('nostalgic, innocent, music box like, gentle', 'tender cinematic score', 'soft glockenspiel ticks'),
+                'bittersweet nostalgia': ('bittersweet, warm, slow, wistful', 'nostalgic cinematic score', 'beatless'),
+                'looking back on life': ('reflective, introspective, medium slow tempo', 'contemplative cinematic score', 'soft brushed drums'),
+                'faded photographs': ('faded, hazy, warm lo-fi texture, slow', 'dreamy cinematic underscore', 'dusty lo-fi beat'),
+                'autumn reflection': ('autumnal, mellow, golden warmth, slow', 'warm cinematic score', 'light hand percussion'),
+                'letters from the past': ('tender, intimate, reminiscent, slow', 'intimate cinematic score', 'beatless'),
+                'the passing of time': ('contemplative, steady pulse, timeless', 'reflective cinematic underscore', 'clock-like ticking percussion'),
+                'a wistful daydream': ('dreamy, floating, soft haze, slow', 'ethereal cinematic score', 'beatless')
             },
             'mysterious and curious': {
-                'an enigmatic puzzle': 'enigmatic, curious staccato, unresolved harmonies, medium tempo',
-                'a secret discovery': 'mysterious, building curiosity, shimmering textures',
-                'a foggy unknown': 'foggy, ambiguous harmonies, hazy atmosphere, slow',
-                'an investigation': 'investigative, steady pulse, curious motif',
-                'hidden clues': 'sneaky, light staccato, inquisitive',
-                'curious exploration': 'curious, wandering melody, medium tempo',
-                'a strange encounter': 'uncanny, unusual intervals, sparse',
-                'ancient secrets': 'ancient, modal, mysterious drones, slow'
+                'an enigmatic puzzle': ('enigmatic, curious, unresolved harmonies, medium tempo', 'mystery cinematic score', 'light ticking percussion'),
+                'a secret discovery': ('mysterious, building curiosity, shimmering textures', 'cinematic discovery score', 'soft mallets and cymbal swells'),
+                'a foggy unknown': ('foggy, ambiguous harmonies, hazy atmosphere, slow', 'atmospheric cinematic score', 'distant low drums'),
+                'an investigation': ('investigative, steady pulse, curious motif', 'detective cinematic score', 'muted snare pulse'),
+                'hidden clues': ('sneaky, light staccato, inquisitive', 'mystery cinematic underscore', 'woodblock and light shakers'),
+                'curious exploration': ('curious, wandering melody, medium tempo', 'adventurous cinematic underscore', 'light hand drums'),
+                'a strange encounter': ('uncanny, unusual intervals, sparse', 'eerie cinematic score', 'sparse metallic hits'),
+                'ancient secrets': ('ancient, modal, mysterious drones, slow', 'mystical cinematic score', 'deep frame drum')
             },
             'suspense and tension': {
-                'creeping dread': 'creeping, slowly building tension, low pulses',
-                'a ticking clock': 'urgent ticking rhythm, rising tension',
-                'stealth': 'stealthy, quiet staccato, tiptoeing rhythm',
-                'an interrogation': 'tense, sparse, cold, unresolved',
-                'impending danger': 'ominous build, rising tension, swelling',
-                'paranoia': 'anxious, unstable rhythm, dissonant',
-                'nervous anticipation': 'nervous, restless pulse, held breath',
-                'a cliffhanger': 'tense crescendo, suspended, unresolved ending'
+                'creeping dread': ('creeping, slowly building tension, low pulses', 'suspense cinematic score', 'low heartbeat drum'),
+                'a ticking clock': ('urgent, rising tension', 'thriller cinematic score', 'ticking clock percussion'),
+                'stealth': ('stealthy, quiet, tiptoeing rhythm', 'suspense cinematic underscore', 'muted rimshots'),
+                'an interrogation': ('tense, sparse, cold, unresolved', 'tense cinematic underscore', 'sparse low hits'),
+                'impending danger': ('ominous build, rising tension, swelling', 'suspense cinematic score', 'rolling timpani and taiko'),
+                'paranoia': ('anxious, unstable rhythm, dissonant', 'psychological thriller score', 'irregular glitchy percussion'),
+                'nervous anticipation': ('nervous, restless pulse, held breath', 'tense cinematic score', 'fast muted hi-hat pulse'),
+                'a cliffhanger': ('tense crescendo, suspended, unresolved ending', 'dramatic cinematic score', 'snare roll and final boom')
             },
             'fear and horror': {
-                'terror': 'terrifying, harsh dissonance, sudden stabs',
-                'a haunted house': 'eerie, creaking textures, ghostly',
-                'a lurking monster': 'menacing, low growling drones, slow',
-                'a nightmare': 'nightmarish, distorted, disorienting',
-                'panic': 'panicked, fast, frantic, chaotic',
-                'eerie silence': 'eerie near silence, thin high tones',
-                'a curse': 'cursed, dark ritualistic, slow minor',
-                'psychological horror': 'unsettling, detuned, creeping, claustrophobic'
+                'terror': ('terrifying, harsh dissonance, sudden stabs', 'horror cinematic score', 'violent hits and booms'),
+                'a haunted house': ('eerie, creaking textures, ghostly', 'horror cinematic score', 'distant knocking percussion'),
+                'a lurking monster': ('menacing, low growling drones, slow', 'dark horror score', 'heavy slow thuds'),
+                'a nightmare': ('nightmarish, distorted, disorienting', 'surreal horror score', 'reversed percussion'),
+                'panic': ('panicked, fast, frantic, chaotic', 'horror chase score', 'frantic pounding drums'),
+                'eerie silence': ('eerie near silence, thin high tones', 'minimal horror underscore', 'beatless'),
+                'a curse': ('cursed, dark ritualistic, slow minor', 'occult cinematic score', 'ritual drums'),
+                'psychological horror': ('unsettling, detuned, creeping, claustrophobic', 'psychological horror score', 'irregular heartbeat thumps')
             },
             'action and chase': {
-                'a high speed chase': 'fast tempo, driving rhythm, adrenaline',
-                'an escape': 'urgent, fast, breathless momentum',
-                'a heist': 'cool, rhythmic, slick groove, tension',
-                'a fight': 'aggressive, hard hitting percussion, fast',
-                'a pursuit through the city': 'relentless, pulsing, fast tempo',
-                'a race against time': 'racing, accelerating, high energy',
-                'a rooftop run': 'agile, fast, syncopated rhythm',
-                'a getaway': 'propulsive, fast, triumphant energy'
+                'a high speed chase': ('fast tempo, driving rhythm, adrenaline', 'action cinematic score', 'driving drums and taiko'),
+                'an escape': ('urgent, fast, breathless momentum', 'action cinematic score', 'pounding percussion'),
+                'a heist': ('cool, rhythmic, slick groove, tension', 'heist movie score', 'tight funky drums'),
+                'a fight': ('aggressive, hard hitting, fast', 'action cinematic score', 'hard-hitting drums and impacts'),
+                'a pursuit through the city': ('relentless, pulsing, fast tempo', 'urban action score', 'relentless electronic drums'),
+                'a race against time': ('racing, accelerating, high energy', 'action cinematic score', 'accelerating drum ostinato'),
+                'a rooftop run': ('agile, fast, syncopated rhythm', 'action cinematic score', 'syncopated percussion'),
+                'action and suspense': ('fast tempo, tense strings, dramatic', 'dramatic trailer music', 'cinematic percussion')
             },
             'battle and conflict': {
-                'war drums': 'thunderous drums, marching rhythm, martial',
-                'a siege': 'heavy, relentless, brooding power',
-                'a clash of armies': 'massive, chaotic, epic battle intensity',
-                'a duel': 'tense, focused, rhythmic clashes',
-                'the aftermath of battle': 'somber, slow, devastated, mournful',
-                'a rebellion': 'defiant, rising, driving rhythm',
-                'a call to arms': 'rallying, heroic fanfare, stirring',
-                'a last stand': 'desperate, heroic, intense, climactic'
+                'war drums': ('marching rhythm, martial, relentless', 'epic war score', 'thunderous war drums'),
+                'a siege': ('heavy, relentless, brooding power', 'epic battle score', 'heavy taiko and timpani'),
+                'a clash of armies': ('massive, chaotic, epic battle intensity', 'epic battle score', 'massive percussion ensemble'),
+                'a duel': ('tense, focused, rhythmic clashes', 'cinematic duel score', 'sharp percussive hits'),
+                'the aftermath of battle': ('somber, slow, devastated, mournful', 'elegiac cinematic score', 'distant slow drum'),
+                'a rebellion': ('defiant, rising, driving rhythm', 'epic cinematic score', 'driving snare and toms'),
+                'a call to arms': ('rallying, heroic fanfare, stirring', 'heroic cinematic score', 'military snare and timpani'),
+                'a last stand': ('desperate, heroic, intense, climactic', 'epic cinematic score', 'pounding taiko and timpani')
             },
             'epic and heroic': {
-                "a hero's journey": 'adventurous heroic theme, building',
-                'a quest beginning': 'adventurous, hopeful, setting out, medium tempo',
-                'a legendary saga': 'grand, sweeping, legendary',
-                'a noble sacrifice': 'noble, slow, heartbreaking grandeur',
-                'a rising hero': 'ascending, inspiring, building to a climax',
-                'vast landscapes': 'majestic, wide open, slow and sweeping',
-                'an ancient kingdom': 'regal, stately, ancient grandeur',
-                'destiny': 'fateful, powerful, building intensity'
+                "a hero's journey": ('adventurous heroic theme, building', 'epic adventure score', 'rhythmic orchestral percussion'),
+                'a quest beginning': ('adventurous, hopeful, setting out, medium tempo', 'adventure cinematic score', 'marching snare'),
+                'epic and orchestral': ('epic, 120 bpm, massive brass, epic choir, soaring strings', 'hans zimmer style cinematic score', 'thunderous orchestral percussion'),
+                'a noble sacrifice': ('noble, slow, heartbreaking grandeur', 'emotional epic score', 'slow timpani'),
+                'a rising hero': ('ascending, inspiring, building to a climax', 'epic cinematic score', 'building drums and cymbal crashes'),
+                'vast landscapes': ('majestic, wide open, slow and sweeping', 'sweeping cinematic score', 'soft timpani rolls'),
+                'an ancient kingdom': ('regal, stately, ancient grandeur', 'epic historical score', 'ceremonial drums'),
+                'destiny': ('fateful, powerful, building intensity', 'epic cinematic score', 'pounding orchestral drums')
             },
             'triumphant and victorious': {
-                'victory': 'triumphant, bold, celebratory fanfare',
-                'triumph over adversity': 'triumphant, emotional, soaring',
-                'a coronation': 'regal, majestic, ceremonial',
-                "a hero's homecoming": 'warm, triumphant, emotional',
-                'an achievement': 'proud, bright, uplifting',
-                'a rescue': 'relieved, rising, joyful release',
-                'sunrise after the storm': 'hopeful, gradually brightening, radiant',
-                'a happy ending': 'resolved, warm, satisfying final cadence'
+                'victory': ('triumphant, bold, celebratory fanfare', 'triumphant cinematic score', 'triumphant timpani and cymbals'),
+                'triumph over adversity': ('triumphant, emotional, soaring', 'uplifting epic score', 'building drums'),
+                'a coronation': ('regal, majestic, ceremonial', 'ceremonial cinematic score', 'ceremonial timpani'),
+                "a hero's homecoming": ('warm, triumphant, emotional', 'heartfelt cinematic score', 'gentle march drums'),
+                'an achievement': ('proud, bright, uplifting', 'uplifting cinematic score', 'steady drums'),
+                'a rescue': ('relieved, rising, joyful release', 'rescue cinematic score', 'cymbal swell and timpani'),
+                'sunrise after the storm': ('hopeful, gradually brightening, radiant', 'radiant cinematic score', 'soft timpani swells'),
+                'a happy ending': ('resolved, warm, satisfying final cadence', 'heartwarming cinematic finale', 'gentle cymbal swell')
             },
             'dark and ominous': {
-                'a looming threat': 'ominous, low, slow, heavy',
-                'a villain': 'sinister, menacing theme, dark',
-                'a dark ritual': 'ritualistic, chant like, dark',
-                'corruption': 'decaying, dissonant, slowly twisting',
-                'a gathering storm': 'brooding, rumbling, building',
-                'oppression': 'oppressive, cold, mechanical, bleak',
-                'betrayal': 'shocking, bitter, dark turn',
-                'menace': 'threatening, stalking pulse, dark'
+                'a looming threat': ('ominous, low, slow, heavy', 'dark cinematic score', 'slow ominous booms'),
+                'a villain': ('sinister, menacing theme, dark', 'villain cinematic score', 'heavy low drums'),
+                'a dark ritual': ('ritualistic, chant like, dark', 'occult cinematic score', 'tribal ritual drums'),
+                'corruption': ('decaying, dissonant, slowly twisting', 'dark cinematic underscore', 'distorted low hits'),
+                'a gathering storm': ('brooding, rumbling, building', 'dark epic score', 'rumbling timpani'),
+                'oppression': ('oppressive, cold, mechanical, bleak', 'dystopian cinematic score', 'mechanical industrial percussion'),
+                'betrayal': ('shocking, bitter, dark turn', 'dramatic cinematic score', 'sudden impact hit'),
+                'menace': ('threatening, stalking pulse, dark', 'dark thriller score', 'stalking low drum pulse')
             },
             'wonder and magical': {
-                'an enchanted forest': 'enchanted, shimmering, magical, gentle',
-                'a fairy tale': 'storybook, whimsical, magical',
-                'a magic spell': 'sparkling, mystical, rising shimmer',
-                'a new world discovered': 'awe inspiring, wide, blossoming',
-                'a starry sky': 'cosmic, twinkling, vast, slow',
-                'a dreamlike fantasy': 'dreamlike, floating, ethereal',
-                'mythical creatures': 'majestic, mysterious, wondrous',
-                'awe': 'awestruck, swelling, luminous'
+                'an enchanted forest': ('enchanted, shimmering, magical, gentle', 'fantasy cinematic score', 'soft chimes and bells'),
+                'a fairy tale': ('storybook, whimsical, magical', 'fairy tale cinematic score', 'light glockenspiel and triangle'),
+                'a magic spell': ('sparkling, mystical, rising shimmer', 'magical cinematic score', 'shimmering chimes and cymbal swell'),
+                'a new world discovered': ('awe inspiring, wide, blossoming', 'sweeping cinematic score', 'soft timpani rolls'),
+                'a starry sky': ('cosmic, twinkling, vast, slow', 'space ambient cinematic score', 'beatless'),
+                'a dreamlike fantasy': ('dreamlike, floating, ethereal', 'ethereal cinematic score', 'beatless'),
+                'mythical creatures': ('majestic, mysterious, wondrous', 'fantasy cinematic score', 'deep tribal drums'),
+                'sci-fi and electronic': ('futuristic, atmospheric synth pads, pulsing bass', 'blade runner vibe cinematic score', 'synthwave drums')
             },
             'playful and humorous': {
-                'mischief': 'mischievous, sneaky playful staccato',
-                'whimsy': 'whimsical, light, quirky',
-                'slapstick comedy': 'comedic, bouncy, exaggerated',
-                'light-hearted banter': 'light, breezy, conversational rhythm',
-                'a quirky character': 'quirky, odd meter, playful',
-                'a cheeky prank': 'cheeky, tiptoeing, playful',
-                'cartoonish antics': 'cartoonish, zany, fast',
-                'bouncy fun': 'bouncy, upbeat, fun'
+                'mischief': ('mischievous, sneaky playful staccato', 'comedy cinematic score', 'light woodblocks'),
+                'whimsy': ('whimsical, light, quirky', 'whimsical film score', 'light toy percussion'),
+                'slapstick comedy': ('comedic, bouncy, exaggerated', 'cartoon comedy score', 'slapstick percussion hits'),
+                'light-hearted banter': ('light, breezy, conversational rhythm', 'light comedy score', 'brushed snare'),
+                'a quirky character': ('quirky, odd meter, playful', 'quirky film score', 'odd meter claps'),
+                'a cheeky prank': ('cheeky, tiptoeing, playful', 'comedy cinematic underscore', 'tiptoe woodblock'),
+                'cartoonish antics': ('cartoonish, zany, fast', 'cartoon score', 'zany xylophone and drum hits'),
+                'bouncy fun': ('bouncy, upbeat, fun', 'feel-good film score', 'bouncy drums and claps')
             },
             'solemn and spiritual': {
-                'a funeral': 'solemn, slow funeral march, grave',
-                'a prayer': 'prayerful, slow, reverent',
-                'a sacred ritual': 'sacred, chant like, timeless',
-                'redemption': 'redemptive, slowly rising, emotional release',
-                'forgiveness': 'gentle, warm, healing',
-                'mortality': 'contemplative, slow, profound',
-                'a cathedral': 'reverberant, majestic, sacred',
-                'transcendence': 'transcendent, ethereal, ascending'
+                'a funeral': ('solemn, slow funeral march, grave', 'solemn cinematic score', 'muffled funeral drum'),
+                'a prayer': ('prayerful, slow, reverent', 'sacred cinematic score', 'beatless'),
+                'a sacred ritual': ('sacred, chant like, timeless', 'spiritual cinematic score', 'slow ritual frame drum'),
+                'redemption': ('redemptive, slowly rising, emotional release', 'emotional cinematic score', 'gentle timpani swell'),
+                'forgiveness': ('gentle, warm, healing', 'heartfelt cinematic score', 'beatless'),
+                'mortality': ('contemplative, slow, profound', 'elegiac cinematic score', 'distant slow drum'),
+                'a cathedral': ('reverberant, majestic, sacred', 'sacred cinematic score', 'deep cathedral bell'),
+                'transcendence': ('transcendent, ethereal, ascending', 'ethereal cinematic score', 'soft cymbal swells')
             }
         }
         # book genre: its instrumentation goes into every prompt, and it favours the mood families that suit it
@@ -262,7 +265,7 @@ class InterludeGenerator:
             ('nostalgic and reflective', 'the passing of time'), ('calm and peaceful', 'quiet contemplation'),
             ('nostalgic and reflective', 'a wistful daydream'), ('calm and peaceful', 'a still night'),
             ('nostalgic and reflective', 'autumn reflection'), ('calm and peaceful', 'serene water'),
-            ('nostalgic and reflective', 'looking back on life'), ('calm and peaceful', 'meditative stillness')
+            ('nostalgic and reflective', 'looking back on life'), ('calm and peaceful', 'peaceful and ambient')
         ]
         self.neutral_turn = 0
         # set by generate_prompt() on its first call, or beforehand by the caller (e.g. a genre stored for the book);
@@ -475,8 +478,9 @@ class InterludeGenerator:
             torch.set_num_threads(threads)
             if blas_threads is not None:
                 self.openblas.openblas_set_num_threads(blas_threads)
-        prompt = f'{self.moods[family][mood]}, {palette}, instrumental'
-        self.prompt_info[prompt] = {'mood': mood, 'family': family, 'genre': self.genre or 'neutral', 'emotion': self.moods[family][mood], 'instruments': palette, 'label': f"{mood} · {self.genre or 'neutral'}"}
+        emotion, cinematic, percussion = self.moods[family][mood]
+        prompt = f'{emotion}, {cinematic}, {percussion}, {palette}, instrumental'
+        self.prompt_info[prompt] = {'mood': mood, 'family': family, 'genre': self.genre or 'neutral', 'emotion': f'{emotion}, {cinematic}', 'percussion': percussion, 'instruments': palette, 'label': f"{mood} · {self.genre or 'neutral'}"}
         return prompt
 
     def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, desc:str='Interlude', is_cancelled:Optional[Callable[[], bool]]=None)->Optional[str]:

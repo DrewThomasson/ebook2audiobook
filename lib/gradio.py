@@ -1539,7 +1539,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 if previous.get('prompt') == prompt and previous.get('label'):
                                     with open(interlude_json, 'r', encoding='utf-8') as f:
                                         interlude_data = json.load(f)
-                                    interlude_data.update({k: previous[k] for k in ('mood', 'family', 'genre', 'emotion', 'instruments', 'label') if k in previous})
+                                    interlude_data.update({k: previous[k] for k in ('mood', 'family', 'genre', 'emotion', 'percussion', 'instruments', 'label') if k in previous})
                                     with open(interlude_json, 'w', encoding='utf-8') as f:
                                         json.dump(interlude_data, f, ensure_ascii=False)
                             Path(os.path.join(session['process_dir'], f"__edit_pending_{session['final_name']}")).touch()
@@ -1559,7 +1559,7 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                             shown = prompt
                             if previous.get('prompt') == prompt and previous.get('label'):
-                                details = ' — '.join(str(previous[k]) for k in ('emotion', 'instruments') if previous.get(k)) or re.sub(r',\s*instrumental\s*$', '', prompt)
+                                details = ' — '.join(str(previous[k]) for k in ('emotion', 'percussion', 'instruments') if previous.get(k)) or re.sub(r',\s*instrumental\s*$', '', prompt)
                                 shown = f"{previous['label']} — {details}" if details else str(previous['label'])
                             return (
                                 gr.update(value=f'♪ {shown}', interactive=False), gr.update(visible=False), gr.update(value=None),
@@ -1687,11 +1687,11 @@ def build_interface(args:dict)->gr.Blocks:
                             try:
                                 with open(os.path.join(session['chapters_dir'], 'interludes', f'{interlude}-{interlude + 1}.json'), 'r', encoding='utf-8') as f:
                                     interlude_data = json.load(f)
-                                # same text as its subtitle cue (see combine_audio_chapters()): "mood · genre — emotion — instruments",
+                                # same text as its subtitle cue (see combine_audio_chapters()): "mood · genre — emotion — percussion — instruments",
                                 # or the prompt typed in the editor
                                 prompt = str(interlude_data.get('prompt') or prompt)
                                 if interlude_data.get('label'):
-                                    details = ' — '.join(str(interlude_data[k]) for k in ('emotion', 'instruments') if interlude_data.get(k)) or re.sub(r',\s*instrumental\s*$', '', prompt)
+                                    details = ' — '.join(str(interlude_data[k]) for k in ('emotion', 'percussion', 'instruments') if interlude_data.get(k)) or re.sub(r',\s*instrumental\s*$', '', prompt)
                                     prompt = f"{interlude_data['label']} — {details}" if details else str(interlude_data['label'])
                                 prompt = ' '.join(prompt.split())
                             except (OSError, ValueError):
