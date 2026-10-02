@@ -1208,6 +1208,19 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)
                 return tuple(gr.update() for _ in range(len(outputs_audiobook_edit_lock)))
 
+            def _update_audiobook_edit_input(session_id:str)->tuple:
+                # chained after ◉ and ✔, it also runs when they failed (gradio's .then): while an edit is still open the
+                # sentence box and the editor buttons are usable again, ✔ only once a preview exists
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False) and session.get('audiobook_edit_block_id') is not None:
+                        preview_file = session.get('audiobook_edit_preview')
+                        return gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=bool(preview_file and os.path.exists(preview_file))), gr.update(interactive=True)
+                except Exception as e:
+                    error = f'_update_audiobook_edit_input(): {e}'
+                    print(error)
+                return gr.update(), gr.update(), gr.update(), gr.update()
+
             def _click_gr_audiobook_edit_btn(session_id:str, audiobook:str|None, cue:str|None)->tuple:
                 try:
                     session = context.get_session(session_id)
@@ -3515,26 +3528,36 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_audiobook_list]
             )
             gr_audiobook_edit_preview_btn.click(
-                fn=lambda: (gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False)),
+                fn=lambda: (gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False)),
                 inputs=None,
-                outputs=[gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                outputs=[gr_audiobook_sentence, gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
                 queue=False
             ).then(
                 fn=_click_gr_audiobook_edit_sentence_btn,
                 inputs=[gr_session, gr_audiobook_sentence],
                 outputs=[gr_audiobook_edit_player, gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
                 show_progress_on=[gr_progress]
+            ).then(
+                fn=_update_audiobook_edit_input,
+                inputs=[gr_session],
+                outputs=[gr_audiobook_sentence, gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                queue=False
             )
             gr_audiobook_edit_save_btn.click(
-                fn=lambda: (gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False)),
+                fn=lambda: (gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False)),
                 inputs=None,
-                outputs=[gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                outputs=[gr_audiobook_sentence, gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
                 queue=False
             ).then(
                 fn=_click_gr_audiobook_edit_save_btn,
                 inputs=[gr_session, gr_audiobook_sentence],
                 outputs=outputs_audiobook_edit,
                 show_progress_on=[gr_progress]
+            ).then(
+                fn=_update_audiobook_edit_input,
+                inputs=[gr_session],
+                outputs=[gr_audiobook_sentence, gr_audiobook_edit_preview_btn, gr_audiobook_edit_save_btn, gr_audiobook_edit_cancel_btn],
+                queue=False
             ).then(
                 fn=_update_audiobook_edit_lock,
                 inputs=[gr_session],
