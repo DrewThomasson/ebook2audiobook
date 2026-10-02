@@ -2826,7 +2826,7 @@ def generate_interludes(session_id:str)->None:
         try:
             with open(genre_file, 'r', encoding='utf-8') as f:
                 stored_genre = json.load(f).get('genre')
-            if stored_genre in generator.genre_styles:
+            if stored_genre in generator.genre_styles or stored_genre == 'neutral':
                 generator.genre = stored_genre
         except (OSError, ValueError):
             pass
@@ -2874,7 +2874,7 @@ def generate_interludes(session_id:str)->None:
                 prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text, text_supported)
                 if not genre_saved and generator.genre:
                     with open(genre_file, 'w', encoding='utf-8') as f:
-                        json.dump({'genre': generator.genre, 'scores': generator.genre_scores, 'available': list(generator.genre_styles.keys())}, f, ensure_ascii=False, indent=1)
+                        json.dump({'genre': generator.genre, 'scores': generator.genre_scores, 'available': list(generator.genre_styles.keys()) + ['neutral']}, f, ensure_ascii=False, indent=1)
                     genre_saved = True
                 duration = random.randint(*interlude_duration_range)
                 generator.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}', is_cancelled=lambda: session['cancellation_requested'])

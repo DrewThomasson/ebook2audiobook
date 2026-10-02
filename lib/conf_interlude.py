@@ -6,6 +6,7 @@ interlude_duration_range = (20, 30) # seconds, MusicGen generates 30 s at most
 interlude_fade_in_range = (5.0, 10.0) # seconds of fade in before the chapter's last sentence ends
 interlude_fade_out_range = (4.0, 6.0) # seconds of fade out after the next chapter starts
 interlude_classifier_repo = 'MoritzLaurer/mDeBERTa-v3-base-mnli-xnli' # multilingual zero-shot (NLI) classifier
+interlude_genre_min_score = 0.10 # averaged score the winning genre needs (26 genres: 0.04 is a random guess), else 'neutral' instruments
 
 # zero-shot classifier sentences, {} is the genre, the mood family or the mood
 interlude_templates = {

@@ -17,9 +17,13 @@ from scipy.signal import resample_poly
 from tqdm import tqdm
 from huggingface_hub import snapshot_download
 from transformers import pipeline, AutoProcessor, MusicgenForConditionalGeneration, StoppingCriteriaList, LogitsProcessorList
-from lib.conf_interlude import interlude_classifier_repo, interlude_templates, interlude_moods, interlude_genre_styles, interlude_classifier_languages, interlude_neutral_style, interlude_neutral_moods
+from lib.conf_interlude import interlude_classifier_repo, interlude_genre_min_score, interlude_templates, interlude_moods, interlude_genre_styles, interlude_classifier_languages, interlude_neutral_style, interlude_neutral_moods
 
 class InterludeGenerator:
+
+    # level of safe settings that last made generation work in this process (see generate_interlude), so the next
+    # interludes and books start there instead of rediscovering it: 0 normal, 1 eager attention, 2 eager + no thread boost
+    safe_level = 0
 
     def __init__(self, device:str='cpu', channels:int=2, progress_bar:Optional[Callable]=None)->None:
         self.device = str(device or 'cpu').lower()
@@ -29,8 +33,6 @@ class InterludeGenerator:
         self.progress_bar = progress_bar
         self.classifier_repo = interlude_classifier_repo
         self.torch_device = None
-        # set once non-finite logits showed up: the following generations go straight to the safe settings
-        self.safe_mode = False
         # torch's intra-op threads call BLAS concurrently: fine with MKL, Accelerate or an OpenMP OpenBLAS (PyPI wheels),
         # not with a pthreads or sequential OpenBLAS, which is what the Jetson torch builds link (the system libopenblas.so.0,
         # 0.3.8 pthreads on JetPack 5): there concurrent GEMMs return NaN/garbage now and then. On such builds torch keeps
@@ -252,6 +254,10 @@ class InterludeGenerator:
                 ranking = list(self.genre_scores.items())
                 self.genre = ranking[0][0]
                 msg = f'Interludes: book genre detected as {self.genre} ({ranking[0][1]:.0%}, then {ranking[1][0]} {ranking[1][1]:.0%}) from {len(samples)} excerpts'
+                if ranking[0][1] < interlude_genre_min_score:
+                    # barely above a random guess: neutral instruments rather than a wrong genre's
+                    self.genre = 'neutral'
+                    msg = f'Interludes: book genre unclear (best {ranking[0][0]} {ranking[0][1]:.0%}, then {ranking[1][0]} {ranking[1][1]:.0%}) from {len(samples)} excerpts, neutral instruments are used'
                 print(msg)
                 if self.progress_bar is not None:
                     self.progress_bar(1.0, desc=msg)
@@ -285,17 +291,22 @@ class InterludeGenerator:
             bar = tqdm(total=max_new_tokens, desc=desc, unit='step', file=sys.stdout, dynamic_ncols=True, leave=False)
             step = [0]
             cancelled = [False]
+            guarded = [0]
+            unstable = [False]
             def _progress(input_ids:torch.LongTensor, scores:torch.FloatTensor, **kwargs)->torch.BoolTensor:
-                # reports the step counter (terminal bar, plus progress_bar in GUI) and stops generation only on a cancel request
+                # reports the step counter (terminal bar, plus progress_bar in GUI); stops generation on a cancel request, or
+                # early when most of the first steps gave non-finite logits (no point running 1500 broken steps)
                 if is_cancelled is not None and is_cancelled():
                     cancelled[0] = True
                     return torch.ones(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
                 step[0] += 1
+                if step[0] >= 20 and guarded[0] * 2 > step[0] and (InterludeGenerator.safe_level < 2 or self.torch_device != 'cpu'):
+                    unstable[0] = True
+                    return torch.ones(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
                 bar.update(1)
                 if self.progress_bar is not None:
                     self.progress_bar(min(step[0], max_new_tokens) / max_new_tokens, desc=desc)
                 return torch.zeros(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
-            guarded = [0]
             def _finite_logits(input_ids:torch.LongTensor, scores:torch.FloatTensor)->torch.FloatTensor:
                 # runs before classifier-free guidance: a non-finite logit would make torch.multinomial fail
                 # ("probability tensor contains either inf, nan or element < 0"), so it is neutralized and the step counted
@@ -306,15 +317,24 @@ class InterludeGenerator:
             threads = torch.get_num_threads()
             blas_threads = self.openblas.openblas_get_num_threads() if self.openblas is not None else None
             audio = None
-            # attempt 1 only when attempt 0 failed: GPU failure -> CPU, or non-finite logits on CPU -> safe settings
-            # (torch's own thread count, eager attention); autocast leaking from the caller is always switched off
-            for attempt in range(2):
+            # failures and non-finite logits escalate: GPU -> CPU first, then on CPU level 1 (eager attention instead of
+            # SDPA, threads kept) and level 2 (eager + no thread boost). The level that works is kept for the process.
+            # Autocast leaking from the caller is always switched off
+            while True:
+                if InterludeGenerator.safe_level >= 1:
+                    try:
+                        # the decoder holds the attention that matters (self + cross); the T5 encoder cannot switch anyway
+                        self.model.decoder.set_attn_implementation('eager')
+                    except Exception:
+                        pass
                 step[0] = 0
                 guarded[0] = 0
+                unstable[0] = False
                 if bar is not None:
                     bar.reset()
+                failure = None
                 try:
-                    if self.torch_device == 'cpu' and not self.safe_mode:
+                    if self.torch_device == 'cpu' and InterludeGenerator.safe_level < 2:
                         # the e2a process runs torch on one thread (OMP_NUM_THREADS=1): MusicGen gets every core for this call only
                         if self.raise_threads:
                             torch.set_num_threads(os.cpu_count() or 1)
@@ -324,38 +344,30 @@ class InterludeGenerator:
                     with torch.inference_mode(), torch.autocast(device_type='cuda' if self.torch_device == 'cuda' else 'cpu', enabled=False):
                         audio = self.model.generate(**inputs.to(self.torch_device), do_sample=True, guidance_scale=3.0, max_new_tokens=max_new_tokens, logits_processor=LogitsProcessorList([_finite_logits]), stopping_criteria=StoppingCriteriaList([_progress]))
                 except Exception as e:
-                    # a cancel stops generation mid-way and MusicGen may fail decoding the partial codes: that is not an error
-                    if cancelled[0]:
-                        break
-                    if attempt == 1:
-                        raise
-                    audio = None
-                    if self.torch_device != 'cpu':
-                        print(f'Generation on {self.torch_device} failed ({e}), retrying on cpu...')
-                        self.torch_device = 'cpu'
-                        self.model = self.model.to('cpu', dtype=torch.float32)
-                    else:
-                        print(f'{desc} failed ({e}), retrying with safe settings...')
-                        self.safe_mode = True
-                        try:
-                            self.model.set_attn_implementation('eager')
-                        except Exception:
-                            pass
-                    continue
+                    # a cancel or an early stop leaves partial codes that MusicGen may fail to decode: not an error
+                    if not (cancelled[0] or unstable[0]):
+                        failure = e
                 finally:
                     torch.set_num_threads(threads)
                     if blas_threads is not None:
                         self.openblas.openblas_set_num_threads(blas_threads)
-                # a couple of neutralized steps are harmless; more means the run is unreliable: redo it once in safe mode
-                if cancelled[0] or attempt == 1 or self.torch_device != 'cpu' or guarded[0] <= max(2, max_new_tokens // 100):
+                if cancelled[0]:
                     break
-                print(f'{desc}: {guarded[0]} steps produced non-finite logits, retrying with safe settings...')
+                if failure is None and not unstable[0]:
+                    break
                 audio = None
-                self.safe_mode = True
-                try:
-                    self.model.set_attn_implementation('eager')
-                except Exception:
-                    pass
+                reason = f'failed ({failure})' if failure is not None else 'gave non-finite logits'
+                if self.torch_device != 'cpu':
+                    tqdm.write(f'{desc}: generation on {self.torch_device} {reason}, retrying on cpu...', file=sys.stdout)
+                    self.torch_device = 'cpu'
+                    self.model = self.model.to('cpu', dtype=torch.float32)
+                    continue
+                if InterludeGenerator.safe_level >= 2:
+                    if failure is not None:
+                        raise failure
+                    break
+                InterludeGenerator.safe_level += 1
+                tqdm.write(f"{desc}: generation {reason}, retrying with {'eager attention' if InterludeGenerator.safe_level == 1 else 'eager attention and no thread boost'}...", file=sys.stdout)
             if guarded[0] and not cancelled[0]:
                 print(f'{desc}: {guarded[0]} step(s) with non-finite logits were neutralized')
             if cancelled[0]:

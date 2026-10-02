@@ -33,7 +33,7 @@ from .conf_models import (
 )
 
 from .conf_interlude import (
-    interlude_duration_range, interlude_fade_in_range, interlude_fade_out_range, interlude_classifier_repo,
+    interlude_duration_range, interlude_fade_in_range, interlude_fade_out_range, interlude_classifier_repo, interlude_genre_min_score,
     interlude_templates, interlude_moods, interlude_genre_styles, interlude_classifier_languages, interlude_neutral_style, interlude_neutral_moods
 )
 
@@ -71,6 +71,6 @@ __all__ = [
     "sml_tag_keys", "default_speaker",
     
     # from conf_interlude
-    "interlude_duration_range", "interlude_fade_in_range", "interlude_fade_out_range", "interlude_classifier_repo", "interlude_templates",
+    "interlude_duration_range", "interlude_fade_in_range", "interlude_fade_out_range", "interlude_classifier_repo", "interlude_genre_min_score", "interlude_templates",
     "interlude_moods", "interlude_genre_styles", "interlude_classifier_languages", "interlude_neutral_style", "interlude_neutral_moods"
 ]
