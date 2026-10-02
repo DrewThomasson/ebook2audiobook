@@ -1539,7 +1539,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 if previous.get('prompt') == prompt and previous.get('label'):
                                     with open(interlude_json, 'r', encoding='utf-8') as f:
                                         interlude_data = json.load(f)
-                                    interlude_data.update({k: previous[k] for k in ('mood', 'family', 'genre', 'label') if k in previous})
+                                    interlude_data.update({k: previous[k] for k in ('mood', 'family', 'genre', 'emotion', 'instruments', 'label') if k in previous})
                                     with open(interlude_json, 'w', encoding='utf-8') as f:
                                         json.dump(interlude_data, f, ensure_ascii=False)
                             Path(os.path.join(session['process_dir'], f"__edit_pending_{session['final_name']}")).touch()
@@ -1557,7 +1557,10 @@ def build_interface(args:dict)->gr.Blocks:
                                 or (session['ebook_mode'] == ebook_modes['SINGLE'] and bool(session.get('ebook_src')))
                                 or (session['ebook_mode'] == ebook_modes['DIRECTORY'] and bool(session.get('ebook_list')))
                             )
-                            shown = previous.get('label') if previous.get('prompt') == prompt and previous.get('label') else prompt
+                            shown = prompt
+                            if previous.get('prompt') == prompt and previous.get('label'):
+                                details = ' — '.join(str(previous[k]) for k in ('emotion', 'instruments') if previous.get(k)) or re.sub(r',\s*instrumental\s*$', '', prompt)
+                                shown = f"{previous['label']} — {details}" if details else str(previous['label'])
                             return (
                                 gr.update(value=f'♪ {shown}', interactive=False), gr.update(visible=False), gr.update(value=None),
                                 gr.update(interactive=True), gr.update(interactive=False), gr.update(interactive=True),
@@ -1684,8 +1687,13 @@ def build_interface(args:dict)->gr.Blocks:
                             try:
                                 with open(os.path.join(session['chapters_dir'], 'interludes', f'{interlude}-{interlude + 1}.json'), 'r', encoding='utf-8') as f:
                                     interlude_data = json.load(f)
-                                # same text as its subtitle cue: "mood · genre", or the prompt typed in the editor
-                                prompt = ' '.join(str(interlude_data.get('label') or interlude_data.get('prompt') or prompt).split())
+                                # same text as its subtitle cue (see combine_audio_chapters()): "mood · genre — emotion — instruments",
+                                # or the prompt typed in the editor
+                                prompt = str(interlude_data.get('prompt') or prompt)
+                                if interlude_data.get('label'):
+                                    details = ' — '.join(str(interlude_data[k]) for k in ('emotion', 'instruments') if interlude_data.get(k)) or re.sub(r',\s*instrumental\s*$', '', prompt)
+                                    prompt = f"{interlude_data['label']} — {details}" if details else str(interlude_data['label'])
+                                prompt = ' '.join(prompt.split())
                             except (OSError, ValueError):
                                 pass
                             sentence_update = gr.update(value=f'♪ {prompt}', interactive=False)

@@ -476,7 +476,7 @@ class InterludeGenerator:
             if blas_threads is not None:
                 self.openblas.openblas_set_num_threads(blas_threads)
         prompt = f'{self.moods[family][mood]}, {palette}, instrumental'
-        self.prompt_info[prompt] = {'mood': mood, 'family': family, 'genre': self.genre or 'neutral', 'label': f"{mood} · {self.genre or 'neutral'}"}
+        self.prompt_info[prompt] = {'mood': mood, 'family': family, 'genre': self.genre or 'neutral', 'emotion': self.moods[family][mood], 'instruments': palette, 'label': f"{mood} · {self.genre or 'neutral'}"}
         return prompt
 
     def generate_interlude(self, prompt:str, output_path:str, duration:int=30, samplerate:int=24000, desc:str='Interlude', is_cancelled:Optional[Callable[[], bool]]=None)->Optional[str]:

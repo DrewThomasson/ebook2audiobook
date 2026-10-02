@@ -3581,8 +3581,13 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         try:
                             with open(interlude_path.with_suffix('.json'), 'r', encoding='utf-8') as f:
                                 cue_data = json.load(f)
-                                # "mood · genre" when the prompt was chosen automatically, the prompt itself when typed in the editor
-                                cue_text = ' '.join(str(cue_data.get('label') or cue_data.get('prompt') or cue_text).split())
+                                # chosen automatically: "mood · genre — emotion — instruments" (older sidecars without the last two
+                                # fields: the prompt minus its trailing "instrumental"); typed in the editor: the prompt itself
+                                cue_text = str(cue_data.get('prompt') or cue_text)
+                                if cue_data.get('label'):
+                                    details = ' — '.join(str(cue_data[k]) for k in ('emotion', 'instruments') if cue_data.get(k)) or re.sub(r',\s*instrumental\s*$', '', cue_text)
+                                    cue_text = f"{cue_data['label']} — {details}" if details else str(cue_data['label'])
+                                cue_text = ' '.join(cue_text.split())
                         except (OSError, ValueError):
                             pass
                         part_cues.append((chapter_end / voice_rate, cue_end / voice_rate, global_idx, f'♪ {cue_text}'))
