@@ -1,4 +1,4 @@
-import os, time, threading, stanza, regex as re
+import os, time, threading, regex as re
 import argostranslate.package, argostranslate.translate
 
 from iso639 import Lang
@@ -216,10 +216,6 @@ class ArgosTranslator:
         try:
             if self.neural_machine != 'argostranslate':
                 return f'Neural machine {self.neural_machine} is not supported.', False
-            try:
-                stanza.download(source_iso1, processors='tokenize,mwt')
-            except Exception:
-                pass
             error, ok = self.download_and_install(source_iso1, target_iso1)
             if not ok:
                 return error, False

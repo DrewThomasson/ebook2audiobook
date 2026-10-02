@@ -154,7 +154,7 @@ os.environ['CALIBRE_CACHE_DIRECTORY'] = run_dir
 os.environ['CALIBRE_CONFIG_DIRECTORY'] = run_dir
 os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
-os.environ['DO_NOT_TRACK'] = 'True'
+os.environ['DO_NOT_TRACK'] = 'TRUE'
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
 os.environ['HF_HOME'] = tts_dir
 os.environ['HF_DATASETS_CACHE'] = tts_dir
@@ -190,7 +190,7 @@ os.environ['MIOPEN_LOG_LEVEL'] = '2'
 os.environ['MIOPEN_DEBUG_CONV_IMPLICIT_GEMM'] = '0'
 os.environ['HSA_NO_SCRATCH_RECLAIM'] = '0'
 os.environ['HSA_ENABLE_SDMA'] = '0'
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE' 
 os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['SYCL_IN_MEM_CACHE_EVICTION_THRESHOLD'] = str(512 * 1024 * 1024)
 if DEVICE_SYSTEM == systems['WINDOWS']:
