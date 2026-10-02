@@ -32,6 +32,11 @@ from .conf_models import (
     sml_tag_keys, default_speaker
 )
 
+from .conf_interlude import (
+    interlude_duration_range, interlude_fade_in_range, interlude_fade_out_range, interlude_classifier_repo,
+    interlude_templates, interlude_moods, interlude_genre_styles, interlude_classifier_languages, interlude_neutral_style, interlude_neutral_moods
+)
+
 __all__ = [
 
     # from conf
@@ -63,5 +68,9 @@ __all__ = [
     "default_engine_settings", "default_vc_model", "default_voice_detection_model", "tts_engines_from_coqui", "tts_engines_with_inner_speaker", "tts_engines_with_custom_model",
     "loaded_tts", "xtts_builtin_speakers_list", "max_custom_model",
     "max_custom_voices",
-    "sml_tag_keys", "default_speaker"
+    "sml_tag_keys", "default_speaker",
+    
+    # from conf_interlude
+    "interlude_duration_range", "interlude_fade_in_range", "interlude_fade_out_range", "interlude_classifier_repo", "interlude_templates",
+    "interlude_moods", "interlude_genre_styles", "interlude_classifier_languages", "interlude_neutral_style", "interlude_neutral_moods"
 ]

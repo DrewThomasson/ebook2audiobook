@@ -2876,7 +2876,7 @@ def generate_interludes(session_id:str)->None:
                     with open(genre_file, 'w', encoding='utf-8') as f:
                         json.dump({'genre': generator.genre, 'scores': generator.genre_scores, 'available': list(generator.genre_styles.keys())}, f, ensure_ascii=False, indent=1)
                     genre_saved = True
-                duration = random.randint(20, 30)
+                duration = random.randint(*interlude_duration_range)
                 generator.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}', is_cancelled=lambda: session['cancellation_requested'])
     except Exception as e:
         error = f'generate_interludes() error: {e}'
@@ -3532,8 +3532,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         continue
                     # seeded per chapter so a re-run gives the same timeline
                     rnd = random.Random(global_idx)
-                    fade_in = rnd.uniform(5.0, 10.0)
-                    fade_out = rnd.uniform(4.0, 6.0)
+                    fade_in = rnd.uniform(*interlude_fade_in_range)
+                    fade_out = rnd.uniform(*interlude_fade_out_range)
                     # end of the last sentence = chapter end minus its trailing silence
                     window = min(20.0, durations[idx])
                     detect = subprocess.run([ffmpeg, '-hide_banner', '-nostats', '-sseof', f'-{window:.3f}', '-i', str(chapter_path), '-af', 'silencedetect=noise=-50dB:d=0.3', '-f', 'null', '-'], capture_output=True, text=True)
@@ -4101,9 +4101,7 @@ def convert_ebook(args:dict)->tuple:
                             session['device'] = devices['CPU']['proc']
                             msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
                     elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
-                        if devices['JETSON']['found']:
-                            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True,max_split_size_mb:128,garbage_collection_threshold:0.8'
-                        else:
+                        if not devices['JETSON']['found']:
                             session['device'] = devices['CPU']['proc']
                             msg += f'JETSON CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
                     elif session['device'] == devices['MPS']['proc']:

@@ -69,11 +69,41 @@ def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
     if hasattr(mod, attr):
         setattr(mod, attr, wrapped_check_torch_load_is_safe)
         warn(f'patched {mod.__name__}.{attr}')
+
     # Patch missing isin_mps_friendly for newer transformers
     if mod.__name__ == 'transformers.pytorch_utils' and not hasattr(mod, 'isin_mps_friendly'):
         import torch
-        mod.isin_mps_friendly = torch.isin
+
+        # Safely check PyTorch version for MPS compatibility
+        try:
+            import packaging.version
+            _is_torch_gte_2_4 = packaging.version.parse(
+                torch.__version__.split('+')[0]
+            ) >= packaging.version.parse("2.4.0")
+        except ImportError:
+            _is_torch_gte_2_4 = False
+
+        def _isin_mps_friendly(elements, test_elements):
+            """MPS-safe fallback for torch.isin on PyTorch < 2.4."""
+            if elements.device.type == "mps" and not _is_torch_gte_2_4:
+                test_elements = torch.tensor(test_elements)
+                if test_elements.ndim == 0:
+                    test_elements = test_elements.unsqueeze(0)
+                return (
+                    elements.tile(test_elements.shape[0], 1)
+                    .eq(test_elements.unsqueeze(1))
+                    .sum(dim=0)
+                    .bool()
+                    .squeeze()
+                )
+            else:
+                # Note: don't use named arguments in `torch.isin`,
+                # see https://github.com/pytorch/pytorch/issues/126045
+                return torch.isin(elements, test_elements)
+
+        mod.isin_mps_friendly = _isin_mps_friendly
         warn(f'patched {mod.__name__}.isin_mps_friendly')
+
     # Rewrite use_auth_token → token for newer huggingface_hub
     if mod.__name__ == 'huggingface_hub':
         for fn_name in dir(mod):
