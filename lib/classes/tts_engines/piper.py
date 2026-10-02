@@ -124,8 +124,8 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                 if use_zs and not self.engine_zs:
                     error = f'Engine {self.tts_zs_key} is None'
                     return False, error
-                proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                 if use_zs:
+                    proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                     os.makedirs(proc_dir, exist_ok=True)
                 for part in sentence_parts:
                     part = part.strip()
@@ -135,15 +135,9 @@ class Piper(TTSUtils, TTSRegistry, name='piper'):
                         success, error = self._convert_sml(part)
                         if success:
                             self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
-                            use_zs = (
-                                self.speaker is not None
-                                and self.speaker != custom_model_name
-                                and (self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None)
-                            )
-                            if use_zs:
-                                if not self.engine_zs:
-                                    return False, f'Engine {self.tts_zs_key} is None'
-                                os.makedirs(proc_dir, exist_ok=True)
+                            if self.speaker is not None and self.speaker != custom_model_name:
+                                if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
+                                    use_zs = True
                         else:
                             return False, error
                         continue
