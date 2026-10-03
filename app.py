@@ -353,31 +353,6 @@ Default to config.json model.""")
             print(error)
             sys.exit(1)
         import lib.core as c
-        try:
-            import re as omp_re, ctypes as omp_ctypes, psutil as omp_psutil
-            omp_runtimes = {}
-            if sys.platform == 'darwin':
-                libsystem = omp_ctypes.CDLL('/usr/lib/libSystem.B.dylib')
-                libsystem._dyld_image_count.restype = omp_ctypes.c_uint32
-                libsystem._dyld_get_image_name.argtypes = [omp_ctypes.c_uint32]
-                libsystem._dyld_get_image_name.restype = omp_ctypes.c_char_p
-                mapped = [libsystem._dyld_get_image_name(i).decode() for i in range(libsystem._dyld_image_count())]
-            else:
-                mapped = [m.path for m in omp_psutil.Process().memory_maps(grouped=True)]
-            for path in mapped:
-                if omp_re.match(r'^libi?omp(\d|\.|-)', os.path.basename(path).lower()) and os.path.isfile(path):
-                    st = os.stat(path)
-                    omp_runtimes[(st.st_dev, st.st_ino)] = '/'.join(os.path.realpath(path).replace('\\', '/').split('/')[-3:])
-            if len(omp_runtimes) > 1:
-                msg = f'WARNING: {len(omp_runtimes)} LLVM/Intel OpenMP runtimes loaded in one process, crashes or hangs possible: {", ".join(sorted(omp_runtimes.values()))}'
-                print(msg)
-                try:
-                    c.bug_reporter.system_info()['omp_runtimes'] = sorted(omp_runtimes.values())
-                except Exception:
-                    pass
-        except Exception as e:
-            msg = f'OpenMP runtime check skipped: {e}'
-            print(msg)
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions

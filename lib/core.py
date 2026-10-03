@@ -8,7 +8,7 @@
 import argparse, asyncio, csv, difflib, fnmatch, sqlite3, hashlib, io, json, math, os, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, multiprocessing
-import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
+import ebooklib, psutil, requests, importlib, queue, pykakasi
 import regex as re, gradio as gr
 
 from typing import Any, Generator, Dict
@@ -27,7 +27,6 @@ from markdown import markdown
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy, SyncManager
-from stanza.pipeline.core import Pipeline, DownloadMethod
 from num2words2 import num2words
 from pathlib import Path
 from PIL import Image
@@ -1364,6 +1363,8 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
+                import stanza
+                from stanza.pipeline.core import Pipeline, DownloadMethod
                 try:
                     stanza_model = f"stanza-{session['language_iso1']}"
                     stanza_nlp = loaded_tts.get(stanza_model, False)
