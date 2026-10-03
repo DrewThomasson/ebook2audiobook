@@ -263,7 +263,6 @@ Default depends on the selected language. The tts engine should be compatible wi
     headless_optional_group.add_argument(cli_options[15], type=str, default=default_fine_tuned, help='Fine tuned model path. Default is builtin model.')
     headless_optional_group.add_argument(cli_options[16], type=str, default=default_output_format, help=f'Output audio format. Default is {default_output_format} set in ./lib/conf.py')
     headless_optional_group.add_argument(cli_options[17], type=str, default=default_output_channel, help=f'Output audio channel. Default is {default_output_channel} set in ./lib/conf.py')
-    headless_optional_group.add_argument(cli_options[36], action='store_true', help='Add a music interlude (MusicGen) after each chapter and at the end of the audiobook. Settings are in ./lib/conf_interlude.py')
     headless_optional_group.add_argument(cli_options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['temperature'], help=f"""(xtts only, optional) Temperature for the model.
 Default to config.json model. Higher temperatures lead to more creative outputs.""")
     headless_optional_group.add_argument(cli_options[19], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder.
@@ -289,11 +288,12 @@ Default to config.json model.""")
     headless_optional_group.add_argument(cli_options[29], type=str, default='', help='Audiobookshelf server URL (e.g. http://localhost:13378).')
     headless_optional_group.add_argument(cli_options[30], type=str, default='', help='Audiobookshelf API token.')
     headless_optional_group.add_argument(cli_options[31], type=str, default='', help='Audiobookshelf library ID.')
-    headless_optional_group.add_argument(cli_options[32], action='version', version=f'ebook2audiobook version {prog_version}', help='Show the version of the script and exit')
+    headless_optional_group.add_argument(cli_options[32], action='store_true', help='Add a music interlude (MusicGen) after each chapter and at the end of the audiobook. Settings are in ./lib/conf_interlude.py')
+    headless_optional_group.add_argument(cli_options[33], action='version', version=f'ebook2audiobook version {prog_version}', help='Show the version of the script and exit')
 
     internal_group = parser.add_argument_group(argparse.SUPPRESS)
-    internal_group.add_argument(cli_options[33], type=str, default=None, help=argparse.SUPPRESS)
     internal_group.add_argument(cli_options[34], type=str, default=None, help=argparse.SUPPRESS)
+    internal_group.add_argument(cli_options[35], type=str, default=None, help=argparse.SUPPRESS)
 
     for arg in sys.argv:
          if arg.startswith('--') and arg not in cli_options:
