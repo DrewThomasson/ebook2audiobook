@@ -3572,6 +3572,50 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             music_pos = 0
             part_cues = []
             with open(voice_list, 'w') as fv, open(music_list, 'w') as fm:
+                if intro_path is not None:
+                    intro_len = get_audio_duration(str(intro_path))
+                    if intro_len and intro_len > 0:
+                        rnd_intro = random.Random(first_global_idx + 1000003)
+                        intro_fade_in = rnd_intro.uniform(*interlude_fade_in_range)
+                        intro_fade_out = rnd_intro.uniform(*interlude_fade_out_range)
+                        intro_fade_in = max(0.1, min(intro_fade_in, intro_len))
+                        intro_fade_out = max(0.1, min(intro_fade_out, max(0.1, intro_len - intro_fade_in)))
+                        intro_samples = round(intro_len * voice_rate)
+                        # Voice enters when the intro starts fading out.
+                        intro_delay_samples = max(0, intro_samples - round(intro_fade_out * voice_rate))
+                        # The voice track timeline starts after this delay.
+                        voice_pos = intro_delay_samples
+                        intro_music_path = Path(mix_dir) / f'intro_music.{music_mix_ext}'
+                        intro_af = (
+                            f'aresample={voice_rate},'
+                            f'aformat=channel_layouts={out_layout},'
+                            f'afade=t=in:st=0:d={intro_fade_in:.3f},'
+                            f'afade=t=out:st={intro_len - intro_fade_out:.3f}:d={intro_fade_out:.3f},'
+                            f'atrim=end_sample={intro_samples},'
+                            f'apad=whole_len={intro_samples}'
+                        )
+                        subprocess.run(
+                            [
+                                ffmpeg, '-hide_banner', '-v', 'error',
+                                '-i', str(intro_path),
+                                '-af', intro_af,
+                                *music_mix_codec_args,
+                                '-y', str(intro_music_path)
+                            ],
+                            check=True
+                        )
+                        fm.write(f"file '{intro_music_path.as_posix()}'\n")                        music_pos = intro_samples                        # Optional subtitle cue for the intro.
+                        if voice_rate > 0 and (intro_delay_samples / voice_rate) >= 0.5:
+                            intro_cue_text = 'Intro'                            try:
+                                with open(Path(intro_path).with_suffix('.json'), 'r', encoding='utf-8') as f_intro:
+                                    intro_cue_data = json.load(f_intro)                                    intro_cue_text = str(intro_cue_data.get('prompt') or intro_cue_text)                                    if intro_cue_data.get('label'):
+                                        details = ' — '.join(
+                                            str(intro_cue_data[k])
+                                            for k in ('emotion', 'percussion', 'instruments')
+                                            if intro_cue_data.get(k)
+                                        ) or re.sub(r',\s*instrumental\s*$', '', intro_cue_text)                                        intro_cue_text = f"{intro_cue_data['label']} — {details}" if details else str(intro_cue_data['label'])                                    intro_cue_text = ' '.join(intro_cue_text.split())
+                            except (OSError, ValueError):
+                                pass                            part_cues.append((0.0, intro_delay_samples / voice_rate, first_global_idx, f'♪ {intro_cue_text}'))
                 for n, idx in enumerate(indices):
                     if session['cancellation_requested']:
                         return None
