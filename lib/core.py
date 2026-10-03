@@ -1388,9 +1388,8 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                         stanza_processors = 'tokenize,mwt,ner' if stanza_has_mwt else 'tokenize,ner'
                         stanza_nlp = stanza.Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
                         if stanza_nlp:
-                            if not session['translate_enabled']:
-                                session['stanza_cache'] = stanza_model
-                                loaded_tts[stanza_model] = stanza_nlp
+                            session['stanza_cache'] = stanza_model
+                            loaded_tts[stanza_model] = stanza_nlp
                             msg = f"NLP model {stanza_model} loaded!"
                             print(msg)
                 except (ConnectionError, TimeoutError) as e:
@@ -1731,6 +1730,9 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
                             text
                         )
+                if session['translate_enabled']:
+                    del stanza_nlp
+                    gc.collect()
             msg = 'Convert romans to numbers…'
             print(msg)
             text = roman2number(text)
