@@ -3517,6 +3517,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 bits = str(stream.get('bits_per_raw_sample') or '')
                 if bits.isdigit():
                     voice_codec_args += ['-bits_per_raw_sample', bits]
+            voice_list = os.path.join(mix_dir, 'voice.txt')
             music_list = os.path.join(mix_dir, 'music.txt')
             voice_pos = 0
             music_pos = 0
