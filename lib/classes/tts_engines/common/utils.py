@@ -116,35 +116,38 @@ class TTSUtils:
         gc.collect()
         if hasattr(torch, 'clear_autocast_cache'):
             torch.clear_autocast_cache()
+        try:
+            if torch.cuda.is_initialized():
+                torch.cuda.synchronize()
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+        except Exception:
+            pass
+        try:
+            if hasattr(torch, 'xpu') and torch.xpu.is_initialized():
+                torch.xpu.synchronize()
+                torch.xpu.empty_cache()
+        except Exception:
+            pass
+        try:
+            if hasattr(torch, 'mps') and torch.backends.mps.is_available():
+                torch.mps.synchronize()
+                torch.mps.empty_cache()
+        except Exception:
+            pass
         if sys.platform == systems['LINUX']:
             try:
                 libc = ctypes.CDLL('libc.so.6')
                 libc.malloc_trim(0)
             except Exception:
                 pass
-        elif sys.platform == systems['WINDOWS']:
+        elif sys.platform == systems['MACOS']:
             try:
-                kernel32 = ctypes.windll.kernel32
-                handle = kernel32.GetCurrentProcess()
-                kernel32.SetProcessWorkingSetSize(
-                    handle, ctypes.c_size_t(-1), ctypes.c_size_t(-1)
-                )
+                libsystem = ctypes.CDLL('/usr/lib/libSystem.B.dylib')
+                libsystem.malloc_zone_pressure_relief.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+                libsystem.malloc_zone_pressure_relief(None, 0)
             except Exception:
                 pass
-        if torch.cuda.is_available():
-            torch.cuda.ipc_collect()
-            torch.cuda.synchronize()
-            torch.cuda.empty_cache()
-        try:
-            if hasattr(torch, 'xpu') and torch.xpu.is_available():
-                torch.xpu.synchronize()
-                torch.xpu.empty_cache()
-        except Exception:
-            # torch.xpu.is_available() is not exception-safe: on an old Level Zero
-            # loader it raises out of ctypes instead of returning False. A memory
-            # flush must never be the thing that kills a conversion, and this runs
-            # on every cleanup, so it stays silent like the malloc_trim block above.
-            pass
 
     def _try_dml(self, engine:Any, checkpoint_path:str)->None:
         try:

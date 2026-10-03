@@ -4551,15 +4551,46 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
 
 def unload_tts_manager(tts_manager:Any)->None:
     try:
+        engine_ref = None
         if tts_manager is not None:
             engine = getattr(tts_manager, 'engine', None)
             keys = [getattr(engine, attr, None) for attr in ('tts_key', 'tts_zs_key')]
+            if engine is not None:
+                try:
+                    import weakref
+                    engine_ref = weakref.ref(engine)
+                except Exception:
+                    pass
             tts_manager.engine = None
             engine = None
             for key in keys:
                 if key:
                     loaded_tts.pop(key, None)
         gc.collect()
+        try:
+            import torch
+        except Exception:
+            torch = None
+        if torch is not None:
+            try:
+                if torch.cuda.is_initialized():
+                    torch.cuda.synchronize()
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
+            except Exception:
+                pass
+            try:
+                if hasattr(torch, 'xpu') and torch.xpu.is_initialized():
+                    torch.xpu.synchronize()
+                    torch.xpu.empty_cache()
+            except Exception:
+                pass
+            try:
+                if hasattr(torch, 'mps') and torch.backends.mps.is_available():
+                    torch.mps.synchronize()
+                    torch.mps.empty_cache()
+            except Exception:
+                pass
         if sys.platform == 'linux':
             # gc frees the python objects but glibc keeps the pages in its arena:
             # on jetson unified memory those unreturned pages starve CUDA itself
@@ -4569,13 +4600,8 @@ def unload_tts_manager(tts_manager:Any)->None:
                 ctypes.CDLL('libc.so.6').malloc_trim(0)
             except Exception:
                 pass
-        try:
-            import torch
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
-        except Exception:
-            pass
+        if engine_ref is not None and engine_ref() is not None:
+            print('unload_tts_manager(): engine still referenced after unload, its models were not freed')
     except Exception as e:
         error = f'unload_tts_manager() error: {e}'
         print(error)
