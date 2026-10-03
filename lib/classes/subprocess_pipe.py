@@ -43,8 +43,8 @@ class SubprocessPipe:
             if is_ffmpeg:
                 self.process = subprocess.Popen(
                     self.cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
                     bufsize=0
                 )
             else:
@@ -88,6 +88,7 @@ class SubprocessPipe:
                 while True:
                     try:
                         line = stderr_queue.get(timeout=0.1)
+                        print(line)
                     except queue.Empty:
                         if self.process.poll() is not None:
                             break
