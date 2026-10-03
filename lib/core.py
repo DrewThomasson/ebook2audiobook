@@ -1363,7 +1363,6 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
-                import stanza
                 from stanza.pipeline.core import Pipeline, DownloadMethod
                 try:
                     stanza_model = f"stanza-{session['language_iso1']}"
@@ -1387,7 +1386,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                         except Exception:
                             pass
                         stanza_processors = 'tokenize,mwt,ner' if stanza_has_mwt else 'tokenize,ner'
-                        stanza_nlp = stanza.Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
+                        stanza_nlp = Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
                         if stanza_nlp:
                             session['stanza_cache'] = stanza_model
                             loaded_tts[stanza_model] = stanza_nlp
@@ -1440,7 +1439,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -2116,7 +2115,7 @@ def get_sanitized(str:str, replacement:str='_')->str:
     sanitized = sanitized.strip('_')
     return sanitized
     
-def get_date_entities(text:str, stanza_nlp:Pipeline)->list[tuple[int,int,str]]|bool:
+def get_date_entities(text:str, stanza_nlp)->list[tuple[int,int,str]]|bool:
     try:
         doc = stanza_nlp(text)
         date_spans = []
