@@ -43,8 +43,8 @@ class SubprocessPipe:
             if is_ffmpeg:
                 self.process = subprocess.Popen(
                     self.cmd,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
                     bufsize=0
                 )
             else:
