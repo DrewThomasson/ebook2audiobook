@@ -2805,57 +2805,44 @@ def generate_interludes(session_id:str)->None:
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
-            return
-        # Music Interlude unchecked / no --enable_interlude: nothing to generate
+            return        # Music Interlude unchecked / no --enable_interlude: no thing to generate
         if not session.get('interlude_enabled', False):
-            return
-        interludes_dir = session.get('interludes_dir')
+            return        interludes_dir = session.get('interludes_dir')
         if not interludes_dir:
-            return
-        from lib.classes.interlude_generator import InterludeGenerator
-        os.makedirs(interludes_dir, exist_ok=True)
-        blocks = session['blocks_current']['blocks']
-        # same chapter selection and global positions as combine_audio_chapters(), so the interlude file names always match
+            return        from lib.classes.interlude_generator import InterludeGenerator        os.makedirs(interludes_dir, exist_ok=True)        blocks = session['blocks_current']['blocks']        # same chapter selection and global positions as combine_audio_chapters(), so the interlude file names always match
         positions = [x for x, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
         if not positions:
-            return
-        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
-        # terminal bars always (Loading weights: terminal in headless mode only), progress_bar too in GUI mode
-        generator = InterludeGenerator(session['device'], 2 if session['output_channel'] == 'stereo' else 1, progress_bar if session['is_gui_process'] else None)
-        msg = f'Generating {len(positions) + 1} interludes via MusicGen.'
-        show_alert(session_id, {'type': 'info', 'msg': msg})
-        # book genre: detected once from the metadata and the opening pages, then kept in book_genre.json so every
+            return        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)        # terminal bars always (Loading weights: terminal in headless mode only), progress_bar too in GUI mode
+        generator = InterludeGenerator(
+            session['device'],
+            2 if session['output_channel'] == 'stereo' else 1,
+            progress_bar if session['is_gui_process'] else None
+        )        msg = f'Generating {len(positions) + 1} interludes via MusicGen...'
+        show_alert(session_id, {'type': 'info', 'msg': msg})        # book genre: detected once from the metadata and the opening pages, then kept in book_genre.json so every
         # run of this book uses the same one. Set "genre" there to one of the "available" values to force another
         genre_file = os.path.join(interludes_dir, 'book_genre.json')
         try:
             with open(genre_file, 'r', encoding='utf-8') as f:
                 stored_genre = json.load(f).get('genre')
-            if stored_genre in generator.genre_styles or stored_genre == 'neutral':
-                generator.genre = stored_genre
+                if stored_genre in generator.genre_styles or stored_genre == 'neutral':
+                    generator.genre = stored_genre
         except (OSError, ValueError):
-            pass
-        genre_saved = generator.genre is not None
-        # genre excerpts: the metadata (title, subject, description) counts double; then the middle three fifths of the book,
+            pass        genre_saved = generator.genre is not None        # genre excerpts: the metadata (title, subject, description) counts double; then the middle three fifths of the book,
         # since its first and last fifth hold the title page, copyright, contents, dedication, acknowledgements or appendices.
         # That middle is read as one continuous text so short chapters count too (poetry, picture books, books split into
         # many small parts): 8 windows of about 1200 characters, evenly spread and cut on whole words; a short book is
-        # simply covered by consecutive windows
-        # language guard: the classifier only understands the languages it was pretrained on. The chapter text is in the
+        # simply covered by consecutive windows        # language guard: the classifier only understands the languages it was pretrained on. The chapter text is in the
         # translation's language when translation is on, the metadata always stays in the book's own language
         text_language = session['translate'] if session.get('translate_enabled') and session.get('translate') else session['language']
         text_iso1 = session.get('translate_iso1') if session.get('translate_enabled') and session.get('translate') else session.get('language_iso1')
         text_supported = text_iso1 in generator.classifier_languages
-        meta_supported = session.get('language_iso1') in generator.classifier_languages
-        if not text_supported:
+        meta_supported = session.get('language_iso1') in generator.classifier_languages        if not text_supported:
             msg = f"Interludes: the mood classifier does not know {text_language}, calm and reflective moods are used instead{'' if generator.genre or meta_supported else ', with a neutral genre (set one in book_genre.json to choose it)'}"
-            print(msg)
-        metadata = session.get('metadata') or {}
+            print(msg)        metadata = session.get('metadata') or {}
         meta_text = ' '.join(re.sub(r'<[^>]+>', ' ', '. '.join(str(metadata.get(k)) for k in ('title', 'subject', 'description') if metadata.get(k))).split())
-        book_text = [(meta_text, 2.0)] if meta_text and meta_supported else []
-        middle = positions[len(positions) // 5:len(positions) - len(positions) // 5] or positions
+        book_text = [(meta_text, 2.0)] if meta_text and meta_supported else []        middle = positions[len(positions) // 5:len(positions) - len(positions) // 5] or positions
         stream = ' '.join(' '.join(blocks[x]['text'].split()) for x in middle)
-        span = 1200
-        for i in range(8 if text_supported else 0):
+        span = 1200        for i in range(8 if text_supported else 0):
             start = i * span if len(stream) <= span * 8 else max(0, int(len(stream) * (i + 0.5) / 8) - span // 2)
             if start >= len(stream):
                 break
@@ -2865,76 +2852,57 @@ def generate_interludes(session_id:str)->None:
             if start + span < len(stream):
                 excerpt = excerpt.rsplit(' ', 1)[0]
             if excerpt.strip():
-                book_text.append((excerpt, 1.0))
-        total_interludes = len(positions) + 1
-        # Intro interlude: always before the first voice
+                book_text.append((excerpt, 1.0))        total_interludes = len(positions) + 1        # Intro interlude: always before the first voice
         first_x = positions[0]
         intro_fname = f'intro-{first_x}.{default_audio_proc_format}'
-        intro_fpath = os.path.join(interludes_dir, intro_fname)
-        if not os.path.exists(intro_fpath):
+        intro_fpath = os.path.join(interludes_dir, intro_fname)        if not os.path.exists(intro_fpath):
             if session['cancellation_requested']:
-                return
-            text_next = blocks[first_x]['text'][:500]
-            prompt = generator.generate_prompt(text_next, book_text, text_supported)
-            if not genre_saved and generator.genre:
+                return            text_next = blocks[first_x]['text'][:500]
+            prompt = generator.generate_prompt(text_next, book_text, text_supported)            if not genre_saved and generator.genre:
                 with open(genre_file, 'w', encoding='utf-8') as f:
                     json.dump({
                         'genre': generator.genre,
                         'scores': generator.genre_scores,
                         'available': list(generator.genre_styles.keys()) + ['neutral']
                     }, f, ensure_ascii=False, indent=1)
-                genre_saved = True
-            duration = random.randint(*interlude_duration_range)
-            generator.generate_interlude(
+                genre_saved = True            duration = random.randint(*interlude_duration_range)            generator.generate_interlude(
                 prompt,
                 intro_fpath,
                 duration=duration,
                 samplerate=default_audio_proc_samplerate,
                 desc=f'Interlude 1/{total_interludes}',
                 is_cancelled=lambda: session['cancellation_requested']
-            )
-        for n, x in enumerate(positions):
+            )        for n, x in enumerate(positions):
             if session['cancellation_requested']:
-                return
-            fname = f'{x}-{x + 1}.{default_audio_proc_format}'
-            fpath = os.path.join(interludes_dir, fname)
-            if not os.path.exists(fpath):
-                text_prev = blocks[x]['text'][-500:]
-                # the last chapter always gets one too: it closes the audiobook
-                text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''
-                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text, text_supported)
-                if not genre_saved and generator.genre:
+                return            fname = f'{x}-{x + 1}.{default_audio_proc_format}'
+            fpath = os.path.join(interludes_dir, fname)            if not os.path.exists(fpath):
+                text_prev = blocks[x]['text'][-500:]                # the last chapter always gets one too: it closes the audiobook
+                text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text, text_supported)                if not genre_saved and generator.genre:
                     with open(genre_file, 'w', encoding='utf-8') as f:
                         json.dump({
                             'genre': generator.genre,
                             'scores': generator.genre_scores,
                             'available': list(generator.genre_styles.keys()) + ['neutral']
                         }, f, ensure_ascii=False, indent=1)
-                    genre_saved = True
-                duration = random.randint(*interlude_duration_range)
-                generator.generate_interlude(
+                    genre_saved = True                duration = random.randint(*interlude_duration_range)                generator.generate_interlude(
                     prompt,
                     fpath,
                     duration=duration,
                     samplerate=default_audio_proc_samplerate,
                     desc=f'Interlude {n + 2}/{total_interludes}',
                     is_cancelled=lambda: session['cancellation_requested']
-                )
-    except Exception as e:
+                )    except Exception as e:
         error = f'generate_interludes() error: {e}'
-        exception_alert(session_id, error)
-    finally:
+        exception_alert(session_id, error)    finally:
         if generator is not None:
             # MusicGen and the classifier live in e2a's process: release them before the final merge
             generator = None
-            gc.collect()
-            if sys.platform == 'linux':
+            gc.collect()            if sys.platform == 'linux':
                 try:
                     import ctypes
                     ctypes.CDLL('libc.so.6').malloc_trim(0)
                 except Exception:
-                    pass
-            try:
+                    pass            try:
                 import torch
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -3555,9 +3523,15 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 bits = str(stream.get('bits_per_raw_sample') or '')
                 if bits.isdigit():
                     voice_codec_args += ['-bits_per_raw_sample', bits]
-            # The temporary music track uses WAV to avoid FLAC streaminfo/blocksize concat issues.
-            music_mix_ext = 'wav'
-            music_mix_codec_args = ['-c:a', 'pcm_s16le', '-ar', str(voice_rate), '-sample_fmt', 's16']
+            # Respect the selected internal processing format: flac, wav or ogg.
+            music_mix_ext = default_audio_proc_format
+            music_codec = {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(
+                default_audio_proc_format,
+                default_audio_proc_format
+            )
+            music_mix_codec_args = ['-c:a', music_codec, '-ar', str(voice_rate)]
+            if music_codec == 'flac' or music_codec.startswith('pcm_'):
+                music_mix_codec_args += ['-sample_fmt', 's16']
             intro_path = None
             intro_delay_samples = 0
             intro_samples = 0
@@ -3666,12 +3640,40 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         fv.write(f"file '{Path(gap_path).as_posix()}'\n")
                         voice_pos += gap_samples
                         interlude_durations[global_idx] = gap_samples / voice_rate
-                    if music_start > music_pos:
-                        pad_path = os.path.join(mix_dir, f'pad_{n}.flac')
-                        subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-f', 'lavfi', '-i', f'anullsrc=r={voice_rate}:cl={out_layout}', '-af', f'atrim=end_sample={music_start - music_pos}', '-c:a', 'flac', '-sample_fmt', 's16', '-y', pad_path], check=True)
+                    pad_samples = music_start - music_pos
+                    if pad_samples > 0:
+                        pad_path = os.path.join(mix_dir, f'pad_{n}.{music_mix_ext}')
+                        subprocess.run(
+                            [
+                                ffmpeg, '-hide_banner', '-v', 'error',
+                                '-f', 'lavfi',
+                                '-i', f'anullsrc=r={voice_rate}:cl={out_layout}',
+                                '-af', f'atrim=end_sample={pad_samples}',
+                                *music_mix_codec_args,
+                                '-y', pad_path
+                            ],
+                            check=True
+                        )
                         fm.write(f"file '{Path(pad_path).as_posix()}'\n")
-                    music_path = os.path.join(mix_dir, f'music_{n}.flac')
-                    subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-i', str(interlude_path), '-af', f'aresample={voice_rate},aformat=channel_layouts={out_layout},afade=t=in:st=0:d={fade_in:.3f},afade=t=out:st={interlude_len - fade_out:.3f}:d={fade_out:.3f},atrim=end_sample={interlude_samples},apad=whole_len={interlude_samples}', '-c:a', 'flac', '-sample_fmt', 's16', '-y', music_path], check=True)
+                    music_path = os.path.join(mix_dir, f'music_{n}.{music_mix_ext}')
+                    music_af = (
+                        f'aresample={voice_rate},'
+                        f'aformat=channel_layouts={out_layout},'
+                        f'afade=t=in:st=0:d={fade_in:.3f},'
+                        f'afade=t=out:st={interlude_len - fade_out:.3f}:d={fade_out:.3f},'
+                        f'atrim=end_sample={interlude_samples},'
+                        f'apad=whole_len={interlude_samples}'
+                    )
+                    subprocess.run(
+                        [
+                            ffmpeg, '-hide_banner', '-v', 'error',
+                            '-i', str(interlude_path),
+                            '-af', music_af,
+                            *music_mix_codec_args,
+                            '-y', music_path
+                        ],
+                        check=True
+                    )
                     fm.write(f"file '{Path(music_path).as_posix()}'\n")
                     music_pos = music_start + interlude_samples
                     # subtitle cue over the music-only stretch: chapter end -> next chapter start, or -> the end for the part's last one
@@ -3698,15 +3700,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 else 'pan=stereo|c0=c0|c1=c0'
                 if out_layout == 'stereo'
                 else 'pan=mono|c0=0.5*c0+0.5*c1'
-            )
-            target_samples = max(voice_pos, music_pos)
-            voice_chain = f'[0:a]{voice_to_out}'
-            music_chain = f'[1:a]aformat=sample_rates={voice_rate}:channel_layouts={out_layout}'
-            if music_pos > 0 and target_samples > 0:
-                voice_chain += f',apad=whole_len={target_samples}'
-                music_chain += f',apad=whole_len={target_samples}'
-            cmd = [ffmpeg, '-hide_banner', '-nostats', '-safe', '0', '-f', 'concat', '-i', voice_list]
-            if music_pos > 0:
+            )            target_samples = max(voice_pos, music_pos)            voice_filters = []            # Delay the voice track by the intro length so the first voice enters when the intro starts fading out.
+            if intro_delay_samples > 0 and voice_rate > 0:
+                intro_delay_ms = int(round(intro_delay_samples * 1000 / voice_rate))                if voice_layout == 'mono':
+                    delay_expr = str(intro_delay_ms)
+                else:
+                    delay_expr = f'{intro_delay_ms}|{intro_delay_ms}'                voice_filters.append(f'adelay={delay_expr}')            voice_filters.append(voice_to_out)            if music_pos > 0 and target_samples > 0:
+                voice_filters.append(f'apad=whole_len={target_samples}')            voice_chain = '[0:a]' + ','.join(voice_filters)            music_chain = f'[1:a]aformat=sample_rates={voice_rate}:channel_layouts={out_layout}'            if music_pos > 0 and target_samples > 0:
+                music_chain += f',apad=whole_len={target_samples}'            cmd = [ffmpeg, '-hide_banner', '-nostats', '-safe', '0', '-f', 'concat', '-i', voice_list]            if music_pos > 0:
                 cmd += [
                     '-safe', '0', '-f', 'concat', '-i', music_list,
                     '-filter_complex',
@@ -3716,9 +3717,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 cmd += [
                     '-filter_complex',
                     f'{voice_chain}[out]'
-                ]
-            # default_audio_proc_format is a container name: only 'flac' is also an encoder name, 'wav'/'ogg' need theirs
-            cmd += ['-map', '[out]', '-c:a', {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(default_audio_proc_format, default_audio_proc_format), '-map_metadata', '-1', '-threads', '0', '-progress', 'pipe:2', '-y', str(merged_audio)]
+                ]            # default_audio_proc_format is a container name: only 'flac' is also an encoder name, 'wav'/'ogg' need theirs
+            out_codec = {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(default_audio_proc_format, default_audio_proc_format)            cmd += ['-map', '[out]', '-c:a', out_codec]            if out_codec == 'flac':
+                cmd += ['-sample_fmt', 's16']            cmd += [
+                '-map_metadata', '-1',
+                '-threads', '0',
+                '-progress', 'pipe:2',
+                '-y', str(merged_audio)
+            ]
             progress_desc = f'Assemble Part {part_num}' if part_num is not None else 'Assemble'
             total_duration = ((target_samples / float(voice_rate)) + 1.0) if voice_rate else 0.0
             proc_pipe = SubprocessPipe(
@@ -3733,17 +3739,35 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 print(error)
                 return None
             shutil.rmtree(mix_dir, ignore_errors=True)
+            initial_offset_ms = int(round(intro_delay_samples * 1000 / voice_rate)) if (part_idx == 0 and voice_rate > 0) else 0
             metadata_file = Path(session['process_dir']) / f'metadata{part_suffix}.txt'
             part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
             part_global_indices = [chapter_positions[i] for i in indices]
-            _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format, part_num=part_num, interlude_durations=interlude_durations, chapter_global_indices=part_global_indices)
+            _generate_ffmpeg_metadata(
+                part_chapters,
+                str(metadata_file),
+                default_audio_proc_format,
+                part_num=part_num,
+                interlude_durations=interlude_durations,
+                chapter_global_indices=part_global_indices,
+                initial_offset_ms=initial_offset_ms
+            )
             final_file = os.path.join(
                 session['audiobooks_dir'],
                 f"{Path(session['final_name']).stem}{part_suffix}.{session['output_format']}"
                 if is_multi_part else session['final_name']
             )
             block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
-            if _export_audio(merged_audio, str(metadata_file), final_file, block_indices=block_indices, part_num=part_num, interlude_durations=interlude_durations, chapter_global_indices=part_global_indices):
+            if _export_audio(
+                merged_audio,
+                str(metadata_file),
+                final_file,
+                block_indices=block_indices,
+                part_num=part_num,
+                interlude_durations=interlude_durations,
+                chapter_global_indices=part_global_indices,
+                initial_offset_ms=initial_offset_ms
+            ):
                 exported_files.append(final_file)
                 final_vtt = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
                 if part_cues and os.path.exists(final_vtt):
