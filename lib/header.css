@@ -439,7 +439,7 @@ span[data-testid="block-info"] {
 	display: none !important;
 }
 #gr_row_ebook_mode { align-items: center !important; }
-#gr_blocks_preview {
+#gr_blocks_preview, #gr_interlude_enabled {
 	align-self: center !important; 
 	overflow: visible !important;
 	padding: 20px 0 20px 10px !important;

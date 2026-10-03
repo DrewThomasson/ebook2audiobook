@@ -58,6 +58,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
                                         gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File',ebook_modes['SINGLE']), ('Directory',ebook_modes['DIRECTORY']), ('Text',ebook_modes['TEXT'])], interactive=True, scale=2)
                                         gr_blocks_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
+                                        gr_interlude_enabled = gr.Checkbox(label='Music Interlude', elem_id='gr_interlude_enabled', value=False, interactive=True, scale=1)
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                     with gr.Row(elem_id='gr_row_language') as gr_row_language:
@@ -674,6 +675,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                             gr.update(value=session['ebook_mode']),
                             gr.update(value=bool(session['blocks_preview'])),
+                            gr.update(value=bool(session.get('interlude_enabled', False))),
                             gr.update(value=session['device']),
                             gr.update(value=session['language']),
                             gr.update(value=translate_enabled_state),
@@ -1410,7 +1412,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['audiobook_edit_preview'] = None
                             # same length and channel count as the interlude it replaces
                             interlude_info = mediainfo(interlude_file)
-                            duration = int(min(30, max(20, round(float(interlude_info.get('duration') or 30)))))
+                            duration = int(min(interlude_duration_range[1], max(interlude_duration_range[0], round(float(interlude_info.get('duration') or 30)))))
                             channels = 1 if int(interlude_info.get('channels') or 2) == 1 else 2
                             from lib.classes.interlude_generator import InterludeGenerator
                             generator = None
@@ -1810,10 +1812,17 @@ def build_interface(args:dict)->gr.Blocks:
                                 # rebuild with the audiobook's own format, channels and split mode, not the current UI settings
                                 is_split = Path(target).stem != Path(session['final_name']).stem
                                 channels = int(audio_info.get('channels') or (2 if session['output_channel'] == 'stereo' else 1))
-                                output_backup = (session['output_format'], session['output_channel'], session['output_split'])
+                                output_backup = (session['output_format'], session['output_channel'], session['output_split'], session.get('interlude_enabled', False))
                                 session['output_format'] = ext
                                 session['output_channel'] = 'stereo' if channels >= 2 else 'mono'
                                 session['output_split'] = is_split
+                                # interludes too: kept if this audiobook has them (interlude cues in its subtitles), whatever Music Interlude says now
+                                target_vtt = Path(target).with_suffix('.vtt')
+                                if target_vtt.exists():
+                                    session['interlude_enabled'] = bool(re.search(r'(?m)^interlude \d+\s*$', target_vtt.read_text(encoding='utf-8', errors='replace')))
+                                else:
+                                    interludes_dir = os.path.join(session['chapters_dir'], 'interludes')
+                                    session['interlude_enabled'] = os.path.isdir(interludes_dir) and any(f.endswith(f'.{default_audio_proc_format}') and not f.startswith('__') for f in os.listdir(interludes_dir))
                                 session['status'] = status_tags['CONVERTING']
                                 session['cancellation_requested'] = False
                                 exported_files = None
@@ -1823,7 +1832,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     progress_bar(0.0, desc=msg)
                                     exported_files = combine_audio_chapters(session_id)
                                 finally:
-                                    session['output_format'], session['output_channel'], session['output_split'] = output_backup
+                                    session['output_format'], session['output_channel'], session['output_split'], session['interlude_enabled'] = output_backup
                                     session['status'] = status_tags['READY']
                                 if not exported_files:
                                     error = 'combine_audio_chapters() failed!'
@@ -2445,7 +2454,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return
 
             def _start_conversion(
-                    session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
+                    session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, interlude_enabled:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str,
                     translate_enabled:bool, translate_target:str|None
@@ -2461,6 +2470,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 "is_gui_process": session['is_gui_process'],
                                 "script_mode": script_mode,
                                 "blocks_preview": blocks_preview,
+                                "interlude_enabled": interlude_enabled,
                                 "device": device,
                                 "tts_engine": tts_engine,
                                 "ebook": None,
@@ -3110,14 +3120,14 @@ def build_interface(args:dict)->gr.Blocks:
             ######## grouped tuples
 
             inputs_start_conversion = [
-                gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_tts_engine_list, gr_language, gr_voice_list,
+                gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_interlude_enabled, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate
             ]
             outputs_disable_components = [
-                gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
+                gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate,
@@ -3133,7 +3143,9 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_translate_enabled, gr_translate,
                 gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn,
                 gr_abs_upload_btn,
-                gr_audiobook_edit_btn, gr_audiobook_export_btn
+                gr_audiobook_edit_btn, gr_audiobook_export_btn,
+                # kept last: _enable_components() addresses the items above by position
+                gr_interlude_enabled
             ]
             outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
@@ -3143,7 +3155,7 @@ def build_interface(args:dict)->gr.Blocks:
                 *blocks_components_flat, gr_blocks_header, gr_blocks_expands
             ]
             outputs_restore_interface = [
-                gr_tab_xtts_params, gr_tab_bark_params, gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_device, gr_language,
+                gr_tab_xtts_params, gr_tab_bark_params, gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_device, gr_language,
                 gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
@@ -3162,7 +3174,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_audiobook_player
             ]
             outputs_audiobook_edit_lock = [
-                gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_translate_enabled, gr_translate,
+                gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_language, gr_translate_enabled, gr_translate,
                 gr_voice_file, gr_voice_play, gr_voice_list, gr_voice_del_btn, gr_device, gr_tts_engine_list, gr_fine_tuned_list,
                 gr_custom_model_file, gr_custom_model_list, gr_custom_model_del_btn,
                 gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
@@ -3224,6 +3236,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_blocks_preview.select(
                 fn=lambda session_id, val: _change_param('blocks_preview', session_id, bool(val)),
                 inputs=[gr_session, gr_blocks_preview],
+                outputs=None
+            )
+            gr_interlude_enabled.select(
+                fn=lambda session_id, val: _change_param('interlude_enabled', session_id, bool(val)),
+                inputs=[gr_session, gr_interlude_enabled],
                 outputs=None
             )
             gr_voice_file.upload(

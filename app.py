@@ -263,6 +263,7 @@ Default depends on the selected language. The tts engine should be compatible wi
     headless_optional_group.add_argument(cli_options[15], type=str, default=default_fine_tuned, help='Fine tuned model path. Default is builtin model.')
     headless_optional_group.add_argument(cli_options[16], type=str, default=default_output_format, help=f'Output audio format. Default is {default_output_format} set in ./lib/conf.py')
     headless_optional_group.add_argument(cli_options[17], type=str, default=default_output_channel, help=f'Output audio channel. Default is {default_output_channel} set in ./lib/conf.py')
+    headless_optional_group.add_argument(cli_options[36], action='store_true', help='Add a music interlude (MusicGen) after each chapter and at the end of the audiobook. Settings are in ./lib/conf_interlude.py')
     headless_optional_group.add_argument(cli_options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['temperature'], help=f"""(xtts only, optional) Temperature for the model.
 Default to config.json model. Higher temperatures lead to more creative outputs.""")
     headless_optional_group.add_argument(cli_options[19], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder.
@@ -378,6 +379,7 @@ Default to config.json model.""")
 
             args['is_gui_process'] = False
             args['blocks_preview'] = False
+            args['interlude_enabled'] = bool(args.get('enable_interlude'))
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
