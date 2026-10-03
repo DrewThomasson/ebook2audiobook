@@ -1730,9 +1730,6 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
                             text
                         )
-                if session['translate_enabled']:
-                    del stanza_nlp
-                    gc.collect()
             msg = 'Convert romans to numbers…'
             print(msg)
             text = roman2number(text)
