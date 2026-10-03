@@ -2822,7 +2822,7 @@ def generate_interludes(session_id:str)->None:
         progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
         # terminal bars always (Loading weights: terminal in headless mode only), progress_bar too in GUI mode
         generator = InterludeGenerator(session['device'], 2 if session['output_channel'] == 'stereo' else 1, progress_bar if session['is_gui_process'] else None)
-        msg = f'Generating {len(positions)} interludes via MusicGen...'
+        msg = f'Generating {len(positions) + 1} interludes via MusicGen.'
         show_alert(session_id, {'type': 'info', 'msg': msg})
         # book genre: detected once from the metadata and the opening pages, then kept in book_genre.json so every
         # run of this book uses the same one. Set "genre" there to one of the "available" values to force another
@@ -2866,6 +2866,33 @@ def generate_interludes(session_id:str)->None:
                 excerpt = excerpt.rsplit(' ', 1)[0]
             if excerpt.strip():
                 book_text.append((excerpt, 1.0))
+        total_interludes = len(positions) + 1
+        # Intro interlude: always before the first voice
+        first_x = positions[0]
+        intro_fname = f'intro-{first_x}.{default_audio_proc_format}'
+        intro_fpath = os.path.join(interludes_dir, intro_fname)
+        if not os.path.exists(intro_fpath):
+            if session['cancellation_requested']:
+                return
+            text_next = blocks[first_x]['text'][:500]
+            prompt = generator.generate_prompt(text_next, book_text, text_supported)
+            if not genre_saved and generator.genre:
+                with open(genre_file, 'w', encoding='utf-8') as f:
+                    json.dump({
+                        'genre': generator.genre,
+                        'scores': generator.genre_scores,
+                        'available': list(generator.genre_styles.keys()) + ['neutral']
+                    }, f, ensure_ascii=False, indent=1)
+                genre_saved = True
+            duration = random.randint(*interlude_duration_range)
+            generator.generate_interlude(
+                prompt,
+                intro_fpath,
+                duration=duration,
+                samplerate=default_audio_proc_samplerate,
+                desc=f'Interlude 1/{total_interludes}',
+                is_cancelled=lambda: session['cancellation_requested']
+            )
         for n, x in enumerate(positions):
             if session['cancellation_requested']:
                 return
@@ -2878,10 +2905,21 @@ def generate_interludes(session_id:str)->None:
                 prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text, text_supported)
                 if not genre_saved and generator.genre:
                     with open(genre_file, 'w', encoding='utf-8') as f:
-                        json.dump({'genre': generator.genre, 'scores': generator.genre_scores, 'available': list(generator.genre_styles.keys()) + ['neutral']}, f, ensure_ascii=False, indent=1)
+                        json.dump({
+                            'genre': generator.genre,
+                            'scores': generator.genre_scores,
+                            'available': list(generator.genre_styles.keys()) + ['neutral']
+                        }, f, ensure_ascii=False, indent=1)
                     genre_saved = True
                 duration = random.randint(*interlude_duration_range)
-                generator.generate_interlude(prompt, fpath, duration=duration, samplerate=default_audio_proc_samplerate, desc=f'Interlude {n + 1}/{len(positions)}', is_cancelled=lambda: session['cancellation_requested'])
+                generator.generate_interlude(
+                    prompt,
+                    fpath,
+                    duration=duration,
+                    samplerate=default_audio_proc_samplerate,
+                    desc=f'Interlude {n + 2}/{total_interludes}',
+                    is_cancelled=lambda: session['cancellation_requested']
+                )
     except Exception as e:
         error = f'generate_interludes() error: {e}'
         exception_alert(session_id, error)
@@ -3162,7 +3200,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         if is_gui_process:
             progress_bar(p / 100.0, desc=desc)
 
-    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str, part_num:int=None, interlude_durations:dict=None, chapter_global_indices:list=None)->str|bool:
+    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str, part_num:int=None, interlude_durations:dict=None, chapter_global_indices:list=None, initial_offset_ms:int=0)->str|bool:
         try:
             out_fmt = session['output_format']
             is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
@@ -3207,7 +3245,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 interlude_durations = {}
             if chapter_global_indices is None:
                 chapter_global_indices = list(range(len(part_chapters)))
-            start_time = 0
+            start_time = initial_offset_ms
             cumulative_offset = 0
             total = len(part_chapters)
             progress_desc = f'Metadata Part {part_num}' if part_num is not None else 'Metadata'
@@ -3248,7 +3286,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             print(error)
             return False
 
-    def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None, interlude_durations:dict=None, chapter_global_indices:list=None)->bool:
+    def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None, interlude_durations:dict=None, chapter_global_indices:list=None, initial_offset_ms:int=0)->bool:
         try:
             if session['cancellation_requested']:
                 return False
@@ -3401,11 +3439,11 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     if audio is not None:
                         audio.save()
             vtt_offsets = {}
-            if interlude_durations and chapter_global_indices:
-                cumulative_ms = 0
+            if chapter_global_indices:
+                cumulative_ms = initial_offset_ms
                 for idx in chapter_global_indices:
                     vtt_offsets[idx] = cumulative_ms / 1000.0
-                    if idx in interlude_durations:
+                    if interlude_durations and idx in interlude_durations:
                         cumulative_ms += int(interlude_durations[idx] * 1000)
             final_vtt = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
             vtt_built, error = build_vtt_file(session, vtt_path=final_vtt, block_indices=block_indices, offsets=vtt_offsets)
@@ -3517,6 +3555,17 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 bits = str(stream.get('bits_per_raw_sample') or '')
                 if bits.isdigit():
                     voice_codec_args += ['-bits_per_raw_sample', bits]
+            # The temporary music track uses WAV to avoid FLAC streaminfo/blocksize concat issues.
+            music_mix_ext = 'wav'
+            music_mix_codec_args = ['-c:a', 'pcm_s16le', '-ar', str(voice_rate), '-sample_fmt', 's16']
+            intro_path = None
+            intro_delay_samples = 0
+            intro_samples = 0
+            first_global_idx = chapter_positions[indices[0]] if indices else None
+            if interludes_dir and part_idx == 0 and indices:
+                candidate_intro = Path(interludes_dir) / f'intro-{first_global_idx}.{default_audio_proc_format}'
+                if candidate_intro.exists():
+                    intro_path = candidate_intro
             voice_list = os.path.join(mix_dir, 'voice.txt')
             music_list = os.path.join(mix_dir, 'music.txt')
             voice_pos = 0

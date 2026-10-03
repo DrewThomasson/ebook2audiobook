@@ -88,7 +88,6 @@ class SubprocessPipe:
                 while True:
                     try:
                         line = stderr_queue.get(timeout=0.1)
-                        print(line)
                     except queue.Empty:
                         if self.process.poll() is not None:
                             break
