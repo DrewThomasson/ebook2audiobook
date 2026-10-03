@@ -3509,13 +3509,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             voice_layout = 'mono' if int(stream.get('channels', 1)) == 1 else 'stereo'
             out_layout = 'stereo' if session['output_channel'] == 'stereo' else 'mono'
             # silent gaps go through the same concat demuxer/decoder as the chapters, so they must share codec and bit depth exactly
-            voice_codec = {'opus': 'libopus', 'vorbis': 'libvorbis'}.get(stream.get('codec_name', 'flac'), stream.get('codec_name', 'flac'))
-            voice_codec_args = ['-c:a', voice_codec]
+            voice_codec = {'opus': 'libopus', 'vorbis': 'libvorbis'}.get(stream.get('codec_name', 'flac'), stream.get('codec_name', 'flac'))      
+            sample_fmt = str(stream.get('sample_fmt') or 's16').rstrip('p') or 's16'
+            voice_codec_args = ['-c:a', voice_codec, '-ar', str(voice_rate)]
             if voice_codec == 'flac' or voice_codec.startswith('pcm_'):
-                voice_codec_args += ['-sample_fmt', str(stream.get('sample_fmt', 's16')).rstrip('p')]
-                if str(stream.get('bits_per_raw_sample', '')).isdigit():
-                    voice_codec_args += ['-bits_per_raw_sample', str(stream['bits_per_raw_sample'])]
-            voice_list = os.path.join(mix_dir, 'voice.txt')
+                voice_codec_args += ['-sample_fmt', sample_fmt]
+                bits = str(stream.get('bits_per_raw_sample') or '')
+                if bits.isdigit():
+                    voice_codec_args += ['-bits_per_raw_sample', bits]
             music_list = os.path.join(mix_dir, 'music.txt')
             voice_pos = 0
             music_pos = 0
@@ -3597,16 +3598,42 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             pass
                         part_cues.append((chapter_end / voice_rate, cue_end / voice_rate, global_idx, f'♪ {cue_text}'))
             # explicit pan keeps the voice level (a plain mono->stereo upmix drops it by 3 dB)
-            voice_to_out = 'anull' if voice_layout == out_layout else 'pan=stereo|c0=c0|c1=c0' if out_layout == 'stereo' else 'pan=mono|c0=0.5*c0+0.5*c1'
+            voice_to_out = (
+                'anull'
+                if voice_layout == out_layout
+                else 'pan=stereo|c0=c0|c1=c0'
+                if out_layout == 'stereo'
+                else 'pan=mono|c0=0.5*c0+0.5*c1'
+            )
+            target_samples = max(voice_pos, music_pos)
+            voice_chain = f'[0:a]{voice_to_out}'
+            music_chain = f'[1:a]aformat=sample_rates={voice_rate}:channel_layouts={out_layout}'
+            if music_pos > 0 and target_samples > 0:
+                voice_chain += f',apad=whole_len={target_samples}'
+                music_chain += f',apad=whole_len={target_samples}'
             cmd = [ffmpeg, '-hide_banner', '-nostats', '-safe', '0', '-f', 'concat', '-i', voice_list]
             if music_pos > 0:
-                cmd += ['-safe', '0', '-f', 'concat', '-i', music_list, '-filter_complex', f'[0:a]{voice_to_out}[v];[1:a]aformat=sample_rates={voice_rate}:channel_layouts={out_layout}[m];[v][m]amix=inputs=2:duration=longest:normalize=0[out]']
+                cmd += [
+                    '-safe', '0', '-f', 'concat', '-i', music_list,
+                    '-filter_complex',
+                    f'{voice_chain}[v];{music_chain}[m];[v][m]amix=inputs=2:duration=longest:normalize=0[out]'
+                ]
             else:
-                cmd += ['-filter_complex', f'[0:a]{voice_to_out}[out]']
+                cmd += [
+                    '-filter_complex',
+                    f'{voice_chain}[out]'
+                ]
             # default_audio_proc_format is a container name: only 'flac' is also an encoder name, 'wav'/'ogg' need theirs
             cmd += ['-map', '[out]', '-c:a', {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(default_audio_proc_format, default_audio_proc_format), '-map_metadata', '-1', '-threads', '0', '-progress', 'pipe:2', '-y', str(merged_audio)]
             progress_desc = f'Assemble Part {part_num}' if part_num is not None else 'Assemble'
-            proc_pipe = SubprocessPipe(cmd=cmd, is_gui_process=is_gui_process, total_duration=max(voice_pos, music_pos) / voice_rate, msg='Assemble', on_progress=lambda p: _on_progress(p, progress_desc))
+            total_duration = ((target_samples / float(voice_rate)) + 1.0) if voice_rate else 0.0
+            proc_pipe = SubprocessPipe(
+                cmd=cmd,
+                is_gui_process=is_gui_process,
+                total_duration=total_duration,
+                msg='Assemble',
+                on_progress=lambda p: _on_progress(p, progress_desc)
+            )
             if not (proc_pipe.result and os.path.exists(merged_audio)):
                 error = f'combine_audio_chapters() final merge failed for {merged_audio}'
                 print(error)
