@@ -1363,43 +1363,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             title = get_ebook_title(epubBook, all_docs)
             blocks = []
             stanza_nlp = False
-            if session['language'] in year_to_decades_languages:
-                try:
-                    stanza_model = f"stanza-{session['language_iso1']}"
-                    stanza_nlp = loaded_tts.get(stanza_model, False)
-                    if stanza_nlp:
-                        msg = f"NLP model {stanza_model} loaded."
-                        print(msg)
-                    else:
-                        use_gpu = True if (
-                            (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or
-                            (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or
-                            (session['device'] == devices['XPU']['proc'] and devices['XPU']['found']) or
-                            (session['device'] == devices['JETSON']['proc'] and devices['JETSON']['found'])
-                        ) else False
-                        # only use mwt if the language supports it
-                        stanza_lang = session['language_iso1']
-                        stanza_has_mwt = False
-                        try:
-                            stanza_resources = stanza.resources.common.load_resources_json(os.getenv('STANZA_RESOURCES_DIR', stanza.resources.common.DEFAULT_MODEL_DIR))
-                            stanza_has_mwt = 'mwt' in stanza_resources.get(stanza_lang, {})
-                        except Exception:
-                            pass
-                        stanza_processors = 'tokenize,mwt,ner' if stanza_has_mwt else 'tokenize,ner'
-                        stanza_nlp = stanza.Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
-                        if stanza_nlp:
-                            session['stanza_cache'] = stanza_model
-                            loaded_tts[stanza_model] = stanza_nlp
-                            msg = f"NLP model {stanza_model} loaded!"
-                            print(msg)
-                except (ConnectionError, TimeoutError) as e:
-                    error = f'Stanza model download connection error: {e}. Retry later'
-                    print(error)
-                    return []
-                except Exception as e:
-                    error = f'Stanza model initialization error: {e}'
-                    print(error)
-                    return []
+
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
             non_text_filter = NonTextFilter(sml_pattern=SML_TAG_PATTERN, lang=session['language'])
             try:
@@ -1423,7 +1387,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                         session['stanza_cache'] = None
                     except Exception:
                         pass
-                    stanza_nlp = None
+                    stanza_nlp = False
                     gc.collect()
                     if torch.cuda.is_available():
                         torch.cuda.empty_cache()
