@@ -8,7 +8,7 @@
 import argparse, asyncio, csv, difflib, fnmatch, sqlite3, hashlib, io, json, math, os, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, multiprocessing
-import ebooklib, psutil, requests, importlib, queue, pykakasi
+import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
 
 from typing import Any, Generator, Dict
@@ -27,6 +27,7 @@ from markdown import markdown
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy, SyncManager
+from stanza.pipeline.core import Pipeline, DownloadMethod
 from num2words2 import num2words
 from pathlib import Path
 from PIL import Image
@@ -1362,6 +1363,43 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             title = get_ebook_title(epubBook, all_docs)
             blocks = []
             stanza_nlp = False
+            if session['language'] in year_to_decades_languages:
+                try:
+                    stanza_model = f"stanza-{session['language_iso1']}"
+                    stanza_nlp = loaded_tts.get(stanza_model, False)
+                    if stanza_nlp:
+                        msg = f"NLP model {stanza_model} loaded."
+                        print(msg)
+                    else:
+                        use_gpu = True if (
+                            (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or
+                            (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or
+                            (session['device'] == devices['XPU']['proc'] and devices['XPU']['found']) or
+                            (session['device'] == devices['JETSON']['proc'] and devices['JETSON']['found'])
+                        ) else False
+                        # only use mwt if the language supports it
+                        stanza_lang = session['language_iso1']
+                        stanza_has_mwt = False
+                        try:
+                            stanza_resources = stanza.resources.common.load_resources_json(os.getenv('STANZA_RESOURCES_DIR', stanza.resources.common.DEFAULT_MODEL_DIR))
+                            stanza_has_mwt = 'mwt' in stanza_resources.get(stanza_lang, {})
+                        except Exception:
+                            pass
+                        stanza_processors = 'tokenize,mwt,ner' if stanza_has_mwt else 'tokenize,ner'
+                        stanza_nlp = stanza.Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
+                        if stanza_nlp:
+                            session['stanza_cache'] = stanza_model
+                            loaded_tts[stanza_model] = stanza_nlp
+                            msg = f"NLP model {stanza_model} loaded!"
+                            print(msg)
+                except (ConnectionError, TimeoutError) as e:
+                    error = f'Stanza model download connection error: {e}. Retry later'
+                    print(error)
+                    return []
+                except Exception as e:
+                    error = f'Stanza model initialization error: {e}'
+                    print(error)
+                    return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
             non_text_filter = NonTextFilter(sml_pattern=SML_TAG_PATTERN, lang=session['language'])
             try:
@@ -1401,7 +1439,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -2077,7 +2115,7 @@ def get_sanitized(str:str, replacement:str='_')->str:
     sanitized = sanitized.strip('_')
     return sanitized
     
-def get_date_entities(text:str, stanza_nlp)->list[tuple[int,int,str]]|bool:
+def get_date_entities(text:str, stanza_nlp:Pipeline)->list[tuple[int,int,str]]|bool:
     try:
         doc = stanza_nlp(text)
         date_spans = []
