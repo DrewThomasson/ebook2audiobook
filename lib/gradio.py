@@ -216,7 +216,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 visible=False
                             )      
                     with gr.Tab(legends['gr_tab_bark_params'], elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=False) as gr_tab_bark_params:
-                        gr.Markdown(
+                        gr_markdown_tab_bark_params = gr.Markdown(
                             elem_id='gr_markdown_tab_bark_params',
                             value=f"### {legends['gr_markdown_tab_bark_params_title']}\n{legends['gr_markdown_tab_bark_params_desc']}"
                         )
@@ -666,25 +666,25 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['translate_iso1'] = None
                         translate_visible = translate_enabled_state and bool(translate_options)
                         return (
-                            gr.update(visible=visible_xtts),
-                            gr.update(visible=visible_bark),
+                            gr.update(visible=visible_xtts, label=legends['gr_tab_xtts_params']),
+                            gr.update(visible=visible_bark, label=legends['gr_tab_bark_params']),
                             gr.update(visible=visible_ebook_src, value=ebook_data, file_count=ebook_file_count),
-                            gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
-                            gr.update(value=session['ebook_mode']),
-                            gr.update(value=bool(session['blocks_preview'])),
-                            gr.update(value=bool(session.get('interlude_enabled', False))),
+                            gr.update(visible=visible_ebook_textarea, value=ebook_textarea, label=legends['gr_ebook_textarea']),
+                            gr.update(value=session['ebook_mode'], choices=[(legends['gr_ebook_mode_file'],ebook_modes['SINGLE']), (legends['gr_ebook_mode_directory'],ebook_modes['DIRECTORY']), (legends['gr_ebook_mode_text'],ebook_modes['TEXT'])]),
+                            gr.update(value=bool(session['blocks_preview']), label=legends['gr_blocks_preview']),
+                            gr.update(value=bool(session.get('interlude_enabled', False)), label=legends['gr_interlude_enabled']),
                             gr.update(value=session['device']),
                             gr.update(value=session['language']),
-                            gr.update(value=translate_enabled_state),
+                            gr.update(value=translate_enabled_state, label=legends['gr_translate_enabled']),
                             gr.update(visible=translate_visible, choices=translate_options, value=translate),
                             _update_gr_voice_list(session_id),
                             _update_gr_tts_engine_list(session_id),
                             gr.update(value=_show_rating(session['tts_engine'])),
                             _update_gr_custom_model_list(session_id),
                             _update_gr_fine_tuned_list(session_id),
-                            gr.update(value=session['output_format']),
-                            gr.update(value=session['output_channel']),
-                            gr.update(value=bool(session['output_split'])),
+                            gr.update(value=session['output_format'], label=legends['gr_output_format_list']),
+                            gr.update(value=session['output_channel'], label=legends['gr_output_channel_list'], choices=[(legends['gr_output_channel_mono'], 'mono'), (legends['gr_output_channel_stereo'], 'stereo')]),
+                            gr.update(value=bool(session['output_split']), label=legends['gr_output_split']),
                             gr.update(value=session['output_split_hours']),
                             gr.update(visible=visible_row_split_hours),
                             _update_gr_audiobook_list(session_id),
@@ -696,11 +696,36 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(visible=visible_row_voice_player),
                             gr.update(label=legends['gr_custom_model_file_engine'].format(engine=session['tts_engine'].upper(), files=', '.join(models[default_fine_tuned]['files']))),
                             gr.update(visible=visible_custom_model_del_btn),
-                            gr.update(value=session.get('abs_url', '')),
-                            gr.update(value=session.get('abs_api_token', '')),
+                            gr.update(value=session.get('abs_url', ''), label=legends['gr_abs_url']),
+                            gr.update(value=session.get('abs_api_token', ''), label=legends['gr_abs_api_token']),
                             _search_abs_libraries(session_id, session.get('abs_url', ''), session.get('abs_api_token', '')),
                             gr.update(interactive=abs_upload_enabled),
-                            gr.update(value=''),
+                            gr.update(value='', label=legends['gr_abs_audiobook']),
+                            gr.update(label=legends['gr_tab_main']),
+                            gr.update(label=legends['gr_tab_abs_params']),
+                            gr.update(value=legends['gr_import_markdown']),
+                            gr.update(value=legends['gr_language_markdown']),
+                            gr.update(value=legends['gr_voice_markdown']),
+                            gr.update(label=legends['gr_voice_file']),
+                            gr.update(value=legends['gr_device_markdown']),
+                            gr.update(value=legends['gr_models_markdown']),
+                            gr.update(value=legends['gr_output_markdown']),
+                            gr.update(value=legends['gr_output_split_hours_markdown']),
+                            gr.update(value=legends['gr_session_markdown']),
+                            gr.update(value=legends['gr_progress_markdown']),
+                            gr.update(value=legends['gr_audiobook_markdown']),
+                            gr.update(label=legends['gr_xtts_temperature'], info=legends['gr_xtts_temperature_info']),
+                            gr.update(label=legends['gr_xtts_length_penalty'], info=legends['gr_xtts_length_penalty_info']),
+                            gr.update(label=legends['gr_xtts_num_beams'], info=legends['gr_xtts_num_beams_info']),
+                            gr.update(label=legends['gr_xtts_repetition_penalty'], info=legends['gr_xtts_repetition_penalty_info']),
+                            gr.update(label=legends['gr_xtts_top_k'], info=legends['gr_xtts_top_k_info']),
+                            gr.update(label=legends['gr_xtts_top_p'], info=legends['gr_xtts_top_p_info']),
+                            gr.update(label=legends['gr_xtts_speed'], info=legends['gr_xtts_speed_info']),
+                            gr.update(label=legends['gr_xtts_enable_text_splitting'], info=legends['gr_xtts_enable_text_splitting_info']),
+                            gr.update(value=f"### {legends['gr_markdown_tab_bark_params_title']}\n{legends['gr_markdown_tab_bark_params_desc']}"),
+                            gr.update(label=legends['gr_bark_text_temp'], info=legends['gr_bark_text_temp_info']),
+                            gr.update(label=legends['gr_bark_waveform_temp'], info=legends['gr_bark_waveform_temp_info']),
+                            gr.update(label=legends['gr_abs_status']),
                         )
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
@@ -2071,7 +2096,7 @@ def build_interface(args:dict)->gr.Blocks:
                         selected_voice = session['voice']
                         if session.get('ebook_mode') == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
                             selected_voice = (session.get('voice_map') or {}).get(session['ebook_selected'], session['voice'])
-                        return gr.update(choices=voice_options, value=selected_voice)
+                        return gr.update(choices=voice_options, value=selected_voice, label=legends['gr_voice_list'])
                 except Exception as e:
                     error = f'_update_gr_voice_list(): {e}!'
                     exception_alert(session_id, error)
@@ -2160,7 +2185,7 @@ def build_interface(args:dict)->gr.Blocks:
                         else:
                             fine_tuned = default_fine_tuned
                         session['fine_tuned'] = fine_tuned
-                        return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
+                        return gr.update(choices=fine_tuned_options, value=session['fine_tuned'], label=legends['gr_fine_tuned_list'])
                 except Exception as e:
                     error = f'_update_gr_fine_tuned_list(): {e}!'
                     exception_alert(session_id, error)              
@@ -2931,6 +2956,9 @@ def build_interface(args:dict)->gr.Blocks:
                         active_sessions.add(req.session_hash)
                         session[req.session_hash] = req.session_hash
                         session['cancellation_requested'] = False
+                        accept_language = req.headers.get('accept-language', '') if req is not None else ''
+                        session['ui_language'] = next((legends_iso1[tag.split(';')[0].strip().split('-')[0].lower()] for tag in accept_language.split(',') if tag.split(';')[0].strip().split('-')[0].lower() in legends_iso1), system_language)
+                        ui_language.set(session['ui_language'])
                     if isinstance(session.get('ebook'), str):
                         if not os.path.exists(session['ebook']):
                             session['ebook'] = session['ebook_src'] = None
@@ -3157,7 +3185,12 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_row_voice_player, gr_custom_model_file, gr_custom_model_del_btn,
-                gr_abs_url, gr_abs_api_token, gr_abs_library, gr_abs_upload_btn, gr_abs_audiobook
+                gr_abs_url, gr_abs_api_token, gr_abs_library, gr_abs_upload_btn, gr_abs_audiobook,
+                gr_tab_main, gr_tab_abs_params, gr_import_markdown, gr_language_markdown, gr_voice_markdown, gr_voice_file,
+                gr_device_markdown, gr_models_markdown, gr_output_markdown, gr_output_split_hours_markdown, gr_session_markdown,
+                gr_progress_markdown, gr_audiobook_markdown, gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams,
+                gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
+                gr_markdown_tab_bark_params, gr_bark_text_temp, gr_bark_waveform_temp, gr_abs_status
             ]
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_abs_params, gr_convert_btn,

@@ -45,13 +45,14 @@ from lib.classes.bug_reporter import bug_reporter
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.non_text_filter import NonTextFilter
+#from lib.classes.redirect_console import RedirectConsole
 from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
 from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp
 
 from lib import *
-from lib.lang import legends
+from lib.lang import legends, legends_iso1, ui_language, system_language
 
 #import logging
 #logging.basicConfig(
@@ -181,6 +182,7 @@ class SessionContext:
             "system": None,
             "client": None,
             "language": default_language_code,
+            "ui_language": None,
             "language_iso1": None,
             "translate_enabled": False,
             "translate": None,
@@ -272,6 +274,7 @@ class SessionContext:
 
     def get_session(self, session_id:str)->Any:
         if session_id in self.sessions:
+            ui_language.set(self.sessions[session_id].get('ui_language') or system_language)
             return self.sessions[session_id]
         return {}
 
