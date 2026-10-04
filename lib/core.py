@@ -52,8 +52,7 @@ from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_aud
 from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp
 
 from lib import *
-from lib.lang import legends_all
-legends = {**legends_all['eng'], **legends_all.get(default_language_code, {})}
+from lib.lang import legends
 
 #import logging
 #logging.basicConfig(

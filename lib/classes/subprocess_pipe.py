@@ -1,10 +1,11 @@
 import os, re, queue, threading, subprocess, multiprocessing, sys, gradio as gr
 
 from collections.abc import Callable
+from lib.lang import legends
 
 class SubprocessPipe:
 
-    def __init__(self, cmd:list[str], is_gui_process:bool, total_duration:float, msg:str='Processing', on_progress:Callable[[float], None]|None=None)->None:
+    def __init__(self, cmd:list[str], is_gui_process:bool, total_duration:float, msg:str=legends['msg_processing'], on_progress:Callable[[float], None]|None=None)->None:
         self.cmd = cmd
         self.is_gui_process = is_gui_process
         self.total_duration = total_duration
@@ -26,13 +27,13 @@ class SubprocessPipe:
         sys.stdout.flush()
 
     def _on_complete(self)->None:
-        msg = f"\n{self.msg} completed!"
+        msg = '\n' + legends['msg_step_completed'].format(step=self.msg)
         print(msg)
         if self.progress_bar:
             self.progress_bar(1.0, desc=msg)
 
     def _on_error(self, err:Exception)->None:
-        error = f"{self.msg} failed! {err}"
+        error = legends['error_step_failed'].format(step=self.msg, e=err)
         print(error)
         if self.progress_bar:
             self.progress_bar(0.0, desc=error)

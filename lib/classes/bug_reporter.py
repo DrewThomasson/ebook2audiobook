@@ -96,7 +96,8 @@ class BugReporter:
             atexit.register(self.on_exit)
         except Exception:
             pass
-        msg = 'Crash reports: ON (anonymized, sent to the maintainer). Disable with DO_NOT_TRACK=1 or bug_report_enabled = False in lib/conf.py'
+        from lib.lang import legends
+        msg = legends['msg_crash_reports_on']
         print(msg)
         return True
 
@@ -222,7 +223,8 @@ class BugReporter:
             if path is not None and 200 <= status < 500 and status not in [408, 429]:
                 os.remove(path)
             if 200 <= status < 300:
-                msg = f"Crash report sent: {payload['fingerprint']} {payload.get('location') or ''}"
+                from lib.lang import legends
+                msg = legends['msg_crash_report_sent'].format(fingerprint=payload['fingerprint'], location=payload.get('location') or '')
                 print(msg)
         except Exception:
             pass

@@ -4,6 +4,7 @@ from pathlib import Path
 from lib.conf import *
 from lib.conf_lang import default_language_code, language_mapping, install_info
 from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
+from lib.lang import legends
 
 warnings.filterwarnings('ignore', category=SyntaxWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='jieba._compat')
@@ -24,18 +25,16 @@ def check_virtual_env(script_mode:str)->bool:
         conda_meta = os.path.join(sys.prefix, 'conda-meta')
         if os.path.isdir(conda_meta):
             error=f'''***********
-Wrong launch: {search_python_env} was created by conda/Miniforge3, not uv!
-Please remove the '{search_python_env}' directory and re-run the installer:
-"./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+{legends['error_venv_conda'].format(env=search_python_env)}
+{legends['msg_venv_reinstall'].format(env=search_python_env)}
 {install_info}
 ***********'''
             print(error)
             return False
         if not os.path.isfile(pyvenv_cfg):
             error=f'''***********
-Wrong launch: {search_python_env} does not appear to be a valid virtual environment.
-Please remove the '{search_python_env}' directory and re-run the installer:
-"./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+{legends['error_venv_invalid'].format(env=search_python_env)}
+{legends['msg_venv_reinstall'].format(env=search_python_env)}
 {install_info}
 ***********'''
             print(error)
@@ -51,9 +50,8 @@ Please remove the '{search_python_env}' directory and re-run the installer:
             pass
         if not is_uv_venv:
             error=f'''***********
-Wrong launch: {search_python_env} was not created by uv!
-Please remove the '{search_python_env}' directory and re-run the installer:
-"./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+{legends['error_venv_not_uv'].format(env=search_python_env)}
+{legends['msg_venv_reinstall'].format(env=search_python_env)}
 {install_info}
 ***********'''
             print(error)
@@ -68,10 +66,7 @@ Please remove the '{search_python_env}' directory and re-run the installer:
             uv_bin = next((c for c in uv_candidates if os.path.isfile(c)), None)
         if not uv_bin:
             error=f'''***********
-Wrong launch: uv binary not found.
-The application requires uv to manage Python packages.
-Please install uv: https://docs.astral.sh/uv/getting-started/installation/
-Then re-run the installer.
+{legends['error_uv_missing'].format(url='https://docs.astral.sh/uv/getting-started/installation/')}
 {install_info}
 ***********'''
             print(error)
@@ -82,7 +77,7 @@ Then re-run the installer.
     if current_version >= min_python_version and current_version <= max_python_version:
         return True
     error=f'''***********
-Wrong launch! ebook2audiobook must run in its own virtual environment!
+{legends['error_wrong_venv']}
 {install_info}
 ***********'''
     print(error)
@@ -94,9 +89,7 @@ def check_python_version(script_mode:str)->bool:
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
         error = f'''***********
-Wrong launch: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
-In order to install and/or use ebook2audiobook correctly you must delete completly the folder python_env
-and run "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
+{legends['error_python_version'].format(version=f'{current_version[0]}.{current_version[1]}')}
 {install_info}
 ***********'''
         print(error)
@@ -297,7 +290,7 @@ Default to config.json model.""")
 
     for arg in sys.argv:
          if arg.startswith('--') and arg not in cli_options:
-             error = f'Error: Unrecognized option "{arg}"'
+             error = legends['error_unrecognized_option'].format(arg=arg)
              print(error)
              sys.exit(1)
 
@@ -315,18 +308,18 @@ Default to config.json model.""")
         args['ebook_list'] = None
 
         if args['script_mode'] == FULL_DOCKER and not is_running_in_container():
-            error = f'{FULL_DOCKER} is only an internal option for the docker itself. Use {BUILD_DOCKER} if you need to build a docker image.'
+            error = legends['error_full_docker_internal'].format(full=FULL_DOCKER, build=BUILD_DOCKER)
             print(error)
             sys.exit(1)
         elif (not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
             sys.exit(1)
         elif args.get('headless', False) and args.get('share', False):
-            error = '--share option is only allowed in non-headless mode.'
+            error = legends['error_share_headless']
             print(error)
             sys.exit(1)
         elif not args.get('headless', False) and is_port_in_use(interface_port):
             # Check if the port is already in use to prevent multiple launches
-            error = f'Error: Port {interface_port} is already in use. The web interface may already be running.'
+            error = legends['error_port_in_use'].format(port=interface_port)
             print(error)
             sys.exit(1)
 
@@ -337,7 +330,7 @@ Default to config.json model.""")
         device_info_str = manager.check_device_info(args['script_mode'])
         if args['script_mode'] == NATIVE:
             if manager.install_device_packages(device_info_str) == 1:
-                error = f'Error: Could not installed device packages!'
+                error = legends['error_device_packages']
                 print(error)
                 sys.exit(1)
             import importlib
@@ -346,11 +339,11 @@ Default to config.json model.""")
             if result == 1:
                 sys.exit(1)
         if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
-            error = 'WARNING: shared DLLs not found. aborting…'
+            error = legends['error_shared_dlls']
             print(error)
             sys.exit(1)
         if manager.check_voices() == 1:
-            error = f'Error: Could not download voices!'
+            error = legends['error_download_voices']
             print(error)
             sys.exit(1)
         import lib.core as c
@@ -367,13 +360,13 @@ Default to config.json model.""")
                 session_dir = os.path.join(tmp_dir, f"proc-{args['id']}")
                 session = c.context.get_session(args['id'])
                 if not os.path.exists(session_dir) and not session or (session and not session.get('id', False)):
-                    error = 'Session expired or does not exist!'
+                    error = legends['error_session_expired_or_missing']
                     print(error)
                     sys.exit(1)
                 session = c.context.set_session(args['id'])
 
             if not c.context_tracker.start_session(args['id']):
-                error = 'Session could not start!'
+                error = legends['error_session_start']
                 print(error)
                 sys.exit(1)
 
@@ -409,7 +402,7 @@ Default to config.json model.""")
                 except Exception:
                     pass
                 if not tgt or tgt not in language_mapping.keys():
-                    error = f"Error: --translate target '{_user_translate_raw}' is not a supported language."
+                    error = legends['error_translate_target_cli'].format(lang=_user_translate_raw)
                     print(error)
                     sys.exit(1)
                 if tgt == args.get('language'):
@@ -420,7 +413,7 @@ Default to config.json model.""")
                     except Exception:
                         tgt_iso1 = None
                     if not tgt_iso1:
-                        error = f"Error: --translate target '{tgt}' has no iso639-1 mapping."
+                        error = legends['error_translate_target_cli_iso1'].format(lang=tgt)
                         print(error)
                         sys.exit(1)
                     args['translate_enabled'] = True
@@ -433,7 +426,7 @@ Default to config.json model.""")
                 for k in ('ebook', 'ebooks_dir', 'text')
             )
             if specified_input > 1:
-                error = 'Error: You can only specify one of --ebook, --ebooks_dir, or --text in headless mode.'
+                error = legends['error_one_input_only']
             else:
                 if args.get('voice'):
                     if os.path.exists(args['voice']):
@@ -442,32 +435,32 @@ Default to config.json model.""")
                     if os.path.exists(args['custom_model']):
                         args['custom_model'] = os.path.abspath(args['custom_model'])
                 if args.get('output_dir', None) is not None and not os.path.exists(args['output_dir']):
-                    error = 'Error: --output_dir path does not exist.'              
+                    error = legends['error_output_dir_missing']              
                 elif args.get('ebooks_dir', None) is not None:
                     args['ebook_mode'] = 'directory'
                     args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
                     if not os.path.exists(args['ebooks_dir']):
-                        error = f"Error: The provided --ebooks_dir {args['ebooks_dir']} does not exist."                 
+                        error = legends['error_ebooks_dir_missing'].format(dir=args['ebooks_dir'])                 
                     else:
                         # --- voice_map: load the optional per-file override map ---
                         voice_map:dict = {}
                         if args.get('voice_map'):
                             voice_map_path = os.path.abspath(args['voice_map'])
                             if not os.path.exists(voice_map_path):
-                                error = f'Error: The provided --voice_map {voice_map_path} does not exist.'
+                                error = legends['error_voice_map_missing'].format(path=voice_map_path)
                             else:
                                 try:
                                     with open(voice_map_path, 'r', encoding='utf-8') as f:
                                         raw = json.load(f)
                                     if not isinstance(raw, dict):
-                                        error = 'Error: --voice_map JSON must be an object {ebook_path: voice_path}.'
+                                        error = legends['error_voice_map_format'].format()
                                     else:
                                         voice_map = {}
                                         for k, v in raw.items():
                                             normalized_key = os.path.abspath(k) if os.path.isabs(k) else k
                                             voice_map[normalized_key] = os.path.abspath(v) if v else None
                                 except Exception as e:
-                                    error = f'Error: Failed to parse --voice_map: {e}'
+                                    error = legends['error_voice_map_parse'].format(e=e)
                         if not error:
                             # Persist the map onto the session so resolve_voice() can read it.
                             c.context.sessions[args['id']]['voice_map'] = voice_map
@@ -485,7 +478,7 @@ Default to config.json model.""")
                                     continue
                                 args['ebook_list'].append(ebook_dir_path)
                             if not args['ebook_list']:
-                                error = 'Error: No supported ebook files found in --ebooks_dir.'
+                                error = legends['error_no_ebooks_in_dir']
                             else:
                                 ebook_list = copy.deepcopy(args['ebook_list'])
                                 for file in ebook_list:
@@ -508,7 +501,7 @@ Default to config.json model.""")
                     args['ebook_mode'] = 'single'
                     args['ebook_src'] = os.path.abspath(args['ebook'])
                     if not os.path.exists(args['ebook_src']):
-                        error = f"Error: The provided --ebook {args['ebook_src']} does not exist."
+                        error = legends['error_ebook_missing'].format(src=args['ebook_src'])
                     else:
                         progress_status, passed = c.convert_ebook(args)
                         c.context.sessions[args['id']]['status'] = c.status_tags['READY']
@@ -519,9 +512,9 @@ Default to config.json model.""")
                     args['ebook_mode'] = 'text'
                     args['ebook_textarea'] = args['text'].strip()
                     if not args['ebook_textarea']:
-                        error = f'Error: The --text is empty.'
+                        error = legends['error_text_empty']
                     elif len(args['ebook_textarea']) > max_ebook_textarea_length:
-                        error = f'Error: --text input exceeds {max_ebook_textarea_length} characters.'
+                        error = legends['error_text_too_long'].format(max=max_ebook_textarea_length)
                     else:
                         progress_status, passed = c.convert_ebook(args)
                         c.context.sessions[args['id']]['status'] = c.status_tags['READY']
@@ -529,7 +522,7 @@ Default to config.json model.""")
                         if not passed:
                             error = progress_status
                 else:
-                    error = 'Error: In headless mode, you must specify either an ebook file using --ebook, ebook directory using --ebooks_dir or a raw text using --text.'
+                    error = legends['error_headless_input']
         else:
             args['is_gui_process'] = True
             passed_arguments = sys.argv[1:]
@@ -554,19 +547,19 @@ Default to config.json model.""")
                         }
                         app.queue(default_concurrency_limit=interface_concurrency_limit).launch(**gr_blocks_kwargs)
                 except OSError as e:
-                    error = f'Connection error: {e}'
+                    error = legends['error_connection'].format(e=e)
                     c.exception_alert(None, error)
                 except socket.error as e:
-                    error = f'Socket error: {e}'
+                    error = legends['error_socket'].format(e=e)
                     c.exception_alert(None, error)
                 except KeyboardInterrupt:
-                    error = 'Server interrupted by user. Shutting down...'
+                    error = legends['msg_server_interrupted']
                     c.exception_alert(None, error)
                 except Exception as e:
-                    error = f'An unexpected error occurred: {e}'
+                    error = legends['error_unexpected'].format(e=e)
                     c.exception_alert(None, error)
             else:
-                error = 'Error: In GUI mode, no option or only --share can be passed'
+                error = legends['error_gui_options']
         if error:
             print(error)
             sys.exit(1)

@@ -17,6 +17,7 @@ from scipy.signal import resample_poly
 from tqdm import tqdm
 from huggingface_hub import snapshot_download
 from transformers import pipeline, AutoProcessor, MusicgenForConditionalGeneration, StoppingCriteriaList, LogitsProcessorList
+from lib.lang import legends
 from lib.conf_interlude import interlude_classifier_repo, interlude_genre_min_score, interlude_templates, interlude_moods, interlude_genre_styles, interlude_classifier_languages, interlude_neutral_style, interlude_neutral_moods
 
 class InterludeGenerator:
@@ -191,7 +192,7 @@ class InterludeGenerator:
                 if report is not None:
                     report(1.0, desc=state['desc'])
             if self.model is None:
-                msg = f"Loading {model_name} on {self.torch_device} ({str(dtype).replace('torch.', '')})..."
+                msg = legends['msg_loading_model_on'].format(model=model_name, device=self.torch_device, dtype=str(dtype).replace('torch.', ''))
                 print(msg)
                 state['desc'] = msg
                 if report is not None:
@@ -253,11 +254,11 @@ class InterludeGenerator:
                 self.genre_scores = {g: round(v / weight_sum, 4) for g, v in sorted(totals.items(), key=lambda i: -i[1])}
                 ranking = list(self.genre_scores.items())
                 self.genre = ranking[0][0]
-                msg = f'Interludes: book genre detected as {self.genre} ({ranking[0][1]:.0%}, then {ranking[1][0]} {ranking[1][1]:.0%}) from {len(samples)} excerpts'
+                msg = legends['msg_genre_detected'].format(genre=self.genre, score=f'{ranking[0][1]:.0%}', genre2=ranking[1][0], score2=f'{ranking[1][1]:.0%}', count=len(samples))
                 if ranking[0][1] < interlude_genre_min_score:
                     # barely above a random guess: neutral instruments rather than a wrong genre's
                     self.genre = 'neutral'
-                    msg = f'Interludes: book genre unclear (best {ranking[0][0]} {ranking[0][1]:.0%}, then {ranking[1][0]} {ranking[1][1]:.0%}) from {len(samples)} excerpts, neutral instruments are used'
+                    msg = legends['msg_genre_unclear'].format(genre=ranking[0][0], score=f'{ranking[0][1]:.0%}', genre2=ranking[1][0], score2=f'{ranking[1][1]:.0%}', count=len(samples))
                 print(msg)
                 if self.progress_bar is not None:
                     self.progress_bar(1.0, desc=msg)
@@ -371,7 +372,7 @@ class InterludeGenerator:
             if guarded[0] and not cancelled[0]:
                 print(f'{desc}: {guarded[0]} step(s) with non-finite logits were neutralized')
             if cancelled[0]:
-                msg = f'{desc} cancelled, nothing saved'
+                msg = legends['msg_interlude_cancelled'].format(desc=desc)
                 print(msg)
                 return None
             sample_rate = self.model.config.audio_encoder.sampling_rate
@@ -399,11 +400,11 @@ class InterludeGenerator:
             if bar is not None:
                 bar.close()
                 bar = None
-            msg = f'Saved interlude to {output_path}'
+            msg = legends['msg_interlude_saved'].format(path=output_path)
             print(msg)
             return output_path
         except Exception as e:
-            error = f'Interlude error: {e}'
+            error = legends['error_interlude'].format(e=e)
             print(error)
             return None
         finally:
