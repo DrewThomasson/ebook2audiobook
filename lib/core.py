@@ -52,7 +52,7 @@ from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_aud
 from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp
 
 from lib import *
-from lib.lang import legends, legends_iso1, ui_language, system_language
+from lib.lang import legends, legends_langs, legends_iso1, ui_language, system_language
 
 #import logging
 #logging.basicConfig(
@@ -183,6 +183,7 @@ class SessionContext:
             "client": None,
             "language": default_language_code,
             "ui_language": None,
+            "ui_language_choice": None,
             "language_iso1": None,
             "translate_enabled": False,
             "translate": None,
