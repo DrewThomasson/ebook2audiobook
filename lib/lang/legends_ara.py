@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': 'تعذّر إنشاء {file}',
     'error_tts_engine_load_failed': 'فشل تحميل محرك TTS {engine}!',
     'msg_computing_latents': 'جارٍ حساب الخصائص الكامنة للمتحدث…',
+    'gr_ui_language': 'لغة الواجهة',
+    'gr_ui_language_auto': 'تلقائي (المتصفح)',
 }

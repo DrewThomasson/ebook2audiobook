@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': '{file}을(를) 만들 수 없습니다',
     'error_tts_engine_load_failed': 'TTS 엔진 {engine}을(를) 불러오지 못했습니다!',
     'msg_computing_latents': '화자 잠재 표현을 계산하는 중…',
+    'gr_ui_language': '인터페이스 언어',
+    'gr_ui_language_auto': '자동(브라우저)',
 }

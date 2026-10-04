@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': '{file}ను సృష్టించలేము',
     'error_tts_engine_load_failed': 'TTS ఇంజిన్ {engine} లోడ్ కాలేదు!',
     'msg_computing_latents': 'వక్త లేటెంట్‌లు గణించబడుతున్నాయి…',
+    'gr_ui_language': 'ఇంటర్‌ఫేస్ భాష',
+    'gr_ui_language_auto': 'ఆటోమేటిక్ (బ్రౌజర్)',
 }

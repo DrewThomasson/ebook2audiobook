@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': '{file} oluşturulamıyor',
     'error_tts_engine_load_failed': 'TTS motoru {engine} yüklenemedi!',
     'msg_computing_latents': 'Konuşmacı latentleri hesaplanıyor…',
+    'gr_ui_language': 'Arayüz dili',
+    'gr_ui_language_auto': 'Otomatik (tarayıcı)',
 }

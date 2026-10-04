@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': 'ساخت {file} ممکن نیست',
     'error_tts_engine_load_failed': 'بارگیری موتور TTS {engine} ناموفق بود!',
     'msg_computing_latents': 'در حال محاسبه ویژگی‌های نهفته گوینده…',
+    'gr_ui_language': 'زبان رابط کاربری',
+    'gr_ui_language_auto': 'خودکار (مرورگر)',
 }

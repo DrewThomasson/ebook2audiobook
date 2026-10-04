@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': 'A kò lè ṣẹ̀dá {file}',
     'error_tts_engine_load_failed': 'A kò lè ṣí ẹ̀rọ TTS {engine}!',
     'msg_computing_latents': 'À ń ṣírò àwọn àmì ìpamọ́ olùsọ̀rọ̀…',
+    'gr_ui_language': 'Èdè ojú-iṣẹ́',
+    'gr_ui_language_auto': 'Aládàáṣe (aṣàwákiri)',
 }

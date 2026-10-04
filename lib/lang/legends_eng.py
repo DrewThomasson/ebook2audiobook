@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': 'Cannot create {file}',
     'error_tts_engine_load_failed': 'TTS engine {engine} failed to load!',
     'msg_computing_latents': 'Computing speaker latents…',
+    'gr_ui_language': 'Interface language',
+    'gr_ui_language_auto': 'Auto (browser)',
 }

@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': '无法创建 {file}',
     'error_tts_engine_load_failed': 'TTS 引擎 {engine} 加载失败！',
     'msg_computing_latents': '正在计算说话人潜在特征…',
+    'gr_ui_language': '界面语言',
+    'gr_ui_language_auto': '自动（浏览器）',
 }

@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': 'Не удаётся создать {file}',
     'error_tts_engine_load_failed': 'Не удалось загрузить движок TTS {engine}!',
     'msg_computing_latents': 'Вычисление латентных признаков диктора…',
+    'gr_ui_language': 'Язык интерфейса',
+    'gr_ui_language_auto': 'Авто (браузер)',
 }

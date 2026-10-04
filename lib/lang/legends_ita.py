@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': 'Impossibile creare {file}',
     'error_tts_engine_load_failed': 'Impossibile caricare il motore TTS {engine}!',
     'msg_computing_latents': 'Calcolo dei latenti del parlante…',
+    'gr_ui_language': 'Lingua dell\'interfaccia',
+    'gr_ui_language_auto': 'Auto (browser)',
 }

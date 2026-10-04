@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': '{file} ஐ உருவாக்க முடியவில்லை',
     'error_tts_engine_load_failed': 'TTS இயந்திரம் {engine} ஏற்றப்படவில்லை!',
     'msg_computing_latents': 'பேச்சாளர் மறைநிலைப் பண்புகள் கணக்கிடப்படுகின்றன…',
+    'gr_ui_language': 'இடைமுக மொழி',
+    'gr_ui_language_auto': 'தானியங்கு (உலாவி)',
 }

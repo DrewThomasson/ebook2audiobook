@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': '{file} を作成できません',
     'error_tts_engine_load_failed': 'TTS エンジン {engine} を読み込めませんでした！',
     'msg_computing_latents': '話者の潜在表現を計算中…',
+    'gr_ui_language': '表示言語',
+    'gr_ui_language_auto': '自動（ブラウザー）',
 }

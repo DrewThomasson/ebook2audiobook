@@ -22,5 +22,5 @@ ui_language = ContextVar('ui_language', default=system_language)
 class Legends(dict):
     def __getitem__(self, key:str)->str:
         table = legends_all.get(ui_language.get(), legends_all['eng'])
-        return table[key] if key in table else legends_all['eng'][key]
+        return table[key] if key in table else legends_all['eng'].get(key, key)
 legends = Legends(legends_all['eng'])

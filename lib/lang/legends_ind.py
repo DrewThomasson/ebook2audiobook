@@ -474,4 +474,6 @@ legends = {
     'error_cannot_create': 'Tidak dapat membuat {file}',
     'error_tts_engine_load_failed': 'Mesin TTS {engine} gagal dimuat!',
     'msg_computing_latents': 'Menghitung laten pembicara…',
+    'gr_ui_language': 'Bahasa antarmuka',
+    'gr_ui_language_auto': 'Otomatis (peramban)',
 }
