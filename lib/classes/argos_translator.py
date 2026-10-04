@@ -3,6 +3,7 @@ import argostranslate.package, argostranslate.translate
 
 from iso639 import Lang
 from lib.conf_lang import language_mapping
+from lib.lang import legends
 
 # NOTE: argostranslate API requires iso639-1 (2 letters) codes.
 # All public methods here accept/return iso639-3 except where explicitly named *_iso1.
@@ -159,10 +160,10 @@ class ArgosTranslator:
                 )
                 if direct_pkg is not None:
                     if not self.is_pair_installed(source_iso1, target_iso1):
-                        print(f'Downloading argos package {source_iso1} -> {target_iso1}')
+                        print(legends['msg_argos_downloading'].format(src=source_iso1, dst=target_iso1))
                         download_path = direct_pkg.download()
                         argostranslate.package.install_from_path(download_path)
-                        msg = f'Installed argos package {source_iso1} -> {target_iso1}'
+                        msg = legends['msg_argos_installed'].format(src=source_iso1, dst=target_iso1)
                         print(msg)
                     return None, True
                 # English-pivot fallback
@@ -184,29 +185,26 @@ class ArgosTranslator:
                         None,
                     )
                     if src_to_en is not None and en_to_tgt is not None:
-                        print(f'No direct {source_iso1}->{target_iso1}; using English pivot.')
+                        print(legends['msg_argos_pivot_none'].format(src=source_iso1, dst=target_iso1))
                         if not self.is_pair_installed(source_iso1, 'en'):
-                            msg = f'Downloading argos package {source_iso1} -> en'
+                            msg = legends['msg_argos_downloading'].format(src=source_iso1, dst='en')
                             print(msg)
                             download_path = src_to_en.download()
                             argostranslate.package.install_from_path(download_path)
-                            msg = f'Installed argos package {source_iso1} -> en'
+                            msg = legends['msg_argos_installed'].format(src=source_iso1, dst='en')
                             print(msg)
                         if not self.is_pair_installed('en', target_iso1):
-                            msg = f'Downloading argos package en -> {target_iso1}'
+                            msg = legends['msg_argos_downloading'].format(src='en', dst=target_iso1)
                             print(msg)
                             download_path = en_to_tgt.download()
                             argostranslate.package.install_from_path(download_path)
-                            msg = f'Installed argos package en -> {target_iso1}'
+                            msg = legends['msg_argos_installed'].format(src='en', dst=target_iso1)
                             print(msg)
-                        msg = f'English pivot ready: {source_iso1} -> en -> {target_iso1}'
+                        msg = legends['msg_argos_pivot_ready'].format(src=source_iso1, dst=target_iso1)
                         print(msg)
                         return None, True
 
-                error = (
-                    f'No argos package available for {source_iso1} -> {target_iso1} '
-                    f'(direct or English-pivoted)'
-                )
+                error = legends['error_argos_no_package'].format(src=source_iso1, dst=target_iso1)
                 return error, False
         except Exception as e:
             error = f'ArgosTranslator.download_and_install() error: {e}'
@@ -215,13 +213,13 @@ class ArgosTranslator:
     def start(self, source_iso1:str, target_iso1:str)->tuple[str|None, bool]:
         try:
             if self.neural_machine != 'argostranslate':
-                return f'Neural machine {self.neural_machine} is not supported.', False
+                return legends['error_argos_machine_unsupported'].format(machine=self.neural_machine), False
             error, ok = self.download_and_install(source_iso1, target_iso1)
             if not ok:
                 return error, False
             translation = self.build_translation(source_iso1, target_iso1, timeout=60.0)
             if translation is None:
-                error = f'No translation path available: {source_iso1} -> {target_iso1}'
+                error = legends['error_argos_no_path'].format(src=source_iso1, dst=target_iso1)
                 return error, False
             self.translation = translation
             self.source_lang_iso1 = source_iso1

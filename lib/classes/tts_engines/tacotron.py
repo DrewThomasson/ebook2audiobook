@@ -1,5 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.lang import legends
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
@@ -29,20 +30,20 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                     self.language_iso1 = self.session['translate_iso1']
             tts_engine = self.session.get('tts_engine')
             if tts_engine not in default_engine_settings:
-                error = f'Invalid tts_engine {tts_engine}.'
+                error = legends['error_invalid_tts_engine'].format(engine=tts_engine)
                 raise ValueError(error)
             engine_langs = default_engine_settings[tts_engine].get('languages', {})
             if self.language not in engine_langs:
-                error = f'Language {self.language} not supported by engine {tts_engine}.'
+                error = legends['error_language_not_supported_engine'].format(lang=self.language, engine=tts_engine)
                 raise ValueError(error)
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
-                error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
+                error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list(self.models.keys()))
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
             for required_key in ('repo', 'samplerate', 'sub'):
                 if required_key not in model_cfg:
-                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
+                    error = legends['error_fine_tuned_missing_key'].format(model=fine_tuned, key=required_key)
                     raise ValueError(error)
             sub_dict = model_cfg['sub']
             iso_dir = engine_langs[self.language]
@@ -51,7 +52,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 iso_dir = self.language
                 sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
-                error = f'{tts_engine} checkpoint for {self.language} not found.'
+                error = legends['error_checkpoint_not_found'].format(engine=tts_engine, lang=self.language)
                 raise KeyError(error)
             self.params['samplerate'] = model_cfg['samplerate'][sub]
             self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
@@ -68,7 +69,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
             raise ValueError(error)
 
     def load_engine(self)->Any:
-        msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        msg = legends['msg_loading_tts_model'].format(model=self.tts_key)
         print(msg)
         self.cleanup_memory()
         #if self.session['custom_model'] is not None:
@@ -97,7 +98,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 error = 'load_engine(): decoder tuning failed'
                 raise RuntimeError(error) from e
         if engine:
-            msg = f'TTS {self.tts_key} Loaded!'
+            msg = legends['msg_tts_loaded'].format(model=self.tts_key)
             print(msg)
             return engine
         error = 'load_engine(): engine is None'
@@ -126,7 +127,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                 self.audio_segments = []
                 use_zs = self.params['current_voice'] is not None
                 if use_zs and not self.engine_zs:
-                    error = f'Engine {self.tts_zs_key} is None'
+                    error = legends['error_engine_not_loaded'].format(engine=self.tts_zs_key)
                     return False, error
                 if use_zs:
                     proc_dir = os.path.join(self.session['voice_dir'], 'proc')
@@ -166,7 +167,7 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                     voice_builtin_gender = detect_gender(tmp_in_wav)
                                     if voice_builtin_gender != current_voice_gender:
                                         semitones = -4 if current_voice_gender == 'male' else 4
-                                        msg = f'Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}. Adapting builtin voice frequencies from the clone voice…'
+                                        msg = legends['msg_voice_gender_adapt'].format(cloned=current_voice_gender, builtin=voice_builtin_gender)
                                         print(msg)
                                     else:
                                         semitones = 0
@@ -180,11 +181,11 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                                         ]
                                         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                                     except subprocess.CalledProcessError as e:
-                                        error = f'Subprocess error: {e.stderr}'
+                                        error = legends['error_subprocess'].format(e=e.stderr)
                                         DependencyError(error)
                                         return False, error
                                     except FileNotFoundError as e:
-                                        error = f'File not found: {e}'
+                                        error = legends['error_file_not_found_detail'].format(e=e)
                                         DependencyError(error)
                                         return False, error
                                 else:
@@ -243,11 +244,11 @@ class Tacotron2(TTSUtils, TTSRegistry, name='tacotron'):
                         return False, error
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
-                        error = f'Cannot create {sentence_file}'
+                        error = legends['error_cannot_create'].format(file=sentence_file)
                         return False, error
                 return True, None
             else:
-                error = f"TTS engine {self.session['tts_engine']} failed to load!"
+                error = legends['error_tts_engine_load_failed'].format(engine=self.session['tts_engine'])
                 return False, error
         except Exception as e:
             self.cleanup_memory()

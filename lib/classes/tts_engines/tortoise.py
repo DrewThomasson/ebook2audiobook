@@ -1,5 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.lang import legends
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
@@ -29,25 +30,25 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                     self.language_iso1 = self.session['translate_iso1']
             fine_tuned = self.session.get('fine_tuned')
             if tts_engine not in default_engine_settings:
-                error = f'Invalid tts_engine {tts_engine}.'
+                error = legends['error_invalid_tts_engine'].format(engine=tts_engine)
                 raise ValueError(error)
             engine_langs = default_engine_settings[tts_engine].get('languages', {})
             if self.language not in engine_langs:
-                error = f'Language {self.language} not supported by engine {tts_engine}.'
+                error = legends['error_language_not_supported_engine'].format(lang=self.language, engine=tts_engine)
                 raise ValueError(error)
             iso_dir = engine_langs[self.language]
             if fine_tuned not in self.models:
-                error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
+                error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list(self.models.keys()))
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
             for required_key in ('repo', 'samplerate', 'sub', 'voice'):
                 if required_key not in model_cfg:
-                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
+                    error = legends['error_fine_tuned_missing_key'].format(model=fine_tuned, key=required_key)
                     raise ValueError(error)
             sub_dict = model_cfg['sub']
             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
-                error = f'{tts_engine} checkpoint for {self.language} not found.'
+                error = legends['error_checkpoint_not_found'].format(engine=tts_engine, lang=self.language)
                 raise KeyError(error)
             self.params['samplerate'] = model_cfg['samplerate'][sub]
             self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
@@ -67,7 +68,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
             raise ValueError(error)
 
     def load_engine(self)->Any:
-        msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        msg = legends['msg_loading_tts_model'].format(model=self.tts_key)
         print(msg)
         self.cleanup_memory()
         self.tts_key = self.model_path
@@ -93,7 +94,7 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                         module.config._attn_implementation = 'eager'
                 if getattr(autoregressive, 'inference_model', None) is not None:
                     autoregressive.inference_model.kv_cache = False
-            msg = f'TTS {self.tts_key} Loaded!'
+            msg = legends['msg_tts_loaded'].format(model=self.tts_key)
             print(msg)
             return engine
         error = 'load_engine(): engine is None'
@@ -179,11 +180,11 @@ class Tortoise(TTSUtils, TTSRegistry, name='tortoise'):
                         return False, error
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
-                        error = f'Cannot create {sentence_file}'
+                        error = legends['error_cannot_create'].format(file=sentence_file)
                         return False, error
                 return True, None
             else:
-                error = f"TTS engine {self.session['tts_engine']} failed to load!"
+                error = legends['error_tts_engine_load_failed'].format(engine=self.session['tts_engine'])
                 return False, error
         except Exception as e:
             self.cleanup_memory()

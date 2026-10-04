@@ -1,5 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.lang import legends
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
@@ -26,12 +27,12 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                     self.language_iso1 = self.session['translate_iso1']
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
-                error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
+                error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list(self.models.keys()))
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
             for required_key in ('repo', 'samplerate', 'voice'):
                 if required_key not in model_cfg:
-                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
+                    error = legends['error_fine_tuned_missing_key'].format(model=fine_tuned, key=required_key)
                     raise ValueError(error)
             self.params['samplerate'] = model_cfg['samplerate']
             self.model_path = model_cfg['repo']
@@ -142,7 +143,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
     ##################################
 
     def load_engine(self)->Any:
-        msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+        msg = legends['msg_loading_tts_model'].format(model=self.tts_key)
         print(msg)
         self.cleanup_memory()
         engine = loaded_tts.get(self.tts_key)
@@ -159,7 +160,7 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
             except Exception as e:
                 error = f'load_engine(): bark attention patch failed: {e}'
                 raise RuntimeError(error) from e
-            msg = f'TTS {self.tts_key} Loaded!'
+            msg = legends['msg_tts_loaded'].format(model=self.tts_key)
             print(msg)
             return engine
         error = 'load_engine(): engine is None'
@@ -264,11 +265,11 @@ class Bark(TTSUtils, TTSRegistry, name='bark'):
                         return False, error
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
-                        error = f'Cannot create {sentence_file}'
+                        error = legends['error_cannot_create'].format(file=sentence_file)
                         return False, error
                 return True, None
             else:
-                error = f"TTS engine {self.session['tts_engine']} failed to load!"
+                error = legends['error_tts_engine_load_failed'].format(engine=self.session['tts_engine'])
                 return False, error
         except Exception as e:
             self.cleanup_memory()
