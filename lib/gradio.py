@@ -352,7 +352,7 @@ def build_interface(args:dict)->gr.Blocks:
             blocks_texts = [c[3] for c in block_components]
 
             with gr.Row(elem_id='gr_row_ui_language'):
-                gr_ui_language = gr.Dropdown(label=legends['gr_ui_language'], elem_id='gr_ui_language', choices=[(legends['gr_ui_language_auto'], 'auto')] + sorted([(language_mapping[lang]['native_name'] if lang in language_mapping else lang, lang) for lang in legends_langs]), value='auto', type='value', interactive=True, scale=0, min_width=200)
+                gr_ui_language = gr.Dropdown(label=legends['gr_ui_language'], elem_id='gr_ui_language', choices=[(legends['gr_ui_language_auto'], 'auto')] + sorted([(language_mapping[lang]['native_name'] if lang in language_mapping else lang, lang) for lang in legends_langs]), value='auto', type='value', interactive=True, scale=0, min_width=150)
                 gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                     <div style="right:0;margin:auto;padding:10px;text-align:center">
                         <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
@@ -360,8 +360,7 @@ def build_interface(args:dict)->gr.Blocks:
                     </div>
                     ''', scale=1
                 )
-                with gr.Column(elem_id='gr_ui_language_spacer', scale=0, min_width=200):
-                    pass
+                gr_button_balloons = gr.Checkbox(label='buttons help', elem_id='gr_button_balloons', value=False, interactive=True, scale=0, min_width=150)
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
