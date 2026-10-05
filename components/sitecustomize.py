@@ -86,7 +86,7 @@ def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
         def _isin_mps_friendly(elements, test_elements):
             """MPS-safe fallback for torch.isin on PyTorch < 2.4."""
             if elements.device.type == "mps" and not _is_torch_gte_2_4:
-                test_elements = torch.tensor(test_elements)
+                test_elements = torch.as_tensor(test_elements, device=elements.device)
                 if test_elements.ndim == 0:
                     test_elements = test_elements.unsqueeze(0)
                 return (

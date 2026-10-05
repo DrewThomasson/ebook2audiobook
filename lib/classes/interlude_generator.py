@@ -187,7 +187,7 @@ class InterludeGenerator:
                     model=self.classifier_repo,
                     device=-1,
                     dtype=torch.float32,
-                    trust_remote_code=True
+                    trust_remote_code=False
                 )
                 if report is not None:
                     report(1.0, desc=state['desc'])
