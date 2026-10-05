@@ -352,15 +352,15 @@ def build_interface(args:dict)->gr.Blocks:
             blocks_texts = [c[3] for c in block_components]
 
             with gr.Row(elem_id='gr_row_ui_language'):
-                gr_ui_language = gr.Dropdown(label=legends['gr_ui_language'], show_label=False, elem_id='gr_ui_language', choices=sorted([(language_mapping[lang]['native_name'] if lang in language_mapping else lang, lang) for lang in legends_langs]), value=system_language, type='value', interactive=True, scale=0, min_width=140)
+                gr_ui_language = gr.Dropdown(label=legends['gr_ui_language'], show_label=False, elem_id='gr_ui_language', choices=sorted([(language_mapping[lang]['native_name'] if lang in language_mapping else lang, lang) for lang in legends_langs]), value=system_language, type='value', interactive=True, scale=0, min_width=150)
                 gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                     <div style="right:0;margin:auto;padding:10px;text-align:center">
-                        <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none; font-size:14px; white-space: nowrap;" target="_blank">
-                        <b>{title}</b><br/><b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
+                        <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
+                        <b>{title}</b>&nbsp;<b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
                     </div>
                     ''', scale=1
                 )
-                gr_tooltips = gr.Checkbox(label=legends['gr_tooltips'], elem_id='gr_tooltips', value=False, interactive=True, scale=0, min_width=140)
+                gr_tooltips = gr.Checkbox(label=legends['gr_tooltips'], elem_id='gr_tooltips', value=False, interactive=True, scale=0, min_width=150)
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
@@ -3261,7 +3261,7 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             tooltips_js = r'''(enabled,data)=>{
                 window.gr_tooltips_state={enabled:!!enabled,data:data||{}};
-                const hide=()=>{const tip=document.getElementById('gr_tooltip_box');if(tip){tip.style.display='none';}};
+                const hide=()=>{const tip=document.getElementById('gr_tooltip_box');if(tip){tip.style.display='none';}window.gr_tooltips_current=null;};
                 if(!enabled){hide();}
                 if(window.gr_tooltips_ready){return;}
                 window.gr_tooltips_ready=true;
@@ -3279,6 +3279,10 @@ def build_interface(args:dict)->gr.Blocks:
                 document.addEventListener('pointerover',(e)=>{
                     const hit=find(e.target);
                     if(!hit){return;}
+                    clearTimeout(timer);
+                    if(e.pointerType==='touch'){timer=setTimeout(hide,2500);}
+                    if(window.gr_tooltips_current===hit[0]){return;}
+                    window.gr_tooltips_current=hit[0];
                     let tip=document.getElementById('gr_tooltip_box');
                     if(!tip){
                         tip=document.createElement('div');
@@ -3295,15 +3299,16 @@ def build_interface(args:dict)->gr.Blocks:
                     const left=Math.max(4,Math.min(r.left+r.width/2-tip.offsetWidth/2,window.innerWidth-tip.offsetWidth-4));
                     tip.style.top=top+'px';
                     tip.style.left=left+'px';
-                    clearTimeout(timer);
-                    if(e.pointerType==='touch'){timer=setTimeout(hide,2500);}
                 },true);
                 document.addEventListener('pointerout',(e)=>{
                     if(e.pointerType==='touch'){return;}
                     const hit=find(e.target);
-                    if(hit&&!(e.relatedTarget&&hit[0].contains(e.relatedTarget))){hide();}
+                    if(!hit||(e.relatedTarget&&hit[0].contains(e.relatedTarget))){return;}
+                    clearTimeout(timer);
+                    timer=setTimeout(hide,150);
                 },true);
-                document.addEventListener('scroll',hide,true);
+                window.addEventListener('scroll',hide);
+                window.addEventListener('resize',hide);
             }'''
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_abs_params, gr_convert_btn,
