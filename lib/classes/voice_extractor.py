@@ -9,6 +9,7 @@ from lib.classes.tts_engines.common.audio import get_audio_duration
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.conf import systems, devices, voice_formats, default_audio_proc_samplerate
 from lib.conf_models import TTS_ENGINES
+from lib.lang import legends
 
 class VoiceExtractor:
 
@@ -38,14 +39,14 @@ class VoiceExtractor:
     def _validate_format(self)->tuple[bool,str]:
         file_extension = os.path.splitext(self.voice_file)[1].lower()
         if file_extension in voice_formats:
-            msg = 'Input file is valid'
+            msg = legends['msg_input_valid']
             return True,msg
-        error = f'Unsupported format: {file_extension}'
+        error = legends['error_unsupported_file_format'].format(ext=file_extension)
         return False,error
 
     def _convert2wav(self)->tuple[bool, str]:
         try:
-            msg = 'Convert to WAV…'
+            msg = legends['msg_convert_wav']
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
@@ -54,12 +55,12 @@ class VoiceExtractor:
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
                 '-ac', '1', '-y', self.wav_file
             ]   
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(self.voice_file), msg='Demux')
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(self.voice_file), msg=legends['msg_demux'])
             if not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
                 error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
             else:
                 if proc_pipe.result:
-                    msg = 'WAV conversion successful'
+                    msg = legends['msg_wav_ok']
                     return True, msg
                 else:
                     error = f'_convert2wav() SubprocessPipe error'
@@ -77,7 +78,7 @@ class VoiceExtractor:
         try:
             from lib.classes.background_detector import pyannote_patch, BackgroundDetector
             pyannote_patch()
-            msg = 'Detecting if any background noise or music…'
+            msg = legends['msg_detecting_background']
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
@@ -86,9 +87,9 @@ class VoiceExtractor:
             if report:
                 print(report)
                 if status:
-                    msg = 'Background detected…'
+                    msg = legends['msg_background_detected']
                 else:
-                    msg = 'No background detected'
+                    msg = legends['msg_no_background']
                 return True, status, msg
             else:
                 error = 'detector.detect() could not analyze the audio file'
@@ -119,7 +120,7 @@ class VoiceExtractor:
         try:
             system = self.session['system']
             last_percent = 0.0
-            msg = 'Extracting Voice…'
+            msg = legends['msg_extracting_voice']
             if self.is_gui_process:
                 self.progress_bar(0.0, desc=msg)
             model = get_model(name="htdemucs")
@@ -166,7 +167,7 @@ class VoiceExtractor:
                 channels=audio_np.shape[1] if audio_np.ndim > 1 else 1
             )
             audio_segment.export(self.voice_track, format="wav")
-            msg = 'Completed'
+            msg = legends['msg_done']
             return True, msg
         except Exception as e:
             error = f'_demucs_voice() error: {str(e)}'
@@ -174,7 +175,7 @@ class VoiceExtractor:
 
 
     def _remove_silences(self, audio:AudioSegment, silence_threshold:int, min_silence_len:int=200, keep_silence:int=300)->AudioSegment:
-        msg = "Removing empty audio…"
+        msg = legends['msg_removing_empty_audio']
         print(msg)
         if self.is_gui_process:
             self.progress_bar(0, desc=msg)
@@ -207,12 +208,12 @@ class VoiceExtractor:
             )
             total_duration = len(audio)
             min_required_duration = 20000 if self.session["tts_engine"] == TTS_ENGINES["BARK"] else 12000
-            msg = "Removing long pauses…"
+            msg = legends['msg_removing_long_pauses']
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(0, desc=msg)
             if total_duration <= min_required_duration:
-                msg = f"Audio is only {total_duration / 1000:.2f}s long; skipping audio trimming…"
+                msg = legends['msg_audio_too_short'].format(seconds=f'{total_duration / 1000:.2f}')
                 return True, msg
             if total_duration > min_required_duration * 2:
                 window = min_required_duration
@@ -251,7 +252,7 @@ class VoiceExtractor:
                 best_end = total_duration
             trimmed_audio = audio[best_start:best_end]
             trimmed_audio.export(self.voice_track, format = "wav")
-            msg = "Audio trimmed and cleaned!"
+            msg = legends['msg_audio_trimmed']
             return True, msg
         except Exception as e:
             error = f"_trim_and_clean() error: {e}"
@@ -260,7 +261,7 @@ class VoiceExtractor:
 
     def normalize_audio(self, src_file:str, proc_file:str, dst_file:str)->tuple[bool, str]:
         try:
-            msg = 'Normalize audio…'
+            msg = legends['msg_normalize_audio']
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(0, desc=msg)
@@ -284,7 +285,7 @@ class VoiceExtractor:
                 '-y', proc_file
             ]
             try:
-                proc_pipe = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(src_file), msg='Normalize')
+                proc_pipe = SubprocessPipe(cmd, is_gui_process=self.is_gui_process, total_duration=get_audio_duration(src_file), msg=legends['msg_normalize'])
                 if not os.path.exists(proc_file) or os.path.getsize(proc_file) == 0:
                     error = f'normalize_audio() error: {proc_file} was not created or is empty.'
                 else:
@@ -292,7 +293,7 @@ class VoiceExtractor:
                         if proc_file != dst_file:
                             os.replace(proc_file, dst_file)
                             shutil.rmtree(self.demucs_dir, ignore_errors = True)
-                        msg = 'Audio normalization successful!'
+                        msg = legends['msg_normalization_ok']
                         return True, msg
                     else:
                         error = f'normalize_audio() SubprocessPipe Error.'

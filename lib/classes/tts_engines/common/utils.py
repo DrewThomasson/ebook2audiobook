@@ -3,8 +3,10 @@ import os, sys, threading, gc, ctypes, tempfile, regex as re
 from typing import Any, TYPE_CHECKING
 from pathlib import Path
 from lib.classes.vram_detector import VRAMDetector
+from lib.classes.bug_reporter import bug_reporter
 from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
 from lib import *
+from lib.lang import legends
 
 _lock = threading.Lock()
 
@@ -19,11 +21,13 @@ def format_timestamp(seconds:float)->str:
     h, m = divmod(m, 60)
     return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
-def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tuple:
+def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None, offsets:dict=None)->tuple:
     try:
         from tqdm import tqdm
+        if offsets is None:
+            offsets = {}
         progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
-        msg = 'VTT file creation started…'
+        msg = legends['msg_vtt_started']
         print(msg)
         if progress_bar is not None:
             progress_bar(0.0, desc=msg)
@@ -33,6 +37,7 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
         blocks = session['blocks_current']['blocks']
         audio_files = []
         sentences_to_use = []
+        sentence_block_indices = []
         for i, block in enumerate(blocks):
             if not (block['keep'] and block['text'].strip()):
                 continue
@@ -40,7 +45,7 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                 continue
             block_dir = audio_sentences_dir / str(block['id'])
             if not block_dir.is_dir():
-                error = f"Missing audio directory for block {i} (id {block['id']}): {block_dir}"
+                error = legends['error_missing_audio_dir'].format(block=i, id=block['id'], dir=block_dir)
                 return False, error
             block_sentences = block.get('sentences', [])
             for sentence_idx, sentence in enumerate(block_sentences):
@@ -48,19 +53,20 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                     continue
                 audio_file = block_dir / f'{sentence_idx}.{default_audio_proc_format}'
                 if not audio_file.is_file():
-                    error = f"Missing audio file for block {i} (id {block['id']}), sentence {sentence_idx}: {audio_file}"
+                    error = legends['error_missing_audio_file'].format(block=i, id=block['id'], sentence=sentence_idx, file=audio_file)
                     return False, error
                 audio_files.append(audio_file)
                 sentences_to_use.append(sentence)
+                sentence_block_indices.append(i)
         audio_files_length = len(audio_files)
         sentences_total_time = 0.0
         vtt_blocks = []
-        msg = 'Get duration of each sentence…'
+        msg = legends['msg_get_durations']
         print(msg)
         if progress_bar is not None:
             progress_bar(0.0, desc=msg)
         durations = get_audiolist_duration([str(p) for p in audio_files])
-        msg = 'Create VTT blocks…'
+        msg = legends['msg_create_vtt_blocks']
         print(msg)
         if progress_bar is not None:
             progress_bar(0.0, desc=msg)
@@ -70,8 +76,10 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                 duration = durations.get(os.path.realpath(file), 0.0)
                 end_time = start_time + duration
                 sentences_total_time = end_time
-                start = format_timestamp(start_time)
-                end = format_timestamp(end_time)
+                block_idx = sentence_block_indices[idx]
+                block_offset = offsets.get(block_idx, 0.0)
+                start = format_timestamp(start_time + block_offset)
+                end = format_timestamp(end_time + block_offset)
                 text = re.sub(
                     r'\s+',
                     ' ',
@@ -85,7 +93,7 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None)->tup
                         desc=f'Writing vtt idx {idx}'
                     )
                 t.update(1)
-        msg = 'Write VTT blocks into file…'
+        msg = legends['msg_write_vtt']
         print(msg)
         if progress_bar is not None:
             progress_bar(1.0, desc=msg)
@@ -109,35 +117,38 @@ class TTSUtils:
         gc.collect()
         if hasattr(torch, 'clear_autocast_cache'):
             torch.clear_autocast_cache()
+        try:
+            if torch.cuda.is_initialized():
+                torch.cuda.synchronize()
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+        except Exception:
+            pass
+        try:
+            if hasattr(torch, 'xpu') and torch.xpu.is_initialized():
+                torch.xpu.synchronize()
+                torch.xpu.empty_cache()
+        except Exception:
+            pass
+        try:
+            if hasattr(torch, 'mps') and torch.backends.mps.is_available():
+                torch.mps.synchronize()
+                torch.mps.empty_cache()
+        except Exception:
+            pass
         if sys.platform == systems['LINUX']:
             try:
                 libc = ctypes.CDLL('libc.so.6')
                 libc.malloc_trim(0)
             except Exception:
                 pass
-        elif sys.platform == systems['WINDOWS']:
+        elif sys.platform == systems['MACOS']:
             try:
-                kernel32 = ctypes.windll.kernel32
-                handle = kernel32.GetCurrentProcess()
-                kernel32.SetProcessWorkingSetSize(
-                    handle, ctypes.c_size_t(-1), ctypes.c_size_t(-1)
-                )
+                libsystem = ctypes.CDLL('/usr/lib/libSystem.B.dylib')
+                libsystem.malloc_zone_pressure_relief.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+                libsystem.malloc_zone_pressure_relief(None, 0)
             except Exception:
                 pass
-        if torch.cuda.is_available():
-            torch.cuda.ipc_collect()
-            torch.cuda.synchronize()
-            torch.cuda.empty_cache()
-        try:
-            if hasattr(torch, 'xpu') and torch.xpu.is_available():
-                torch.xpu.synchronize()
-                torch.xpu.empty_cache()
-        except Exception:
-            # torch.xpu.is_available() is not exception-safe: on an old Level Zero
-            # loader it raises out of ctypes instead of returning False. A memory
-            # flush must never be the thing that kills a conversion, and this runs
-            # on every cleanup, so it stays silent like the malloc_trim block above.
-            pass
 
     def _try_dml(self, engine:Any, checkpoint_path:str)->None:
         try:
@@ -152,7 +163,7 @@ class TTSUtils:
             engine.session = sess
             active = sess.get_providers()
             on_gpu = 'DmlExecutionProvider' in active
-            msg = f'Piper: running on GPU via DirectML — {active}' if on_gpu else f'Piper: DirectML not engaged, providers={active}'
+            msg = legends['msg_piper_directml_on'].format(providers=active) if on_gpu else legends['msg_piper_directml_off'].format(providers=active)
             print(msg)
             progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
             if progress_bar is not None:
@@ -194,7 +205,7 @@ class TTSUtils:
             speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTS']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
             loaded = torch.load(speakers_path, weights_only=False)
             if not isinstance(loaded, dict):
-                error = f'Invalid XTTS speakers format: {type(loaded)}'
+                error = legends['error_xtts_speakers_format'].format(type=type(loaded))
                 raise TypeError(error)
             for name, data in loaded.items():
                 if name not in xtts_builtin_speakers_list:
@@ -351,7 +362,7 @@ class TTSUtils:
                     if progress_bar is not None:
                         import gradio as gr
                         from gradio.context import LocalContext
-                        msg = f'Loading {key} model…'
+                        msg = legends['msg_loading_model'].format(model=key)
                         progress_bar((0, 3), desc=msg)
                         tqdm_token = LocalContext.progress.set(gr.Progress(track_tqdm=True))
                     try:
@@ -361,7 +372,7 @@ class TTSUtils:
                             LocalContext.progress.reset(tqdm_token)
                     load_error = None
                     if progress_bar is not None:
-                        msg = f'Moving {key} model to {device}…'
+                        msg = legends['msg_moving_model'].format(model=key, device=device)
                         progress_bar((1, 3), desc=msg)
                     try:
                         engine = engine.to(device)
@@ -374,7 +385,7 @@ class TTSUtils:
                 if not engine:
                     raise RuntimeError('TTSEngine returned None')
                 if progress_bar is not None:
-                    msg = f'Checking {key} weights on {device}…'
+                    msg = legends['msg_checking_weights'].format(model=key, device=device)
                     progress_bar((2, 3), desc=msg)
                 for syn_attr in ('synthesizer', 'voice_converter'):
                     syn = getattr(engine, syn_attr, None)
@@ -405,7 +416,7 @@ class TTSUtils:
                 if self.session['free_vram_gb'] > models_loaded_size_gb:
                     loaded_tts[key] = engine
                 if progress_bar is not None:
-                    msg = f'{key} model loaded'
+                    msg = legends['msg_model_loaded'].format(model=key)
                     progress_bar((3, 3), desc=msg)
                 return engine
         except Exception as e:
@@ -432,18 +443,18 @@ class TTSUtils:
                     progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
                     if self.session['custom_model'] is None:
                         if progress_bar is not None:
-                            msg = f'Downloading {key} voice…'
+                            msg = legends['msg_downloading_voice'].format(model=key)
                             progress_bar((0, 2), desc=msg)
                         download_voice(Path(self.model_path).stem, Path(self.model_path))
                     if progress_bar is not None:
-                        msg = f'Loading {key} voice…'
+                        msg = legends['msg_loading_voice'].format(model=key)
                         progress_bar((1, 2), desc=msg)
                     use_cuda = device == devices['CUDA']['proc']
                     engine = PiperVoice.load(checkpoint_path, config_path=config_path, use_cuda=use_cuda)
                     if device == devices['CPU']['proc']:
                         self._try_dml(engine, checkpoint_path)
                     if progress_bar is not None:
-                        msg = f'{key} voice loaded'
+                        msg = legends['msg_voice_loaded'].format(model=key)
                         progress_bar((2, 2), desc=msg)
                 elif engine_name in tts_engines_from_coqui:
                     import torch
@@ -453,14 +464,14 @@ class TTSUtils:
                     is_accel = target_dev.type != 'cpu'
                     if not engine:
                         if not checkpoint_path or not os.path.exists(checkpoint_path):
-                            error = f'Missing or invalid checkpoint_path: {checkpoint_path}'
+                            error = legends['error_missing_or_invalid'].format(name='checkpoint_path', path=checkpoint_path)
                             raise FileNotFoundError(error)
                         if not config_path or not os.path.exists(config_path):
-                            error = f'Missing or invalid config_path: {config_path}'
+                            error = legends['error_missing_or_invalid'].format(name='config_path', path=config_path)
                             raise FileNotFoundError(error)
                         progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
                         if progress_bar is not None:
-                            msg = f'Reading {key} checkpoint…'
+                            msg = legends['msg_reading_checkpoint'].format(model=key)
                             progress_bar((0, 3), desc=msg)
                         if engine_name == TTS_ENGINES['XTTS']:
                             from TTS.tts.configs.xtts_config import XttsConfig
@@ -481,7 +492,7 @@ class TTSUtils:
                         elif engine_name == TTS_ENGINES['FAIRSEQ']:
                             from TTS.utils.synthesizer import Synthesizer
                             if not vocab_path or not os.path.exists(vocab_path):
-                                error = f'Missing or invalid vocab_path: {vocab_path}'
+                                error = legends['error_missing_or_invalid'].format(name='vocab_path', path=vocab_path)
                                 raise FileNotFoundError(error)
                             custom_dir = os.path.dirname(checkpoint_path)
                             syn = Synthesizer(model_dir=custom_dir, use_cuda=is_accel)
@@ -502,12 +513,12 @@ class TTSUtils:
                             raise ValueError(error)
                     if engine:
                         if progress_bar is not None:
-                            msg = f'Moving {key} model to {device}…'
+                            msg = legends['msg_moving_model'].format(model=key, device=device)
                             progress_bar((1, 3), desc=msg)
                         engine.to(device)
                         engine.eval()
                         if progress_bar is not None:
-                            msg = f'Checking {key} weights on {device}…'
+                            msg = legends['msg_checking_weights'].format(model=key, device=device)
                             progress_bar((2, 3), desc=msg)
                         ## Walk the actual weight-bearing module(s).
                         ## XTTS / fairseq shim: engine itself is an nn.Module that owns the params.
@@ -544,7 +555,7 @@ class TTSUtils:
                     if self.session['free_vram_gb'] > models_loaded_size_gb:
                         loaded_tts[key] = engine
                     if progress_bar is not None:
-                        msg = f'{key} model loaded'
+                        msg = legends['msg_model_loaded'].format(model=key)
                         progress_bar((3, 3), desc=msg)
                 return engine
         except Exception as e:
@@ -554,7 +565,7 @@ class TTSUtils:
 
     def _load_engine_zs(self, device:str)->Any:
         try:
-            msg = f'Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient…'
+            msg = legends['msg_loading_zeroshot'].format(model=self.tts_zs_key)
             print(msg)
             progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
             if progress_bar is not None:
@@ -565,7 +576,7 @@ class TTSUtils:
                 engine_zs = self._load_api(self.tts_zs_key, default_vc_model, device)
             if engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
-                msg = f'ZeroShot {self.tts_zs_key} Loaded!'
+                msg = legends['msg_zeroshot_loaded'].format(model=self.tts_zs_key)
                 return engine_zs
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
@@ -645,7 +656,7 @@ class TTSUtils:
             if self.language in default_engine_settings[xtts].get('languages', {}):
                 default_text_file = os.path.join(voices_dir, self.language, 'default.txt')
                 if os.path.exists(default_text_file):
-                    msg = f"Converting builtin eng voice to {self.language}…"
+                    msg = legends['msg_converting_builtin_voice'].format(lang=self.language)
                     print(msg)
                     progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
                     if progress_bar is not None:
@@ -755,7 +766,7 @@ class TTSUtils:
                     else:
                         error = f'_check_xtts_builtin_speakers() error: {xtts} is False'
                 else:
-                    error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
+                    error = legends['error_translated_default_text'].format(file=default_text_file)
                 print(error)
             else:
                 return current_voice
@@ -913,7 +924,7 @@ class TTSUtils:
                 value = '' # TODO: get the value between tag [ipa] and close [/ipa]
             return True, None
         else:
-            error = 'This SML is not recognized'
+            error = legends['error_sml_not_recognized']
             return False, error
             
     def audio_save(self, sentence_file, segment_tensor:any, samplerate:int)->bool:
@@ -939,4 +950,5 @@ class TTSUtils:
     def log_exception(self,where:str, e:Exception)->str:
         import traceback
         traceback.print_exc()
+        bug_reporter.report(f'{where}: {e}', getattr(self, 'session', None))
         return f'{where}: {e}'

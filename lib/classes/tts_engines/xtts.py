@@ -1,5 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.lang import legends
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
@@ -29,12 +30,12 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                     self.language_iso1 = self.session['translate_iso1']
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
-                error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
+                error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list(self.models.keys()))
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
             for required_key in ('repo', 'samplerate'):
                 if required_key not in model_cfg:
-                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
+                    error = legends['error_fine_tuned_missing_key'].format(model=fine_tuned, key=required_key)
                     raise ValueError(error)
             self.params['samplerate'] = model_cfg['samplerate']
             enough_vram = self.session['free_vram_gb'] > 4.0
@@ -69,7 +70,7 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
     def load_engine(self)->Any:
         try:
             from huggingface_hub import hf_hub_download
-            msg = f'Loading TTS {self.tts_key} model, it takes a while, please be patient…'
+            msg = legends['msg_loading_tts_model'].format(model=self.tts_key)
             print(msg)
             self.cleanup_memory()
             if self.session['custom_model'] is not None:
@@ -104,7 +105,7 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                         error = f'load_engine(): HuggingFace checkpoint loading failed: {e}'
                         raise RuntimeError(error) from e
             if engine:
-                msg = f'TTS {self.tts_key} Loaded!'
+                msg = legends['msg_tts_loaded'].format(model=self.tts_key)
                 print(msg)
                 return engine
             error = 'load_engine(): engine is None'
@@ -147,7 +148,7 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                         if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
                             self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
                         else:
-                            msg = 'Computing speaker latents…'
+                            msg = legends['msg_computing_latents']
                             print(msg)
                             if self.speaker in default_engine_settings[TTS_ENGINES['XTTS']]['voices'].keys():
                                 self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.xtts_speakers[default_engine_settings[TTS_ENGINES['XTTS']]['voices'][self.speaker]].values()
@@ -205,11 +206,11 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                         return False, error
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
-                        error = f'Cannot create {sentence_file}'
+                        error = legends['error_cannot_create'].format(file=sentence_file)
                         return False, error
                 return True, None
             else:
-                error = f"TTS engine {self.session['tts_engine']} failed to load!"
+                error = legends['error_tts_engine_load_failed'].format(engine=self.session['tts_engine'])
                 return False, error
         except Exception as e:
             self.cleanup_memory()
