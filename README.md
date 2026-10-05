@@ -482,7 +482,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Any help from people speaking any of the supported languages to help us improve the models ⭐
 - [x] Preview Blocks/Chapters before to start the conversion
 - [x] Edit by sentence converted for surgical text change
-- [x] Generate and edit music intro, interludes and end
+- [x] Generate music intros, interludes, and endings; edit interludes and endings
 - [x] SML tags integration for voice, pause, break, and more changes 
 - [x] -h -help parameter info in different languages
 - [x] OCR scanning for PDF / JPG / BMP / PNG / TIFF
