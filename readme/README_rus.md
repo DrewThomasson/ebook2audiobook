@@ -1,4 +1,6 @@
 # 📚 ebook2audiobook (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 CPU/GPU конвертер из электронной книги в аудиокнигу с главами и метаданными<br/>
 с использованием передовых движков TTS и многого другого.<br/>
 Поддерживает клонирование голоса и 1158 языков!
@@ -89,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Шаги для запуска](#docker)
   
 - [Клонированные голоса](#cloned-voices)
-- [Дообученные модели TTS](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Коллекция дообученных моделей TTS](#fine-tuned-tts-collection)
-  - [Обучение XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Поддерживаемые форматы электронных книг](#supported-ebook-formats)
 - [Форматы вывода](#output-and-process-formats)
 - [Возврат к более старой версии](#reverting-to-older-versions)
@@ -154,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — фиксированная пауза (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — переключение голоса с голоса по умолчанию или выбранного из GUI/CLI
 
-**Проверьте наш другой репозиторий, предназначенный для автоматического добавления SML в вашу электронную книгу -> [E2A-SML](./components/E2A-SML)**
+**Проверьте наш другой репозиторий, предназначенный для автоматического добавления SML в вашу электронную книгу -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > Важно
 **Прежде чем сообщать о проблеме с установкой или ошибке, внимательно поищите во вкладке открытых и закрытых задач<br>
@@ -343,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -437,10 +440,9 @@ Podman Compose (i.e. cuda 12.8:
 добавлены в список, свяжитесь с нами, и мы добавим их после проверки.
 
 ## Дообученные (fine-tuned) модели TTS
-#### Дообучите свою собственную модель XTTSv2
+#### Тонкая настройка собственной модели TTS
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Шумоподавление обучающих данных
 
@@ -479,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Все функции открыты для публичных вкладов ⭐
 - Любая помощь от людей, говорящих на любом из поддерживаемых языков, чтобы помочь нам улучшить модели ⭐
 - [x] Предварительный просмотр блоков/глав перед началом преобразования
-- [ ] Редактировать по предложению, преобразованному для изменения хирургического текста
+- [x] Редактировать по предложению, преобразованному для изменения хирургического текста
+- [x] Создание музыкальных интро, интерлюдий и окончаний; редактирование интерлюдий и окончаний
 - [x] Интеграция тегов SML для голоса, паузы, перерыва и других изменений
 - [x] -h -help информация о параметрах на разных языках
 - [x] Сканирование OCR для PDF / JPG / BMP / PNG / tiff
@@ -574,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Дополнительный избыток для обучения моделей и подобного (все поддерживаемые модели Coqui-tts и piper-tts в одной простой команде) 
-- За информацией об этом @DrewThomasson, он сейчас работает над разработкой этого, [репозиторий в разработке здесь](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Создать простой в использовании графический интерфейс обучения для всех моделей coqui-tts в обучающих рецептах формата ljspeech [здесь от coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Для информации об этом @ DrewThomasson в настоящее время работает над разработкой этого, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Сделайте простой в использовании обучающий gui для всех моделей coqui-tts в [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Информация о нормализации кода Python для участников

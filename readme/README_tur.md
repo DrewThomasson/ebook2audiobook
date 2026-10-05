@@ -1,8 +1,10 @@
 # 📚 ebook2audiobook (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 E-Kitaptan bölümler ve meta verilerle sesli kitaba CPU/GPU dönüştürücü<br/>
 gelişmiş TTS motorları ve çok daha fazlasını kullanarak.<br/>
 Ses klonlamayı ve 1158 dili destekler!
-> [!IMPORTANT]
+> ÖNEMLİ
 **Bu araç yalnızca DRM içermeyen, yasal olarak edinilmiş e-kitaplarla kullanılmak üzere tasarlanmıştır.** <br>
 Yazarlar, bu yazılımın herhangi bir şekilde kötüye kullanılmasından veya bundan kaynaklanan yasal sonuçlardan sorumlu değildir. <br>
 Bu aracı sorumlu bir şekilde ve geçerli tüm yasalara uygun olarak kullanın.
@@ -91,7 +93,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Klonlanmış Sesler](#cloned-voices)
 - [İnce Ayarlı TTS modelleri](#fine-tuned-tts-models)
   - [İnce Ayarlı TTS Modelleri Koleksiyonu](#fine-tuned-tts-collection)
-  - [XTTSv2 Eğitimi](#fine-tune-your-own-xttsv2-model)
+  - [Tren TTS Model](#fine-tune-your-own-tts-model)
 - [Desteklenen E-Kitap Biçimleri](#supported-ebook-formats)
 - [Çıktı Biçimleri](#output-and-process-formats)
 - [Eski Sürüme Geri Dönme](#reverting-to-older-versions)
@@ -154,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — sabit duraklama (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — varsayılan sesten veya GUI/CLI'den seçilen sesten ses değiştirme
 
-**E-kitabınıza otomatik olarak SML eklemeye adanmış diğer deposumuza göz atın -> [E2A-SML](./components/E2A-SML)**
+**E-kitabınıza otomatik olarak SML eklemeye adanmış diğer deposumuza göz atın -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > [!IMPORTANT]
 **Bir kurulum veya hata sorunu göndermeden önce, açık ve kapalı sorunlar sekmesini dikkatlice arayın<br>
@@ -343,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -437,10 +440,9 @@ Yerleşik klonlanmış sesler listesi esas olarak İngilizcedir. Resmi olarak ba
 listeye eklendi, lütfen bizimle iletişime geçin. İncelemeden sonra bunları ekleyeceğiz.
 
 ## İnce Ayarlı (fine-tuned) TTS modelleri
-#### Kendi XTTSv2 modelinizi ince ayarlayın
+#### Kendi TTS modelinize ince ayar yapın
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Eğitim verilerinin gürültüsünü giderme
 
@@ -479,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Tüm Özellikler kamuya açık Katkılara açık ⭐
 - Modelleri geliştirmemize yardımcı olmak için desteklenen dillerden herhangi birini konuşan kişilerden gelen her türlü yardım ⭐
 - [x] Dönüştürmeyi başlatmadan önce Blokları/Bölümleri önizleme
-- [ ] Cerrahi metin değişikliği için dönüştürülen cümleye göre düzenleme
+- [x] Cerrahi metin değişikliği için dönüştürülen cümleye göre düzenleme
+- [x] Müzik tanıtımları, aralıkları ve sonları oluşturun; aralıkları ve sonları düzenleyin
 - [x] Ses, duraklama, kesinti ve daha fazla değişiklik için SML etiketi entegrasyonu 
 - [x] Farklı dillerde -h -help parametre bilgisi
 - [x] PDF / JPG / BMP / PNG / TIFF için OCR taraması
@@ -574,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Model eğitmek ve benzeri işler için Ekstra Abartı (desteklenen tüm Coqui-tts modelleri ve piper-tts tek bir kolay komutta) 
-- Bununla ilgili bilgi için @DrewThomasson, şu anda bunun geliştirilmesi üzerinde çalışıyor, [devam eden çalışma deposu burada](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] ljspeech formatındaki eğitim tariflerinde tüm coqui-tts modelleri için kullanımı kolay bir eğitim gui'si yapmak [coqui tts'ten burada](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Bununla ilgili bilgi için @ DrewThomasson, şu anda bunun geliştirilmesi üzerinde çalışıyor, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Katkıda bulunanlar için Python Kodu normalleştirme bilgileri

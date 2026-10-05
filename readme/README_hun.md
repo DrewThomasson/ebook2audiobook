@@ -1,8 +1,10 @@
 # 📚 ebook2audiobook (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 CPU/GPU átalakító e-könyvből hangoskönyvvé fejezetekkel és metaadatokkal<br/>
 fejlett TTS-motorok használatával és még sok mással.<br/>
 Támogatja a hangklónozást és 1158 nyelvet!
-> [!IMPORTANT]
+> FONTOS
 **Ez az eszköz kizárólag DRM-mentes, legálisan beszerzett e-könyvekhez használható.** <br>
 A szerzők nem felelősek a szoftver bárminemű visszaéléséért, sem az ebből eredő jogi következményekért. <br>
 Használd ezt az eszközt felelősségteljesen, az összes vonatkozó törvénnyel összhangban.
@@ -91,7 +93,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Klónozott hangok](#cloned-voices)
 - [Finomhangolt TTS modellek](#fine-tuned-tts-models)
   - [Finomhangolt TTS modellek gyűjteménye](#fine-tuned-tts-collection)
-  - [XTTSv2 tanítása](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Támogatott e-könyv formátumok](#supported-ebook-formats)
 - [Kimeneti formátumok](#output-and-process-formats)
 - [Visszatérés régebbi verzióhoz](#reverting-to-older-versions)
@@ -154,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — fix szünet (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — hangváltás az alapértelmezett vagy a GUI/CLI-ben kiválasztott hangról
 
-**Nézd meg másik repónkat, amely az SML automatikus hozzáadásának szentelt az e-könyvedhez -> [E2A-SML](./components/E2A-SML)**
+**Nézd meg másik repónkat, amely az SML automatikus hozzáadásának szentelt az e-könyvedhez -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > [!IMPORTANT]
 **Mielőtt telepítési vagy hibajegyet nyitnál, gondosan keress rá a nyitott és lezárt jegyek fülön<br>
@@ -343,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -437,10 +440,9 @@ A beépített klónozott hangok listája főként angol nyelven érhető el. Ha 
 hozzáadva a listához. Vedd fel velünk a kapcsolatot, és az ellenőrzés után hozzáadjuk őket.
 
 ## Finomhangolt (fine-tuned) TTS modellek
-#### Finomhangold a saját XTTSv2 modelledet
+#### Finomhangolja saját TTS-modelljét
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Tanítóadatok zajszűrése
 
@@ -479,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Minden funkció nyitva a nyilvános hozzájárulások előtt ⭐
 - Bármilyen segítség a támogatott nyelvek valamelyikét beszélő emberektől, hogy segítsenek javítani a modelleket ⭐
 - [x] Blokkok/fejezetek előnézete az átalakítás megkezdése előtt
-- [ ] Szerkesztés átalakított mondatonként a sebészi pontosságú szövegmódosításhoz
+- [x] Szerkesztés átalakított mondatonként a sebészi pontosságú szövegmódosításhoz
+- [x] Zenei intrók, közjátékok és befejezések létrehozása; közjátékok és befejezések szerkesztése
 - [x] SML címkék integrációja hanghoz, szünethez, megszakításhoz és további módosításokhoz 
 - [x] A -h -help paraméterek információi különböző nyelveken
 - [x] OCR-beolvasás PDF / JPG / BMP / PNG / TIFF formátumokhoz
@@ -574,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Extra túlzás modellek tanításához és hasonlókhoz (az összes támogatott Coqui-tts modell és a piper-tts egyetlen egyszerű paranccsal) 
-- Az erről szóló információkért: @DrewThomasson jelenleg ennek a fejlesztésén dolgozik, [fejlesztés alatt álló repó itt](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Könnyen használható tanító GUI készítése az összes coqui-tts modellhez ljspeech formátumú tanító receptekben [itt a coqui tts-től](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- A @ DrewThomasson témájával kapcsolatos információkért jelenleg ennek fejlesztésén dolgozik, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Készítsen könnyen használható képzési útmutatókat az összes coqui-tts modellhez a [ljspeech formátumú képzési receptekben](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Teljesítve itt: [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Python kódnormalizálási információk közreműködőknek

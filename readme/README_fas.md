@@ -1,8 +1,10 @@
-# 📚 ebook2audiobook (E2A)
+# 📚 کتاب الکترونیکی به کتاب صوتی (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 مبدل CPU/GPU از کتاب الکترونیکی به کتاب صوتی همراه با فصل‌ها و فراداده<br/>
 با استفاده از موتورهای پیشرفته TTS و موارد دیگر.<br/>
 از شبیه‌سازی صدا و ۱۱۵۸ زبان پشتیبانی می‌کند!
-> [!IMPORTANT]
+> مهم
 **این ابزار تنها برای استفاده با کتاب‌های الکترونیکی فاقد DRM که به‌صورت قانونی به دست آمده‌اند، در نظر گرفته شده است.** <br>
 نویسندگان مسئول هیچ‌گونه سوءاستفاده از این نرم‌افزار یا هرگونه پیامد قانونی ناشی از آن نیستند. <br>
 از این ابزار مسئولانه و در چارچوب تمام قوانین قابل اجرا استفاده کنید.
@@ -89,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [مراحل اجرا](#docker)
   
 - [صداهای کلون شده](#cloned-voices)]
-- [مدل‌های TTS تنظیم‌دقیق‌شده](#fine-tuned-tts-models)
+- [مدل‌های TTS تنظیم‌شده دقیق](#fine-tuned-tts-models)]
   - [مجموعه مدل‌های TTS تنظیم‌دقیق‌شده](#fine-tuned-tts-collection)
-  - [آموزش XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [مدل TTS قطار](#fine-tune-your-own-tts-model)]
 - [قالب‌های کتاب الکترونیکی پشتیبانی‌شده](#supported-ebook-formats)
 - [قالب‌های خروجی](#output-and-process-formats)
 - [بازگشت به نسخه قدیمی‌تر](#reverting-to-older-versions)
@@ -154,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — مکث ثابت (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — تعویض صدا از صدای پیش‌فرض یا انتخاب‌شده از GUI/CLI
 
-**مخزن دیگر ما را که به افزودن خودکار SML در کتاب الکترونیکی شما اختصاص دارد، بررسی کنید -> [E2A-SML](./components/E2A-SML)**
+**مخزن دیگر ما را که به افزودن خودکار SML در کتاب الکترونیکی شما اختصاص دارد، بررسی کنید -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > [!IMPORTANT]
 **پیش از ارسال مشکل نصب یا باگ، با دقت در زبانه مسائل باز و بسته جستجو کنید<br>
@@ -343,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -437,10 +440,9 @@ Podman Compose (i.e. cuda 12.8:
 به لیست اضافه شد، لطفا با ما تماس بگیرید تا پس از بررسی، آنها را اضافه کنیم.
 
 ## مدل‌های TTS تنظیم‌دقیق‌شده (fine-tuned)
-#### مدل XTTSv2 خود را تنظیم دقیق کنید
+#### مدل TTS خودتان را به طور دقیق تنظیم کنید
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### حذف نویز از داده‌های آموزشی
 
@@ -479,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - تمام ویژگی‌ها برای مشارکت‌های عمومی باز هستند ⭐
 - هرگونه کمک از افرادی که به یکی از زبان‌های پشتیبانی‌شده صحبت می‌کنند تا به ما در بهبود مدل‌ها کمک کنند ⭐
 - [x] پیش‌نمایش بلوک‌ها/فصل‌ها پیش از شروع تبدیل
-- [ ] ویرایش به‌ازای هر جمله تبدیل‌شده برای تغییر دقیق متن
+- [x] ویرایش به‌ازای هر جمله تبدیل‌شده برای تغییر دقیق متن
+- [x] تولید مقدمه، میان‌پرده و پایان موسیقی؛ ویرایش میان‌پرده‌ها و پایان‌ها
 - [x] یکپارچه‌سازی برچسب‌های SML برای صدا، مکث، وقفه و تغییرات بیشتر 
 - [x] اطلاعات پارامتر -h -help به زبان‌های مختلف
 - [x] اسکن OCR برای PDF / JPG / BMP / PNG / TIFF
@@ -574,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## افراط اضافی برای آموزش مدل‌ها و موارد مشابه (تمام مدل‌های پشتیبانی‌شده Coqui-tts و piper-tts در یک دستور ساده) 
-- برای اطلاعات در این مورد @DrewThomasson، او در حال حاضر روی توسعه این مورد کار می‌کند، [مخزن در حال انجام در اینجا](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] ساخت یک رابط گرافیکی آموزشی آسان برای استفاده برای تمام مدل‌های coqui-tts در دستورالعمل‌های آموزشی قالب ljspeech [اینجا از coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- برای اطلاعات بیشتر در مورد این @DrewThomasson، او در حال حاضر روی توسعه این [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)] کار می‌کند.
+- [x] یک رابط کاربری آموزشی آسان برای همه مدل‌های coqui-tts در دستور العمل‌های آموزشی با فرمت [ljspeech](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)] بسازید که در [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)] تکمیل شده است.
 
 
 ## اطلاعات نرمال‌سازی کد Python برای مشارکت‌کنندگان

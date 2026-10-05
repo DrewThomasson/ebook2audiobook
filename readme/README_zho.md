@@ -1,8 +1,10 @@
 # 📚 ebook2audiobook (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 将电子书转换为带有章节和元数据的有声书的 CPU/GPU 转换器<br/>
 使用先进的 TTS 引擎等。<br/>
 支持语音克隆和 1158 种语言！
-> [!IMPORTANT]
+> 重要
 **本工具仅供与合法获取的无 DRM 电子书一起使用。** <br>
 作者对本软件的任何滥用或由此产生的任何法律后果概不负责。 <br>
 请负责任地使用本工具，并遵守所有适用的法律。
@@ -89,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [运行步骤](#docker)
   
 - [克隆声音](#cloned-voices)
-- [微调 TTS 模型](#fine-tuned-tts-models)
+- [微调TTS型号](#fine-tuned-tts-models)
   - [微调 TTS 模型集合](#fine-tuned-tts-collection)
-  - [训练 XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [支持的电子书格式](#supported-ebook-formats)
 - [输出格式](#output-and-process-formats)
 - [还原到较旧版本](#reverting-to-older-versions)
@@ -154,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — 固定停顿（**N sec.**）
 - `[voice:/path/to/voice/file]...[/voice]` — 从默认语音或从 GUI/CLI 选择的语音切换语音
 
-**请查看我们另一个专门用于在电子书中自动添加 SML 的仓库 -> [E2A-SML](./components/E2A-SML)**
+**请查看我们另一个专门用于在电子书中自动添加 SML 的仓库 -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > [!IMPORTANT]
 **在发布安装或错误问题之前，请仔细搜索打开和已关闭问题的标签页<br>
@@ -343,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -437,10 +440,9 @@ Podman Compose (i.e. cuda 12.8:
 添加到列表中，请联系我们，我们将在审核后添加它们。
 
 ## 微调（fine-tuned）TTS 模型
-#### 微调您自己的 XTTSv2 模型
+#### 微调您自己的TTS模型
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### 训练数据降噪
 
@@ -479,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - 所有功能均向公众贡献开放 ⭐
 - 来自任何说支持语言的人的任何帮助，以帮助我们改进模型 ⭐
 - [x] 在开始转换之前预览块/章节
-- [ ] 按转换后的句子进行编辑，以进行精准的文本更改
+- [x] 按转换后的句子进行编辑，以进行精准的文本更改
+- [x] 生成音乐插曲、插曲和结尾；编辑插曲和结尾
 - [x] 用于语音、停顿、中断及更多更改的 SML 标签集成 
 - [x] 不同语言的 -h -help 参数信息
 - [x] 针对 PDF / JPG / BMP / PNG / TIFF 的 OCR 扫描
@@ -574,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## 用于训练模型等的额外杀手锏（所有支持的 Coqui-tts 模型和 piper-tts 通过一条简单命令） 
-- 有关此信息 @DrewThomasson，他目前正在进行其开发，[正在进行中的仓库在此处](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] 为 ljspeech 格式训练配方中的所有 coqui-tts 模型创建一个易于使用的训练 gui [此处来自 coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- For info about this @DrewThomasson, he is currently working on the development of this, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## 面向贡献者的 Python 代码规范化信息

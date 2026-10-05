@@ -1,8 +1,10 @@
 # 📚 ebook2audiobook (E2A)
+<a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
+
 CPU/GPU převodník z e-knihy na audioknihu s kapitolami a metadaty<br/>
 s využitím pokročilých TTS enginů a mnoha dalšího.<br/>
 Podporuje klonování hlasu a 1158 jazyků!
-> [!IMPORTANT]
+> DŮLEŽITÉ
 **Tento nástroj je určen pouze pro použití s e-knihami bez DRM, získanými legálně.** <br>
 Autoři nenesou odpovědnost za jakékoli zneužití tohoto softwaru ani za případné právní následky. <br>
 Používejte tento nástroj zodpovědně a v souladu se všemi platnými zákony.
@@ -89,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Kroky ke spuštění](#docker)
   
 - [Klonované hlasy](#cloned-voices)
-- [Doladěné TTS modely](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Kolekce doladěných TTS modelů](#fine-tuned-tts-collection)
-  - [Trénování XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [Vlak TTS Model](#fine-tune-your-own-tts-model)
 - [Podporované formáty e-knih](#supported-ebook-formats)
 - [Výstupní formáty](#output-and-process-formats)
 - [Návrat ke starší verzi](#reverting-to-older-versions)
@@ -154,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — pevná pauza (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — přepnutí hlasu z výchozího nebo vybraného hlasu z GUI/CLI
 
-**Podívejte se na náš další repozitář věnovaný automatickému přidávání SML do vaší e-knihy -> [E2A-SML](./components/E2A-SML)**
+**Podívejte se na náš další repozitář věnovaný automatickému přidávání SML do vaší e-knihy -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > [!IMPORTANT]
 **Než nahlásíte problém s instalací nebo chybu, pečlivě prohledejte záložku otevřených a uzavřených issues<br>
@@ -343,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -437,10 +440,9 @@ Vestavěný seznam klonovaných hlasů je převážně v angličtině. Pokud pot
 přidáno do seznamu, kontaktujte nás a po kontrole je přidáme.
 
 ## Doladěné (fine-tuned) TTS modely
-#### Dolaďte svůj vlastní model XTTSv2
+#### Vylaďte svůj vlastní model TTS
 
-[Universal_TTS_Finetune](./components/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Odšumění tréninkových dat
 
@@ -479,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Všechny funkce otevřené veřejným příspěvkům ⭐
 - Jakákoli pomoc od lidí mluvících některým z podporovaných jazyků, aby nám pomohli vylepšit modely ⭐
 - [x] Náhled bloků/kapitol před zahájením převodu
-- [ ] Úprava po převedené větě pro chirurgickou změnu textu
+- [x] Úprava po převedené větě pro chirurgickou změnu textu
+- [x] Vytvářejte hudební úvody, mezihry a konce; upravujte mezihry a konce
 - [x] Integrace SML tagů pro hlas, pauzu, přerušení a další změny 
 - [x] Informace o parametrech -h -help v různých jazycích
 - [x] OCR skenování pro PDF / JPG / BMP / PNG / TIFF
@@ -574,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Extra nadstandard pro trénování modelů a podobně (všechny podporované modely Coqui-tts a piper-tts v jednom snadném příkazu) 
-- Pro informace o tomto: @DrewThomasson na tom v současné době pracuje, [repozitář ve vývoji zde](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Vytvořit snadno použitelné tréninkové GUI pro všechny modely coqui-tts v tréninkových receptech ve formátu ljspeech [zde od coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Pro informace o tomto @ DrewThomasson v současné době pracuje na vývoji tohoto, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Vytvořte snadno použitelné tréninkové gui pro všechny modely coqui-tts v [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Dokončeno v [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Informace o normalizaci kódu Python pro přispěvatele
