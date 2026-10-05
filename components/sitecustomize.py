@@ -23,9 +23,10 @@ below cover what the older stacks still expect:
   are below. No pin can replace this patch.
 • isin_mps_friendly        → removed in transformers 5.1, still imported by coqui-tts
   tortoise. Without it: cap transformers<5.1 on every tag.
-• tortoise attention_mask  → transformers 5.18 drops an all-1s attention_mask in generate(),
-  but coqui-tts tortoise GPT2InferenceModel.forward reads attention_mask.shape[1] on every
-  cached (1-token) step. Without it: cap transformers<5.18 on every tag.
+• GPT2InferenceModel mask  → transformers 5.18 drops an all-1s attention_mask in generate(),
+  but coqui-tts tortoise AND xtts GPT2InferenceModel.forward read attention_mask.shape[1] on
+  every cached (1-token) step. Without it: cap transformers<5.18 on every tag. No-op once
+  coqui-tts ships the upstream fix (idiap/coqui-ai-TTS#592).
 • use_auth_token → token   → removed in huggingface_hub 1.x, still passed by pyannote 3.4
   (torch<2.9 branch). Without it: transformers==4.57.6 + huggingface_hub<1.0 there.
 
@@ -107,7 +108,7 @@ def patch_module(mod: ModuleType, attr='check_torch_load_is_safe') -> None:
         mod.isin_mps_friendly = _isin_mps_friendly
         warn(f'patched {mod.__name__}.isin_mps_friendly')
     # Restore the attention_mask transformers>=5.18 drops from generate() when it is all 1s
-    if mod.__name__ == 'TTS.tts.layers.tortoise.autoregressive' and hasattr(mod, 'GPT2InferenceModel'):
+    if mod.__name__ in ('TTS.tts.layers.tortoise.autoregressive', 'TTS.tts.layers.xtts.gpt_inference') and hasattr(mod, 'GPT2InferenceModel'):
         import functools, torch
         orig_forward = mod.GPT2InferenceModel.forward
         if not getattr(orig_forward, '_e2a_mask_patch', False):
@@ -200,7 +201,7 @@ if patch_enabled:
         def exec_module(self, module):
             self._orig.exec_module(module)
             name = module.__name__
-            if name.startswith(('transformers', 'huggingface_hub')) or name == 'TTS.tts.layers.tortoise.autoregressive':
+            if name.startswith(('transformers', 'huggingface_hub')) or name in ('TTS.tts.layers.tortoise.autoregressive', 'TTS.tts.layers.xtts.gpt_inference'):
                 patch_module(module)
             elif name == 'torchaudio':
                 patch_torchaudio(module)
@@ -208,7 +209,7 @@ if patch_enabled:
     class LazyPatchHook:
         def find_spec(self, fullname, path, target=None):
             if not (fullname.startswith(('transformers', 'huggingface_hub'))
-                    or fullname in ('torchaudio', 'TTS.tts.layers.tortoise.autoregressive')):
+                    or fullname in ('torchaudio', 'TTS.tts.layers.tortoise.autoregressive', 'TTS.tts.layers.xtts.gpt_inference')):
                 return None
             spec = importlib.machinery.PathFinder.find_spec(fullname, path)
             if not spec or not spec.loader:
@@ -217,7 +218,7 @@ if patch_enabled:
             return spec
 
     sys.meta_path.insert(0, LazyPatchHook())
-    warn('active (lazy patch mode: transformers, huggingface_hub, torchaudio, TTS tortoise)')
+    warn('active (lazy patch mode: transformers, huggingface_hub, torchaudio, TTS tortoise/xtts)')
 
 else:
     warn('loaded but inactive (no patches applied)')
