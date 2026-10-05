@@ -358,8 +358,10 @@ def build_interface(args:dict)->gr.Blocks:
                         <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
                         <b>{title}</b>&nbsp;<b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
                     </div>
-                    ''', scale=3
+                    ''', scale=1
                 )
+                with gr.Column(elem_id='gr_ui_language_spacer', scale=0, min_width=200):
+                    pass
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
