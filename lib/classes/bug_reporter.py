@@ -132,8 +132,12 @@ class BugReporter:
             if session and hasattr(session, 'get') and session.get('id'):
                 info = {k: session.get(k) for k in self.session_keys if session.get(k) is None or isinstance(session.get(k), (str, int, float, bool))}
                 voice = session.get('voice')
-                builtin = isinstance(voice, str) and os.path.abspath(voice).startswith(self.voices_dir)
-                info['voice'] = os.path.relpath(os.path.abspath(voice), self.voices_dir) if builtin else '<custom>' if voice not in [None, '', 'None'] else None
+                voice_path = os.path.abspath(voice) if isinstance(voice, str) else ''
+                try:
+                    builtin = bool(voice_path) and os.path.commonpath((voice_path, self.voices_dir)) == self.voices_dir
+                except ValueError:
+                    builtin = False
+                info['voice'] = os.path.relpath(voice_path, self.voices_dir) if builtin else '<custom>' if voice not in [None, '', 'None'] else None
                 info['custom_model'] = bool(session.get('custom_model'))
                 ebook = session.get('ebook') or session.get('ebook_src')
                 info['ebook_ext'] = os.path.splitext(ebook)[1].lower() if isinstance(ebook, str) else None
