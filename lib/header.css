@@ -591,12 +591,15 @@ audio:-moz-read-only {
     box-shadow: none !important;
     line-height: 1 !important;
 }
+/* Remove any default gap spacing in its parent row if needed */
+#gr_row_ui_language {
+    gap: 0 !important;
+    align-items: center !important;
+}
 #gr_tooltips,
 #gr_tooltips .wrap,
 #gr_tooltips .wrap-inner,
-#gr_tooltips .secondary-wrap,
-#gr_tooltips input,
-#gr_tooltips select {
+#gr_tooltips .secondary-wrap {
     margin: 0 !important;
     padding: 0 !important;
     min-height: 0 !important;
@@ -604,11 +607,6 @@ audio:-moz-read-only {
     border: none !important;
     box-shadow: none !important;
     line-height: 1 !important;
-}
-/* Remove any default gap spacing in its parent row if needed */
-#gr_row_ui_language {
-    gap: 0 !important;
-    align-items: center !important;
 }
 /* Effects */
 .fade-in {
