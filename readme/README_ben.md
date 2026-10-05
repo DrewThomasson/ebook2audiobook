@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [চালানোর ধাপ](#docker)
   
 - [ক্লোনড ভয়েসেস](#cloned-voices)
-- [ফাইন-টিউন করা TTS মডেল](#fine-tuned-tts-models)
+- [ফাইন টিউনড টিটিএস মডেল](#fine-tuned-tts-models)
   - [ফাইন-টিউন করা TTS মডেলের সংগ্রহ](#fine-tuned-tts-collection)
-  - [XTTSv2 প্রশিক্ষণ](#fine-tune-your-own-xttsv2-model)
+  - [ট্রেন টিটিএস মডেল](#fine-tune-your-own-tts-model)
 - [সমর্থিত ই-বুক ফরম্যাট](#supported-ebook-formats)
 - [আউটপুট ফরম্যাট](#output-and-process-formats)
 - [পুরনো সংস্করণে ফিরে যাওয়া](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Podman Compose (i.e. cuda 12.8:
 তালিকায় যোগ করা হয়েছে, অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন এবং পর্যালোচনার পরে আমরা সেগুলি যোগ করব ।
 
 ## ফাইন-টিউন করা (fine-tuned) TTS মডেল
-#### আপনার নিজের XTTSv2 মডেল ফাইন-টিউন করুন
+#### আপনার নিজস্ব টিটিএস মডেলটি সুর করুন
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### প্রশিক্ষণ ডেটার শব্দ অপসারণ
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - সমস্ত বৈশিষ্ট্য সর্বজনীন অবদানের জন্য উন্মুক্ত ⭐
 - মডেল উন্নত করতে আমাদের সাহায্য করার জন্য যেকোনো সমর্থিত ভাষায় কথা বলা লোকদের কাছ থেকে যেকোনো সাহায্য ⭐
 - [x] রূপান্তর শুরু করার আগে ব্লক/অধ্যায় প্রিভিউ
-- [ ] সূক্ষ্ম টেক্সট পরিবর্তনের জন্য রূপান্তরিত বাক্য অনুযায়ী সম্পাদনা
+- [x] সূক্ষ্ম টেক্সট পরিবর্তনের জন্য রূপান্তরিত বাক্য অনুযায়ী সম্পাদনা
+- [x] মিউজিক ইন্ট্রো, ইন্টারলুড এবং এন্ডিং জেনারেট করুন; ইন্টারলুড এবং এন্ডিং এডিট করুন
 - [x] ভয়েস, বিরতি, থামা এবং আরও পরিবর্তনের জন্য SML ট্যাগ ইন্টিগ্রেশন 
 - [x] বিভিন্ন ভাষায় -h -help প্যারামিটার তথ্য
 - [x] PDF / JPG / BMP / PNG / TIFF-এর জন্য OCR স্ক্যানিং
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## মডেল প্রশিক্ষণ ইত্যাদির জন্য অতিরিক্ত ওভারকিল (সমস্ত সমর্থিত Coqui-tts মডেল এবং piper-tts একটি সহজ কমান্ডে) 
-- এই সম্পর্কে তথ্যের জন্য @DrewThomasson, তিনি বর্তমানে এর উন্নয়নে কাজ করছেন, [কার্য-চলমান রেপো এখানে](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] ljspeech ফরম্যাট প্রশিক্ষণ রেসিপিতে সমস্ত coqui-tts মডেলের জন্য একটি সহজ-ব্যবহারযোগ্য প্রশিক্ষণ gui তৈরি করুন [coqui tts থেকে এখানে](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- @ DrewThomasson সম্পর্কে তথ্যের জন্য, তিনি বর্তমানে এটির উন্নয়নে কাজ করছেন, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## অবদানকারীদের জন্য Python কোড স্বাভাবিকীকরণ তথ্য

@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Àwọn Ìgbésẹ̀ láti Ṣe](#docker)
   
 - [Cloned Voices](#cloned-voices)
-- [Àwọn àwòṣe TTS Tí A Ti Ṣàtúnṣe](#fine-tuned-tts-models)
+- [Àwọn àwòṣe TTS Fine Tuned](#fine-tuned-tts-models)
   - [Àkójọ Àwọn Àwòṣe TTS Tí A Ti Ṣàtúnṣe](#fine-tuned-tts-collection)
-  - [Dídá XTTSv2 Lẹ́kọ̀ọ́](#fine-tune-your-own-xttsv2-model)
+  - [Reluwe TTS Awoṣe](#fine-tune-your-own-tts-model)
 - [Àwọn Ọ̀nà eBook Tí A Ṣe Àtìlẹ́yìn Fún](#supported-ebook-formats)
 - [Àwọn Ọ̀nà Ìjáde](#output-and-process-formats)
 - [Padà sí Ẹ̀dà àtijọ́](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Kò ṣe pàtàkì bí àkọsílẹ̀ náà bá ní ìpìlẹ̀ ariwo tàbí or
 àfikún sí àtòjọ náà, jọ̀wọ́ kàn sí wa a ó sì fi kún un lẹ́yìn àtúnyẹ̀wò.
 
 ## Àwọn àwòṣe TTS Tí A Ti Ṣàtúnṣe (fine-tuned)
-#### Ṣàtúnṣe àwòṣe XTTSv2 tìrẹ
+#### Tún àwòṣe TTS tìrẹ ṣe dáadáa
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Yíyọ ariwo kúrò nínú dátà ìdánilẹ́kọ̀ọ́
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Gbogbo Àwọn Ẹ̀yà ṣí sílẹ̀ fún Àwọn Ìdáwó àjọ̀dún ⭐
 - Ìrànlọ́wọ́ èyíkéyìí láti ọ̀dọ̀ àwọn ènìyàn tó ń sọ èdè èyíkéyìí tí a ṣe àtìlẹ́yìn fún láti ràn wá lọ́wọ́ láti mú àwọn àwòṣe dára síi ⭐
 - [x] Àwòkọ́ Àwọn Àkójọpọ̀/Orí kí a tó bẹ̀rẹ̀ ìyípadà
-- [ ] Ṣàtúnṣe ní gbólóhùn tí a yí padà fún ìyípadà ọ̀rọ̀ tó pé
+- [x] Ṣàtúnṣe ní gbólóhùn tí a yí padà fún ìyípadà ọ̀rọ̀ tó pé
+- [x] Ṣẹda orin intros, interludes, àti ìparí; ṣatunkọ interludes àti ìparí
 - [x] Ìṣọ̀kan àmì SML fún ohùn, ìdúró, ìdáwọ́dúró, àti àwọn ìyípadà síi 
 - [x] Ìsọfúnni àléébù -h -help ní àwọn èdè ọ̀tọ̀ọ̀tọ̀
 - [x] Àyẹ̀wò OCR fún PDF / JPG / BMP / PNG / TIFF
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Àpọ̀jù Àfikún fún dídá àwọn àwòṣe lẹ́kọ̀ọ́ àti irú rẹ̀ (Gbogbo àwọn àwòṣe Coqui-tts tí a ṣe àtìlẹ́yìn fún àti piper-tts nínú àṣẹ rọrùn kan) 
-- Fún ìsọfúnni nípa èyí @DrewThomasson, ó ń ṣiṣẹ́ lórí ìdàgbàsókè rẹ̀ lọ́wọ́lọ́wọ́, [repo tó ń lọ lọ́wọ́ níbí](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Ṣe gui ìdánilẹ́kọ̀ọ́ tó rọrùn láti lò fún gbogbo àwọn àwòṣe coqui-tts nínú àwọn ìlànà ìdánilẹ́kọ̀ọ́ ọ̀nà ljspeech [níbí láti ọ̀dọ̀ coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Fún àlàyé nípa èyí @ DrewThomasson, ó ń ṣiṣẹ́ lórí ìdàgbàsókè èyí, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Ìsọfúnni ìṣàkóso Kóòdù Python fún àwọn olùdáwó

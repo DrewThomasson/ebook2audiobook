@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Schritte zur Ausführung](#docker)
   
 - [Geklonte Stimmen](#cloned-voices)
-- [Feinabgestimmte TTS-Modelle](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Sammlung feinabgestimmter TTS-Modelle](#fine-tuned-tts-collection)
-  - [XTTSv2 trainieren](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Unterstützte E-Book-Formate](#supported-ebook-formats)
 - [Ausgabeformate](#output-and-process-formats)
 - [Zu einer älteren Version zurückkehren](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Die eingebaute Liste der geklonten Stimmen ist hauptsächlich auf Englisch. Wenn
 der Liste hinzugefügt, kontaktieren Sie uns bitte und wir werden sie nach der Überprüfung hinzufügen.
 
 ## Feinabgestimmte (fine-tuned) TTS-Modelle
-#### Stimmen Sie Ihr eigenes XTTSv2-Modell fein ab
+#### Feinabstimmung Ihres eigenen TTS-Modells
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Trainingsdaten entrauschen
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Alle Funktionen offen für öffentliche Beiträge ⭐
 - Jede Hilfe von Personen, die eine der unterstützten Sprachen sprechen, um uns bei der Verbesserung der Modelle zu helfen ⭐
 - [x] Blöcke/Kapitel vor dem Start der Konvertierung in der Vorschau anzeigen
-- [ ] Bearbeitung nach konvertiertem Satz für chirurgisch genaue Textänderungen
+- [x] Bearbeitung nach konvertiertem Satz für chirurgisch genaue Textänderungen
+- [x] Musik-Intros, -Zwischenspiele und -Enden generieren; Zwischenspiele und -Enden bearbeiten
 - [x] SML-Tag-Integration für Stimme, Pause, Unterbrechung und weitere Änderungen 
 - [x] Informationen zu den Parametern -h -help in verschiedenen Sprachen
 - [x] OCR-Erkennung für PDF / JPG / BMP / PNG / TIFF
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Extra-Overkill für das Trainieren von Modellen und Ähnliches (alle unterstützten Coqui-tts-Modelle und piper-tts in einem einzigen einfachen Befehl) 
-- Für Informationen dazu: @DrewThomasson arbeitet derzeit an der Entwicklung, [Work-in-Progress-Repo hier](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Eine einfach zu bedienende Trainings-GUI für alle coqui-tts-Modelle im ljspeech-Format erstellen [Trainingsrezepte hier von coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Zur Information darüber @DrewThomasson, er arbeitet derzeit an der Entwicklung dieses, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Informationen zur Python-Code-Normalisierung für Mitwirkende

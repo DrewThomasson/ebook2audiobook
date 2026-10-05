@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [실행 단계](#docker)
   
 - [Cloned Voices](#cloned-voices)
-- [미세 조정된 TTS 모델](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [미세 조정된 TTS 모델 모음](#fine-tuned-tts-collection)
-  - [XTTSv2 학습](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [지원되는 전자책 형식](#supported-ebook-formats)
 - [출력 형식](#output-and-process-formats)
 - [이전 버전으로 되돌리기](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Podman Compose (i.e. cuda 12.8:
 목록에 추가되었습니다. 문의해 주시면 검토 후 추가해 드리겠습니다.
 
 ## 미세 조정된(fine-tuned) TTS 모델
-#### 자신만의 XTTSv2 모델을 미세 조정하세요
+#### 나만의 TTS 모델 미세 조정
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### 학습 데이터의 노이즈 제거
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - 모든 기능이 공개 기여에 열려 있습니다 ⭐
 - 모델 개선을 돕기 위해 지원 언어 중 하나를 구사하는 사람들의 모든 도움 ⭐
 - [x] 변환을 시작하기 전에 블록/챕터 미리 보기
-- [ ] 정밀한 텍스트 변경을 위해 변환된 문장 단위로 편집
+- [x] 정밀한 텍스트 변경을 위해 변환된 문장 단위로 편집
+- [x] 음악 인트로, 인터루드 및 엔딩 생성, 인터루드 및 엔딩 편집
 - [x] 음성, 멈춤, 중단 및 추가 변경을 위한 SML 태그 통합 
 - [x] 다양한 언어로 된 -h -help 매개변수 정보
 - [x] PDF / JPG / BMP / PNG / TIFF용 OCR 스캔
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## 모델 학습 등을 위한 추가적인 오버킬(지원되는 모든 Coqui-tts 모델과 piper-tts를 하나의 쉬운 명령으로) 
-- 이에 관한 정보는 @DrewThomasson, 그가 현재 이것의 개발을 진행하고 있습니다, [작업 중인 저장소는 여기](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] ljspeech 형식의 학습 레시피에서 모든 coqui-tts 모델을 위한 사용하기 쉬운 학습 gui 만들기 [coqui tts에서 여기](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- For info about this @DrewThomasson, he is currently working on the development of this, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## 기여자를 위한 Python 코드 정규화 정보

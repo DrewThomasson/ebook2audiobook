@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Hatua za Kuendesha](#docker)
   
 - [Sauti Zilizopambwa](#cloned-voices)
-- [Modeli za TTS Zilizoboreshwa](#fine-tuned-tts-models)
+- [Miundo ya TTS Iliyorekebishwa](#fine-tuned-tts-models)
   - [Mkusanyiko wa Modeli za TTS Zilizoboreshwa](#fine-tuned-tts-collection)
-  - [Funza XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Miundo ya eBook Inayoungwa Mkono](#supported-ebook-formats)
 - [Miundo ya Matokeo](#output-and-process-formats)
 - [Rudi kwa Toleo la zamani](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Orodha ya sauti zilizojengwa ndani ni hasa kwa Kiingereza. Ikiwa unahitaji sauti
 imeongezwa kwenye orodha, tafadhali wasiliana nasi na tutayaweka baada ya kutathminiwa.
 
 ## Modeli za TTS Zilizoboreshwa (fine-tuned)
-#### Boresha modeli yako mwenyewe ya XTTSv2
+#### Fanya vizuri modeli yako ya TTS
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Ondoa kelele kwenye data ya mafunzo
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Vipengele vyote vimefunguliwa kwa Michango ya umma ⭐
 - Msaada wowote kutoka kwa watu wanaozungumza lugha yoyote inayoungwa mkono ili kutusaidia kuboresha modeli ⭐
 - [x] Hakiki Vizuizi/Sura kabla ya kuanza ubadilishaji
-- [ ] Hariri kwa sentensi iliyobadilishwa kwa mabadiliko ya maandishi ya kina
+- [x] Hariri kwa sentensi iliyobadilishwa kwa mabadiliko ya maandishi ya kina
+- [x] Tengeneza intros za muziki, maingiliano, na miisho; hariri miingiliano na miisho
 - [x] Ujumuishaji wa lebo za SML kwa sauti, pumziko, mapumziko, na mabadiliko zaidi 
 - [x] Taarifa za vigezo -h -help katika lugha tofauti
 - [x] Uchanganuzi wa OCR kwa PDF / JPG / BMP / PNG / TIFF
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Ziada ya Kupita Kiasi kwa kufunza modeli na mengineyo (Modeli zote za Coqui-tts zinazoungwa mkono na piper-tts katika amri moja rahisi) 
-- Kwa maelezo kuhusu hili @DrewThomasson, kwa sasa anafanyia kazi maendeleo ya hili, [repo inayoendelea hapa](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Tengeneza gui ya mafunzo rahisi kutumia kwa modeli zote za coqui-tts katika maagizo ya mafunzo ya muundo wa ljspeech [hapa kutoka coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Kwa taarifa kuhusu hii @ DrewThomasson, kwa sasa anafanyia kazi maendeleo ya hii, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Maelezo ya usanifishaji wa Msimbo wa Python kwa wachangiaji

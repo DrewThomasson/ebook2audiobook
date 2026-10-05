@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Kroky ke spuštění](#docker)
   
 - [Klonované hlasy](#cloned-voices)
-- [Doladěné TTS modely](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Kolekce doladěných TTS modelů](#fine-tuned-tts-collection)
-  - [Trénování XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [Vlak TTS Model](#fine-tune-your-own-tts-model)
 - [Podporované formáty e-knih](#supported-ebook-formats)
 - [Výstupní formáty](#output-and-process-formats)
 - [Návrat ke starší verzi](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Vestavěný seznam klonovaných hlasů je převážně v angličtině. Pokud pot
 přidáno do seznamu, kontaktujte nás a po kontrole je přidáme.
 
 ## Doladěné (fine-tuned) TTS modely
-#### Dolaďte svůj vlastní model XTTSv2
+#### Vylaďte svůj vlastní model TTS
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Odšumění tréninkových dat
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Všechny funkce otevřené veřejným příspěvkům ⭐
 - Jakákoli pomoc od lidí mluvících některým z podporovaných jazyků, aby nám pomohli vylepšit modely ⭐
 - [x] Náhled bloků/kapitol před zahájením převodu
-- [ ] Úprava po převedené větě pro chirurgickou změnu textu
+- [x] Úprava po převedené větě pro chirurgickou změnu textu
+- [x] Vytvářejte hudební úvody, mezihry a konce; upravujte mezihry a konce
 - [x] Integrace SML tagů pro hlas, pauzu, přerušení a další změny 
 - [x] Informace o parametrech -h -help v různých jazycích
 - [x] OCR skenování pro PDF / JPG / BMP / PNG / TIFF
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Extra nadstandard pro trénování modelů a podobně (všechny podporované modely Coqui-tts a piper-tts v jednom snadném příkazu) 
-- Pro informace o tomto: @DrewThomasson na tom v současné době pracuje, [repozitář ve vývoji zde](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Vytvořit snadno použitelné tréninkové GUI pro všechny modely coqui-tts v tréninkových receptech ve formátu ljspeech [zde od coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Pro informace o tomto @ DrewThomasson v současné době pracuje na vývoji tohoto, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Vytvořte snadno použitelné tréninkové gui pro všechny modely coqui-tts v [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Dokončeno v [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Informace o normalizaci kódu Python pro přispěvatele

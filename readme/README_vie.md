@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Các bước để chạy](#docker)
   
 - [Cloned Voices](#cloned-voices)
-- [Các mô hình TTS đã tinh chỉnh](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Bộ sưu tập các mô hình TTS đã tinh chỉnh](#fine-tuned-tts-collection)
-  - [Huấn luyện XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Định dạng sách điện tử được hỗ trợ](#supported-ebook-formats)
 - [Định dạng đầu ra](#output-and-process-formats)
 - [Quay lại phiên bản cũ hơn](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Danh sách giọng nói nhân bản tích hợp chủ yếu bằng tiếng Anh. 
 đã thêm vào danh sách, vui lòng liên hệ với chúng tôi và chúng tôi sẽ thêm chúng sau khi đánh giá.
 
 ## Các mô hình TTS đã tinh chỉnh (fine-tuned)
-#### Tinh chỉnh mô hình XTTSv2 của riêng bạn
+#### Tinh chỉnh mô hình TTS của riêng bạn
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Khử nhiễu dữ liệu huấn luyện
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Tất cả các Tính năng đều mở cho Đóng góp công khai ⭐
 - Mọi sự giúp đỡ từ những người nói bất kỳ ngôn ngữ nào được hỗ trợ để giúp chúng tôi cải thiện các mô hình ⭐
 - [x] Xem trước các Khối/Chương trước khi bắt đầu chuyển đổi
-- [ ] Chỉnh sửa theo từng câu đã chuyển đổi để thay đổi văn bản chính xác
+- [x] Chỉnh sửa theo từng câu đã chuyển đổi để thay đổi văn bản chính xác
+- [x] Tạo phần giới thiệu âm nhạc, đoạn ngắt và kết thúc; chỉnh sửa đoạn ngắt và kết thúc
 - [x] Tích hợp thẻ SML cho giọng nói, khoảng dừng, điểm ngắt và nhiều thay đổi hơn 
 - [x] Thông tin tham số -h -help bằng các ngôn ngữ khác nhau
 - [x] Quét OCR cho PDF / JPG / BMP / PNG / TIFF
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Phần thừa thãi để huấn luyện mô hình và những thứ tương tự (tất cả các mô hình Coqui-tts được hỗ trợ và piper-tts trong một lệnh đơn giản) 
-- Để biết thông tin về việc này @DrewThomasson, anh ấy hiện đang phát triển nó, [repo đang trong quá trình thực hiện tại đây](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Tạo một gui huấn luyện dễ sử dụng cho tất cả các mô hình coqui-tts trong các công thức huấn luyện định dạng ljspeech [tại đây từ coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Để biết thông tin về @DrewThomasson này, anh ấy hiện đang làm việc để phát triển điều này, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Tạo gui đào tạo dễ sử dụng cho tất cả các mô hình coqui-tts trong [công thức đào tạo định dạng ljspeech](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Đã hoàn thành tại [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Thông tin chuẩn hóa mã Python cho người đóng góp

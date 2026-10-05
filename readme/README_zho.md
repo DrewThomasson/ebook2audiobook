@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [运行步骤](#docker)
   
 - [克隆声音](#cloned-voices)
-- [微调 TTS 模型](#fine-tuned-tts-models)
+- [微调TTS型号](#fine-tuned-tts-models)
   - [微调 TTS 模型集合](#fine-tuned-tts-collection)
-  - [训练 XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [支持的电子书格式](#supported-ebook-formats)
 - [输出格式](#output-and-process-formats)
 - [还原到较旧版本](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Podman Compose (i.e. cuda 12.8:
 添加到列表中，请联系我们，我们将在审核后添加它们。
 
 ## 微调（fine-tuned）TTS 模型
-#### 微调您自己的 XTTSv2 模型
+#### 微调您自己的TTS模型
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### 训练数据降噪
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - 所有功能均向公众贡献开放 ⭐
 - 来自任何说支持语言的人的任何帮助，以帮助我们改进模型 ⭐
 - [x] 在开始转换之前预览块/章节
-- [ ] 按转换后的句子进行编辑，以进行精准的文本更改
+- [x] 按转换后的句子进行编辑，以进行精准的文本更改
+- [x] 生成音乐插曲、插曲和结尾；编辑插曲和结尾
 - [x] 用于语音、停顿、中断及更多更改的 SML 标签集成 
 - [x] 不同语言的 -h -help 参数信息
 - [x] 针对 PDF / JPG / BMP / PNG / TIFF 的 OCR 扫描
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## 用于训练模型等的额外杀手锏（所有支持的 Coqui-tts 模型和 piper-tts 通过一条简单命令） 
-- 有关此信息 @DrewThomasson，他目前正在进行其开发，[正在进行中的仓库在此处](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] 为 ljspeech 格式训练配方中的所有 coqui-tts 模型创建一个易于使用的训练 gui [此处来自 coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- For info about this @DrewThomasson, he is currently working on the development of this, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## 面向贡献者的 Python 代码规范化信息

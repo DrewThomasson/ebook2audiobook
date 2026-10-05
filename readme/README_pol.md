@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Kroki uruchamiania](#docker)
   
 - [Sklonowane głosy](#cloned-voices)
-- [Dostrojone modele TTS](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Kolekcja dostrojonych modeli TTS](#fine-tuned-tts-collection)
-  - [Trenowanie XTTSv2](#fine-tune-your-own-xttsv2-model)
+  - [Pociąg TTS Model](#fine-tune-your-own-tts-model)
 - [Obsługiwane formaty e-booków](#supported-ebook-formats)
 - [Formaty wyjściowe](#output-and-process-formats)
 - [Powrót do starszej wersji](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Wbudowana lista sklonowanych głosów jest głównie w języku angielskim. Jeśl
 dodane do listy, skontaktuj się z nami, a my dodamy je po sprawdzeniu.
 
 ## Dostrojone (fine-tuned) modele TTS
-#### Dostrój własny model XTTSv2
+#### Precyzyjne dostrojenie własnego modelu TTS
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### Odszumianie danych treningowych
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - Wszystkie funkcje otwarte na publiczne wkłady ⭐
 - Wszelka pomoc od osób mówiących w którymkolwiek z obsługiwanych języków, aby pomóc nam ulepszać modele ⭐
 - [x] Podgląd bloków/rozdziałów przed rozpoczęciem konwersji
-- [ ] Edycja według przekonwertowanego zdania dla chirurgicznej zmiany tekstu
+- [x] Edycja według przekonwertowanego zdania dla chirurgicznej zmiany tekstu
+- [x] Generuj muzyczne intro, interludia i zakończenia; edytuj interludia i zakończenia
 - [x] Integracja znaczników SML dla głosu, pauzy, przerwy i innych zmian 
 - [x] Informacje o parametrach -h -help w różnych językach
 - [x] Skanowanie OCR dla PDF / JPG / BMP / PNG / TIFF
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## Dodatkowy przerost dla trenowania modeli i nie tylko (wszystkie obsługiwane modele Coqui-tts oraz piper-tts w jednym prostym poleceniu) 
-- Po informacje na ten temat: @DrewThomasson obecnie pracuje nad jego rozwojem, [repozytorium w trakcie prac tutaj](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] Stworzyć łatwy w użyciu interfejs treningowy dla wszystkich modeli coqui-tts w przepisach treningowych w formacie ljspeech [tutaj od coqui tts](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- Aby uzyskać więcej informacji na temat tego @ DrewThomasson, obecnie pracuje nad rozwojem tego, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Stwórz łatwy w użyciu interfejs szkoleniowy dla wszystkich modeli koqui-tts w [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## Informacje o normalizacji kodu Python dla współtwórców

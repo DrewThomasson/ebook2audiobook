@@ -91,9 +91,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [実行手順](#docker)
   
 - [クローン音声](#cloned-voices)
-- [ファインチューニング済みTTSモデル](#fine-tuned-tts-models)
+- [微調整されたTTSモデル](#fine-tuned-tts-models)
   - [ファインチューニング済みTTSモデルのコレクション](#fine-tuned-tts-collection)
-  - [XTTSv2の学習](#fine-tune-your-own-xttsv2-model)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [対応する電子書籍形式](#supported-ebook-formats)
 - [出力形式](#output-and-process-formats)
 - [古いバージョンに戻す](#reverting-to-older-versions)
@@ -345,6 +345,7 @@ optional parameters:
                         Audiobookshelf API token.
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
+  --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
   --version             Show the version of the script and exit
 
 Example usage:
@@ -439,10 +440,9 @@ Podman Compose (i.e. cuda 12.8:
 リストに追加されました。お問い合わせください。審査後に追加させていただきます。
 
 ## ファインチューニング済み（fine-tuned）TTSモデル
-#### 独自のXTTSv2モデルをファインチューニング
+#### 独自のTTSモデルを微調整する
 
-[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
-
+[Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 #### 学習データのノイズ除去
 
@@ -481,7 +481,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - すべての機能が公開された貢献に開かれています ⭐
 - モデルの改善に役立つよう、対応言語のいずれかを話す人々からのあらゆる支援 ⭐
 - [x] 変換を開始する前にブロック／章をプレビュー
-- [ ] 外科的なテキスト変更のために変換された文ごとに編集
+- [x] 外科的なテキスト変更のために変換された文ごとに編集
+- [x] 音楽のイントロ、インタールーデス、エンディングを生成し、インタールーデスとエンディングを編集
 - [x] 音声、一時停止、中断、その他の変更のためのSMLタグ統合 
 - [x] さまざまな言語での-h -helpパラメータ情報
 - [x] PDF / JPG / BMP / PNG / TIFF向けのOCRスキャン
@@ -576,8 +577,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 ## モデルの学習などのための追加のオーバーキル（対応するすべてのCoqui-ttsモデルとpiper-ttsを1つの簡単なコマンドで） 
-- これに関する情報は@DrewThomasson、彼は現在この開発に取り組んでいます、[作業中のリポジトリはこちら](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [ ] ljspeech形式の学習レシピですべてのcoqui-ttsモデル向けに使いやすい学習用guiを作成する [coqui ttsからこちら](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech)
+- この@ DrewThomassonに関する情報については、彼は現在これの開発に取り組んでいます、[ユニバーサルTTSファインチューン](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## 貢献者向けPythonコード正規化情報
