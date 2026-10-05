@@ -343,8 +343,8 @@ def build_interface(args:dict)->gr.Blocks:
                         block_components.append((acc, acc_keep, acc_voice_list, acc_text))
 
                 with gr.Row(elem_id='gr_row_buttons', visible=True) as gr_row_buttons:
-                    gr_blocks_cancel_btn = gr.Button('🡄', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
-                    gr_blocks_confirm_btn = gr.Button('🡆', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
+                    gr_blocks_cancel_btn = gr.Button('🡄', elem_id='gr_blocks_cancel_btn', elem_classes=['gr-blocks-buttons'], variant='stop', scale=0, size='md')
+                    gr_blocks_confirm_btn = gr.Button('🡆', elem_id='gr_blocks_confirm_btn', elem_classes=['gr-blocks-buttons'], variant='primary', scale=0, size='md')
 
             blocks_components_flat = [comp for quad in block_components for comp in quad]
             blocks_keeps = [c[1] for c in block_components]
@@ -352,7 +352,7 @@ def build_interface(args:dict)->gr.Blocks:
             blocks_texts = [c[3] for c in block_components]
 
             with gr.Row(elem_id='gr_row_ui_language'):
-                gr_ui_language = gr.Dropdown(label=legends['gr_ui_language'], elem_id='gr_ui_language', choices=[(legends['gr_ui_language_auto'], 'auto')] + sorted([(language_mapping[lang]['native_name'] if lang in language_mapping else lang, lang) for lang in legends_langs]), value='auto', type='value', interactive=True, scale=0, min_width=150)
+                gr_ui_language = gr.Dropdown(label=legends['gr_ui_language'], show_label=False, elem_id='gr_ui_language', choices=sorted([(language_mapping[lang]['native_name'] if lang in language_mapping else lang, lang) for lang in legends_langs]), value=system_language, type='value', interactive=True, scale=0, min_width=150)
                 gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                     <div style="right:0;margin:auto;padding:10px;text-align:center">
                         <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
@@ -360,7 +360,7 @@ def build_interface(args:dict)->gr.Blocks:
                     </div>
                     ''', scale=1
                 )
-                gr_button_balloons = gr.Checkbox(label='buttons help', elem_id='gr_button_balloons', value=False, interactive=True, scale=0, min_width=150)
+                gr_tooltips = gr.Checkbox(label=legends['gr_tooltips'], elem_id='gr_tooltips', value=False, interactive=True, scale=0, min_width=150)
 
             gr_modal = gr.HTML(visible=False)
             gr_glassmask = gr.HTML(gr_glassmask_msg, elem_id='gr_glassmask', elem_classes=['gr-glass-mask'])
@@ -376,6 +376,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
             gr_session_update = gr.State({'hash': None})
             gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden')
+            gr_tooltips_data = gr.JSON(elem_id='gr_tooltips_data', visible='hidden')
             
             gr_event = gr.Number(value=0, visible=False, precision=0)
             gr_blocks_event = gr.Number(value=0, visible=False, precision=0)
@@ -715,11 +716,20 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        session['ui_language_choice'] = None if choice in (None, 'auto') else choice
+                        session['ui_language_choice'] = choice if choice in legends_langs else None
                         session['ui_language'] = session['ui_language_choice'] or next((legends_iso1[tag.split(';')[0].strip().split('-')[0].lower()] for tag in req.headers.get('accept-language', '').split(',') if tag.split(';')[0].strip().split('-')[0].lower() in legends_iso1), system_language)
                         ui_language.set(session['ui_language'])
                 except Exception as e:
                     error = f'_change_gr_ui_language(): {e}'
+                    exception_alert(session_id, error)
+
+            def _change_gr_tooltips(session_id:str, enabled:bool)->None:
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        session['tooltips'] = bool(enabled)
+                except Exception as e:
+                    error = f'_change_gr_tooltips(): {e}'
                     exception_alert(session_id, error)
 
             def _restore_ui_language(session_id:str)->tuple:
@@ -769,7 +779,9 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(label=legends['gr_abs_api_token']),
                             gr.update(label=legends['gr_abs_audiobook']),
                             gr.update(label=legends['gr_abs_status']),
-                            gr.update(label=legends['gr_ui_language'], choices=[(legends['gr_ui_language_auto'], 'auto')] + sorted([(language_mapping[lang]['native_name'] if lang in language_mapping else lang, lang) for lang in legends_langs]), value=session.get('ui_language_choice') or 'auto'),
+                            gr.update(value=session.get('ui_language') or system_language),
+                            gr.update(label=legends['gr_tooltips'], value=bool(session.get('tooltips'))),
+                            gr.update(value={elem_id: legends[f'tooltip_{elem_id}'] for elem_id in tooltips_buttons}),
                         )
                 except Exception as e:
                     error = f'_restore_ui_language(): {e}'
@@ -3237,8 +3249,62 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_output_split_hours_markdown, gr_session_markdown, gr_progress_markdown, gr_audiobook_markdown,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k,
                 gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_markdown_tab_bark_params, gr_bark_text_temp,
-                gr_bark_waveform_temp, gr_abs_url, gr_abs_api_token, gr_abs_audiobook, gr_abs_status, gr_ui_language
+                gr_bark_waveform_temp, gr_abs_url, gr_abs_api_token, gr_abs_audiobook, gr_abs_status, gr_ui_language,
+                gr_tooltips, gr_tooltips_data
             ]
+            tooltips_buttons = [
+                'gr_voice_play', 'gr_voice_del_btn', 'gr_custom_model_del_btn', 'gr_session_switch_btn',
+                'gr_audiobook_edit_preview_btn', 'gr_audiobook_edit_save_btn', 'gr_audiobook_edit_cancel_btn',
+                'gr_audiobook_download_btn', 'gr_audiobook_edit_btn', 'gr_audiobook_export_btn', 'gr_audiobook_del_btn',
+                'gr_convert_btn', 'gr_abs_search_btn', 'gr_abs_upload_btn', 'gr_blocks_back_btn', 'gr_blocks_next_btn',
+                'gr_blocks_cancel_btn', 'gr_blocks_confirm_btn'
+            ]
+            tooltips_js = r'''(enabled,data)=>{
+                window.gr_tooltips_state={enabled:!!enabled,data:data||{}};
+                const hide=()=>{const tip=document.getElementById('gr_tooltip_box');if(tip){tip.style.display='none';}};
+                if(!enabled){hide();}
+                if(window.gr_tooltips_ready){return;}
+                window.gr_tooltips_ready=true;
+                let timer=null;
+                const find=(target)=>{
+                    const state=window.gr_tooltips_state;
+                    if(!state||!state.enabled||!target||!target.closest){return null;}
+                    const btn=target.closest('button');
+                    if(!btn){return null;}
+                    for(let el=btn;el&&el!==document.body;el=el.parentElement){
+                        if(el.id&&state.data[el.id]){return [btn,state.data[el.id]];}
+                    }
+                    return null;
+                };
+                document.addEventListener('pointerover',(e)=>{
+                    const hit=find(e.target);
+                    if(!hit){return;}
+                    let tip=document.getElementById('gr_tooltip_box');
+                    if(!tip){
+                        tip=document.createElement('div');
+                        tip.id='gr_tooltip_box';
+                        tip.setAttribute('role','tooltip');
+                        tip.style.cssText='position:fixed;z-index:10000;max-width:260px;padding:6px 10px;border-radius:6px;background:rgba(20,20,20,0.92);color:#fff;font-size:13px;line-height:1.35;pointer-events:none;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.35)';
+                        document.body.appendChild(tip);
+                    }
+                    tip.textContent=hit[1];
+                    tip.style.display='block';
+                    const r=hit[0].getBoundingClientRect();
+                    let top=r.top-tip.offsetHeight-8;
+                    if(top<4){top=r.bottom+8;}
+                    const left=Math.max(4,Math.min(r.left+r.width/2-tip.offsetWidth/2,window.innerWidth-tip.offsetWidth-4));
+                    tip.style.top=top+'px';
+                    tip.style.left=left+'px';
+                    clearTimeout(timer);
+                    if(e.pointerType==='touch'){timer=setTimeout(hide,2500);}
+                },true);
+                document.addEventListener('pointerout',(e)=>{
+                    if(e.pointerType==='touch'){return;}
+                    const hit=find(e.target);
+                    if(hit&&!(e.relatedTarget&&hit[0].contains(e.relatedTarget))){hide();}
+                },true);
+                document.addEventListener('scroll',hide,true);
+            }'''
             outputs_refresh_interface = [
                 gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_abs_params, gr_convert_btn,
                 gr_ebook_src, gr_ebook_textarea, gr_device, gr_audiobook_player, gr_audiobook_list,
@@ -3944,6 +4010,23 @@ def build_interface(args:dict)->gr.Blocks:
                     }
                 '''
             )       
+            gr_tooltips.input(
+                fn=_change_gr_tooltips,
+                inputs=[gr_session, gr_tooltips],
+                outputs=None
+            )
+            gr_tooltips.change(
+                fn=None,
+                inputs=[gr_tooltips, gr_tooltips_data],
+                outputs=None,
+                js=tooltips_js
+            )
+            gr_tooltips_data.change(
+                fn=None,
+                inputs=[gr_tooltips, gr_tooltips_data],
+                outputs=None,
+                js=tooltips_js
+            )
             gr_ui_language.input(
                 fn=_change_gr_ui_language,
                 inputs=[gr_session, gr_ui_language],

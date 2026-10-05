@@ -184,6 +184,7 @@ class SessionContext:
             "language": default_language_code,
             "ui_language": None,
             "ui_language_choice": None,
+            "tooltips": False,
             "language_iso1": None,
             "translate_enabled": False,
             "translate": None,
