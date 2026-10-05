@@ -596,18 +596,6 @@ audio:-moz-read-only {
     gap: 0 !important;
     align-items: center !important;
 }
-#gr_tooltips,
-#gr_tooltips .wrap,
-#gr_tooltips .wrap-inner,
-#gr_tooltips .secondary-wrap {
-    margin: 0 !important;
-    padding: 0 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    border: none !important;
-    box-shadow: none !important;
-    line-height: 1 !important;
-}
 /* Effects */
 .fade-in {
 	animation: fadeIn 1s ease-in !important;
