@@ -591,7 +591,20 @@ audio:-moz-read-only {
     box-shadow: none !important;
     line-height: 1 !important;
 }
-
+#gr_tooltips,
+#gr_tooltips .wrap,
+#gr_tooltips .wrap-inner,
+#gr_tooltips .secondary-wrap,
+#gr_tooltips input,
+#gr_tooltips select {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    border: none !important;
+    box-shadow: none !important;
+    line-height: 1 !important;
+}
 /* Remove any default gap spacing in its parent row if needed */
 #gr_row_ui_language {
     gap: 0 !important;
