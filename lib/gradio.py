@@ -3292,6 +3292,22 @@ def build_interface(args:dict)->gr.Blocks:
                         document.body.appendChild(tip);
                     }
                     tip.textContent=hit[1];
+                    const dd=document.querySelector('#gr_ui_language .wrap')||document.querySelector('#gr_ui_language');
+                    if(dd){
+                        const ip=document.querySelector('#gr_ui_language input')||dd;
+                        const a=getComputedStyle(dd),b=getComputedStyle(ip);
+                        if(a.backgroundColor&&a.backgroundColor!=='transparent'&&a.backgroundColor!=='rgba(0, 0, 0, 0)'){
+                            tip.style.background=a.backgroundColor;
+                            tip.style.color=b.color;
+                        }
+                        tip.style.border=a.borderTopWidth+' '+a.borderTopStyle+' '+a.borderTopColor;
+                        tip.style.borderRadius=a.borderTopLeftRadius;
+                        tip.style.boxShadow=a.boxShadow;
+                        tip.style.fontFamily=b.fontFamily;
+                        tip.style.fontSize=b.fontSize;
+                        tip.style.fontWeight=b.fontWeight;
+                        tip.style.lineHeight=b.lineHeight;
+                    }
                     tip.style.display='block';
                     const r=hit[0].getBoundingClientRect();
                     let top=r.top-tip.offsetHeight-8;
