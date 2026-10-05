@@ -3288,7 +3288,7 @@ def build_interface(args:dict)->gr.Blocks:
                         tip=document.createElement('div');
                         tip.id='gr_tooltip_box';
                         tip.setAttribute('role','tooltip');
-                        tip.style.cssText='position:fixed;z-index:10000;max-width:260px;padding:6px 10px;border-radius:6px;background:rgba(20,20,20,0.92);color:#fff;font-size:13px;line-height:1.35;pointer-events:none;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.35)';
+                        tip.style.cssText='position:fixed;z-index:10000;max-width:260px;padding:3px;border-radius:6px;background:rgba(20,20,20,0.92);color:#fff;font-size:13px;line-height:1.35;pointer-events:none;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.35)';
                         document.body.appendChild(tip);
                     }
                     tip.textContent=hit[1];
