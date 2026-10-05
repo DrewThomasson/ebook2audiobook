@@ -576,6 +576,27 @@ audio:-moz-read-only {
 	font-size: 18px !important;
 	font-weight: bold !important;
 }
+/* Target the main container and all internal wrapper elements of the UI language dropdown */
+#gr_ui_language,
+#gr_ui_language .wrap,
+#gr_ui_language .wrap-inner,
+#gr_ui_language .secondary-wrap,
+#gr_ui_language input,
+#gr_ui_language select {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    border: none !important;
+    box-shadow: none !important;
+    line-height: 1 !important;
+}
+
+/* Remove any default gap spacing in its parent row if needed */
+#gr_row_ui_language {
+    gap: 0 !important;
+    align-items: center !important;
+}
 /* Effects */
 .fade-in {
 	animation: fadeIn 1s ease-in !important;
