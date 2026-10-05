@@ -1,5 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.lang import legends
 
 #sys.stderr = StdoutFilter(sys.stdout)
 
@@ -29,26 +30,26 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                 if self.session.get('translate_iso1'):
                     self.language_iso1 = self.session['translate_iso1']
             if self.tts_engine not in default_engine_settings:
-                error = f'Invalid tts_engine {self.tts_engine}.'
+                error = legends['error_invalid_tts_engine'].format(engine=self.tts_engine)
                 raise ValueError(error)
             engine_langs = default_engine_settings[self.tts_engine].get('languages', {})
             if self.language not in engine_langs:
-                error = f'Language {self.language} not supported by engine {self.tts_engine}.'
+                error = legends['error_language_not_supported_engine'].format(lang=self.language, engine=self.tts_engine)
                 raise ValueError(error)
             fine_tuned = self.session.get('fine_tuned')
             if fine_tuned not in self.models:
-                error = f'Invalid fine_tuned model {fine_tuned}. Available models: {list(self.models.keys())}'
+                error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list(self.models.keys()))
                 raise ValueError(error)
             model_cfg = self.models[fine_tuned]
             for required_key in ('repo', 'samplerate', 'sub'):
                 if required_key not in model_cfg:
-                    error = f'fine_tuned model {fine_tuned} is missing required key {required_key}.'
+                    error = legends['error_fine_tuned_missing_key'].format(model=fine_tuned, key=required_key)
                     raise ValueError(error)
             sub_dict = model_cfg['sub']
             iso_dir = engine_langs[self.language]
             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
             if sub is None:
-                error = f'{self.tts_engine} checkpoint for {self.language} not found.'
+                error = legends['error_checkpoint_not_found'].format(engine=self.tts_engine, lang=self.language)
                 raise KeyError(error)
             self.params['samplerate'] = model_cfg['samplerate'][sub]
             self.model_path = model_cfg['repo'].replace('[lang_iso1]', iso_dir).replace('[xxx]', sub)
@@ -66,7 +67,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
 
     def load_engine(self)->Any:
         try:
-            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient…"
+            msg = legends['msg_loading_tts_model'].format(model=self.tts_key)
             print(msg)
             self.cleanup_memory()
             if self.session['custom_model'] is not None:
@@ -93,7 +94,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         error = 'load_engine(): _load_api() failed'
                         raise RuntimeError(error) from e
             if engine:
-                msg = f'TTS {self.tts_key} Loaded!'
+                msg = legends['msg_tts_loaded'].format(model=self.tts_key)
                 print(msg)
                 return engine
             error = 'load_engine(): engine is None'
@@ -124,11 +125,11 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                     if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
                         use_zs = True
                 if use_zs and not self.engine_zs:
-                    error = f'Engine {self.tts_zs_key} is None'
+                    error = legends['error_engine_not_loaded'].format(engine=self.tts_zs_key)
                     return False, error
-                if use_zs:
-                    proc_dir = os.path.join(self.session['voice_dir'], 'proc')
-                    os.makedirs(proc_dir, exist_ok=True)
+                # always ready: an inline [voice:…] tag can switch to zero-shot in the middle of the sentence
+                proc_dir = os.path.join(self.session['voice_dir'], 'proc')
+                os.makedirs(proc_dir, exist_ok=True)
                 for part in sentence_parts:
                     part = part.strip()
                     if not part:
@@ -137,9 +138,11 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         success, error = self._convert_sml(part)
                         if success:
                             self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
-                            if self.speaker is not None and self.speaker != custom_model_name:
-                                if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
-                                    use_zs = True
+                            # recomputed both ways: [/voice] back to a builtin voice must leave zero-shot again
+                            use_zs = (
+                                self.speaker is not None and self.speaker != custom_model_name
+                                and (self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None)
+                            )
                         else:
                             return False, error
                         continue
@@ -176,7 +179,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     voice_builtin_gender = detect_gender(tmp_in_wav)
                                     if voice_builtin_gender != current_voice_gender:
                                         semitones = -4 if current_voice_gender == 'male' else 4
-                                        msg = f'Cloned voice seems to be {current_voice_gender}\nBuiltin voice seems to be {voice_builtin_gender}. Adapting builtin voice frequencies from the clone voice…'
+                                        msg = legends['msg_voice_gender_adapt'].format(cloned=current_voice_gender, builtin=voice_builtin_gender)
                                         print(msg)
                                     else:
                                         semitones = 0
@@ -190,11 +193,11 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                         ]
                                         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                                     except subprocess.CalledProcessError as e:
-                                        error = f'Subprocess error: {e.stderr}'
+                                        error = legends['error_subprocess'].format(e=e.stderr)
                                         DependencyError(error)
                                         return False, error
                                     except FileNotFoundError as e:
-                                        error = f'File not found: {e}'
+                                        error = legends['error_file_not_found_detail'].format(e=e)
                                         DependencyError(error)
                                         return False, error
                                 else:
@@ -256,11 +259,11 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                         return False, error
                     self.audio_segments = []
                     if not os.path.exists(sentence_file):
-                        error = f'Cannot create {sentence_file}'
+                        error = legends['error_cannot_create'].format(file=sentence_file)
                         return False, error
                 return True, None
             else:
-                error = f"TTS engine {self.tts_engine} failed to load!"
+                error = legends['error_tts_engine_load_failed'].format(engine=self.tts_engine)
                 return False, error
         except Exception as e:
             self.cleanup_memory()

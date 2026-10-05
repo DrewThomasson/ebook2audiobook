@@ -41,6 +41,7 @@ from phonemizer import phonemize
 from pypinyin import pinyin, Style
 
 from lib.classes.subprocess_pipe import SubprocessPipe
+from lib.classes.bug_reporter import bug_reporter
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.non_text_filter import NonTextFilter
@@ -48,9 +49,10 @@ from lib.classes.non_text_filter import NonTextFilter
 from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
-from lib.classes.tts_engines.common.utils import build_vtt_file
+from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp
 
 from lib import *
+from lib.lang import legends, legends_langs, legends_iso1, ui_language, system_language
 
 #import logging
 #logging.basicConfig(
@@ -104,6 +106,7 @@ class DependencyError(Exception):
     def handle_exception(self)->None:
         # Print the full traceback of the exception
         traceback.print_exc()      
+        bug_reporter.report()
         # Print the exception message
         error = f'Caught DependencyError: {self}'
         print(error)
@@ -169,6 +172,7 @@ class SessionContext:
             "cancellation_requested": False,
             "ebook_mode": ebook_modes['SINGLE'],
             "blocks_preview": False,
+            "interlude_enabled": False,
             "device": default_device,
             "tts_engine": default_tts_engine,
             "fine_tuned": default_fine_tuned,
@@ -178,6 +182,9 @@ class SessionContext:
             "system": None,
             "client": None,
             "language": default_language_code,
+            "ui_language": None,
+            "ui_language_choice": None,
+            "tooltips": False,
             "language_iso1": None,
             "translate_enabled": False,
             "translate": None,
@@ -215,6 +222,13 @@ class SessionContext:
             ####### Audiobook editor
             "audiobook": None,
             "audiobooks_dir": None,
+            "audiobook_edit_target": None,
+            "audiobook_edit_block_id": None,
+            "audiobook_edit_sentence_idx": None,
+            "audiobook_edit_interlude": None,
+            "audiobook_edit_preview": None,
+            "audiobook_edit_preview_text": None,
+            "audiobook_edit_pending": False,
             ####### Ebook conversion
             "ebook": None,
             "ebook_src": None,
@@ -262,6 +276,7 @@ class SessionContext:
 
     def get_session(self, session_id:str)->Any:
         if session_id in self.sessions:
+            ui_language.set(self.sessions[session_id].get('ui_language') or system_language)
             return self.sessions[session_id]
         return {}
 
@@ -333,6 +348,7 @@ def prepare_dirs(session_id:str)->bool:
             os.makedirs(session['audiobooks_dir'], exist_ok=True)
             os.makedirs(session['chapters_dir'], exist_ok=True)
             os.makedirs(session['sentences_dir'], exist_ok=True)
+            os.makedirs(session['interludes_dir'], exist_ok=True)
             return True
     except Exception as e:
         DependencyError(e)
@@ -361,7 +377,7 @@ def check_programs(prog_name:str, command:str, options:str)->bool:
 def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     try:
         if not os.path.exists(zip_path):
-            error = f'The file does not exist: {os.path.basename(zip_path)}'
+            error = legends['error_file_does_not_exist'].format(name=os.path.basename(zip_path))
             print(error)
             return False
         files_in_zip = {}
@@ -379,18 +395,18 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         missing_files = [f for f in required_files if f not in files_in_zip]
         required_empty_files = [f for f in required_files if f in empty_files]
         if missing_files:
-            msg = f'Missing required files: {missing_files}'
+            msg = legends['msg_missing_required_files'].format(files=missing_files)
             print(msg)
         if required_empty_files:
-            msg = f'Required files with 0 KB: {required_empty_files}'
+            msg = legends['msg_required_files_empty'].format(files=required_empty_files)
             print(msg)
         return not missing_files and not required_empty_files
     except zipfile.BadZipFile:
-        error = 'The file is not a valid ZIP archive.'
+        error = legends['error_invalid_zip']
         print(error)
         return False
     except Exception as e:
-        error = f'An error occurred: {e}'
+        error = legends['error_occurred'].format(e=e)
         print(error)
         return False
 
@@ -410,7 +426,7 @@ def extract_custom_model(session_id)->str|None:
                 tts_dir = session['tts_engine']
                 model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
                 os.makedirs(model_path, exist_ok=True)
-                msg = f'Extracting files to {model_path}…'
+                msg = legends['msg_extracting_files'].format(path=model_path)
                 with tqdm(total=files_length, unit='files') as t:
                     for f in files:
                         base_f = os.path.basename(f)
@@ -422,7 +438,7 @@ def extract_custom_model(session_id)->str|None:
                         if session['is_gui_process']:
                             progress_bar((t.n + 1) / files_length, desc=msg)
             if model_path is not None:
-                msg = f'Normalizing ref.wav…'
+                msg = legends['msg_normalizing_ref_wav']
                 print(msg)
                 voice_ref = os.path.join(model_path, 'ref.wav')
                 voice_name = model_name
@@ -440,7 +456,7 @@ def extract_custom_model(session_id)->str|None:
                     error = f'extract_custom_model() VoiceExtractor.extract_voice() error! {msg}'
                     print(error)
             else:
-                error = f'An error occurred     when unzip {file_src}'
+                error = legends['error_unzip'].format(file=file_src)
                 print(error)
         except asyncio.exceptions.CancelledError as e:
             DependencyError(e)
@@ -520,7 +536,7 @@ def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
             data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
             # Handle silent OCR failures (empty or None result)
             if data is None or data.empty:
-                error = f'Tesseract returned empty OCR data for language "{lang}".'
+                error = legends['error_tesseract_empty'].format(lang=lang)
                 return False, error
         except (pytesseract.TesseractError, Exception) as e:
             print(f'The OCR {lang} trained model must be downloaded.')
@@ -529,23 +545,23 @@ def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
                 os.makedirs(tessdata_dir, exist_ok=True)
                 url = f'https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata'
                 dest_path = os.path.join(tessdata_dir, f'{lang}.traineddata')
-                msg = f'Downloading {lang}.traineddata into {tessdata_dir}…'
+                msg = legends['msg_downloading_traineddata'].format(lang=lang, dir=tessdata_dir)
                 print(msg)
                 response = requests.get(url, timeout=15)
                 if response.status_code == 200:
                     with open(dest_path, 'wb') as f:
                         f.write(response.content)
-                    msg = f'Downloaded and installed {lang}.traineddata successfully.'
+                    msg = legends['msg_traineddata_installed'].format(lang=lang)
                     print(msg)
                     data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
                     if data is None or data.empty:
-                        error = f'Tesseract returned empty OCR data even after downloading {lang}.traineddata.'
+                        error = legends['error_tesseract_empty_after'].format(lang=lang)
                         return False, error
                 else:
-                    error = f'Failed to download traineddata for {lang} (HTTP {response.status_code})'
+                    error = legends['error_traineddata_download'].format(lang=lang, code=response.status_code)
                     return False, error
             except Exception as e:
-                error = f'Automatic download failed: {e}'
+                error = legends['error_auto_download_failed'].format(e=e)
                 return False, error
         data = data.dropna(subset=['text'])
         lines = []
@@ -735,24 +751,20 @@ def build_voice_change_note(process_dir:str, current_voice:str|None, html:bool=T
         has_prev, prev_voice = read_stamp_voice(db_path)
         if not has_prev or voice_name_of(prev_voice) == voice_name_of(current_voice):
             return None
-        prev_label = voice_name_of(prev_voice) or 'default'
-        curr_label = voice_name_of(current_voice) or 'default'
+        prev_label = voice_name_of(prev_voice) or legends['gr_voice_list_default']
+        curr_label = voice_name_of(current_voice) or legends['gr_voice_list_default']
         b0, b1, br = ('<b>', '</b>', '<br/><br/>') if html else ('', '', '\n')
-        note = (f'{br}NOTE: the previous global voice was {b0}{prev_label}{b1} but the current '
-                f'global voice is {b0}{curr_label}{b1}.')
+        note = br + legends['msg_voice_note_changed'].format(prev=f'{b0}{prev_label}{b1}', curr=f'{b0}{curr_label}{b1}')
         ok, total, following = count_blocks_global_voice(db_path)
         if not ok or total == 0:
-            return note + ' If you keep this current voice the whole ebook will be converted again.'
+            return note + ' ' + legends['msg_voice_note_whole']
         own_voice = total - following
         if following == 0:
-            note += (f' All {total} blocks use their own voice, so none of them will be '
-                     f'reconverted because of this change.')
+            note += ' ' + legends['msg_voice_note_none'].format(total=total)
         elif own_voice == 0:
-            note += f' If you keep this current voice all {total} blocks will be converted again.'
+            note += ' ' + legends['msg_voice_note_all'].format(total=total)
         else:
-            note += (f' If you keep this current voice {b0}{following}{b1} of {total} blocks will be '
-                     f'converted again; the other {b0}{own_voice}{b1} keep their own block voice '
-                     f'and will not be reconverted.')
+            note += ' ' + legends['msg_voice_note_partial'].format(following=f'{b0}{following}{b1}', total=total, own=f'{b0}{own_voice}{b1}')
         return note
     except Exception as e:
         print(f'build_voice_change_note() error: {e}')
@@ -894,7 +906,7 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
             names = [n for n in zf.namelist() if n and not n.endswith('/')]
             epubs = [n for n in names if n.lower().endswith('.epub')]
             if len(epubs) > 1:
-                msg = f'Unsupported ZIP ebook wrapper: expected one nested .epub file, found {len(epubs)}'
+                msg = legends['msg_zip_wrapper_nested'].format(count=len(epubs))
                 print(msg)
                 return None
             nested_epub = epubs[0] if epubs else None
@@ -912,7 +924,7 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
                     dirs = {n.split('/', 1)[0] for n in names if '/' in n}
                     cands = [d for d in dirs if f'{d}/mimetype' in names and f'{d}/META-INF/container.xml' in names]
                     if len(cands) != 1:
-                        msg = f'Unsupported ZIP ebook wrapper: expected one EPUB root, found {len(cands)}'
+                        msg = legends['msg_zip_wrapper_root'].format(count=len(cands))
                         print(msg)
                         return None
                     prefix = cands[0]
@@ -923,7 +935,7 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
                 members = [n for n in names if n.startswith(strip)]
                 mimetype_name = f'{strip}mimetype'
                 if mimetype_name not in members:
-                    msg = 'Unsupported ZIP ebook wrapper: no mimetype entry'
+                    msg = legends['msg_zip_wrapper_mimetype']
                     print(msg)
                     return None
                 with zipfile.ZipFile(target_path, 'w') as out:
@@ -941,11 +953,11 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
         session['ebook'] = target_path
         session['filename_noext'] = os.path.splitext(os.path.basename(target_path))[0]
         session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
-        msg = f'Normalized EPUB package ZIP: {Path(file_input).name} -> {Path(target_path).name}'
+        msg = legends['msg_epub_zip_normalized'].format(src=Path(file_input).name, dst=Path(target_path).name)
         print(msg)
         return target_path
     except zipfile.BadZipFile:
-        error = f'Unsupported ZIP ebook wrapper: bad ZIP file {file_input}'
+        error = legends['error_zip_wrapper_bad'].format(file=file_input)
         print(error)
     except Exception as e:
         error = f'normalize_epub_zip(): {e}'
@@ -962,17 +974,17 @@ def convert2epub(session_id:str)->bool:
             author = False
             ebook_convert = shutil.which('ebook-convert')
             if not ebook_convert:
-                error = 'ebook-convert utility is not installed or not found.'
+                error = legends['error_ebook_convert_missing']
                 print(error)
                 return False
             file_input = session['ebook']
             if os.path.getsize(file_input) == 0:
-                error = f'Input file is empty: {file_input}'
+                error = legends['error_input_file_empty'].format(file=file_input)
                 print(error)
                 return False
             file_ext = os.path.splitext(file_input)[1].lower()
             if file_ext not in ebook_formats:
-                error = f'Unsupported file format: {file_ext}'
+                error = legends['error_unsupported_file_format'].format(ext=file_ext)
                 print(error)
                 return False
             if file_ext == '.zip':
@@ -989,7 +1001,7 @@ def convert2epub(session_id:str)->bool:
                     f.write(text)
             elif file_ext == '.pdf':
                 import pymupdf
-                msg = 'File input is a PDF. flatten it in XHTML…'
+                msg = legends['msg_pdf_flatten']
                 print(msg)
                 doc = pymupdf.open(file_input)
                 file_meta = doc.metadata
@@ -1010,7 +1022,7 @@ def convert2epub(session_id:str)->bool:
                         xhtml_content = ''
                         error = None
                     if not xhtml_content:
-                        msg = f'The page {i+1} seems to be image-based. Using OCR…'
+                        msg = legends['msg_page_image_ocr'].format(page=i+1)
                         show_alert(session_id, {"type": "warning", "msg": msg})
                         pix = page.get_pixmap(dpi=300)
                         img = Image.open(io.BytesIO(pix.tobytes('png')))
@@ -1041,7 +1053,7 @@ def convert2epub(session_id:str)->bool:
                 from html import escape as html_escape
                 from pptx import Presentation as PptxPresentation
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
-                msg = f'File input is a presentation ({file_ext}). Extracting content…'
+                msg = legends['msg_presentation_extract'].format(ext=file_ext)
                 print(msg)
                 prs = PptxPresentation(file_input)
                 title = prs.core_properties.title or filename_noext
@@ -1068,7 +1080,7 @@ def convert2epub(session_id:str)->bool:
                     if slide_texts:
                         xhtml_content = '\n'.join(f'<p>{html_escape(t)}</p>' for t in slide_texts)
                     elif slide_images:
-                        msg = f'Slide {i+1} seems to be image-based. Using OCR…'
+                        msg = legends['msg_slide_image_ocr'].format(slide=i+1)
                         show_alert(session_id, {"type": "warning", "msg": msg})
                         xhtml_parts = []
                         for blob in slide_images:
@@ -1118,7 +1130,7 @@ def convert2epub(session_id:str)->bool:
                         if all_text:
                             break
                 if not all_text:
-                    msg = f'File input is a DOCX with no extractable text. Extracting images for OCR…'
+                    msg = legends['msg_docx_no_text_ocr']
                     print(msg)
                     title = docx_doc.core_properties.title or filename_noext
                     author = docx_doc.core_properties.author or False
@@ -1154,7 +1166,7 @@ def convert2epub(session_id:str)->bool:
                         return False
             elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
-                msg = f'File input is an image ({file_ext}). Running OCR…'
+                msg = legends['msg_image_ocr'].format(ext=file_ext)
                 print(msg)
                 img = Image.open(file_input)
                 xhtml_pages = []
@@ -1241,7 +1253,7 @@ def convert2epub(session_id:str)->bool:
                 show_alert(session_id, {"type": "error", "msg": error})
                 return False
             if not os.path.exists(session['epub_path']) or os.path.getsize(session['epub_path']) == 0:
-                error = f"ebook-convert produced no output: {session['epub_path']}"
+                error = legends['error_ebook_convert_no_output'].format(path=session['epub_path'])
                 print(error)
                 return False
             print(result.stdout)
@@ -1313,17 +1325,7 @@ def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
 
 def get_blocks(session_id:str, epubBook:EpubBook)->list:
     try:
-        msg = r'''
-*******************************************************************************
-NOTE:
-The warning "Character xx not found in the vocabulary."
-MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE
-(AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION. THE BEST SOLUTION IS
-TO MANUALLY REMOVE ALL UNRECOGNIZED CHARS AND WRONG PUNCTUATIONS FROM YOUR EBOOK
-AND RESTART THE CONVERSION. TO IMPROVE THIS MODEL, IT NEEDS TO ADD THIS CHARACTER
-INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
-*******************************************************************************
-        '''
+        msg = legends['msg_vocab_warning']
         print(msg)
         session = context.get_session(session_id)
         if session and session.get('id', False):
@@ -1337,7 +1339,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                         if (nt := normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine'])) is not None
                 ]
             except Exception as toc_error:
-                error = f'Error extracting Table of Content: {toc_error}'
+                error = legends['error_toc_extract'].format(e=toc_error)
                 show_alert(session_id, {"type": "warning", "msg": error})
             # Get spine item IDs
             spine_ids = [item[0] for item in epubBook.spine]
@@ -1347,7 +1349,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 if item.id in spine_ids
             ]
             if not all_docs:
-                error = 'No document body found!'
+                error = legends['error_no_document_body']
                 print(error)
                 return []
             title = get_ebook_title(epubBook, all_docs)
@@ -1358,7 +1360,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     stanza_model = f"stanza-{session['language_iso1']}"
                     stanza_nlp = loaded_tts.get(stanza_model, False)
                     if stanza_nlp:
-                        msg = f"NLP model {stanza_model} loaded."
+                        msg = legends['msg_nlp_model_loaded'].format(model=stanza_model)
                         print(msg)
                     else:
                         use_gpu = True if (
@@ -1380,14 +1382,14 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                         if stanza_nlp:
                             session['stanza_cache'] = stanza_model
                             loaded_tts[stanza_model] = stanza_nlp
-                            msg = f"NLP model {stanza_model} loaded!"
+                            msg = legends['msg_nlp_model_loaded'].format(model=stanza_model)
                             print(msg)
                 except (ConnectionError, TimeoutError) as e:
-                    error = f'Stanza model download connection error: {e}. Retry later'
+                    error = legends['error_stanza_download'].format(e=e)
                     print(error)
                     return []
                 except Exception as e:
-                    error = f'Stanza model initialization error: {e}'
+                    error = legends['error_stanza_init'].format(e=e)
                     print(error)
                     return []
             is_num2words_compat = get_num2words_compat(session['language_iso1'])
@@ -1399,7 +1401,7 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                     for doc_idx, doc in enumerate(all_docs):
                         text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames)
                         if text is None:
-                            error = f'Error extracting content from document #{doc_idx + 1}; aborting conversion to avoid partial output.'
+                            error = legends['error_doc_extract'].format(doc=doc_idx + 1)
                             show_alert(session_id, {"type": "warning", "msg": error})
                             return []
                         blocks.append(text)
@@ -1413,19 +1415,19 @@ INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                         session['stanza_cache'] = None
                     except Exception:
                         pass
-                    stanza_nlp = None
+                    stanza_nlp = False
                     gc.collect()
                     if torch.cuda.is_available():
                         torch.cuda.empty_cache()
                         torch.cuda.ipc_collect()
             if len(blocks) == 0:
-                error = 'No blocks found! possible reason: file corrupted or need to convert images to text with OCR'
+                error = legends['error_no_blocks_found']
                 print(error)
                 return []
             return blocks
         return []
     except Exception as e:
-        error = f'Error extracting main content pages: {e}'
+        error = legends['error_main_content'].format(e=e)
         DependencyError(error)
         return []
 
@@ -1510,7 +1512,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             return math2words(m, lang, lang_iso1, tts_engine, is_num2words_compat)
 
     try:
-        msg = f'----------\nParsing doc {idx}'
+        msg = legends['msg_parsing_doc'].format(idx=idx)
         print(msg)
         session = context.get_session(session_id)
         if session and session.get('id', False):
@@ -1524,7 +1526,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             soup = BeautifulSoup(raw_html, 'html.parser')
             body = soup.body
             if not body:
-                msg = 'No body found. Skip to next doc…'
+                msg = legends['msg_no_body_skip']
                 print(msg)
                 return ''
             # Skip known non-chapter types
@@ -1539,7 +1541,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 'appendix', 'bibliography', 'copyright-page', 'landmark'
             }
             if any(part in epub_type for part in excluded):
-                msg = 'No body part. Skip to next doc…'
+                msg = legends['msg_no_body_part_skip']
                 print(msg)
                 return ''
             # remove scripts/styles
@@ -1548,7 +1550,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             if not body.get_text(strip=True):
                 images = body.find_all('img') + body.find_all('image')
                 if images and zf:
-                    msg = f'Doc {idx}: no text but {len(images)} image(s) detected. Running OCR…'
+                    msg = legends['msg_doc_images_ocr'].format(idx=idx, count=len(images))
                     show_alert(session_id, {"type": "info", "msg": msg})
                     ocr_parts = []
                     doc_dir = os.path.dirname(doc.get_name())
@@ -1580,10 +1582,10 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             print(f'OCR error on {img_zip_path}: {ocr_err}')
             tuples_list = list(_tuple_row(body))
             if not tuples_list:
-                msg = 'No body text and no images found. Skip to next doc…'
+                msg = legends['msg_no_text_no_images_skip']
                 print(msg)
                 return ''
-            msg = f'Parsing xhtml markers…'
+            msg = legends['msg_parsing_xhtml']
             print(msg)
             text_list = []
             handled_tables = set()
@@ -1626,7 +1628,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                     if text:
                         text_list.append(text)
                 prev_typ = typ
-            msg = f'Flattening as raw text…'
+            msg = legends['msg_flattening_raw']
             print(msg)
             max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
             clean_list = []
@@ -1646,7 +1648,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 i += 1
             text = ' '.join(clean_list)
             if not re.search(r"[^\W_]", text):
-                error = 'No valid text found!'
+                error = legends['error_no_valid_text']
                 print(error)
                 return None
             # clean SML tags badly coded
@@ -1665,7 +1667,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
             if stanza_nlp:
-                msg = 'Converting dates and years to words…'
+                msg = legends['msg_converting_dates']
                 print(msg)
                 re_ordinal = re.compile(
                     r'(?<!\w)(0?[1-9]|[12][0-9]|3[01])(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)',
@@ -1720,16 +1722,16 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
                             text
                         )
-            msg = 'Convert romans to numbers…'
+            msg = legends['msg_convert_romans']
             print(msg)
             text = roman2number(text)
-            msg = 'Convert time to words…'
+            msg = legends['msg_convert_time']
             print(msg)
             text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-            msg = 'Convert numbers, maths signs to words…'
+            msg = legends['msg_convert_numbers']
             print(msg)
             text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-            msg = 'Normalize text…'
+            msg = legends['msg_normalize_text']
             print(msg)
             text = normalize_text(text, lang, lang_iso1, tts_engine)
             text = restore_sml(text, sml_blocks)
@@ -1915,7 +1917,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
         if session['is_gui_process']:
-            msg = 'Segment 1'
+            msg = legends['msg_segment'].format(n=1)
             progress_bar(0, desc='')
         # Tokenize into content and SML runs
         segments = []
@@ -2030,7 +2032,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         n = len(final_list)
         while i < n:
             if session['is_gui_process']:
-                msg = f'Segment {i + 1}' 
+                msg = legends['msg_segment'].format(n=i + 1) 
                 progress_bar(0, desc=msg)
             cur = final_list[i].strip()
             if not cur:
@@ -2528,7 +2530,20 @@ def normalize_sml_tags(text:str)->tuple[bool, str]:
             if close:
                 error = f'normalize_sml_tags() error: non-paired tag [/{tag}] is invalid'
                 return False, error
-            out.append(info['static'])
+            # keep a duration ([pause:10], [pause:10s], [pause:1,5 sec], [pause:500ms]) normalized to seconds:
+            # the engines' _convert_sml() reads it with float(). anything else falls back to the static tag,
+            # as before, so a stray "[pause: xyz]" in an ebook never aborts the conversion.
+            seconds = None
+            if value is not None and value.strip():
+                duration = re.fullmatch(r'\s*(\d+(?:[.,]\d+)?)\s*(ms|s|sec|secs|second|seconds)?\s*', value, flags=re.IGNORECASE)
+                if duration:
+                    seconds = float(duration.group(1).replace(',', '.'))
+                    if (duration.group(2) or '').lower() == 'ms':
+                        seconds /= 1000
+            if seconds is not None and math.isfinite(seconds) and seconds > 0:
+                out.append(f"[{tag}:{seconds:g}]")
+            else:
+                out.append(info['static'])
         last = end
     out.append(text[last:])
     if stack:
@@ -2767,14 +2782,122 @@ def realign_blocks(session_id:str, blocks_orig_old:dict)->bool:
             session['blocks_saved'] = blocks_saved
             save_json_blocks(session_id, 'blocks_saved')
         session['blocks_orig'] = blocks_orig
-        msg = (f"Source file changed: {result['kept']} unchanged, {result['changed']} modified, "
-               f"{result['added']} added, {len(result['removed_ids'])} removed. "
-               f'Only modified and added blocks will be reconverted.')
+        msg = legends['msg_source_changed'].format(kept=result['kept'], changed=result['changed'], added=result['added'], removed=len(result['removed_ids']))
         show_alert(session_id, {'type': 'info', 'msg': msg})
         return True
     except Exception as e:
         exception_alert(session_id, f'realign_blocks() error: {e}')
         return False
+
+def generate_interludes(session_id:str)->None:
+    generator = None
+    try:
+        session = context.get_session(session_id)
+        if not (session and session.get('id', False)):
+            return        # Music Interlude unchecked / no --enable_interlude: no thing to generate
+        if not session.get('interlude_enabled', False):
+            return        interludes_dir = session.get('interludes_dir')
+        if not interludes_dir:
+            return        from lib.classes.interlude_generator import InterludeGenerator        os.makedirs(interludes_dir, exist_ok=True)        blocks = session['blocks_current']['blocks']        # same chapter selection and global positions as combine_audio_chapters(), so the interlude file names always match
+        positions = [x for x, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
+        if not positions:
+            return        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)        # terminal bars always (Loading weights: terminal in headless mode only), progress_bar too in GUI mode
+        generator = InterludeGenerator(
+            session['device'],
+            2 if session['output_channel'] == 'stereo' else 1,
+            progress_bar if session['is_gui_process'] else None
+        )        msg = f'Generating {len(positions) + 1} interludes via MusicGen...'
+        show_alert(session_id, {'type': 'info', 'msg': msg})        # book genre: detected once from the metadata and the opening pages, then kept in book_genre.json so every
+        # run of this book uses the same one. Set "genre" there to one of the "available" values to force another
+        genre_file = os.path.join(interludes_dir, 'book_genre.json')
+        try:
+            with open(genre_file, 'r', encoding='utf-8') as f:
+                stored_genre = json.load(f).get('genre')
+                if stored_genre in generator.genre_styles or stored_genre == 'neutral':
+                    generator.genre = stored_genre
+        except (OSError, ValueError):
+            pass        genre_saved = generator.genre is not None        # genre excerpts: the metadata (title, subject, description) counts double; then the middle three fifths of the book,
+        # since its first and last fifth hold the title page, copyright, contents, dedication, acknowledgements or appendices.
+        # That middle is read as one continuous text so short chapters count too (poetry, picture books, books split into
+        # many small parts): 8 windows of about 1200 characters, evenly spread and cut on whole words; a short book is
+        # simply covered by consecutive windows        # language guard: the classifier only understands the languages it was pretrained on. The chapter text is in the
+        # translation's language when translation is on, the metadata always stays in the book's own language
+        text_language = session['translate'] if session.get('translate_enabled') and session.get('translate') else session['language']
+        text_iso1 = session.get('translate_iso1') if session.get('translate_enabled') and session.get('translate') else session.get('language_iso1')
+        text_supported = text_iso1 in generator.classifier_languages
+        meta_supported = session.get('language_iso1') in generator.classifier_languages        if not text_supported:
+            msg = legends['msg_interludes_unknown_lang'].format(lang=text_language, suffix='' if generator.genre or meta_supported else legends['msg_interludes_neutral_genre'])
+            print(msg)        metadata = session.get('metadata') or {}
+        meta_text = ' '.join(re.sub(r'<[^>]+>', ' ', '. '.join(str(metadata.get(k)) for k in ('title', 'subject', 'description') if metadata.get(k))).split())
+        book_text = [(meta_text, 2.0)] if meta_text and meta_supported else []        middle = positions[len(positions) // 5:len(positions) - len(positions) // 5] or positions
+        stream = ' '.join(' '.join(blocks[x]['text'].split()) for x in middle)
+        span = 1200        for i in range(8 if text_supported else 0):
+            start = i * span if len(stream) <= span * 8 else max(0, int(len(stream) * (i + 0.5) / 8) - span // 2)
+            if start >= len(stream):
+                break
+            excerpt = stream[start:start + span]
+            if start > 0:
+                excerpt = excerpt.split(' ', 1)[-1]
+            if start + span < len(stream):
+                excerpt = excerpt.rsplit(' ', 1)[0]
+            if excerpt.strip():
+                book_text.append((excerpt, 1.0))        total_interludes = len(positions) + 1        # Intro interlude: always before the first voice
+        first_x = positions[0]
+        intro_fname = f'intro-{first_x}.{default_audio_proc_format}'
+        intro_fpath = os.path.join(interludes_dir, intro_fname)        if not os.path.exists(intro_fpath):
+            if session['cancellation_requested']:
+                return            text_next = blocks[first_x]['text'][:500]
+            prompt = generator.generate_prompt(text_next, book_text, text_supported)            if not genre_saved and generator.genre:
+                with open(genre_file, 'w', encoding='utf-8') as f:
+                    json.dump({
+                        'genre': generator.genre,
+                        'scores': generator.genre_scores,
+                        'available': list(generator.genre_styles.keys()) + ['neutral']
+                    }, f, ensure_ascii=False, indent=1)
+                genre_saved = True            duration = random.randint(*interlude_duration_range)            generator.generate_interlude(
+                prompt,
+                intro_fpath,
+                duration=duration,
+                samplerate=default_audio_proc_samplerate,
+                desc=f'Interlude 1/{total_interludes}',
+                is_cancelled=lambda: session['cancellation_requested']
+            )        for n, x in enumerate(positions):
+            if session['cancellation_requested']:
+                return            fname = f'{x}-{x + 1}.{default_audio_proc_format}'
+            fpath = os.path.join(interludes_dir, fname)            if not os.path.exists(fpath):
+                text_prev = blocks[x]['text'][-500:]                # the last chapter always gets one too: it closes the audiobook
+                text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text, text_supported)                if not genre_saved and generator.genre:
+                    with open(genre_file, 'w', encoding='utf-8') as f:
+                        json.dump({
+                            'genre': generator.genre,
+                            'scores': generator.genre_scores,
+                            'available': list(generator.genre_styles.keys()) + ['neutral']
+                        }, f, ensure_ascii=False, indent=1)
+                    genre_saved = True                duration = random.randint(*interlude_duration_range)                generator.generate_interlude(
+                    prompt,
+                    fpath,
+                    duration=duration,
+                    samplerate=default_audio_proc_samplerate,
+                    desc=f'Interlude {n + 2}/{total_interludes}',
+                    is_cancelled=lambda: session['cancellation_requested']
+                )    except Exception as e:
+        error = f'generate_interludes() error: {e}'
+        exception_alert(session_id, error)    finally:
+        if generator is not None:
+            # MusicGen and the classifier live in e2a's process: release them before the final merge
+            generator = None
+            gc.collect()            if sys.platform == 'linux':
+                try:
+                    import ctypes
+                    ctypes.CDLL('libc.so.6').malloc_trim(0)
+                except Exception:
+                    pass            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
+            except Exception:
+                pass
 
 def convert_chapters2audio(session_id:str)->bool:
     progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
@@ -2810,7 +2933,7 @@ def convert_chapters2audio(session_id:str)->bool:
         if session['cancellation_requested']:
             return False
         if progress_bar is not None:
-            msg = 'Preparing the conversion...'
+            msg = legends['msg_preparing_conversion']
             progress_bar(0.0, desc=msg)
         print(f'*********** Session: {session_id} **************\n{session_info}')
         tts_manager = TTSManager(session)
@@ -2850,11 +2973,11 @@ def convert_chapters2audio(session_id:str)->bool:
                 save_db_blocks(session_id)
         total_chapters = sum(1 for b in blocks if b['keep'] and b['text'].strip())
         if total_chapters == 0:
-            show_alert(session_id, {'type': 'warning', 'msg': 'No chapters found!'})
+            show_alert(session_id, {'type': 'warning', 'msg': legends['msg_no_chapters_found']})
             return False
         total_sentences = sum(_count_sentences(b['sentences']) for b in blocks if b['keep'] and b['text'].strip())
         if total_sentences == 0:
-            show_alert(session_id, {'type': 'warning', 'msg': 'No sentences found!'})
+            show_alert(session_id, {'type': 'warning', 'msg': legends['msg_no_sentences_found']})
             return False
         if not session['ebook']:
             return False
@@ -2865,11 +2988,7 @@ def convert_chapters2audio(session_id:str)->bool:
         ch_num = 0
         last_save_time = time.monotonic()
         baseline_initialized = False
-        msg = (f'---------<br/>'
-               f"{session['filename_noext']}<br/>"
-               f"A total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} "
-               f"and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}."
-               f'<br/>---------')
+        msg = legends['msg_conversion_totals'].format(name=session['filename_noext'], blocks=total_chapters, blocks_word=legends['word_block'] if total_chapters <= 1 else legends['word_blocks'], sentences=total_sentences, sentences_word=legends['word_sentence'] if total_sentences <= 1 else legends['word_sentences'])
         show_alert(session_id, {'type': 'info', 'msg': msg})
         with tqdm(total=total_sentences, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x, block in enumerate(blocks):
@@ -2894,7 +3013,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 block_dir = os.path.join(sentences_dir, block_id)
                 if x < block_resume and not block_changed:
                     if not os.path.exists(chapter_audio_file):
-                        show_alert(session_id, {'type': 'warning', 'msg': f'Block {x} chapter audio missing, reconverting entire block…'})
+                        show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_audio_missing'].format(block=x)})
                         _reset_chapter_file(block_id)
                     else:
                         missing_sentences = _check_block_sentences(block_id, sentences)
@@ -2904,16 +3023,16 @@ def convert_chapters2audio(session_id:str)->bool:
                             global_sent += cnt
                             t.update(cnt)
                             continue
-                        show_alert(session_id, {'type': 'warning', 'msg': f'Block {x} has {len(missing_sentences)} missing audio files, reconverting…'})
+                        show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_missing_files'].format(block=x, count=len(missing_sentences))})
                         _reset_chapter_file(block_id)
                 elif block_changed and x <= block_resume:
-                    show_alert(session_id, {'type': 'info', 'msg': f'Chapter {ch_num} (block {x}) — changed, reconverting'})
+                    show_alert(session_id, {'type': 'info', 'msg': legends['msg_chapter_changed'].format(chapter=ch_num, block=x)})
                     _reset_chapter_file(block_id)
                 elif x == block_resume and not block_changed:
                     if sentence_resume == 0 and os.path.isdir(block_dir):
                         shutil.rmtree(block_dir)
                     start_sentence = sentence_resume
-                show_alert(session_id, {'type': 'info', 'msg': f'Chapter {ch_num} (block {x}) containing {block_len} sentences…'})
+                show_alert(session_id, {'type': 'info', 'msg': legends['msg_chapter_containing'].format(chapter=ch_num, block=x, count=block_len)})
                 os.makedirs(block_dir, exist_ok=True)
                 blocks_current['block_resume'] = x
                 blocks_current['sentence_resume'] = start_sentence
@@ -2923,13 +3042,13 @@ def convert_chapters2audio(session_id:str)->bool:
                 block_voice = block.get('voice') or session.get('voice')
                 for j in range(block_len):
                     if session['cancellation_requested']:
-                        msg = 'Conversion Cancelled'
+                        msg = legends['msg_conversion_cancelled']
                         return False
                     sentence = sentences[j].strip()
                     if j in valid_idx:
                         if j >= start_sentence or j in missing_sentences:
                             if j == start_sentence and start_sentence > 0:
-                                show_alert(session_id, {'type': 'info', 'msg': f'*** Resuming from sentence {global_sent} ***'})
+                                show_alert(session_id, {'type': 'info', 'msg': legends['msg_resuming_from'].format(sentence=global_sent)})
                             sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                             run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block_voice)
                             if not run:
@@ -2955,9 +3074,9 @@ def convert_chapters2audio(session_id:str)->bool:
                         if session['is_gui_process']:
                             progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
                 sent_end = global_sent - 1
-                show_alert(session_id, {'type': 'info', 'msg': f'End of Chapter {ch_num} (block {x})'})
+                show_alert(session_id, {'type': 'info', 'msg': legends['msg_end_of_chapter'].format(chapter=ch_num, block=x)})
                 if converted or block_changed or missing_sentences:
-                    show_alert(session_id, {'type': 'info', 'msg': f'Combining chapter {ch_num} (block {x}) to audio, sentence {sent_start} to {sent_end}'})
+                    show_alert(session_id, {'type': 'info', 'msg': legends['msg_combining_chapter'].format(chapter=ch_num, block=x, start=sent_start, end=sent_end)})
                     session['blocks_current'] = blocks_current
                     save_db_stamp(session_id)
                     last_save_time = time.monotonic()
@@ -2987,11 +3106,11 @@ def combine_audio_sentences(session_id:str, file:str, block_id:str, sentence_cou
     try:
         session = context.get_session(session_id)
         if not session or not session.get('id', False):
-            error = 'Session expired!'
+            error = legends['error_session_expired']
             print(error)
             return False
         if sentence_count == 0:
-            error = f'No sentences to combine for block {block_id}.'
+            error = legends['error_no_sentences_to_combine'].format(block=block_id)
             print(error)
             return False
         block_dir = Path(session['sentences_dir']) / block_id
@@ -3005,7 +3124,7 @@ def combine_audio_sentences(session_id:str, file:str, block_id:str, sentence_cou
             else:
                 missing.append(i)
         if missing:
-            error = f'Missing sentence files in block {block_id}: {missing}'
+            error = legends['error_missing_sentence_files'].format(block=block_id, missing=missing)
             print(error)
             return False
         concat_dir = session['process_dir']
@@ -3020,7 +3139,7 @@ def combine_audio_sentences(session_id:str, file:str, block_id:str, sentence_cou
             error = 'combine_audio_sentences() FFmpeg concat failed.'
             print(error)
             return False
-        msg = f'********* Combined block audio file saved in {file}'
+        msg = legends['msg_combined_block_saved'].format(file=file)
         print(msg)
         return True
     except Exception as e:
@@ -3034,7 +3153,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
         if is_gui_process:
             progress_bar(p / 100.0, desc=desc)
 
-    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str, part_num:int=None)->str|bool:
+    def _generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str, part_num:int=None, interlude_durations:dict=None, chapter_global_indices:list=None, initial_offset_ms:int=0)->str|bool:
         try:
             out_fmt = session['output_format']
             is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
@@ -3075,7 +3194,12 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     asin = session['metadata']['identifiers'].get('mobi-asin')
                     if asin:
                         ffmpeg_metadata += f"{tag('asin')}={asin}\n"
-            start_time = 0
+            if interlude_durations is None:
+                interlude_durations = {}
+            if chapter_global_indices is None:
+                chapter_global_indices = list(range(len(part_chapters)))
+            start_time = initial_offset_ms
+            cumulative_offset = 0
             total = len(part_chapters)
             progress_desc = f'Metadata Part {part_num}' if part_num is not None else 'Metadata'
             bar = None if is_gui_process else tqdm(total=total, desc=progress_desc, unit='ch', file=sys.stdout, dynamic_ncols=True, leave=True)
@@ -3087,14 +3211,20 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = int(get_audio_duration(filepath) * 1000)
                 if duration_ms <= 0:
-                    error = f'Could not determine audio duration: {filepath}'
+                    error = legends['error_audio_duration'].format(file=filepath)
                     print(error)
                     return False
+                global_idx = chapter_global_indices[i]
+                adjusted_start = start_time + cumulative_offset
+                adjusted_end = adjusted_start + duration_ms
                 clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), sanitize_meta_chapter_title(chapter_title))
                 ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
-                ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
+                ffmpeg_metadata += f'START={int(adjusted_start)}\nEND={int(adjusted_end)}\n'
                 ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
                 start_time += duration_ms
+                if global_idx in interlude_durations:
+                    cumulative_offset += int(interlude_durations[global_idx] * 1000)
+                    
                 if is_gui_process:
                     _on_progress((((i + 1) / total) * 100.0), progress_desc)
                 else:
@@ -3109,7 +3239,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             print(error)
             return False
 
-    def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None)->bool:
+    def _export_audio(combined_audio:str, metadata_file:str, final_file:str, block_indices:set=None, part_num:int=None, interlude_durations:dict=None, chapter_global_indices:list=None, initial_offset_ms:int=0)->bool:
         try:
             if session['cancellation_requested']:
                 return False
@@ -3181,21 +3311,21 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     '-y', final_file
                 ]
             progress_desc = f'Export Part {part_num}' if part_num is not None else 'Export'
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg='Export', on_progress=lambda p: _on_progress(p, progress_desc))
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(combined_audio), msg=legends['msg_export'], on_progress=lambda p: _on_progress(p, progress_desc))
             if not proc_pipe.result:
-                error = f'ffmpeg export failed for {final_file}'
+                error = legends['error_ffmpeg_export_failed'].format(file=final_file)
                 print(error)
                 return False
             if not (os.path.exists(final_file) and os.path.getsize(final_file) > 0):
-                error = f'{Path(final_file).name} is corrupted or does not exist'
+                error = legends['error_file_corrupted'].format(name=Path(final_file).name)
                 print(error)
                 return False
             if session['cover'] is not None:
                 cover_path = session['cover']
-                msg = f'Adding cover {cover_path} into the final audiobook file…'
+                msg = legends['msg_adding_cover'].format(path=cover_path)
                 print(msg)
                 if session['output_format'] == 'webm':
-                    msg = 'Cover embedding skipped: mutagen has no Matroska/WebM writer'
+                    msg = legends['msg_cover_skipped_webm']
                     print(msg)
                 else:
                     with open(cover_path, 'rb') as f:
@@ -3261,15 +3391,22 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                         tags.save(final_file, v1=ID3v1SaveOptions.REMOVE, v2_version=3)
                     if audio is not None:
                         audio.save()
+            vtt_offsets = {}
+            if chapter_global_indices:
+                cumulative_ms = initial_offset_ms
+                for idx in chapter_global_indices:
+                    vtt_offsets[idx] = cumulative_ms / 1000.0
+                    if interlude_durations and idx in interlude_durations:
+                        cumulative_ms += int(interlude_durations[idx] * 1000)
             final_vtt = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
-            vtt_built, error = build_vtt_file(session, vtt_path=final_vtt, block_indices=block_indices)
+            vtt_built, error = build_vtt_file(session, vtt_path=final_vtt, block_indices=block_indices, offsets=vtt_offsets)
             if not vtt_built:
                 error = f'build_vtt_file() error: {error}'
                 print(error)
                 return False
             return True
         except Exception as e:
-            error = f'Export failed: {e}'
+            error = legends['error_export_failed'].format(e=e)
             print(error)
             return False
 
@@ -3285,14 +3422,14 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             if not (block['keep'] and block['text'].strip()):
                 continue
             if not block.get('sentences'):
-                error = f"Block {x} (id {block['id']}) has no sentences but is marked keep"
+                error = legends['error_block_no_sentences'].format(block=x, id=block['id'])
                 print(error)
                 return None
             block_id = block['id']
             fname = f'{block_id}.{default_audio_proc_format}'
             fpath = os.path.join(session['chapters_dir'], fname)
             if not os.path.exists(fpath):
-                error = f'Missing chapter audio for block {x} (id {block_id}): {fpath}'
+                error = legends['error_missing_chapter_audio'].format(block=x, id=block_id, path=fpath)
                 print(error)
                 return None
             chapter_files.append(fname)
@@ -3315,79 +3452,328 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 durations.append(dur)
                 total_duration += dur
         if len(durations) != len(chapter_files):
-            error = f'Duration count mismatch: {len(durations)} durations vs {len(chapter_files)} chapter files'
+            error = legends['error_duration_mismatch'].format(durations=len(durations), files=len(chapter_files))
             print(error)
             return None
+        # always the chapters' own interludes: the audiobook editor rebuild (⇄) runs this on a session that may still carry another book's interludes_dir.
+        # Music Interlude unchecked / no --enable_interlude: none are mixed in, even if some were generated by an earlier run
+        interludes_dir = os.path.join(session['chapters_dir'], 'interludes') if session.get('interlude_enabled', False) else None
+        interlude_durations = {}
         exported_files = []
         concat_dir = session['process_dir']
+        ffmpeg = shutil.which('ffmpeg')
+        ffprobe = shutil.which('ffprobe')
+        # parts: split by duration when output_split is on, otherwise a single part with every chapter
+        part_chapter_indices = []
         if session.get('output_split'):
-            part_files = []
-            part_chapter_indices = []
-            cur_part = []
             cur_indices = []
             cur_duration = 0
             max_part_duration = int(session['output_split_hours']) * 3600
-            for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
+            for idx, dur in enumerate(durations):
                 if session['cancellation_requested']:
                     return None
-                if cur_part and (cur_duration + dur > max_part_duration):
-                    part_files.append(cur_part)
+                if cur_indices and (cur_duration + dur > max_part_duration):
                     part_chapter_indices.append(cur_indices)
-                    cur_part = []
                     cur_indices = []
                     cur_duration = 0
-                cur_part.append(file)
                 cur_indices.append(idx)
                 cur_duration += dur
-            if cur_part:
-                part_files.append(cur_part)
+            if cur_indices:
                 part_chapter_indices.append(cur_indices)
-            pad_width = len(str(len(part_files)))
-            is_multi_part = len(part_files) > 1
-            for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                concat_list = os.path.join(concat_dir, f'concat_list_chapters_{part_idx+1:0{pad_width}d}.txt')
-                with open(concat_list, 'w') as f:
-                    for file in part_file_list:
-                        if session['cancellation_requested']:
-                            return None
-                        path = Path(session['chapters_dir']) / file
-                        f.write(f"file '{path.as_posix()}'\n")
-                merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1:0{pad_width}d}.{default_audio_proc_format}"
-                result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
-                if not result:
-                    error = f'assemble_audio_chunks() Final merge failed for part {part_idx+1}.'
-                    print(error)
-                    return None
-                metadata_file = Path(session['process_dir']) / f'metadata_part{part_idx+1:0{pad_width}d}.txt'
-                part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                _generate_ffmpeg_metadata(part_chapters, str(metadata_file), default_audio_proc_format)
-                final_file = os.path.join(
-                    session['audiobooks_dir'],
-                    f"{Path(session['final_name']).stem}_part{part_idx+1:0{pad_width}d}.{session['output_format']}"
-                    if is_multi_part else session['final_name']
-                )
-                block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
-                if _export_audio(merged_audio, metadata_file, final_file, block_indices=block_indices, part_num=part_idx+1):
-                    exported_files.append(final_file)
         else:
-            concat_list = os.path.join(concat_dir, 'concat_list_chapters_1.txt')
-            merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
-            with open(concat_list, 'w') as f:
-                for file in chapter_files:
+            part_chapter_indices.append(list(range(len(chapter_files))))
+        pad_width = len(str(len(part_chapter_indices)))
+        is_multi_part = len(part_chapter_indices) > 1
+        for part_idx, indices in enumerate(part_chapter_indices):
+            part_num = part_idx + 1 if is_multi_part else None
+            part_suffix = f'_part{part_idx + 1:0{pad_width}d}' if is_multi_part else ''
+            merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}{part_suffix}.{default_audio_proc_format}"
+            # two tracks mixed into one file in the output's channel layout: voice = chapters + silent gaps, music = faded interludes at their offsets.
+            # each interlude fades in 5-10 s before the chapter's last sentence ends and fades out 4-6 s into the next chapter;
+            # the part's last chapter gets the same fade in, then the interlude plays out and fades out at the very end
+            mix_dir = os.path.join(concat_dir, f'interludes_mix{part_suffix}')
+            shutil.rmtree(mix_dir, ignore_errors=True)
+            os.makedirs(mix_dir, exist_ok=True)
+            probe = subprocess.run([ffprobe, '-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=codec_name,sample_rate,channels,sample_fmt,bits_per_raw_sample', '-of', 'json', os.path.join(session['chapters_dir'], chapter_files[indices[0]])], capture_output=True, text=True)
+            stream = (json.loads(probe.stdout or '{}').get('streams') or [{}])[0]
+            voice_rate = int(stream.get('sample_rate', default_audio_proc_samplerate))
+            voice_layout = 'mono' if int(stream.get('channels', 1)) == 1 else 'stereo'
+            out_layout = 'stereo' if session['output_channel'] == 'stereo' else 'mono'
+            # silent gaps go through the same concat demuxer/decoder as the chapters, so they must share codec and bit depth exactly
+            voice_codec = {'opus': 'libopus', 'vorbis': 'libvorbis'}.get(stream.get('codec_name', 'flac'), stream.get('codec_name', 'flac'))      
+            sample_fmt = str(stream.get('sample_fmt') or 's16').rstrip('p') or 's16'
+            voice_codec_args = ['-c:a', voice_codec, '-ar', str(voice_rate)]
+            if voice_codec == 'flac' or voice_codec.startswith('pcm_'):
+                voice_codec_args += ['-sample_fmt', sample_fmt]
+                bits = str(stream.get('bits_per_raw_sample') or '')
+                if bits.isdigit():
+                    voice_codec_args += ['-bits_per_raw_sample', bits]
+            # Respect the selected internal processing format: flac, wav or ogg.
+            music_mix_ext = default_audio_proc_format
+            music_codec = {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(
+                default_audio_proc_format,
+                default_audio_proc_format
+            )
+            music_mix_codec_args = ['-c:a', music_codec, '-ar', str(voice_rate)]
+            if music_codec == 'flac' or music_codec.startswith('pcm_'):
+                music_mix_codec_args += ['-sample_fmt', 's16']
+            intro_path = None
+            intro_delay_samples = 0
+            intro_samples = 0
+            first_global_idx = chapter_positions[indices[0]] if indices else None
+            if interludes_dir and part_idx == 0 and indices:
+                candidate_intro = Path(interludes_dir) / f'intro-{first_global_idx}.{default_audio_proc_format}'
+                if candidate_intro.exists():
+                    intro_path = candidate_intro
+            voice_list = os.path.join(mix_dir, 'voice.txt')
+            music_list = os.path.join(mix_dir, 'music.txt')
+            voice_pos = 0
+            music_pos = 0
+            part_cues = []
+            with open(voice_list, 'w') as fv, open(music_list, 'w') as fm:
+                if intro_path is not None:
+                    intro_len = get_audio_duration(str(intro_path))
+                    if intro_len and intro_len > 0:
+                        rnd_intro = random.Random(first_global_idx + 1000003)
+                        intro_fade_in = rnd_intro.uniform(*interlude_fade_in_range)
+                        intro_fade_out = rnd_intro.uniform(*interlude_fade_out_range)
+                        intro_fade_in = max(0.1, min(intro_fade_in, intro_len))
+                        intro_fade_out = max(0.1, min(intro_fade_out, max(0.1, intro_len - intro_fade_in)))
+                        intro_samples = round(intro_len * voice_rate)
+                        # Voice enters when the intro starts fading out.
+                        intro_delay_samples = max(0, intro_samples - round(intro_fade_out * voice_rate))
+                        # The voice track timeline starts after this delay.
+                        voice_pos = intro_delay_samples
+                        intro_music_path = Path(mix_dir) / f'intro_music.{music_mix_ext}'
+                        intro_af = (
+                            f'aresample={voice_rate},'
+                            f'aformat=channel_layouts={out_layout},'
+                            f'afade=t=in:st=0:d={intro_fade_in:.3f},'
+                            f'afade=t=out:st={intro_len - intro_fade_out:.3f}:d={intro_fade_out:.3f},'
+                            f'atrim=end_sample={intro_samples},'
+                            f'apad=whole_len={intro_samples}'
+                        )
+                        subprocess.run(
+                            [
+                                ffmpeg, '-hide_banner', '-v', 'error',
+                                '-i', str(intro_path),
+                                '-af', intro_af,
+                                *music_mix_codec_args,
+                                '-y', str(intro_music_path)
+                            ],
+                            check=True
+                        )
+                        fm.write(f"file '{intro_music_path.as_posix()}'\n")                        music_pos = intro_samples                        # Optional subtitle cue for the intro.
+                        if voice_rate > 0 and (intro_delay_samples / voice_rate) >= 0.5:
+                            intro_cue_text = 'Intro'                            try:
+                                with open(Path(intro_path).with_suffix('.json'), 'r', encoding='utf-8') as f_intro:
+                                    intro_cue_data = json.load(f_intro)                                    intro_cue_text = str(intro_cue_data.get('prompt') or intro_cue_text)                                    if intro_cue_data.get('label'):
+                                        details = ' — '.join(
+                                            str(intro_cue_data[k])
+                                            for k in ('emotion', 'percussion', 'instruments')
+                                            if intro_cue_data.get(k)
+                                        ) or re.sub(r',\s*instrumental\s*$', '', intro_cue_text)                                        intro_cue_text = f"{intro_cue_data['label']} — {details}" if details else str(intro_cue_data['label'])                                    intro_cue_text = ' '.join(intro_cue_text.split())
+                            except (OSError, ValueError):
+                                pass                            part_cues.append((0.0, intro_delay_samples / voice_rate, first_global_idx, f'♪ {intro_cue_text}'))
+                for n, idx in enumerate(indices):
                     if session['cancellation_requested']:
                         return None
-                    path = Path(session['chapters_dir']) / file
-                    f.write(f"file '{path.as_posix()}'\n")
-            result = assemble_audio_chunks(concat_list, merged_audio, is_gui_process)
-            if not result:
-                print(f'assemble_audio_chunks() Final merge failed for {merged_audio}.')
+                    chapter_path = Path(session['chapters_dir']) / chapter_files[idx]
+                    fv.write(f"file '{chapter_path.as_posix()}'\n")
+                    chapter_start = voice_pos
+                    voice_pos += round(durations[idx] * voice_rate)
+                    global_idx = chapter_positions[idx]
+                    interlude_path = Path(interludes_dir) / f'{global_idx}-{global_idx + 1}.{default_audio_proc_format}' if interludes_dir else None
+                    if interlude_path is None or not interlude_path.exists():
+                        continue
+                    interlude_len = get_audio_duration(str(interlude_path))
+                    if not interlude_len or interlude_len <= 0:
+                        continue
+                    # seeded per chapter so a re-run gives the same timeline
+                    rnd = random.Random(global_idx)
+                    fade_in = rnd.uniform(*interlude_fade_in_range)
+                    fade_out = rnd.uniform(*interlude_fade_out_range)
+                    # end of the last sentence = chapter end minus its trailing silence
+                    window = min(20.0, durations[idx])
+                    detect = subprocess.run([ffmpeg, '-hide_banner', '-nostats', '-sseof', f'-{window:.3f}', '-i', str(chapter_path), '-af', 'silencedetect=noise=-50dB:d=0.3', '-f', 'null', '-'], capture_output=True, text=True)
+                    silence_starts = [float(v) for v in re.findall(r'silence_start: (-?[\d.]+)', detect.stderr)]
+                    silence_ends = [float(v) for v in re.findall(r'silence_end: (-?[\d.]+)', detect.stderr)]
+                    trailing = 0.0
+                    if silence_starts and (len(silence_ends) < len(silence_starts) or silence_ends[-1] >= window - 0.05):
+                        trailing = max(0.0, window - silence_starts[-1])
+                    speech_end = max(0.0, durations[idx] - trailing)
+                    fade_in = max(0.1, min(fade_in, speech_end))
+                    fade_out = max(0.1, min(fade_out, interlude_len - fade_in))
+                    interlude_samples = round(interlude_len * voice_rate)
+                    is_last = n == len(indices) - 1
+                    if is_last:
+                        gap_samples = 0
+                        music_start = chapter_start + round((speech_end - fade_in) * voice_rate)
+                    else:
+                        gap_samples = max(0, round((interlude_len - fade_in - fade_out - trailing) * voice_rate))
+                        music_start = voice_pos + gap_samples + round(fade_out * voice_rate) - interlude_samples
+                    floor = max(music_pos, chapter_start)
+                    if music_start < floor:
+                        # very short chapter: delay the next chapter so interludes never overlap each other
+                        if not is_last:
+                            gap_samples += floor - music_start
+                        music_start = floor
+                    chapter_end = voice_pos
+                    if gap_samples > 0:
+                        gap_path = os.path.join(mix_dir, f'gap_{n}.{default_audio_proc_format}')
+                        subprocess.run([ffmpeg, '-hide_banner', '-v', 'error', '-f', 'lavfi', '-i', f'anullsrc=r={voice_rate}:cl={voice_layout}', '-af', f'atrim=end_sample={gap_samples}', *voice_codec_args, '-y', gap_path], check=True)
+                        fv.write(f"file '{Path(gap_path).as_posix()}'\n")
+                        voice_pos += gap_samples
+                        interlude_durations[global_idx] = gap_samples / voice_rate
+                    pad_samples = music_start - music_pos
+                    if pad_samples > 0:
+                        pad_path = os.path.join(mix_dir, f'pad_{n}.{music_mix_ext}')
+                        subprocess.run(
+                            [
+                                ffmpeg, '-hide_banner', '-v', 'error',
+                                '-f', 'lavfi',
+                                '-i', f'anullsrc=r={voice_rate}:cl={out_layout}',
+                                '-af', f'atrim=end_sample={pad_samples}',
+                                *music_mix_codec_args,
+                                '-y', pad_path
+                            ],
+                            check=True
+                        )
+                        fm.write(f"file '{Path(pad_path).as_posix()}'\n")
+                    music_path = os.path.join(mix_dir, f'music_{n}.{music_mix_ext}')
+                    music_af = (
+                        f'aresample={voice_rate},'
+                        f'aformat=channel_layouts={out_layout},'
+                        f'afade=t=in:st=0:d={fade_in:.3f},'
+                        f'afade=t=out:st={interlude_len - fade_out:.3f}:d={fade_out:.3f},'
+                        f'atrim=end_sample={interlude_samples},'
+                        f'apad=whole_len={interlude_samples}'
+                    )
+                    subprocess.run(
+                        [
+                            ffmpeg, '-hide_banner', '-v', 'error',
+                            '-i', str(interlude_path),
+                            '-af', music_af,
+                            *music_mix_codec_args,
+                            '-y', music_path
+                        ],
+                        check=True
+                    )
+                    fm.write(f"file '{Path(music_path).as_posix()}'\n")
+                    music_pos = music_start + interlude_samples
+                    # subtitle cue over the music-only stretch: chapter end -> next chapter start, or -> the end for the part's last one
+                    cue_end = music_pos if is_last else voice_pos
+                    if cue_end - chapter_end >= voice_rate // 2:
+                        cue_text = 'Interlude'
+                        try:
+                            with open(interlude_path.with_suffix('.json'), 'r', encoding='utf-8') as f:
+                                cue_data = json.load(f)
+                                # chosen automatically: "mood · genre — emotion — percussion — instruments" (older sidecars without them
+                                # the prompt minus its trailing "instrumental"); typed in the editor: the prompt itself
+                                cue_text = str(cue_data.get('prompt') or cue_text)
+                                if cue_data.get('label'):
+                                    details = ' — '.join(str(cue_data[k]) for k in ('emotion', 'percussion', 'instruments') if cue_data.get(k)) or re.sub(r',\s*instrumental\s*$', '', cue_text)
+                                    cue_text = f"{cue_data['label']} — {details}" if details else str(cue_data['label'])
+                                cue_text = ' '.join(cue_text.split())
+                        except (OSError, ValueError):
+                            pass
+                        part_cues.append((chapter_end / voice_rate, cue_end / voice_rate, global_idx, f'♪ {cue_text}'))
+            # explicit pan keeps the voice level (a plain mono->stereo upmix drops it by 3 dB)
+            voice_to_out = (
+                'anull'
+                if voice_layout == out_layout
+                else 'pan=stereo|c0=c0|c1=c0'
+                if out_layout == 'stereo'
+                else 'pan=mono|c0=0.5*c0+0.5*c1'
+            )            target_samples = max(voice_pos, music_pos)            voice_filters = []            # Delay the voice track by the intro length so the first voice enters when the intro starts fading out.
+            if intro_delay_samples > 0 and voice_rate > 0:
+                intro_delay_ms = int(round(intro_delay_samples * 1000 / voice_rate))                if voice_layout == 'mono':
+                    delay_expr = str(intro_delay_ms)
+                else:
+                    delay_expr = f'{intro_delay_ms}|{intro_delay_ms}'                voice_filters.append(f'adelay={delay_expr}')            voice_filters.append(voice_to_out)            if music_pos > 0 and target_samples > 0:
+                voice_filters.append(f'apad=whole_len={target_samples}')            voice_chain = '[0:a]' + ','.join(voice_filters)            music_chain = f'[1:a]aformat=sample_rates={voice_rate}:channel_layouts={out_layout}'            if music_pos > 0 and target_samples > 0:
+                music_chain += f',apad=whole_len={target_samples}'            cmd = [ffmpeg, '-hide_banner', '-nostats', '-safe', '0', '-f', 'concat', '-i', voice_list]            if music_pos > 0:
+                cmd += [
+                    '-safe', '0', '-f', 'concat', '-i', music_list,
+                    '-filter_complex',
+                    f'{voice_chain}[v];{music_chain}[m];[v][m]amix=inputs=2:duration=longest:normalize=0[out]'
+                ]
+            else:
+                cmd += [
+                    '-filter_complex',
+                    f'{voice_chain}[out]'
+                ]            # default_audio_proc_format is a container name: only 'flac' is also an encoder name, 'wav'/'ogg' need theirs
+            out_codec = {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(default_audio_proc_format, default_audio_proc_format)            cmd += ['-map', '[out]', '-c:a', out_codec]            if out_codec == 'flac':
+                cmd += ['-sample_fmt', 's16']            cmd += [
+                '-map_metadata', '-1',
+                '-threads', '0',
+                '-progress', 'pipe:2',
+                '-y', str(merged_audio)
+            ]
+            progress_desc = f'Assemble Part {part_num}' if part_num is not None else 'Assemble'
+            total_duration = ((target_samples / float(voice_rate)) + 1.0) if voice_rate else 0.0
+            proc_pipe = SubprocessPipe(
+                cmd=cmd,
+                is_gui_process=is_gui_process,
+                total_duration=total_duration,
+                msg=legends['msg_assemble'],
+                on_progress=lambda p: _on_progress(p, progress_desc)
+            )
+            if not (proc_pipe.result and os.path.exists(merged_audio)):
+                error = f'combine_audio_chapters() final merge failed for {merged_audio}'
+                print(error)
                 return None
-            metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-            chapters_zip = list(zip(chapter_files, chapter_titles))
-            _generate_ffmpeg_metadata(chapters_zip, metadata_file, default_audio_proc_format)
-            final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
-            if _export_audio(merged_audio, metadata_file, final_file):
+            shutil.rmtree(mix_dir, ignore_errors=True)
+            initial_offset_ms = int(round(intro_delay_samples * 1000 / voice_rate)) if (part_idx == 0 and voice_rate > 0) else 0
+            metadata_file = Path(session['process_dir']) / f'metadata{part_suffix}.txt'
+            part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
+            part_global_indices = [chapter_positions[i] for i in indices]
+            _generate_ffmpeg_metadata(
+                part_chapters,
+                str(metadata_file),
+                default_audio_proc_format,
+                part_num=part_num,
+                interlude_durations=interlude_durations,
+                chapter_global_indices=part_global_indices,
+                initial_offset_ms=initial_offset_ms
+            )
+            final_file = os.path.join(
+                session['audiobooks_dir'],
+                f"{Path(session['final_name']).stem}{part_suffix}.{session['output_format']}"
+                if is_multi_part else session['final_name']
+            )
+            block_indices = {chapter_positions[i] for i in indices} if is_multi_part else None
+            if _export_audio(
+                merged_audio,
+                str(metadata_file),
+                final_file,
+                block_indices=block_indices,
+                part_num=part_num,
+                interlude_durations=interlude_durations,
+                chapter_global_indices=part_global_indices,
+                initial_offset_ms=initial_offset_ms
+            ):
                 exported_files.append(final_file)
+                final_vtt = os.path.join(session['audiobooks_dir'], f'{Path(final_file).stem}.vtt')
+                if part_cues and os.path.exists(final_vtt):
+                    # interludes become subtitle cues too, with the WebVTT cue id "interlude <block index>": the player shows
+                    # their prompt and the audiobook editor opens them like a sentence. Each one is kept between the sentence
+                    # cues, never across one, since the player finds the current cue with a binary search
+                    with open(final_vtt, 'r', encoding='utf-8') as f:
+                        vtt_cues = [c.strip('\n') for c in f.read().split('\n\n') if '-->' in c]
+                    spans = []
+                    for c in vtt_cues:
+                        start_ts, end_ts = [t.strip().split(' ')[0] for t in next(l for l in c.split('\n') if '-->' in l).split('-->')]
+                        spans.append((sum(float(v) * 60 ** k for k, v in enumerate(reversed(start_ts.split(':')))), sum(float(v) * 60 ** k for k, v in enumerate(reversed(end_ts.split(':'))))))
+                    entries = list(zip(spans, vtt_cues))
+                    for cue_start, cue_end, global_idx, cue_text in part_cues:
+                        cue_start = max([cue_start] + [e for s, e in spans if s <= cue_start])
+                        cue_end = min([cue_end] + [s for s, e in spans if s >= cue_start])
+                        if cue_end - cue_start >= 0.5:
+                            entries.append(((cue_start, cue_end), f'interlude {global_idx}\n{format_timestamp(cue_start)} --> {format_timestamp(cue_end)}\n{cue_text}'))
+                    entries.sort(key=lambda e: e[0][0])
+                    with open(final_vtt, 'w', encoding='utf-8') as f:
+                        f.write('WEBVTT\n\n' + '\n\n'.join(c for _, c in entries) + '\n')
         return exported_files if exported_files else None
     except Exception as e:
         DependencyError(e)
@@ -3424,7 +3810,7 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             return False
         ffmpeg = shutil.which('ffmpeg')
         if not ffmpeg:
-            error = 'ffmpeg not found'
+            error = legends['error_ffmpeg_not_found']
             print(error)
             return False
         cmd = [
@@ -3434,7 +3820,8 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             '-safe', '0',
             '-f', 'concat',
             '-i', txt_file,
-            '-c:a', default_audio_proc_format,
+            # default_audio_proc_format is a container name: only 'flac' is also an encoder name, 'wav'/'ogg' need theirs
+            '-c:a', {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(default_audio_proc_format, default_audio_proc_format),
             '-map_metadata', '-1',
             '-threads', '0',
             '-progress', 'pipe:2',
@@ -3444,15 +3831,15 @@ def assemble_audio_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool
             cmd=cmd,
             is_gui_process=is_gui_process,
             total_duration=total_duration,
-            msg='Assemble',
+            msg=legends['msg_assemble'],
             on_progress=_on_progress
         )
         if proc_pipe.result and os.path.exists(out_file):
-            msg = f'Completed → {out_file}'
+            msg = legends['msg_completed'].format(file=out_file)
             print(msg)
             return True
         else:
-            error = f'Failed (proc_pipe) → {out_file}'
+            error = legends['error_failed_proc_pipe'].format(file=out_file)
             print(error)
             return False
     except subprocess.CalledProcessError as e:
@@ -3559,10 +3946,10 @@ def delete_unused_tmp_dirs(session_id:str, output_dir:str, days:int)->None:
                                 dir_ctime = os.path.getctime(full_dir_path)
                                 if dir_mtime < threshold_time and dir_ctime < threshold_time:
                                     shutil.rmtree(full_dir_path, ignore_errors=True)
-                                    msg = f'Deleted expired session: {full_dir_path}'
+                                    msg = legends['msg_deleted_expired_session'].format(path=full_dir_path)
                                     print(msg)
                             except Exception as e:
-                                error = f'Error deleting {full_dir_path}: {e}'
+                                error = legends['error_deleting'].format(path=full_dir_path, e=e)
                                 print(error)
 
 def get_compatible_tts_engines(language:str)->list[str]:
@@ -3583,12 +3970,12 @@ def translate_blocks(session_id:str, raw_blocks:list)->tuple:
         source_iso1 = session.get('language_iso1')
         target_iso1 = session.get('translate_iso1')
         if not source_iso1 or not target_iso1:
-            msg = f'Translation iso1 codes missing: {source_iso1} -> {target_iso1}'
+            msg = legends['msg_translation_iso1_missing'].format(src=source_iso1, dst=target_iso1)
             return raw_blocks, msg
         if source_iso1 == target_iso1:
             return raw_blocks, None
         total = len(raw_blocks)
-        msg = f'Translating {total} block(s) {source_iso1} -> {target_iso1}'
+        msg = legends['msg_translating_blocks'].format(count=total, src=source_iso1, dst=target_iso1)
         show_alert(session_id, {"type": "warning", "msg": msg})
         translator = ArgosTranslator(neural_machine='argostranslate')
         error, ok = translator.start(source_iso1, target_iso1)
@@ -3620,13 +4007,13 @@ def translate_blocks(session_id:str, raw_blocks:list)->tuple:
                 else:
                     translated, ok = translator.translate(text, sml_patterns)
                     if not ok:
-                        error = f'Translation failed at block {idx}: {translated}'
+                        error = legends['error_translation_failed'].format(idx=idx, text=translated)
                         return raw_blocks, error
                     out.append(translated)
                 t.update(1)
                 if progress_bar is not None:
                     progress_bar((t.n) / total, desc=f'Translating block {t.n}/{total} {source_iso1} -> {target_iso1}')
-        msg = 'Translation done.'
+        msg = legends['msg_translation_done']
         print(msg)
         if progress_bar is not None:
             progress_bar(1.0, desc=msg)
@@ -3642,12 +4029,12 @@ def convert_ebook(args:dict)->tuple:
         session_id = None
         info_session = None
         if not args.get('id'):
-            error = 'Session ID is missing!'
+            error = legends['error_session_id_missing']
             return error, False
         session_id = str(args['id'])
         session = context.get_session(session_id)
         if not session or (session and not session.get('id', False)):
-            error = 'Session expired or does not exist!'
+            error = legends['error_session_expired_or_missing']
             return error, False
         if args['language'] is not None:
             try:
@@ -3661,7 +4048,7 @@ def convert_ebook(args:dict)->tuple:
             except Exception as e:
                 pass
             if args['language'] not in language_mapping.keys():
-                error = 'The language you provided is not (yet) supported'
+                error = legends['error_language_not_supported']
                 return error, False
             translate_to = args.get('translate') if args.get('translate') != args.get('language') else False
             translate_enabled = bool(args.get('translate_enabled')) and bool(translate_to)
@@ -3674,14 +4061,14 @@ def convert_ebook(args:dict)->tuple:
                 except Exception:
                     pass
                 if translate_to not in language_mapping.keys():
-                    error = f'--translate target language {translate_to} is not (yet) supported'
+                    error = legends['error_translate_target_unsupported'].format(lang=translate_to)
                     return error, False
                 try:
                     target_iso1 = Lang(translate_to).pt1
                 except Exception:
                     target_iso1 = None
                 if not target_iso1:
-                    error = f'--translate target {translate_to} has no iso639-1 mapping'
+                    error = legends['error_translate_target_no_iso1'].format(lang=translate_to)
                     return error, False
                 args['translate_enabled'] = True
                 args['translate'] = translate_to
@@ -3697,7 +4084,7 @@ def convert_ebook(args:dict)->tuple:
                 session['ebook_list'] = sorted(session['ebook_list'], key=natural_sort_key)
             if session['ebook_mode'] == ebook_modes['TEXT']:
                 if not args['ebook_textarea']:
-                    error = 'Ebook textarea is empty.'
+                    error = legends['error_ebook_textarea_empty']
                     return error, False
                 text = args['ebook_textarea']
                 text_name = get_sanitized(text[:64])
@@ -3714,13 +4101,13 @@ def convert_ebook(args:dict)->tuple:
                 ebook_name = Path(text_filename).stem
             else:
                 if not args.get('ebook_src'):
-                    error = 'File source is empty.'
+                    error = legends['error_file_source_empty']
                     return error, False
                 elif not os.path.splitext(args['ebook_src'])[1]:
-                    error = f"{args['ebook_src']} needs a format extension."
+                    error = legends['error_needs_extension'].format(src=args['ebook_src'])
                     return error, False
                 elif not os.path.exists(args['ebook_src']):
-                    error = 'File does not exist or Directory empty.'
+                    error = legends['error_file_or_dir_missing']
                     return error, False
                 session['ebook_src'] = str(args['ebook_src'])
                 ebook_file = strip_invalid_filename_characters(Path(session['ebook_src']).name)
@@ -3737,6 +4124,7 @@ def convert_ebook(args:dict)->tuple:
             session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
             session['is_gui_process'] = bool(args['is_gui_process'])
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
+            session['interlude_enabled'] = bool(args.get('interlude_enabled', False))
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
             session['language_iso1'] = str(args['language_iso1'])
@@ -3768,6 +4156,7 @@ def convert_ebook(args:dict)->tuple:
             session['process_dir'] = os.path.join(session['session_dir'], hashlib.md5((ebook_name + lang_prfx).encode()).hexdigest())
             session['chapters_dir'] = os.path.join(session['process_dir'], 'chapters')
             session['sentences_dir'] = os.path.join(session['chapters_dir'], 'sentences')
+            session['interludes_dir'] = os.path.join(session['chapters_dir'], 'interludes')
             cleanup_models_cache()
             if session['is_gui_process']:
                 session['final_name'] = ebook_name + lang_prfx + '.' + session['output_format']
@@ -3784,7 +4173,7 @@ def convert_ebook(args:dict)->tuple:
                 audio_pre_final_exist = os.path.exists(audio_pre_final_file)
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
                 if audio_pre_final_exist or audio_sentences_exist:
-                    msg = f"Warning! audio sentences or final file {ebook_name} of this conversion already exists!"
+                    msg = legends['msg_conversion_exists'].format(name=ebook_name)
                     # audio exists, so the previous global voice matters: warn before the prompt,
                     # since [r]esume with a different global voice reconverts the affected blocks.
                     voice_note = build_voice_change_note(session['process_dir'], session.get('voice'), html=False)
@@ -3804,7 +4193,7 @@ def convert_ebook(args:dict)->tuple:
                     elif choice == 'd':
                         delete_folder(session['process_dir'])
                     elif choice == 's':
-                        msg = 'Conversion skipped.'
+                        msg = legends['msg_conversion_skipped']
                         return msg, True
                 if error is None:
                     delete_unused_tmp_dirs(session_id, audiobooks_cli_dir, tmp_expire)
@@ -3820,11 +4209,11 @@ def convert_ebook(args:dict)->tuple:
                                     if model is not None:
                                         session['custom_model'] = model
                                     else:
-                                        error = f"{model} could not be extracted or mandatory files are missing"
+                                        error = legends['error_model_extract_failed'].format(model=model)
                                 else:
-                                    error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                                    error = legends['error_custom_model_invalid'].format(name=os.path.basename(f))
                             except ModuleNotFoundError as e:
-                                error = f"No presets module for TTS engine '{session['tts_engine']}': {e}"
+                                error = legends['error_no_presets_module'].format(engine=session['tts_engine'], e=e)
                     if session.get('voice'):
                         voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And')
                         voice_name = get_sanitized(voice_name)
@@ -3846,19 +4235,19 @@ def convert_ebook(args:dict)->tuple:
                     if session['device'] == devices['CUDA']['proc']:
                         if not devices['CUDA']['found']:
                             session['device'] = devices['CPU']['proc']
-                            msg += f'CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            msg += legends['msg_device_not_supported'].format(device='CUDA', wiki=default_gpu_wiki)
                     elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
                         if not devices['JETSON']['found']:
                             session['device'] = devices['CPU']['proc']
-                            msg += f'JETSON CUDA not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            msg += legends['msg_device_not_supported'].format(device='JETSON CUDA', wiki=default_gpu_wiki)
                     elif session['device'] == devices['MPS']['proc']:
                         if not devices['MPS']['found']:
                             session['device'] = devices['CPU']['proc']
-                            msg += f'MPS not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            msg += legends['msg_device_not_supported'].format(device='MPS', wiki=default_gpu_wiki)
                     elif session['device'] == devices['ROCM']['proc']:
                         if not devices['ROCM']['found']:
                             session['device'] = devices['CPU']['proc']
-                            msg += f'ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            msg += legends['msg_device_not_supported'].format(device='ROCM', wiki=default_gpu_wiki)
                     elif session['device'] == devices['XPU']['proc']:
                         # devices['XPU']['found'] is a static capability flag: on an
                         # image built for xpu it stays True even when no Intel GPU is
@@ -3878,7 +4267,7 @@ def convert_ebook(args:dict)->tuple:
                                 xpu_error = f'XPU not available: runtime probe failed ({e!r})'
                         if xpu_error is not None:
                             session['device'] = devices['CPU']['proc']
-                            msg += f'{xpu_error}<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            msg += legends['msg_device_error_switch_cpu'].format(error=xpu_error, wiki=default_gpu_wiki)
                     if session['device'] == devices['CPU']['proc']:
                         os.environ['OMP_NUM_THREADS'] = '4'
                     vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
@@ -3934,7 +4323,7 @@ def convert_ebook(args:dict)->tuple:
                                         for f in (db, db + '-wal', db + '-shm'):
                                             if os.path.exists(f):
                                                 os.unlink(f)
-                                    msg = f"NOTE: process folder {session['process_dir']} is strictly used for internal tasks and has nothing to do with the final conversion."
+                                    msg = legends['msg_process_folder_note'].format(dir=session['process_dir'])
                                     print(msg)
                                 else:
                                     error = f"convert2epub() {session['epub_path']} does not exists! check write permissions."
@@ -4008,7 +4397,7 @@ def convert_ebook(args:dict)->tuple:
                                     pass
                                 if not session.get('translate_enabled'):
                                     if session['metadata']['language'] != session['language']:
-                                        error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                        error = legends['error_language_differs_epub'].format(selected=session['language'], other=session['metadata']['language'])
                                         show_alert(session_id, {'type': 'warning', 'msg': error})
                                 is_lang_in_tts_engine = (
                                     session.get('tts_engine') in default_engine_settings and
@@ -4065,7 +4454,7 @@ def convert_ebook(args:dict)->tuple:
                                         if session.get('blocks_orig', {}) and session.get('blocks_current', {}):
                                             sync_globals_to_blocks(session_id)
                                             if session['blocks_preview']:
-                                                msg = f'Chapters preview requested. Select which block to convert:'
+                                                msg = legends['msg_chapters_preview_select']
                                                 print(msg)
                                                 return '', True
                                             else:
@@ -4076,15 +4465,15 @@ def convert_ebook(args:dict)->tuple:
                                     else:
                                         error = 'get_cover() failed!'
                                 else:
-                                    error = f"language {final_language} not supported by {session['tts_engine']}!"
+                                    error = legends['error_language_not_supported_engine'].format(lang=final_language, engine=session['tts_engine'])
                             else:
                                 error = 'epubBook.read_epub failed!'
                     else:
-                        error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
+                        error = legends['error_not_enough_memory'].format(vram=total_vram_gb, engine=session['tts_engine'], required=device_vram_required)
                 else:
-                    error = f"Temporary directory {session['process_dir']} not removed due to failure."
+                    error = legends['error_temp_dir_not_removed'].format(dir=session['process_dir'])
         if session['cancellation_requested']:
-            error = 'Conversion Cancelled'
+            error = legends['msg_conversion_cancelled']
         return error, False
     except Exception as e:
         error = f'convert_ebook() Exception: {e}\n{traceback.format_exc()}'
@@ -4102,16 +4491,16 @@ def finalize_audiobook(session_id:str)->tuple:
             return result(error, False)
 
         if not session or not session.get('id', False):
-            msg = 'session expired!'
+            msg = legends['error_session_expired']
             return result(msg, False)
         if session['status'] not in [status_tags['EDIT'], status_tags['CONVERTING']]:
-            msg = 'No blocks have been selected for the conversion!'
+            msg = legends['msg_no_blocks_selected']
             return result(msg, False)
         if not session.get('blocks_current', {}):
             error = 'finalize_audiobook() failed! blocks_current empty!'
             return _fail(error)
         session['status'] = status_tags['CONVERTING']
-        msg = f"Preparing {os.path.basename(session['ebook'])} conversion…"
+        msg = legends['msg_preparing_ebook_conversion'].format(name=os.path.basename(session['ebook']))
         print(msg)
         if session['is_gui_process']:
             progress_bar(0, desc=msg)
@@ -4121,9 +4510,9 @@ def finalize_audiobook(session_id:str)->tuple:
             if session['cancellation_requested']:
                 if session['status'] == status_tags['DISCONNECTED']:
                     context_tracker.end_session(session_id, session['socket_hash'])
-                    msg = 'Frontend disconnected!'
+                    msg = legends['msg_frontend_disconnected']
                     return result(msg, False)
-                msg = 'Conversion cancelled'
+                msg = legends['msg_conversion_cancelled']
                 return result(msg, False)
             if not block['keep'] or not block['text'].strip():
                 block['sentences'] = []
@@ -4133,7 +4522,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 continue
             sentences_list = get_sentences(session_id, block['text'])
             if sentences_list is None:
-                error = 'No sentences found!'
+                error = legends['msg_no_sentences_found']
                 return result(error, False)
             block['sentences'] = sentences_list
         blocks_current['blocks'] = blocks
@@ -4144,9 +4533,10 @@ def finalize_audiobook(session_id:str)->tuple:
             session = context.get_session(session_id)
             if session and session.get('id', False):
                 if session['cancellation_requested']:
-                    error = 'Conversion cancelled'
+                    error = legends['msg_conversion_cancelled']
             return _fail(error)
-        show_alert(session_id, {'type': 'info', 'msg': 'Combining sentences and chapters…'})
+        generate_interludes(session_id)
+        show_alert(session_id, {'type': 'info', 'msg': legends['msg_combining_all']})
         exported_files = combine_audio_chapters(session_id)
         if exported_files is None:
             return _fail('combine_audio_chapters() error: exported_files not created!')
@@ -4162,19 +4552,19 @@ def finalize_audiobook(session_id:str)->tuple:
                         a_author = str(session.get('metadata', {}).get('creator') or '')
                         ok, msg = upload_to_abs([session['audiobook']], a_title, a_author, session['abs_url'],  session['abs_api_token'], abs_library_id)
                         if ok:
-                            msg = f'ABS upload: {msg}'
+                            msg = legends['msg_abs_upload'].format(msg=msg)
                             print(msg)
                         else:
-                            error = f'ABS upload failed: {msg}'
+                            error = legends['error_abs_upload_failed'].format(msg=msg)
                             print(error)
                     else:
-                        error = 'ABS upload failed: library not found.'
+                        error = legends['error_abs_library_not_found']
                         print(error)
                 else:
-                    error = 'ABS upload failed: Could not search libraries.'
+                    error = legends['error_abs_search_failed']
                     print(error)
             except Exception as e:
-                error = f'ABS upload error: {e}'
+                error = legends['error_abs_upload'].format(e=e)
                 print(error)
         filename = os.path.basename(session['ebook'])
         count_ebook = 0
@@ -4187,7 +4577,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 count_ebook = len(session['ebook_list'])
         if count_ebook > 0:
             reset_ebook_session(session_id, force=True, filter_keys=False)
-            show_alert(session_id, {'type': 'success', 'msg': f'{filename} / converted. {count_ebook} ebook(s) conversion remaining…'})
+            show_alert(session_id, {'type': 'success', 'msg': legends['msg_converted_remaining'].format(name=filename, count=count_ebook)})
         else:
             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                 session['ebook_list'] = None
@@ -4204,7 +4594,7 @@ def finalize_audiobook(session_id:str)->tuple:
                     pass
             session['status'] = status_tags['END']
             reset_ebook_session(session_id, force=True, filter_keys=False)
-            show_alert(session_id, {'type': 'success', 'msg': f'{filename} / converted.'})
+            show_alert(session_id, {'type': 'success', 'msg': legends['msg_converted'].format(name=filename)})
             print(f'*********** Session: {session_id} **************\n{session_info}')
         return result(filename, True)
     except Exception as e:
@@ -4267,6 +4657,13 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
         "blocks_saved_json": None,
         "blocks_current_db": None,
         "audiobook_overridden": None,
+        "audiobook_edit_target": None,
+        "audiobook_edit_block_id": None,
+        "audiobook_edit_sentence_idx": None,
+        "audiobook_edit_interlude": None,
+        "audiobook_edit_preview": None,
+        "audiobook_edit_preview_text": None,
+        "audiobook_edit_pending": False,
         "metadata": {
             "title": None, 
             "creator": None,
@@ -4290,15 +4687,46 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
 
 def unload_tts_manager(tts_manager:Any)->None:
     try:
+        engine_ref = None
         if tts_manager is not None:
             engine = getattr(tts_manager, 'engine', None)
             keys = [getattr(engine, attr, None) for attr in ('tts_key', 'tts_zs_key')]
+            if engine is not None:
+                try:
+                    import weakref
+                    engine_ref = weakref.ref(engine)
+                except Exception:
+                    pass
             tts_manager.engine = None
             engine = None
             for key in keys:
                 if key:
                     loaded_tts.pop(key, None)
         gc.collect()
+        try:
+            import torch
+        except Exception:
+            torch = None
+        if torch is not None:
+            try:
+                if torch.cuda.is_initialized():
+                    torch.cuda.synchronize()
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
+            except Exception:
+                pass
+            try:
+                if hasattr(torch, 'xpu') and torch.xpu.is_initialized():
+                    torch.xpu.synchronize()
+                    torch.xpu.empty_cache()
+            except Exception:
+                pass
+            try:
+                if hasattr(torch, 'mps') and torch.backends.mps.is_available():
+                    torch.mps.synchronize()
+                    torch.mps.empty_cache()
+            except Exception:
+                pass
         if sys.platform == 'linux':
             # gc frees the python objects but glibc keeps the pages in its arena:
             # on jetson unified memory those unreturned pages starve CUDA itself
@@ -4308,13 +4736,8 @@ def unload_tts_manager(tts_manager:Any)->None:
                 ctypes.CDLL('libc.so.6').malloc_trim(0)
             except Exception:
                 pass
-        try:
-            import torch
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
-        except Exception:
-            pass
+        if engine_ref is not None and engine_ref() is not None:
+            print('unload_tts_manager(): engine still referenced after unload, its models were not freed')
     except Exception as e:
         error = f'unload_tts_manager() error: {e}'
         print(error)
@@ -4374,6 +4797,7 @@ def show_alert(session_id:str|None, state:dict|None)->None:
 def exception_alert(session_id:str|None, error:str|None)->None:
     if error is not None:
         print(error.replace('<br/>', '\n'))
+        bug_reporter.report(error.replace('<br/>', '\n'), context.get_session(session_id) if session_id is not None and context is not None else None)
         if session_id is not None:
             session = context.get_session(session_id)
             if session and session.get('id', False):

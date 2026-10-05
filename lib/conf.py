@@ -29,7 +29,7 @@ cli_options = [
     '--repetition_penalty', '--top_k', '--top_p', 
     '--speed', '--enable_text_splitting', '--text_temp',
     '--waveform_temp', '--output_dir', 
-    '--abs_url', '--abs_api_token', '--abs_library',
+    '--abs_url', '--abs_api_token', '--abs_library', '--enable_interlude',
     '--version', '--workflow', '--docker_device', '--help'
 ]
 
@@ -81,18 +81,18 @@ default_jetson_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/downloa
 
 torch_matrix = {
     # CPU
-    "cpu":       {"os": list(systems.values()), "arch": list(archs.values()), "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
+    "cpu":       {"os": list(systems.values()), "arch": list(archs.values()), "base": "2.7.1", "last": "2.14.1", "codec": "0.17.0"},
     # CUDA
     "cu118":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.7.1",  "codec": ""},
     "cu121":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.5.1", "last": "2.5.1",  "codec": ""},
     "cu124":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.6.0", "last": "2.6.0",  "codec": ""},
-    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.11.1"},
+    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.11.1"},
     "cu128":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
     "win-cu128":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.9.1", "codec": "0.9.0"},
-    "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
+    "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.17.0"},
     "win-cu129":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.8.0", "codec": "0.8.0"},
-    "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
-    "cu132":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
+    "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.17.0"},
+    "cu132":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.17.0"},
     # ROCm
     "rocm5.7":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.3.1",  "last": "2.3.1",  "codec": ""},
     "rocm6.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.4.1",  "last": "2.4.1",  "codec": ""},
@@ -102,13 +102,14 @@ torch_matrix = {
     "rocm6.3":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.7.1",  "last": "2.9.1",  "codec": "0.9.1"},
     "rocm6.4":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.7.1",  "last": "2.9.1",  "codec": "0.9.1"},
     "rocm7.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.10.0", "last": "2.10.0", "codec": "0.10.0"},
-    "rocm7.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.13.0", "codec": "0.16.0"},
-    "rocm7.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.13.0", "codec": "0.16.0"},
+    "rocm7.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.13.0", "codec": "0.17.0"},
+    "rocm7.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.14.1", "codec": "0.17.0"},
+    "rocm7.14":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.14.1", "codec": "0.17.0"},
     "win-rocm7.2.1": {"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.9.1",  "last": "2.9.1",  "codec": "0.9.1"},
     # MPS
-    "mps":       {"os": [systems['MACOS']], "arch": [archs['ARM64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
+    "mps":       {"os": [systems['MACOS']], "arch": [archs['ARM64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.17.0"},
     # XPU
-    "xpu":       {"os": [systems['LINUX'], systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.16.0"},
+    "xpu":       {"os": [systems['LINUX'], systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.16.0"},
     # JETSON
     "jetson51":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.4.1", "last": "2.4.1", "codec": ""},
     "jetson60":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.4.0", "last": "2.4.0", "codec": ""},
@@ -154,7 +155,7 @@ os.environ['CALIBRE_CACHE_DIRECTORY'] = run_dir
 os.environ['CALIBRE_CONFIG_DIRECTORY'] = run_dir
 os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
-os.environ['DO_NOT_TRACK'] = 'True'
+os.environ['DO_NOT_TRACK'] = 'TRUE'
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
 os.environ['HF_HOME'] = tts_dir
 os.environ['HF_DATASETS_CACHE'] = tts_dir
@@ -167,10 +168,11 @@ os.environ['XDG_CACHE_HOME'] = models_dir
 os.environ['XDG_CONFIG_HOME'] = f'{models_dir}/config'
 os.environ['ARGOS_PACKAGES_DIR'] = f'{models_dir}/argos-translate/packages'
 os.environ['ARGOS_COMPUTE_TYPE'] = 'float32'
+os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
+os.environ['ARGOS_INTRA_THREADS'] = '1'
 os.environ['MPLCONFIGDIR'] = f'{models_dir}/matplotlib'
 os.environ['TESSDATA_PREFIX'] = f'{models_dir}/tessdata'
 os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
-os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['TORCHCODEC_DEVICE_BACKEND_AUTOLOAD'] = '0';
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
@@ -190,8 +192,8 @@ os.environ['MIOPEN_LOG_LEVEL'] = '2'
 os.environ['MIOPEN_DEBUG_CONV_IMPLICIT_GEMM'] = '0'
 os.environ['HSA_NO_SCRATCH_RECLAIM'] = '0'
 os.environ['HSA_ENABLE_SDMA'] = '0'
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
-os.environ['OMP_NUM_THREADS'] = '1'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE' 
+os.environ['OMP_NUM_THREADS'] = '2'
 os.environ['SYCL_IN_MEM_CACHE_EVICTION_THRESHOLD'] = str(512 * 1024 * 1024)
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
@@ -205,7 +207,11 @@ if not any(_v in os.environ for _v in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVI
 max_upload_size = '6GB' # MB or GB
 tmp_expire = 60 # days
 max_ebook_textarea_length = 1024 # chars
-default_vram_flush_ratio = 0.85 # flush the device cache when used/total VRAM crosses this ratio (0 disables the check)
+default_vram_flush_ratio = 0.85 # 0 disables the check
+bug_report_enabled = True # automatic anonymized crash/exception reports (DO_NOT_TRACK=1 also disables)
+bug_report_url = 'https://www.radsl.net/bug_report.lol' # https endpoint receiving the JSON bug report (POST), empty disables the reporter
+bug_reports_dir = os.path.join(tmp_dir, 'bug_reports')
+bug_report_env_opt_out = os.environ.get('DO_NOT_TRACK', '0').strip().lower() in ('1', 'true', 'yes')
 
 # ---------------------------------------------------------------------
 # Interface configuration

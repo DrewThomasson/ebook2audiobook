@@ -3,6 +3,7 @@ import os, subprocess, shutil, json
 from typing import Any, Union, TYPE_CHECKING
 from lib.classes.subprocess_pipe import SubprocessPipe
 from tinytag import TinyTag
+from lib.lang import legends
 
 if TYPE_CHECKING:
     from torch import Tensor
@@ -92,7 +93,7 @@ def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_proc
     try:
         ffmpeg = shutil.which('ffmpeg')
         if not ffmpeg:
-            error = 'ffmpeg not found'
+            error = legends['error_ffmpeg_not_found']
             print(error)
             return False
         filter_complex = (
@@ -118,7 +119,7 @@ def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_proc
             cmd,
             is_gui_process=is_gui_process,
             total_duration=get_audio_duration(str(input_file)),
-            msg='Normalize'
+            msg=legends['msg_normalize']
         )
         return proc_pipe.result
     except Exception as e:

@@ -4,6 +4,7 @@ from typing import Union
 from glob import glob
 from importlib.metadata import version, PackageNotFoundError
 from lib.conf import *
+from lib.lang import legends
 
 class DeviceInstaller():
     device_pkgs = ['onnxruntime', 'transformers']
@@ -128,7 +129,7 @@ class DeviceInstaller():
                         with open(device_info_json, 'w', encoding='utf-8') as f:
                             json.dump(device_info, f)
                     except OSError as e:
-                        error = f'warning: could not write .device_info.json: {e}'
+                        error = legends['msg_device_info_write_failed'].format(e=e)
                         print(error, file=sys.stderr)
                 return json.dumps(device_info)
         elif mode == BUILD_DOCKER:
@@ -143,7 +144,7 @@ class DeviceInstaller():
                 with open(device_info_json, 'w', encoding='utf-8') as f:
                     json.dump(device_info, f)
             except OSError as e:
-                error = f'warning: could not write .device_info.json: {e}'
+                error = legends['msg_device_info_write_failed'].format(e=e)
                 print(error, file=sys.stderr)
             return json.dumps(device_info)
         elif mode == FULL_DOCKER:
@@ -275,14 +276,14 @@ class DeviceInstaller():
             m2 = re.search(r'revision:\s*([\d\.]+)', text)
             msg = ''
             if not m1 or not m2:
-                msg = 'Unrecognized JetPack version. Falling back to CPU.'
+                msg = legends['msg_jetpack_unknown']
                 return ('unknown', msg)
             l4t_major = int(m1.group(1))
             rev = m2.group(1)
             parts = rev.split('.')
             rev_major = int(parts[0])
             if l4t_major < 35:
-                msg = f'JetPack too old (L4T {l4t_major}). Please upgrade to JetPack 6+. Falling back to CPU.'
+                msg = legends['msg_jetpack_old'].format(version=l4t_major)
                 return ('unsupported', msg)
             if l4t_major == 35:
                 return ('51', msg)
@@ -480,9 +481,9 @@ class DeviceInstaller():
                 tag = forced_tag
                 if forced_tag in ['cu128', 'cu129', 'rocm7.2.1'] and self.system == systems['WINDOWS']:
                     tag = f'win-{forced_tag}'
-                msg = f'Hardware forced from {tag}'
+                msg = legends['msg_hardware_forced'].format(tag=tag)
             else:
-                msg = f'DEVICE_TAG not valid'
+                msg = legends['msg_device_tag_invalid']
         else:
             # ============================================================
             # JETSON
@@ -504,7 +505,7 @@ class DeviceInstaller():
                     else:
                         out = try_cmd('uname -a')
                         if 'tegra' in out:
-                            msg = 'Jetson GPU detected but not(?) compatible'
+                            msg = legends['msg_jetson_incompatible']
                 if devices['JETSON']['found']:
                     os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
                     os.environ['TORCH_CUDA_ENABLE_CUDA_GRAPH'] = '0'
@@ -597,7 +598,7 @@ class DeviceInstaller():
                                 version = (major, minor, patch)
                             else:
                                 ver_disp = f'{major}.{minor}.{patch}' if patch else f'{major}.{minor}'
-                                msg = f'HIP runtime present ({ver_disp}) but no devices.'
+                                msg = legends['msg_hip_no_devices'].format(version=ver_disp)
                 except (OSError, AttributeError):
                     pass
                 # 2) hipcc fallback
@@ -678,11 +679,11 @@ class DeviceInstaller():
                     min_ver = f'{min_tuple[0]}.{min_tuple[1]}'
                     max_ver = f'{max_tuple[0]}.{max_tuple[1]}'
                     if self.system == systems['WINDOWS'] and version < max_tuple:
-                        msg = f'ROCm {version_str} on Windows; needs to be upgraded to {max_ver}.x.'
+                        msg = legends['msg_rocm_windows_upgrade'].format(version=version_str, max=max_ver)
                     elif cmp == -1:
-                        msg = f'ROCm {version_str} < min {min_ver}. Please upgrade.'
+                        msg = legends['msg_rocm_too_old'].format(version=version_str, min=min_ver)
                     elif cmp is None:
-                        msg = 'ROCm GPU detected but version unparseable.'
+                        msg = legends['msg_rocm_unparseable']
                     else:
                         devices['ROCM']['found'] = True
                         name = devices['ROCM']['proc']
@@ -705,11 +706,11 @@ class DeviceInstaller():
                                 else:
                                     tag = f'rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm{matched[0]}.{matched[1]}'
                         if cmp == 1:
-                            msg = f'ROCm {version_str} but tested max {max_ver} so using torch for {tag}' if tag else f'ROCm {version_str} detected but torch with this version not ready for your OS'
+                            msg = legends['msg_rocm_tested_max'].format(version=version_str, max=max_ver, tag=tag) if tag else legends['msg_rocm_torch_not_ready'].format(version=version_str)
                         elif not tag:
-                            msg = f'ROCm {version_str} detected but no compatible torch build for this OS.'
+                            msg = legends['msg_rocm_no_torch_build'].format(version=version_str)
                 else:
-                    msg = 'ROCm hardware detected but AMD ROCm base runtime not installed.'
+                    msg = legends['msg_rocm_runtime_missing']
                 # 5) Last-resort torch fallback
                 if not devices['ROCM']['found']:
                     try:
@@ -721,7 +722,7 @@ class DeviceInstaller():
                                 if self.system == systems['WINDOWS'] and version < tuple(rocm_version_range['max']):
                                     devices['ROCM']['found'] = False
                                     max_ver = f"{rocm_version_range['max'][0]}.{rocm_version_range['max'][1]}"
-                                    msg = f'ROCm {".".join(str(p) for p in version)} on Windows; needs to be upgraded to {max_ver}.x.'
+                                    msg = legends['msg_rocm_windows_upgrade'].format(version='.'.join(str(p) for p in version), max=max_ver)
                                 else:
                                     compat_versions = []
                                 for t, entry in torch_matrix.items():
@@ -808,12 +809,12 @@ class DeviceInstaller():
                                 if device_count.value > 0:
                                     version = f'{major}.{minor}'
                                 else:
-                                    msg = f'CUDA runtime present ({major}.{minor}) but no devices.'
+                                    msg = legends['msg_cuda_no_devices'].format(version=f'{major}.{minor}')
                             else:
                                 v = v_int.value
                                 major = v // 1000
                                 minor = (v % 1000) // 10
-                                msg = f'CUDA runtime present ({major}.{minor}) but cudaGetDeviceCount failed.'
+                                msg = legends['msg_cuda_count_failed'].format(version=f'{major}.{minor}')
                 except (OSError, AttributeError):
                     pass
                 # 2) CUDA toolkit version file (fallback)
@@ -843,9 +844,9 @@ class DeviceInstaller():
                     min_ver = f'{min_tuple[0]}.{min_tuple[1]}'
                     max_ver = f'{max_tuple[0]}.{max_tuple[1]}'
                     if cmp == -1:
-                        msg = f'CUDA {version} < min {min_ver}. Please upgrade.'
+                        msg = legends['msg_cuda_too_old'].format(version=version, min=min_ver)
                     elif cmp is None:
-                        msg = f'CUDA version {version} unparseable.'
+                        msg = legends['msg_cuda_unparseable'].format(version=version)
                     else:
                         devices['CUDA']['found'] = True
                         name = devices['CUDA']['proc']
@@ -869,11 +870,11 @@ class DeviceInstaller():
                                     tag = f'cu{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'cu{matched[0]}.{matched[1]}'
                         if cmp == 1:
                             tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                            msg = f'CUDA {version} but tested max {max_ver} so using torch for cu{max_tuple[0]}{max_tuple[1]}'
+                            msg = legends['msg_cuda_tested_max'].format(version=version, max=max_ver, tag=f'cu{max_tuple[0]}{max_tuple[1]}')
                         else:
                             tag = f'cu{current[0]}{current[1]}'  # still index 0/1, ignore patch
                 else:
-                    msg = 'CUDA Toolkit or Runtime not installed or hardware not detected.'
+                    msg = legends['msg_cuda_missing']
                 # 4) PyTorch fallback (only helps if a CUDA-enabled torch is already installed)
                 if not devices['CUDA']['found']:
                     try:
@@ -910,7 +911,7 @@ class DeviceInstaller():
                                         tag = f'cu{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'cu{matched[0]}.{matched[1]}'
                             if cmp == 1:
                                 tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                                msg = f'CUDA {version} but tested max {max_ver} so using torch for cu{max_tuple[0]}{max_tuple[1]}'
+                                msg = legends['msg_cuda_tested_max'].format(version=version, max=max_ver, tag=f'cu{max_tuple[0]}{max_tuple[1]}')
                             else:
                                 tag = f'cu{current[0]}{current[1]}'  # still index 0/1, ignore patch
                     except Exception:
@@ -927,16 +928,16 @@ class DeviceInstaller():
                         cmp, current, min_tuple, max_tuple = version_classify(smi_version, cuda_version_range)
                         max_ver = '.'.join(str(p) for p in max_tuple)
                         if cmp == -1:
-                            msg = f'CUDA {smi_version} (from nvidia-smi) < min. Please upgrade.'
+                            msg = legends['msg_cuda_smi_too_old'].format(version=smi_version)
                         elif cmp is not None:
                             devices['CUDA']['found'] = True
                             name = devices['CUDA']['proc']
                             if cmp == 1:
                                 tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                                msg = f'CUDA {smi_version} but tested max {max_ver} so using torch for cu{max_tuple[0]}{max_tuple[1]}'
+                                msg = legends['msg_cuda_tested_max'].format(version=smi_version, max=max_ver, tag=f'cu{max_tuple[0]}{max_tuple[1]}')
                             else:
                                 tag = f'cu{current[0]}{current[1]}'
-                                msg = f'CUDA {smi_version} detected via nvidia-smi (driver-only).'
+                                msg = legends['msg_cuda_smi_driver_only'].format(version=smi_version)
             # ============================================================
             # INTEL XPU
             # ============================================================
@@ -1108,15 +1109,15 @@ class DeviceInstaller():
                         min_ver = '.'.join(str(p) for p in min_tuple)
                         max_ver = '.'.join(str(p) for p in max_tuple)
                         if cmp == -1:
-                            msg = f'{xpu_device_count} Intel GPU{plural} via Level Zero. oneAPI {version} < min {min_ver} but using torch default xpu build anyway.'
+                            msg = legends['msg_xpu_oneapi_too_old'].format(count=xpu_device_count, version=version, min=min_ver)
                         elif cmp == 1:
-                            msg = f'{xpu_device_count} Intel GPU{plural} via Level Zero. oneAPI {version} but tested max {max_ver} so using torch default xpu build.'
+                            msg = legends['msg_xpu_oneapi_tested_max'].format(count=xpu_device_count, version=version, max=max_ver)
                         elif cmp is None:
-                            msg = f'{xpu_device_count} Intel GPU{plural} via Level Zero. oneAPI version unparseable so using torch default xpu build.'
+                            msg = legends['msg_xpu_oneapi_unparseable'].format(count=xpu_device_count)
                         else:
-                            msg = f'{xpu_device_count} Intel GPU{plural} via Level Zero, oneAPI {version}.'
+                            msg = legends['msg_xpu_oneapi_ok'].format(count=xpu_device_count, version=version)
                     else:
-                        msg = f'{xpu_device_count} Intel GPU{plural} via Level Zero. oneAPI toolkit version file not found so using torch default xpu build.'
+                        msg = legends['msg_xpu_oneapi_missing'].format(count=xpu_device_count)
                 else:
                     # Hardware is on the bus but nothing usable answered. Name the missing
                     # layer instead of tagging xpu: wheels would install and then die in
@@ -1133,21 +1134,21 @@ class DeviceInstaller():
                         kmd = os.path.basename(os.path.realpath(os.path.join(sysfs, 'driver')))
                         break
                     if os.name == 'nt':
-                        msg = f'Intel GPU on PCI but no Level Zero GPU device ({ze_status}). Update the Intel graphics driver, then re-run. Falling back to CPU.'
+                        msg = legends['msg_intel_no_l0_device'].format(status=ze_status)
                     elif not glob('/dev/dri/renderD*'):
-                        msg = 'Intel GPU on PCI but no render node. Check that i915 or xe is loaded and that this user is in the render group. Falling back to CPU.'
+                        msg = legends['msg_intel_no_render_node']
                     elif not kmd:
-                        msg = 'Intel GPU on PCI but its render node is not bound to a driver. Falling back to CPU.'
+                        msg = legends['msg_intel_render_unbound']
                     elif ze_status == 'no-loader':
-                        msg = f'Intel GPU bound to {kmd} but no Level Zero loader (libze_loader.so.1). Install level-zero and intel-level-zero-gpu, then re-run. Falling back to CPU.'
+                        msg = legends['msg_intel_no_l0_loader'].format(kmd=kmd)
                     elif ze_status.startswith('init-failed'):
-                        msg = f'Intel GPU bound to {kmd}, Level Zero loader present but zeInit {ze_status[len("init-failed "):]}. Check /dev/dri permissions (render group) and that intel-level-zero-gpu is installed. Falling back to CPU.'
+                        msg = legends['msg_intel_zeinit_failed'].format(kmd=kmd, status=ze_status[len('init-failed '):])
                     elif ze_status == 'no-driver':
-                        msg = f'Intel GPU bound to {kmd}, Level Zero initialised but exposes no driver. intel-level-zero-gpu is missing or does not support {kmd}. Falling back to CPU.'
+                        msg = legends['msg_intel_l0_no_driver'].format(kmd=kmd)
                     elif has_xpu():
-                        msg = f'Intel GPU bound to {kmd} and visible to SYCL/OpenCL but Level Zero reports no device. Install or update intel-level-zero-gpu, then re-run. Falling back to CPU.'
+                        msg = legends['msg_intel_sycl_no_l0'].format(kmd=kmd)
                     else:
-                        msg = f'Intel GPU bound to {kmd} but Level Zero reports no device ({ze_status}). Install intel-level-zero-gpu and intel-opencl-icd, then re-run. Falling back to CPU.'
+                        msg = legends['msg_intel_l0_no_device'].format(kmd=kmd, status=ze_status)
                 # 4) PyTorch last-resort fallback
                 if not devices['XPU']['found']:
                     try:
@@ -1157,7 +1158,7 @@ class DeviceInstaller():
                             xpu_device_count = torch.xpu.device_count()
                             name = devices['XPU']['proc']
                             tag = devices['XPU']['proc']
-                            msg = 'XPU detected via PyTorch fallback.'
+                            msg = legends['msg_xpu_fallback']
                     except Exception:
                         pass
             # ============================================================
@@ -1185,9 +1186,9 @@ class DeviceInstaller():
                     if has_intel_gpu_pci():
                         seen.append('Intel')
                     if seen:
-                        msg = f"No GPU backend matched. {' + '.join(seen)} GPU on PCI but its runtime did not answer. Falling back to CPU."
+                        msg = legends['msg_gpu_runtime_silent'].format(gpus=' + '.join(seen))
                     else:
-                        msg = 'No GPU found on the PCI bus. Falling back to CPU.'
+                        msg = legends['msg_no_gpu_pci']
         name, tag, msg = (v.strip() if isinstance(v, str) else v for v in (name, tag, msg))
         return (name, tag, msg)
 
@@ -1260,7 +1261,7 @@ class DeviceInstaller():
 
     def install_python_packages(self)->int:
         if not os.path.exists(requirements_file):
-            error = f'Warning: File {requirements_file} not found. Skipping package check.'
+            error = legends['error_requirements_missing'].format(file=requirements_file)
             print(error)
             return 1
         self.remove_obsolete_packages()
@@ -1307,7 +1308,7 @@ class DeviceInstaller():
                         if not self.eval_marker(marker_part):
                             continue
                     except Exception as e:
-                        error = f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}'
+                        error = legends['error_marker_eval'].format(marker=marker_part, pkg=pkg_part, e=e)
                         print(error)
                     raw_pkg = pkg_part.strip()
                 clean_pkg = re.sub(r'\[.*?\]', '', raw_pkg)
@@ -1325,7 +1326,7 @@ class DeviceInstaller():
                 if 'git+' in raw_pkg or '://' in raw_pkg:
                     spec = importlib.util.find_spec(pkg_name)
                     if spec is None:
-                        msg = f'{pkg_name} (git package) is missing.'
+                        msg = legends['msg_git_pkg_missing'].format(pkg=pkg_name)
                         print(msg)
                         missing_packages.append(raw_pkg)
                     continue
@@ -1333,25 +1334,25 @@ class DeviceInstaller():
                     pkg_name = os.path.basename(local_path)
                     vendor_version = self.version_pkg(None, local_path)
                     if vendor_version is None:
-                        msg = f'{local_path} has no detectable version.'
+                        msg = legends['msg_no_version'].format(path=local_path)
                         print(msg)
                         missing_packages.append(raw_pkg)
                         continue
                     try:
                         installed_version = version(pkg_name)
                     except PackageNotFoundError:
-                        error = f'{pkg_name} is not installed.'
+                        error = legends['msg_pkg_not_installed'].format(pkg=pkg_name)
                         print(error)
                         missing_packages.append(raw_pkg)
                         continue
                     if installed_version != vendor_version:
-                        msg = f'{pkg_name} version mismatch: installed {installed_version} != vendor {vendor_version}.'
+                        msg = legends['msg_pkg_version_mismatch'].format(pkg=pkg_name, installed=installed_version, vendor=vendor_version)
                         print(msg)
                         missing_packages.append(raw_pkg)
                     continue
                 installed_version = self.version_pkg(pkg_name, None)
                 if installed_version is None:
-                    msg = f'{pkg_name} is not installed.'
+                    msg = legends['msg_pkg_not_installed'].format(pkg=pkg_name)
                     print(msg)
                     if pkg_name == 'demucs-simple':
                         subprocess.run(
@@ -1375,39 +1376,39 @@ class DeviceInstaller():
                     for op, req_ver in re.findall(r'(==|!=|>=|<=|>|<)\s*(\d+\.\d+(?:\.\d+)?)', spec_str):
                         req_v = self.version_tuple(req_ver, 3)
                         if op == '==' and installed_v != req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
+                            msg = legends['msg_pkg_violates'].format(pkg=pkg_name, installed=installed_version, req=f'{op}{req_ver}', spec=clean_pkg)
                             print(msg)
                             violated = True
                             break
                         elif op == '>=' and installed_v < req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
+                            msg = legends['msg_pkg_violates'].format(pkg=pkg_name, installed=installed_version, req=f'{op}{req_ver}', spec=clean_pkg)
                             print(msg)
                             violated = True
                             break
                         elif op == '<=' and installed_v > req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
+                            msg = legends['msg_pkg_violates'].format(pkg=pkg_name, installed=installed_version, req=f'{op}{req_ver}', spec=clean_pkg)
                             print(msg)
                             violated = True
                             break
                         elif op == '>' and installed_v <= req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
+                            msg = legends['msg_pkg_violates'].format(pkg=pkg_name, installed=installed_version, req=f'{op}{req_ver}', spec=clean_pkg)
                             print(msg)
                             violated = True
                             break
                         elif op == '<' and installed_v >= req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
+                            msg = legends['msg_pkg_violates'].format(pkg=pkg_name, installed=installed_version, req=f'{op}{req_ver}', spec=clean_pkg)
                             print(msg)
                             violated = True
                             break
                         elif op == '!=' and installed_v == req_v:
-                            msg = f'{pkg_name} (installed {installed_version}) violates {op}{req_ver} from {clean_pkg}.'
+                            msg = legends['msg_pkg_violates'].format(pkg=pkg_name, installed=installed_version, req=f'{op}{req_ver}', spec=clean_pkg)
                             print(msg)
                             violated = True
                             break
                     if violated and raw_pkg not in missing_packages:
                         missing_packages.append(raw_pkg)
             if missing_packages:
-                msg = '\nInstalling missing or upgrade packages…\n'
+                msg = legends['msg_installing_missing']
                 print(msg)
                 base_cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir)
                 pins = [spec for spec in overrides.values() if spec]
@@ -1428,7 +1429,7 @@ class DeviceInstaller():
                             try:
                                 subprocess.check_call(base_cmd + ['--reinstall-package', self.pkg_head(raw_pkg.split('@', 1)[0])] + self.apply_pins([raw_pkg], pins))
                             except subprocess.CalledProcessError as e:
-                                msg = f'Failed to install {raw_pkg}: {e}'
+                                msg = legends['msg_install_pkg_failed'].format(pkg=raw_pkg, e=e)
                                 print(msg)
                                 return 1
                 importlib.invalidate_caches()
@@ -1442,7 +1443,7 @@ class DeviceInstaller():
                     except PackageNotFoundError:
                         still_missing.append(raw_pkg)
                 if still_missing:
-                    msg = f'\n{len(still_missing)} package(s) still invisible after install. Forcing --reinstall…\n'
+                    msg = legends['msg_force_reinstall'].format(count=len(still_missing))
                     print(msg)
                     try:
                         subprocess.check_call(base_cmd + [arg for pkg in still_missing for arg in ('--reinstall-package', self.pkg_head(pkg.split('@', 1)[0]))] + self.apply_pins(still_missing, pins))
@@ -1451,7 +1452,7 @@ class DeviceInstaller():
                             try:
                                 subprocess.check_call(base_cmd + ['--reinstall-package', self.pkg_head(raw_pkg.split('@', 1)[0])] + self.apply_pins([raw_pkg], pins))
                             except subprocess.CalledProcessError as e:
-                                msg = f'Failed to reinstall {raw_pkg}: {e}'
+                                msg = legends['msg_reinstall_pkg_failed'].format(pkg=raw_pkg, e=e)
                                 print(msg)
                                 return 1
                     importlib.invalidate_caches()
@@ -1461,12 +1462,12 @@ class DeviceInstaller():
                         try:
                             version(pkg_name)
                         except PackageNotFoundError:
-                            msg = f'CRITICAL: {pkg_name} is still not installed after --reinstall.'
+                            msg = legends['msg_pkg_still_missing'].format(pkg=pkg_name)
                             print(msg)
                             print(f'DEBUG: sys.executable = {sys.executable}')
                             print(f'DEBUG: sys.prefix = {sys.prefix}')
                             return 1
-                msg = '\nAll required packages are installed.'
+                msg = legends['msg_all_packages_ok']
                 print(msg)
         except Exception as e:
             error = f'install_python_packages() error: {e}'
@@ -1494,7 +1495,7 @@ class DeviceInstaller():
                     version(pkg_name)
                 except PackageNotFoundError:
                     continue
-                msg = f'Removing obsolete package {pkg_name}…'
+                msg = legends['msg_removing_obsolete'].format(pkg=pkg_name)
                 print(msg)
                 try:
                     subprocess.check_call(self._uv_pip('uninstall', pkg_name))
@@ -1504,7 +1505,7 @@ class DeviceInstaller():
                             print(f'Removing UniDic dictionary directory: {dicdir}')
                             shutil.rmtree(dicdir, ignore_errors=True)
                 except subprocess.CalledProcessError as e:
-                    msg = f'Failed to remove obsolete package {pkg_name} (non-fatal): {e}'
+                    msg = legends['msg_remove_obsolete_failed'].format(pkg=pkg_name, e=e)
                     print(msg)
             return 0
         except Exception as e:
@@ -1538,11 +1539,11 @@ class DeviceInstaller():
                 subprocess.check_call(self._uv_pip('install', '--no-cache', numpy_pkg))
             return True
         except subprocess.CalledProcessError as e:
-            error = f'Failed to install numpy package: {e}'
+            error = legends['error_numpy_install_failed'].format(e=e)
             print(error)
             return False
         except Exception as e:
-            error = f'Error while installing numpy package: {e}'
+            error = legends['error_numpy_install'].format(e=e)
             print(error)
             return False
 
@@ -1687,7 +1688,7 @@ class DeviceInstaller():
                 return
             pkg_dir = os.path.join(purelib, pkg.replace('-', '_'))
             if os.path.isdir(pkg_dir):
-                msg = f'Removing leftover {pkg_dir}…'
+                msg = legends['msg_removing_leftover'].format(path=pkg_dir)
                 print(msg)
                 shutil.rmtree(pkg_dir, ignore_errors=True)
         except Exception as e:
@@ -1712,7 +1713,7 @@ class DeviceInstaller():
                 broken = bool(installed) and not self.is_pkg_importable(pkg)
                 if not losers and not broken:
                     continue
-                msg = f"Resolving {pkg}: keeping {keep}, removing {', '.join(losers) if losers else 'a broken install'}…"
+                msg = legends['msg_resolving_pkg'].format(pkg=pkg, keep=keep, remove=', '.join(losers) if losers else legends['msg_broken_install'])
                 print(msg)
                 if installed:
                     subprocess.call(self._uv_pip('uninstall', *installed))
@@ -1785,7 +1786,7 @@ class DeviceInstaller():
             if device_info_str:
                 device_info = json.loads(device_info_str)
                 if device_info:
-                    msg = f'---> Hardware detected: {device_info}'
+                    msg = legends['msg_hardware_detected'].format(info=device_info)
                     print(msg)
                     tag = device_info.get('tag')
                     if tag in ['unknown','unsupported']:
@@ -1793,7 +1794,7 @@ class DeviceInstaller():
                     key = 'last' if self.python_version >= (3, 12) else 'base'
                     matrix_entry = torch_matrix.get(tag)
                     if not matrix_entry:
-                        error = f'No torch_matrix entry for tag {tag}.'
+                        error = legends['error_no_torch_matrix'].format(tag=tag)
                         print(error)
                         return 1
                     torch_version_matrix = matrix_entry.get(key) or matrix_entry['base']
@@ -1813,7 +1814,7 @@ class DeviceInstaller():
                         torch_version_current_base = torch_version_current_full.split('+',1)[0]
                     if _needs_reinstall():
                         try:
-                            msg = f"Installing the right library packages for {device_info['name']}…"
+                            msg = legends['msg_installing_libs'].format(name=device_info['name'])
                             print(msg)
                             os_env = device_info['os']
                             arch = device_info['arch']
@@ -1851,7 +1852,7 @@ class DeviceInstaller():
                                         f'{url}/{url_tag}/rocm_sdk_libraries_custom-{rocm_ver}-py3-none-{os_env}_{arch}.whl',
                                         f'{url}/{url_tag}/rocm-{rocm_ver}.tar.gz',
                                     ]
-                                    msg = f'Installing ROCm SDK {rocm_ver}…'
+                                    msg = legends['msg_installing_rocm_sdk'].format(version=rocm_ver)
                                     print(msg)
                                     subprocess.check_call(self._uv_pip('install', '--no-cache', *sdk_pkgs))
                                 torch_pkg = f'{url}/{url_tag}/torch-{torch_version_matrix}%2B{real_tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl'
@@ -1874,7 +1875,7 @@ class DeviceInstaller():
                                     rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torchcodec_wheel_url))
                                 else:
                                     if device_info['name'] == devices['XPU']['proc']:
-                                        msg = 'Installing torchcodec and the Intel XPU plugin…'
+                                        msg = legends['msg_installing_torchcodec_xpu']
                                         print(msg)
                                         rc = subprocess.call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', f'torchcodec-xpu', 'torchlib-xpu', '--extra-index-url', f'{default_pytorch_url}/xpu'))
                                     else:
@@ -1884,19 +1885,19 @@ class DeviceInstaller():
                                     try:
                                         subprocess.check_call([python_exec, '-c', 'from torchcodec.decoders import AudioDecoder'])
                                     except subprocess.CalledProcessError:
-                                        error = 'torchcodec is installed but cannot be imported. Please check the log and check if ffmpeg is installed as shared and its path registered in your OS lib path.'
+                                        error = legends['error_torchcodec_import']
                                         print(error)
                                         return 1
                                 else:
-                                    error = 'torchcodec not installed! Please check the log and if ffmpeg is installed as shared and its path registered in your OS lib path.'
+                                    error = legends['error_torchcodec_missing']
                                     print(error)
                                     return 1
                         except subprocess.CalledProcessError as e:
-                            error = f'Failed to install torch package: {e}'
+                            error = legends['error_torch_install_failed'].format(e=e)
                             print(error)
                             return 1
                         except Exception as e:
-                            error = f'Error while installing torch package: {e}'
+                            error = legends['error_torch_install'].format(e=e)
                             print(error)
                             return 1
                     if device_info['os'] == 'linux' and ('jetpack' in device_info.get('note', '').lower() or device_info['name'] == devices['JETSON']['proc']):
@@ -1914,14 +1915,14 @@ class DeviceInstaller():
                                             os.unlink(libgomp_dst)
                                         else:
                                             os.unlink(libgomp_dst)
-                                        msg = 'Create symlink to use OS libgomp.'
+                                        msg = legends['msg_symlink_libgomp']
                                         print(msg)
                                         os.symlink(libgomp_src, libgomp_dst)
                     gpu_info = _probe_gpus()
                     device_info_dict['gpu_count'] = gpu_info['count']
                     device_info_dict['gpu_backend'] = gpu_info['backend']
                     if gpu_info.get('error'):
-                        error = f'GPU detection warning: {gpu_info["error"]}'
+                        error = legends['error_gpu_detection_warning'].format(e=gpu_info['error'])
                         print(error)
                     if gpu_info['count'] > 0:
                         idx = ','.join(str(i) for i in range(gpu_info['count']))

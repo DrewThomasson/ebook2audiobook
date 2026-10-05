@@ -1,6 +1,7 @@
 import os
 import requests
 from pathlib import Path
+from lib.lang import legends
 
 
 def fetch_libraries(server_url:str, api_token:str)->list[tuple[str, str]]:
@@ -17,11 +18,11 @@ def fetch_libraries(server_url:str, api_token:str)->list[tuple[str, str]]:
                 if lib.get("id")
             ]
         else:
-            error = f"ABS library fetch failed ({resp.status_code}): {resp.text[:200]}"
+            error = legends['error_abs_fetch_failed'].format(code=resp.status_code, text=resp.text[:200])
             print(error)
             return []
     except Exception as e:
-        error = f"ABS library fetch error: {type(e).__name__}: {e}"
+        error = legends['error_abs_fetch'].format(e=f'{type(e).__name__}: {e}')
         print(error)
         return []
 
@@ -47,7 +48,7 @@ def _detect_folder_id(server_url:str, headers:dict, library_id:str)->str:
             timeout=10,
         )
         if not lib_resp.ok:
-            error = f"ABS folder auto-detect failed ({lib_resp.status_code}): {lib_resp.text[:200]}"
+            error = legends['error_abs_folder_detect_http'].format(code=lib_resp.status_code, text=lib_resp.text[:200])
             print(error)
             return ""
         for lib in lib_resp.json().get("libraries", []):
@@ -55,13 +56,13 @@ def _detect_folder_id(server_url:str, headers:dict, library_id:str)->str:
                 folders = lib.get("folders", [])
                 if folders:
                     return folders[0].get("id", "")
-                error = f"ABS library {library_id} has no folders"
+                error = legends['error_abs_no_folders'].format(id=library_id)
                 print(error)
                 return ""
-        error = f"ABS library {library_id} not found on server"
+        error = legends['error_abs_lib_not_on_server'].format(id=library_id)
         print(error)
     except Exception as e:
-        error = f"ABS folder auto-detect failed: {type(e).__name__}: {e}"
+        error = legends['error_abs_folder_detect'].format(e=f'{type(e).__name__}: {e}')
         print(error)
     return ""
 
@@ -80,21 +81,21 @@ def upload_to_abs(
         file_path = [file_path]
     existing:list[str] = [f for f in file_path if os.path.isfile(f)]
     if not existing:
-        msg = f"ABS upload skipped: no valid files in {file_path}"
+        msg = legends['msg_abs_skip_no_files'].format(files=file_path)
         print(msg)
-        return (False, 'No valid files to upload')
+        return (False, legends['msg_abs_no_valid_files'])
     if not library_id:
-        msg = "ABS upload skipped: no library_id"
+        msg = legends['msg_abs_skip_no_library']
         print(msg)
-        return (False, 'No library selected')
+        return (False, legends['msg_abs_no_library'])
     url:str = server_url.rstrip("/") + "/api/upload"
     headers:dict = {"Authorization": f"Bearer {api_token}"}
     if not folder_id:
         folder_id = _detect_folder_id(server_url, headers, library_id)
     if not folder_id:
-        msg = "ABS upload skipped: could not resolve folder id"
+        msg = legends['msg_abs_skip_no_folder']
         print(msg)
-        return (False, 'Could not resolve library folder')
+        return (False, legends['msg_abs_no_folder'])
     total_bytes:int = sum(os.path.getsize(f) for f in existing)
     form_data:dict = {
         "title": title or Path(existing[0]).stem,
@@ -111,7 +112,7 @@ def upload_to_abs(
             handles.append(fh)
             mime_type:str = MIME_MAP.get(Path(fp).suffix.lower(), "audio/mp4")
             files_dict[str(i)] = (Path(fp).name, fh, mime_type)
-        print(f"ABS upload: {len(existing)} file(s), {total_bytes / 1048576:.1f} MB -> {url}")
+        print(legends['msg_abs_uploading'].format(count=len(existing), size=f'{total_bytes / 1048576:.1f}', url=url))
         resp = requests.post(
             url,
             headers=headers,
@@ -121,37 +122,37 @@ def upload_to_abs(
         )
         if resp.ok:
             names:str = ", ".join(Path(f).name for f in existing)
-            msg = f"Uploaded to Audiobookshelf: {names}"
+            msg = legends['msg_abs_uploaded'].format(names=names)
             print(msg)
-            return (True, f'Uploaded: {names}')
+            return (True, legends['msg_abs_uploaded_short'].format(names=names))
         else:
-            error = f"ABS upload failed ({resp.status_code}): {resp.text[:200]}"
+            error = legends['error_abs_upload_http'].format(code=resp.status_code, text=resp.text[:200])
             print(error)
             return (False, f'HTTP {resp.status_code}: {resp.text[:200]}')
     except requests.exceptions.ConnectTimeout as e:
-        error = f"ABS upload failed: timed out connecting to {server_url}"
+        error = legends['error_abs_connect_timeout'].format(url=server_url)
         print(error)
-        return (False, f'Connect timeout to {server_url}')
+        return (False, legends['error_abs_connect_timeout_short'].format(url=server_url))
     except requests.exceptions.ReadTimeout as e:
-        error = f"ABS upload failed: no response after {timeout}s (upload may still be processing)"
+        error = legends['error_abs_read_timeout'].format(timeout=timeout)
         print(error)
-        return (False, f'Read timeout after {timeout}s')
+        return (False, legends['error_abs_read_timeout_short'].format(timeout=timeout))
     except requests.exceptions.ConnectionError as e:
         # ConnectionError covers refused, reset, and broken pipe. The cause
         # matters: refused means nothing is listening, reset means the server
         # accepted the upload then dropped it (size limit, proxy, crash).
         cause = str(e)
         if 'Connection refused' in cause or 'NewConnectionError' in cause:
-            hint = 'nothing listening - check host/port'
+            hint = legends['msg_abs_hint_refused']
         elif 'reset' in cause.lower() or 'BrokenPipe' in cause or 'RemoteDisconnected' in cause:
-            hint = 'server closed mid-upload - check body size limits and ABS logs'
+            hint = legends['msg_abs_hint_reset']
         else:
-            hint = 'connection error'
-        error = f"ABS upload failed [{hint}]: {type(e).__name__}: {cause[:300]}"
+            hint = legends['msg_abs_hint_conn']
+        error = legends['error_abs_upload_conn'].format(hint=hint, e=f'{type(e).__name__}: {cause[:300]}')
         print(error)
         return (False, f'{hint}: {cause[:200]}')
     except Exception as e:
-        error = f"ABS upload error: {type(e).__name__}: {e}"
+        error = legends['error_abs_upload'].format(e=f'{type(e).__name__}: {e}')
         print(error)
         return (False, f'{type(e).__name__}: {e}')
     finally:
