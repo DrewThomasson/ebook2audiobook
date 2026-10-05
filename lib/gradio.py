@@ -351,7 +351,7 @@ def build_interface(args:dict)->gr.Blocks:
             blocks_voices = [c[2] for c in block_components]
             blocks_texts = [c[3] for c in block_components]
 
-            with gr.Row(elem_id='gr_row_ui_language'):
+            with gr.Row(elem_id='gr_row_ui_language', equal_height=True):
                 gr_ui_language = gr.Dropdown(label=legends['gr_ui_language'], show_label=False, elem_id='gr_ui_language', choices=sorted([(language_mapping[lang]['native_name'] if lang in language_mapping else lang, lang) for lang in legends_langs]), value=system_language, type='value', interactive=True, scale=0, min_width=150)
                 gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
                     <div style="right:0;margin:auto;padding:10px;text-align:center">
