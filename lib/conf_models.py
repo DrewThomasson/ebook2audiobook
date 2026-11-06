@@ -123,7 +123,7 @@ IPA_REMAINING_PATTERN = re.compile(
 
 default_tts_engine = TTS_ENGINES['XTTS']
 default_fine_tuned = 'internal'
-default_vc_model = TTS_VOICE_CONVERSION['chatterbox_vc']['path']
+default_vc_model = TTS_VOICE_CONVERSION['seed_vc']['path']
 default_voice_detection_model = 'drewThomasson/segmentation'
 default_speaker = os.path.join(voices_dir, 'eng', 'adult', 'male', 'KumarDahl.wav')
 
