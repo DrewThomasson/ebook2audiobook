@@ -78,7 +78,7 @@ def write_legends(path:Path, legends:dict)->None:
     if ast.literal_eval(text.split('=', 1)[1].strip()) != legends:
         raise RuntimeError(f'{path.name}: serialization mismatch, file not written')
     tmp:Path = path.with_name(path.name+'.tmp')
-    tmp.write_text(text, encoding='utf-8')
+    tmp.write_text(text, encoding='utf-8', newline='\n')
     os.replace(tmp, path)
 
 def format_fields(text:str)->Optional[list]:
@@ -286,7 +286,7 @@ def main()->int:
             write_legends(s['path'], s['tr'])
             print(f'[{iso3}] removed {len(s["orphans"])} orphan(s), {len(s["stale"])} stale key(s) queued for retranslation')
     if baseline != eng:
-        BASELINE.write_text(dump_legends(eng), encoding='utf-8')
+        BASELINE.write_text(dump_legends(eng), encoding='utf-8', newline='\n')
         print('baseline updated')
     failed:dict = {}
     aborted:Optional[str] = None

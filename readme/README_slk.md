@@ -1,3 +1,4 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
@@ -27,10 +28,12 @@ Používajte tento nástroj zodpovedne a v súlade so všetkými platnými záko
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### Spustenie vzdialene
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### Grafické rozhranie (GUI)
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@ Používajte tento nástroj zodpovedne a v súlade so všetkými platnými záko
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## Ukážky
 
 **Ukážka nového predvoleného hlasu**  
@@ -73,8 +77,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## README.md
 
+<a id="table-of-contents"></a>
 ## Obsah
-- [ebook2audiobook](#-ebook2audiobook)
+- [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
@@ -105,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## Funkcie
 - 🔧 ** Podporované motory TTS **: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Prevod viacerých formátov súborov**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
@@ -121,6 +127,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      <i>(Kontaktujte nás, ak potrebujete ďalšie doladené modely, alebo ak chcete zdieľať tie svoje v oficiálnom zozname predvolieb)</i>
 
 
+<a id="hardware-requirements"></a>
 ##  Hardvérové požiadavky
 - 2 GB RAM min., 8 GB odporúčané.
 - 1 GB VRAM min., 4 GB odporúčané.
@@ -131,6 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 *<i> Moderné TTS enginy sú na CPU veľmi pomalé, používajte teda TTS nižšej kvality ako YourTTS, Tacotron2 atď.</i>
 
+<a id="supported-languages"></a>
 ## Podporované jazyky
 | **Arabčina (ar)**    | **Čínština (zh)**    | **Angličtina (en)**   | **Španielčina (y)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -143,12 +151,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## Podporované formáty e-kníh
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Najlepšie výsledky**: `.epub` alebo `.mobi` pre automatickú detekciu kapitol
 
+<a id="output-and-process-formats"></a>
 ## Formáty výstupu a spracovania
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - Formát spracovania je možné zmeniť v lib/conf.py
@@ -171,6 +181,7 @@ Upozornenie
 Preto by ste mali najprv ručne odstrániť všetok text, ktorý nechcete prevádzať na zvuk.**
 
 
+<a id="instructions"></a>
 ### Instructions 
 1. **Clone repo**
 	```bash
@@ -209,6 +220,7 @@ Preto by ste mali najprv ručne odstrániť všetok text, ktorý nechcete prevá
 **Ak je skript zastavený a znovu spustený, musíte obnoviť svoje grafické rozhranie Gradio<br>
 aby sa webová stránka mohla znovu pripojiť k novému pripojovaciemu socketu.**
 
+<a id="basic-usage"></a>
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
@@ -226,6 +238,7 @@ aby sa webová stránka mohla znovu pripojiť k novému pripojovaciemu socketu.*
     Podporované sú aj dvojpísmenové kódy ISO-639-1.
 
 
+<a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
@@ -376,6 +389,7 @@ SML tags available:
 POZNÁMKA: v režime gradio/gui zrušíte prebiehajúci prevod jednoducho kliknutím na [X] v komponente na nahranie e-knihy.
 TIP: ak je potrebná o niečo dlhšia pauza, pridajte '[pause:3]' pre 3 s atď.
 
+<a id="docker"></a>
 ### Docker
 1. **Clone the Repository**:
 ```bash
@@ -439,6 +453,7 @@ Podman Compose (i.e. cuda 12.8:
 - NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
   across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
 ## Nástroje
 Samostatné nástroje fungujú s vlastným Pythonom e2a (`python_env`, vytvoreným prvým spustením e2a).
 
@@ -583,6 +598,7 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
+<a id="cloned-voices"></a>
 ## Klonované hlasy
 Môžete nahrať akýkoľvek hlasový zvuk v ktoromkoľvek z podporovaných zvukových formátov, ideálne trvanie je približne 1 až 5 miliónov.
 Nezáleží na tom, či má nahrávka hlučné pozadie alebo cez ňu hrá hudba — E2A hlas vyčistí za vás.
@@ -590,7 +606,9 @@ Nezáleží na tom, či má nahrávka hlučné pozadie alebo cez ňu hrá hudba 
 Vstavaný zoznam klonovaných hlasov je prevažne v angličtine. Ak potrebujete, aby hlasy v iných jazykoch boli oficiálne
 pridané do zoznamu, kontaktujte nás a po kontrole ich pridáme.
 
+<a id="fine-tuned-tts-models"></a>
 ## Doladené (fine-tuned) TTS modely
+<a id="fine-tune-your-own-tts-model"></a>
 #### Dolaďte svoj vlastný model TTS
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -600,6 +618,7 @@ pridané do zoznamu, kontaktujte nás a po kontrole ich pridáme.
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### Kolekcia doladených TTS modelov
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -612,12 +631,14 @@ kópiu pôvodného conf.py, aby ste pri každej aktualizácii ebook2audiobook mo
 pôvodný. Rovnaký postup musíte naplánovať aj pre models.py. Ak chcete zo svojho vlastného modelu
 urobiť oficiálny doladený model ebook2audiobook, kontaktujte nás a my ho pridáme do zoznamu predvolieb.
 
+<a id="reverting-to-older-versions"></a>
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## Časté problémy:
 - Moje GPU NVIDIA/ROCm/XPU/MPS nie je detekované?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU je pomalé (lepšie na serverovom SMP CPU), zatiaľ čo GPU môže mať takmer prevod v reálnom čase.
@@ -811,5 +832,6 @@ Prijímame akýkoľvek druh hardvéru na testovanie nášho vývoja, ako naprík
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml inferenčný kód pre Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- All-in-one, čistý C++ inferenčný engine pre audio modely, poháňaný ggml.
 
+<a id="special-thanks"></a>
 ## Osobitné poďakovanie
 Všetkým finančným a kódovým prispievateľom každý príspevok a návrh pomáha zlepšiť kvalitu E2A.

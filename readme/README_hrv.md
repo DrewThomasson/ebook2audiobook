@@ -1,3 +1,4 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
@@ -27,10 +28,12 @@ Koristite ovaj alat odgovorno i u skladu sa svim primjenjivim zakonima.
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### Pokretanje na daljinu
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### Grafičko sučelje (GUI)
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@ Koristite ovaj alat odgovorno i u skladu sa svim primjenjivim zakonima.
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## Demoi
 
 **Demo novog zadanog glasa**  
@@ -73,8 +77,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## README.md
 
+<a id="table-of-contents"></a>
 ## Sadržaj
-- [ebook2audiobook](#-ebook2audiobook)
+- [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
@@ -105,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## Značajke
 - 🔧 ** Podržani TTS motori **: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Pretvaranje više formata datoteka**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
@@ -121,6 +127,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      <i>(Kontaktirajte nas ako trebate dodatne fino podešene modele ili ako želite podijeliti svoje na službenom popisu unaprijed postavljenih)</i>
 
 
+<a id="hardware-requirements"></a>
 ##  Hardverski zahtjevi
 - 2 GB RAM-a min., 8 GB preporučeno.
 - 1 GB VRAM-a min., 4 GB preporučeno.
@@ -131,6 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 *<i> Moderni TTS pogoni vrlo su spori na CPU-u, pa koristite TTS niže kvalitete poput YourTTS, Tacotron2 itd.</i>
 
+<a id="supported-languages"></a>
 ## Podržani jezici
 | **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -143,12 +151,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## Podržani formati e-knjiga
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Najbolji rezultati**: `.epub` ili `.mobi` za automatsko otkrivanje poglavlja
 
+<a id="output-and-process-formats"></a>
 ## Formati izlaza i obrade
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - Format obrade može se promijeniti u lib/conf.py
@@ -171,6 +181,7 @@ kako biste bili sigurni da vaš problem već ne postoji.**
 Stoga biste prvo trebali ručno ukloniti sav tekst koji ne želite pretvoriti u zvuk.**
 
 
+<a id="instructions"></a>
 ### Instructions 
 1. **Clone repo**
 	```bash
@@ -209,6 +220,7 @@ Stoga biste prvo trebali ručno ukloniti sav tekst koji ne želite pretvoriti u 
 **Ako se skripta zaustavi i ponovno pokrene, morate osvježiti svoje Gradio GUI sučelje<br>
 kako bi se web stranica ponovno povezala s novim utičnicom veze.**
 
+<a id="basic-usage"></a>
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
@@ -226,6 +238,7 @@ kako bi se web stranica ponovno povezala s novim utičnicom veze.**
     Podržani su i dvoslovni ISO-639-1 kodovi.
 
 
+<a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
@@ -376,6 +389,7 @@ SML tags available:
 NAPOMENA: u gradio/gui načinu rada, za otkazivanje pretvaranja u tijeku jednostavno kliknite na [X] na komponenti za učitavanje e-knjige.
 SAVJET: ako je potrebna malo dulja pauza, dodajte '[pause:3]' za 3 sek. itd.
 
+<a id="docker"></a>
 ### Docker
 1. **Clone the Repository**:
 ```bash
@@ -439,6 +453,7 @@ Podman Compose (i.e. cuda 12.8:
 - NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
   across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
 ## Alati
 Samostalni alati, pokrenuti s e2a vlastitim Pythonom (`python_env`, stvoreni prvim pokretanjem e2a).
 
@@ -583,6 +598,7 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
+<a id="cloned-voices"></a>
 ## Klonirani glasovi
 Možete prenijeti bilo koji glasovni zvuk u bilo kojem od podržanih audio formata, idealno trajanje je oko 1 do 5 milijuna.
 Nije važno ima li snimka bučnu pozadinu ili se nad njom reproducira glazba — E2A će očistiti glas za vas.
@@ -590,7 +606,9 @@ Nije važno ima li snimka bučnu pozadinu ili se nad njom reproducira glazba —
 Ugrađeni popis kloniranih glasova uglavnom je na engleskom jeziku. Ako želite da glasovi na drugim jezicima budu službeno
 dodano na popis, obratite nam se i dodat ćemo ih nakon pregleda.
 
+<a id="fine-tuned-tts-models"></a>
 ## Fino podešeni (fine-tuned) TTS modeli
+<a id="fine-tune-your-own-tts-model"></a>
 #### Fino ugađanje vlastitog TTS modela
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -600,6 +618,7 @@ dodano na popis, obratite nam se i dodat ćemo ih nakon pregleda.
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### Zbirka fino podešenih TTS modela
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -612,12 +631,14 @@ kopiju izvornog conf.py kako biste pri svakom ažuriranju ebook2audiobook mogli 
 izvorni. Isti postupak morate planirati i za models.py. Ako želite od svog vlastitog prilagođenog modela
 napraviti službeni fino podešeni ebook2audiobook model, kontaktirajte nas i dodat ćemo ga na popis unaprijed postavljenih.
 
+<a id="reverting-to-older-versions"></a>
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## Česti problemi:
 - Moj NVIDIA/ROCm/XPU/MPS GPU nije otkriven?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU je spor (bolje na serverskom SMP CPU-u) dok GPU može imati gotovo pretvaranje u stvarnom vremenu.
@@ -811,5 +832,6 @@ Prihvaćamo bilo koju vrstu hardvera za testiranje našeg razvoja, kao što su:
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml zaključni kod za Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Višenamjenski, čisti C++ mehanizam za zaključivanje za audio modele, koji pokreće ggml.
 
+<a id="special-thanks"></a>
 ## Posebna zahvala
 Svim financijskim i kodnim suradnicima, svaki doprinos i prijedlog pomaže u poboljšanju kvalitete E2A.

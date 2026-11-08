@@ -1,3 +1,4 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
@@ -27,10 +28,12 @@ CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### 远程运行
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### GUI界面
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@ CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## 演示
 
 * *新建默认语音演示* *
@@ -73,8 +77,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## README.md
 
+<a id="table-of-contents"></a>
 ## 目录
-- [ebook2audiobook](#-ebook2audiobook)
+- [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
@@ -105,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## 特点
 - 🔧 * *支持的TTS引擎* * ： `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 * *转换多种文件格式* * ： `.epub`、`.mobi`、`.azw3`、`.fb2`、`.lrf`、`.rb`、`.snb`、`.tcr`、`.pdf`、`.txt`、`.rtf`、`.doc`、`.docx`、`.html`、`.odt`、`.azw`、`.tiff`、`.tif`、`.png`、`.jpg`、`.jpeg`、`.bmp`、 `.zip`
@@ -121,6 +127,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      <i> （如果您需要其他微调模型，或者您想将您的模型分享到官方预设列表，请联系我们）</i>
 
 
+<a id="hardware-requirements"></a>
 ##  硬件要求：
 - 最少2GB内存，建议8GB。
 - 最少1GB VRAM ，建议4GB。
@@ -131,6 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 * <i>现代TTS引擎在CPU上非常慢，因此请使用较低质量的TTS ，如YourTTS、Tacotron2等。</i>
 
+<a id="supported-languages"></a>
 ## 支持的语言
 | * *阿拉伯语(ar) * * | * *中文(zh) * * | * *英语(en) * * | * *西班牙语(es) * * |
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -143,12 +151,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## 支持的电子书格式
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - * *最佳结果* * ：自动章节检测⟧为`.epub`或⟦1 `.mobi`
 
+<a id="output-and-process-formats"></a>
 ## 输出和过程格式
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - 过程格式可以在lib/conf.py中更改
@@ -171,6 +181,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 因此，您应该首先手动删除任何不想在音频中转换的文本。* *
 
 
+<a id="instructions"></a>
 ### 指南
 1. * *克隆回购* *
 	```bash
@@ -209,6 +220,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 * *如果脚本停止并再次运行，则需要刷新gradio GUI界面<br>
 让网页重新连接到新的连接套接字。* *
 
+<a id="basic-usage"></a>
 ### 基本用法
    - * * Linux/MacOS * * ：
      ```bash
@@ -226,6 +238,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     还支持ISO-639-1 2字母代码。
 
 
+<a id="example-of-custom-model-zip-upload"></a>
 ###  自定义模型Zip上传示例
   （必须是包含必需模型文件的.zip文件。XTTSv2的示例： config.json、model.pth、vocab.json和ref.wav ）
    - * * Linux/MacOS * *
@@ -376,6 +389,7 @@ SML tags available:
 注意：在gradio/gui模式下，要取消正在运行的转化，只需单击电子书上传组件中的[X]即可。
 提示：如果需要更多停顿，请在3秒钟内添加⟧“⟦0”等。 [pause:3]
 
+<a id="docker"></a>
 ### Docker
 1. * *克隆存储库* * ：
 ```bash
@@ -439,6 +453,7 @@ Podman Compose (i.e. cuda 12.8:
 - 注意：命名卷`e2a_venvs`将TTS引擎安装在自己的venv中（ GPT-SoVITS、Zonos、OmniVoice、F5-TTS、Orpheus、Spark-TTS、ChatTTS、OpenVoice、MeloTTS、CSM等）
   跨容器运行，因此它们不会每次都重新安装。要重置它们： `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
 ## 工具
 独立工具，使用e2a自己的Python （`python_env` ，由e2a的首次启动创建）运行。
 
@@ -583,6 +598,7 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
+<a id="cloned-voices"></a>
 ## 克隆的声音
 您可以上传任何支持的音频格式的任何语音音频，理想的持续时间约为1至5分钟。
 无论录音的背景是嘈杂的还是播放的音乐， E2A都会为您清理声音。
@@ -590,7 +606,9 @@ examples:
 内置克隆语音列表主要为英文。如果您需要其他语言的声音才能正式
 添加到列表中，请联系我们，我们将在审核后添加它们。
 
+<a id="fine-tuned-tts-models"></a>
 ## 微调TTS型号
+<a id="fine-tune-your-own-tts-model"></a>
 #### 微调您自己的TTS模型
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -600,6 +618,7 @@ examples:
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### 微调TTS系列
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -612,12 +631,14 @@ examples:
 回到原来的。您必须为models.py规划相同的流程。如果您想制作自己的自定义模型
 作为官方ebook2audiobook微调模型，因此请联系我们，我们会将其添加到预设列表中。
 
+<a id="reverting-to-older-versions"></a>
 ## 正在还原为旧版本
 可以找到发布- > [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## 共同问题：
 - 未检测到我的NVIDIA/ROCm/XPU/MPS GPU ？ - > [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU速度慢（在服务器smp CPU上更好） ，而GPU几乎可以实现实时转换。
@@ -811,5 +832,6 @@ if config['default_role'] in roles:
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2的ggml推理代码。
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) --音频模型的一体化、纯C + +推理引擎，由ggml提供支持。
 
+<a id="special-thanks"></a>
 ## 特别鸣谢
 对于所有财务和代码贡献者，每项贡献和建议都有助于提高E2A的质量。

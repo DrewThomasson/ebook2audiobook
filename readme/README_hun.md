@@ -1,3 +1,4 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
@@ -27,10 +28,12 @@ Használd ezt az eszközt felelősségteljesen, az összes vonatkozó törvénny
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### Futtatás távolról
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### Grafikus felület (GUI)
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@ Használd ezt az eszközt felelősségteljesen, az összes vonatkozó törvénny
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## Demók
 
 **Az új alapértelmezett hang demója**  
@@ -73,8 +77,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## README.md
 
+<a id="table-of-contents"></a>
 ## Tartalomjegyzék
-- [ebook2audiobook](#-ebook2audiobook)
+- [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
@@ -105,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## Funkciók
 - 🔧 ** Támogatott TTS-motorok **: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Több fájlformátum átalakítása**: , , , , , , , , , , , , , , , , , , , , , , `.epub` `.mobi` `.azw3` `.fb2` `.lrf` `.rb` `.snb` `.tcr` `.pdf` `.txt` `.rtf` `.doc` `.docx` `.html` `.odt` `.azw` `.tiff` `.tif` `.png` `.jpg` `.jpeg` `.bmp` `.zip`
@@ -121,6 +127,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      (Lépj kapcsolatba velünk, ha további finomhangolt modellekre van szükséged, vagy ha meg szeretnéd osztani a sajátjaidat a hivatalos előbeállítások listáján) <i> </i>
 
 
+<a id="hardware-requirements"></a>
 ##  Hardverkövetelmények
 - 2 GB RAM min., 8 GB ajánlott.
 - 1 GB VRAM min., 4 GB ajánlott.
@@ -131,6 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 *<i> A modern TTS-motorok nagyon lassúak CPU-n, ezért használj alacsonyabb minőségű TTS-t, mint a YourTTS, Tacotron2 stb.</i>
 
+<a id="supported-languages"></a>
 ## Támogatott nyelvek
 | **Arab (ar)**    | **Kínai (zh)**    | **Angol (en)**   | **Spanyol (es)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -143,12 +151,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## Támogatott e-könyv formátumok
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Legjobb eredmények**: `.epub` vagy `.mobi` az automatikus fejezetfelismeréshez
 
+<a id="output-and-process-formats"></a>
 ## Kimeneti és feldolgozási formátumok
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - A feldolgozási formátum a lib/conf.py fájlban módosítható
@@ -171,6 +181,7 @@ Megjegyzés
 Ezért először manuálisan el kell távolítanod minden olyan szöveget, amelyet nem szeretnél hanggá alakítani.**
 
 
+<a id="instructions"></a>
 ### Instructions 
 1. **Clone repo**
 	```bash
@@ -209,6 +220,7 @@ Ezért először manuálisan el kell távolítanod minden olyan szöveget, amely
 **Ha a szkriptet leállítják és újra futtatják, frissítened kell a Gradio GUI felületedet<br>
 hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
 
+<a id="basic-usage"></a>
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
@@ -226,6 +238,7 @@ hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
     A kétbetűs ISO-639-1 kódok is támogatottak.
 
 
+<a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
@@ -376,6 +389,7 @@ SML tags available:
 MEGJEGYZÉS: gradio/gui módban a folyamatban lévő átalakítás megszakításához egyszerűen kattints az e-könyv feltöltési komponens [X] gombjára.
 TIPP: ha kicsit több szünet szükséges, adj hozzá '[pause:3]'-at 3 mp-hez stb.
 
+<a id="docker"></a>
 ### Docker
 1. **Clone the Repository**:
 ```bash
@@ -439,6 +453,7 @@ Podman Compose (i.e. cuda 12.8:
 - NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
   across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
 ## Eszközök
 Önálló eszközök, amelyek az e2a saját Pythonjával futnak (`python_env`, amelyet az e2a első indítása hozott létre).
 
@@ -583,6 +598,7 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
+<a id="cloned-voices"></a>
 ## Klónozott hangok
 Bármilyen hangfelvételt feltölthet bármelyik támogatott hangformátumban, az ideális időtartam 1-5 mn.
 Nem számít, hogy a felvétel zajos háttérrel vagy zenével rendelkezik — az E2A megtisztítja a hangot az Ön számára.
@@ -590,7 +606,9 @@ Nem számít, hogy a felvétel zajos háttérrel vagy zenével rendelkezik — a
 A beépített klónozott hangok listája főként angol nyelven érhető el. Ha más nyelvű hangokra van szüksége ahhoz, hogy hivatalosan
 hozzáadva a listához. Vedd fel velünk a kapcsolatot, és az ellenőrzés után hozzáadjuk őket.
 
+<a id="fine-tuned-tts-models"></a>
 ## Finomhangolt (fine-tuned) TTS modellek
+<a id="fine-tune-your-own-tts-model"></a>
 #### Finomhangolja saját TTS-modelljét
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -600,6 +618,7 @@ hozzáadva a listához. Vedd fel velünk a kapcsolatot, és az ellenőrzés utá
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### Finomhangolt TTS modellek gyűjteménye
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -612,12 +631,14 @@ egy másolatot az eredeti conf.py fájlról, hogy minden ebook2audiobook frissí
 az eredetit. Ugyanezt a folyamatot kell megtervezned a models.py esetében is. Ha szeretnéd a saját egyéni modelledet
 hivatalos finomhangolt ebook2audiobook modellé tenni, lépj kapcsolatba velünk, és hozzáadjuk az előbeállítások listájához.
 
+<a id="reverting-to-older-versions"></a>
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## Gyakori problémák:
 - Az NVIDIA/ROCm/XPU/MPS GPU-mat nem érzékeli?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  A CPU lassú (jobb szerver SMP CPU-n), míg a GPU szinte valós idejű átalakítást tud nyújtani.
@@ -811,5 +832,6 @@ Bármilyen típusú hardvert elfogadunk a fejlesztésünk teszteléséhez, péld
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml következtetési kód a Zonos2 számára.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Egy all-in-one, tiszta C++ következtetési motor hangmodellekhez, ggml meghajtással.
 
+<a id="special-thanks"></a>
 ## Külön köszönet
 Minden pénzügyi és kód közreműködő számára minden hozzájárulás és javaslat hozzájárul az E2A minőségének javításához.
