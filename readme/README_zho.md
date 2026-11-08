@@ -52,7 +52,7 @@ CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
 <details>
-  ⟧其他⟦0个演示</summary> <summary>
+  <summary>更多演示</summary>
 
 * * ASMR语音* *
 
@@ -120,10 +120,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🗣️ * *可选语音克隆* *使用您自己的语音文件
 - 🌐 * *支持1696种语言* * ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 * *低资源友好* * —运行于* * 2 GB RAM/1 GB VRAM （最低） * *
-- 🎵 * *有声读物输出格式* * ：单声道或立体声`aac`⟧⟧、⟦1、`mp3`、`m4b`、`m4a`、`mp4`、`mov`、⟦7、`wav`、 `webm` `flac` `ogg`
+- 🎵 * *有声读物输出格式* * ：单声道或立体声 `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 * *支持SML标签* * —精细控制中断、暂停、语音切换等([see below](#sml-tags-available))
 - 🧩 * *可选的自定义模型* *使用您自己的训练模型（ XTTSv2、VITS、FAIRSEQ、PIPER等）
-- 🎛️ * *由E2A Team⟦ 0训练的微调预设模型* *⟧ <br/>
+- 🎛️ * *由E2A团队培训的微调预设模型* *<br/>
      <i> （如果您需要其他微调模型，或者您想将您的模型分享到官方预设列表，请联系我们）</i>
 
 
@@ -156,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
-- * *最佳结果* * ：自动章节检测⟧为`.epub`或⟦1 `.mobi`
+- * *最佳结果* * ： `.epub` 或者 `.mobi` 用于自动章节检测
 
 <a id="output-and-process-formats"></a>
 ## 输出和过程格式
@@ -168,7 +168,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` —静音（随机范围* * 1.0–1.6秒* * ）
 - `[pause:N]` —固定暂停（ * * N秒* * ）
 - `[voice:/path/to/voice/file]...[/voice]` —从GUI/CLI从默认或所选语音切换语音
-- `[emotion:sadness]...[/emotion]` —仅限Zonos ：对一段话的情绪（幸福、悲伤、厌恶、恐惧、惊讶、愤怒、其他、中立）或像⟦1这样的混合⟧；其他引擎忽略它 `[emotion:sadness=0.7,neutral=0.3]`
+- `[emotion:sadness]...[/emotion]` —仅限Zonos ：对一段经文的情感（幸福、悲伤、厌恶、恐惧、惊讶、愤怒、其他、中立）或类似的混合 `[emotion:sadness=0.7,neutral=0.3]`；其他引擎忽略它
 
 * *查看我们的另一个专门用于在您的电子书中自动添加SML的存储库- > [E2A-SML](https://github.com/DrewThomasson/E2A-SML) * *
 
@@ -195,7 +195,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command
      ```
-     ⟦0 MacOS用户⟧注意事项：已安装homebrew以安装缺少的程序。</i> <i>
+     <i>MacOS用户注意事项：安装自制软件即可安装丢失的程序。</i>
      
    - * * Mac启动器* *
      双击 `Mac Ebook2Audiobook Launcher.command`
@@ -208,7 +208,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      或者
      双击 `ebook2audiobook.cmd`
 
-     ⟦0 Windows用户⟧注意事项：安装SCOOP是为了安装没有管理员权限的缺失程序。</i> <i>
+     <i>Windows用户注意事项：安装SCOOP是为了安装缺失的程序，无需管理员权限。</i>
    
 1. * *打开Web应用程序* * ：单击终端中提供的URL以访问Web应用程序并转换电子书。`http://localhost:7860/`
 2. * *对于公开链接* * ：
@@ -251,7 +251,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```
      <i>注意：您的自定义模型的ref.wav始终是选择用于转换的声音</i>
      
-- * *<custom_model_path> * * ： ⟦1个⟧文件的路径， `model_name.zip`
+- **<custom_model_path>路径至 `model_name.zip` 文件
       其中必须包含（根据TTS引擎）所有必需文件<br>
       （参见./lib/models.py ）。
 
@@ -387,7 +387,7 @@ SML tags available:
 ```
 
 注意：在gradio/gui模式下，要取消正在运行的转化，只需单击电子书上传组件中的[X]即可。
-提示：如果需要更多停顿，请在3秒钟内添加⟧“⟦0”等。 [pause:3]
+提示：如果需要稍作停顿，请添加[pause:3]'持续3秒，以此类推。
 
 <a id="docker"></a>
 ### Docker
@@ -461,9 +461,9 @@ Podman Compose (i.e. cuda 12.8:
 ### 离线安装预加载模型： `tools/preload_models.py`
 下载e2a使用的每个型号（ TTS引擎及其微调、语音转换、节、pyannote、demucs、
 音乐插曲、argos-翻译包、tesseract数据、jieba和声音）整合到一个文件夹中
-与⟦0完全相同⟧，即USB密钥。在脱机机器上，将该文件夹复制到e2a的`./models` `./models`
-并将其旁边的`voices`文件夹写入e2a的⟦1中⟧。 `./voices`
-每个完成的作业都记录在⟦0中⟧：重新运行会跳过已完成的工作并开始 `<models_dir>/.e2a_downloads.json`
+完全一样 `./models`，即USB密钥。在脱机机器上，将该文件夹复制到e2a的 `./models`
+和 `voices` 在其旁边写入e2a的文件夹 `./voices`.
+每个完成的作业都记录在 `<models_dir>/.e2a_downloads.json`：重新运行跳过已完成的内容并开始
 删除部分文件后再次切割（ ctrl-c、crash、unplugged key ）。
    - * * Linux/MacOS * *
      ```bash
@@ -507,18 +507,18 @@ options:
 
 <a id="translate-ebooks"></a>
 ### 从e2a翻译电子书： `translate_ebook.sh`/`translate_ebook.cmd`
-翻译EPUB/AZW3文件、整个文件夹（其子文件夹⟧为⟦0 ）或路径列表（`@list.txt` ） `-r`
+翻译EPUB/AZW3文件，整个文件夹（`-r` 子文件夹）或路径列表（`@list.txt`)
 使用Argos Translate calibre插件离线翻译成已翻译的电子书，
 `tools/argostranslate-calibre-plugin.zip`.独立于有声读物转换：它只写电子书。
 它需要calibre （ e2a已经要求）并在e2a的`python_env`和argos-translate软件包上运行：
 e2a已使用的语言对不会再次下载，缺失的语言对会在首次使用时下载。
 该插件在首次使用时安装到e2a自己的calibre配置文件(`./run`)中，您的calibre保持不变。
-⟦0次⟧翻译成多种语言，每种语言一本电子书， ⟦1次翻译⟧成每种语言 `--to fra,ara,spa` `--to all`
+`--to fra,ara,spa` 同时翻译成几种语言，每种语言一本电子书， `--to all` 变成每一个
 源达到的语言（`--from` ，否则每本书自己的语言；仅安装`--no_download` ）。
 `--list --from eng`列出了英语翻译成的语言（已安装、可下载或通过英语翻译为
 添加其他源
 其他格式calibre的`ebook-convert`读数（ PDF、DOCX、MOBI、TXT等）在
-第一语言，并且在没有语言的情况下⟧需要翻译为EPUB: ⟦0 ，就像PDF和TXT经常做的那样。 `--from`
+第一语言，翻译为EPUB ： `--from` 当它们不支持任何语言时，就像PDF和TXT经常做的那样。
 没有`-o`或`--output_dir` ，每个翻译都保存在其书旁边为`<name>.<lang>.<ext>` ，
 并跳过一本翻译已经存在的书（`--overwrite`表示再次翻译）。
 E2a文件夹中的启动器运行`tools/translate_ebook.py`与`python_env` ，无需激活，
@@ -533,7 +533,7 @@ E2a文件夹中的启动器运行`tools/translate_ebook.py`与`python_env` ，�
      ```
    - 或者直接使用`python_env`的Python: `./python_env/bin/python tools/translate_ebook.py ...`
      （ Windows ： `python_env\Scripts\python.exe tools\translate_ebook.py ...` ）。从任何其他Python开始，
-     脚本再次以⟦⟧0开始。 `python_env`
+     脚本再次以 `python_env`南
    - * * Docker * * ：在e2a容器中运行，例如`docker exec -it <container> python3 tools/translate_ebook.py ...`
      从容器中看到的路径。
    - * *速度* * ： argostranslate根据自己的默认值运行（ CTranslate2选择线程和最快的计算类型，
@@ -766,7 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 ## 训练模型等的额外过度杀伤（所有支持的Coqui-tts模型和piper-tts在一个简单的命令中）
 - 有关这个@ DrewThomasson的信息，他目前正在开发这个， [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] 为[ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at ⟦1中的所有coqui-tts模型制作一个易于使用的训练GUI⟧ [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] 为所有coqui-tts模型制作一个易于使用的训练GUI ， [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) 完成于 [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
 ## 贡献者的Python代码规范化信息

@@ -182,8 +182,8 @@ Daarom moet je eerst handmatig alle tekst verwijderen die je niet naar audio wil
 
 
 <a id="instructions"></a>
-### Instructions 
-1. **Clone repo**
+### Instructies
+1. ** Repo klonen **
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ Daarom moet je eerst handmatig alle tekst verwijderen die je niet naar audio wil
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>Opmerking voor MacOS-gebruikers: homebrew is geïnstalleerd om ontbrekende programma's te installeren.</i>
      
    - **Mac-launcher**  
      Dubbelklik op `Mac Ebook2Audiobook Launcher.command`
@@ -205,8 +205,8 @@ Daarom moet je eerst handmatig alle tekst verwijderen die je niet naar audio wil
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     of
+     Dubbelklik `ebook2audiobook.cmd`
 
      <i>Opmerking voor Windows-gebruikers: scoop wordt geïnstalleerd om ontbrekende programma's te installeren zonder beheerdersrechten.</i>
    
@@ -221,7 +221,7 @@ Daarom moet je eerst handmatig alle tekst verwijderen die je niet naar audio wil
 zodat de webpagina opnieuw verbinding kan maken met de nieuwe verbindings-socket.**
 
 <a id="basic-usage"></a>
-### Basic  Usage
+### Algemeen gebruik
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ zodat de webpagina opnieuw verbinding kan maken met de nieuwe verbindings-socket
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+###  Voorbeeld van aangepaste model zip-upload
+  (moet een .zip-bestand zijn met de verplichte modelbestanden. Voorbeeld voor XTTSv2: config.json, model.pth, vocab.json en ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ zodat de webpagina opnieuw verbinding kan maken met de nieuwe verbindings-socket
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>Opmerking: de ref.wav van uw aangepaste model is altijd de stem die is geselecteerd voor de conversie</i>
      
 - **<custom_model_path>**: Pad naar het `model_name.zip`-bestand,
       dat (afhankelijk van de TTS-engine) alle verplichte bestanden moet bevatten<br>
       (zie ./lib/models.py).
 
-### For Detailed Guide with list of all Parameters to use
+### Voor gedetailleerde gids met een lijst van alle te gebruiken parameters
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ zodat de webpagina opnieuw verbinding kan maken met de nieuwe verbindings-socket
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **Of voor alle besturingssystemen**
     ```python
      app.py --help
     ```
@@ -391,12 +391,12 @@ TIP: als er wat meer pauze nodig is, voeg dan '[pause:3]' toe voor 3 sec. enz.
 
 <a id="docker"></a>
 ### Docker
-1. **Clone the Repository**:
+1. **De repository klonen **:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. **Bouw de container**
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ TIP: als er wat meer pauze nodig is, voeg dan '[pause:3]' toe voor 3 sec. enz.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Run the Container:**
+4. **Voer de container uit:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
-- NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
-  across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
+- OPMERKING: MPS is niet zichtbaar in docker, dus CPU moet worden gebruikt
+- OPMERKING: het genoemde volume `e2a_venvs` houdt de TTS-motoren geïnstalleerd in hun eigen venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM enz.)
+  over de container loopt, zodat ze niet elke keer opnieuw worden geïnstalleerd. Om ze te resetten: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Hulpmiddelen
 Standalone tools, uitgevoerd met e2a's eigen Python (`python_env`, gemaakt door de eerste lancering van e2a).
 
 <a id="preload-models"></a>
-### Preload models for offline installs: `tools/preload_models.py`
-Downloads every model e2a uses (TTS engines and their fine-tunes, voice conversion, stanza, pyannote, demucs,
-music interludes, argos-translate packages, tesseract data, jieba, and the voices) into one folder laid out
-exactly like `./models`, i.e. a USB key. On the offline machine, copy that folder into e2a's `./models`
-and the `voices` folder written beside it into e2a's `./voices`.
-Every finished job is recorded in `<models_dir>/.e2a_downloads.json`: a rerun skips what is done and starts
-again what was cut (ctrl-c, crash, unplugged key) after removing its partial files.
+### Voorlaadmodellen voor offline installaties: `tools/preload_models.py`
+Download elk model dat e2a gebruikt (TTS-motoren en hun fijnafstemmingen, spraakconversie, stanza, pyannote, demucs,
+muziek intermezzo's, argos-vertaal pakketten, tesseract data, jieba, en de stemmen) in één map ingedeeld
+precies zoals `./models`, d.w.z. een USB-stick. Kopieer die map op de offline machine naar e2a's `./models`
+en het `voices` map ernaast geschreven in e2a's `./voices`.
+Elke voltooide taak wordt geregistreerd in `<models_dir>/.e2a_downloads.json`: een herhaling slaat over wat er is gedaan en begint
+opnieuw wat werd geknipt (ctrl-c, crash, unplugged key) na het verwijderen van de gedeeltelijke bestanden.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ again what was cut (ctrl-c, crash, unplugged key) after removing its partial fil
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` lists the jobs and their state (done, interrupted, todo) without downloading anything.
+   - `--dry_run` vermeldt de taken en hun status (voltooid, onderbroken, taken) zonder iets te downloaden.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Translate ebooks out of e2a: `translate_ebook.sh` / `translate_ebook.cmd`
-Translates EPUB/AZW3 files, a whole folder (`-r` for its subfolders) or a list of paths (`@list.txt`)
-into translated ebooks, offline, with the Argos Translate calibre plugin shipped in
-`tools/argostranslate-calibre-plugin.zip`. Independent of the audiobook conversion: it only writes ebooks.
-It needs calibre (already required by e2a) and runs on e2a's `python_env` and argos-translate packages:
-a language pair e2a already uses is not downloaded again, a missing one is downloaded on first use.
-The plugin is installed on first use into e2a's own calibre profile (`./run`), your calibre is left untouched.
-`--to fra,ara,spa` translates into several languages at once, one ebook per language, and `--to all` into every
-language the source reaches (`--from`, else each book's own language; installed ones only with `--no_download`).
-`--list --from eng` lists the languages English translates into (installed, downloadable, or through English for
-another source).
-Other formats calibre's `ebook-convert` reads (PDF, DOCX, MOBI, TXT, ...) are converted to EPUB once, before the
-first language, and translated as EPUB: `--from` is needed when they carry no language, as PDF and TXT often do.
-Without `-o` or `--output_dir`, each translation is saved beside its book as `<name>.<lang>.<ext>`,
-and a book whose translation already exists is skipped (`--overwrite` to translate it again).
-The launchers in e2a's folder run `tools/translate_ebook.py` with `python_env`, nothing to activate,
-from any folder (relative paths are taken from where it is started):
+### Vertaal e-boeken uit e2a: `translate_ebook.sh`/`translate_ebook.cmd`
+Vertaalt EPUB/AZW3-bestanden, een hele map (`-r` voor de submappen) of een lijst met paden (`@list.txt`)
+in vertaalde e-boeken, offline, met de Argos Translate kaliber plugin geleverd in
+`tools/argostranslate-calibre-plugin.zip`. Onafhankelijk van de audioboekconversie: het schrijft alleen e-boeken.
+Het heeft kaliber nodig (al vereist door e2a) en werkt op e2a's `python_env` en argos-vertaalpakketten:
+een taalpaar dat e2a al gebruikt, wordt niet opnieuw gedownload, een ontbrekende wordt gedownload bij het eerste gebruik.
+De plug-in wordt bij het eerste gebruik geïnstalleerd in het eigen kaliberprofiel (`./run`) van e2a, uw kaliber blijft onaangetast.
+`--to fra,ara,spa` vertaalt zich in meerdere talen tegelijk, één e-boek per taal en `--to all` in elke
+taal die de bron bereikt (`--from`, anders de eigen taal van elk boek; geïnstalleerde talen alleen met `--no_download`).
+`--list --from eng` geeft de talen weer waarin het Engels vertaalt (geïnstalleerd, downloadbaar of via het Engels voor
+andere bron).
+Andere formaten kaliber `ebook-convert` leest (pdf, DOCX, MOBI, txt, ...) worden eenmaal omgezet naar EPUB, vóór de
+eerste taal, en vertaald als EPUB: `--from` is nodig wanneer ze geen taal hebben, zoals PDF en txt vaak doen.
+Zonder `-o` of `--output_dir` wordt elke vertaling naast zijn boek opgeslagen als `<name>.<lang>.<ext>`,
+en een boek waarvan de vertaling al bestaat, wordt overgeslagen (`--overwrite` om het opnieuw te vertalen).
+De launchers in de map van e2a draaien `tools/translate_ebook.py` met `python_env`, niets om te activeren,
+vanuit elke map (relatieve paden worden genomen van waar het is begonnen):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ from any folder (relative paths are taken from where it is started):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Or directly with `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Started with any other Python,
-     the script starts itself again with `python_env`'s.
-   - **Docker**: run it inside the e2a container, e.g. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     with paths seen from the container.
-   - **Speed**: argostranslate runs on its own defaults (CTranslate2 picks the threads and the fastest compute type,
-     int8 on CPU), not on e2a's 1 thread in float32. Set `ARGOS_INTRA_THREADS` or `ARGOS_COMPUTE_TYPE` to override them.
+   - Of direct met Python: `./python_env/bin/python tools/translate_ebook.py ...` van `python_env`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Begonnen met een andere Python,
+     het script begint opnieuw met `python_env`'s.
+   - **Docker**: voer het uit in de e2a-container, bijv. `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     met paden gezien vanuit de container.
+   - **Snelheid**: argostranslate draait op zijn eigen standaardwaarden (CTranslate2 kiest de threads en het snelste computertype,
+     int8 op CPU), niet op e2a's 1 draad in float32. Set `ARGOS_INTRA_THREADS` of `ARGOS_COMPUTE_TYPE` om ze op te heffen.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ originele kunt terugzetten. Je moet hetzelfde proces plannen voor models.py. Als
 een officieel fijnafgesteld ebook2audiobook-model wilt maken, neem dan contact met ons op en we voegen het toe aan de presetlijst.
 
 <a id="reverting-to-older-versions"></a>
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Terugzetten naar oudere versies
+Vrijgaven zijn te vinden -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
