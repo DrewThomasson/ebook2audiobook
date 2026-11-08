@@ -182,8 +182,8 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
 
 
 <a id="instructions"></a>
-### Instructions 
-1. **Clone repo**
+### Hướng dẫn
+1. ** Repo nhân bản **
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>Lưu ý cho người dùng MacOS: homebrew được cài đặt để cài đặt các chương trình bị thiếu.</i>
      
    - **Trình khởi chạy Mac**  
      Nhấp đúp vào `Mac Ebook2Audiobook Launcher.command`
@@ -205,8 +205,8 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     hoặc
+     Bấm Đúp `ebook2audiobook.cmd`
 
      <i>Lưu ý cho người dùng Windows: scoop được cài đặt để cài các chương trình còn thiếu mà không cần quyền quản trị viên.</i>
    
@@ -221,7 +221,7 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
 để trang web kết nối lại với socket kết nối mới.**
 
 <a id="basic-usage"></a>
-### Basic  Usage
+### Sử Dụng Cơ Bản
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+###  Ví dụ về Tải lên Zip Mô hình Tùy chỉnh
+  (phải là tệp .zip chứa các tệp mô hình bắt buộc. Ví dụ cho XTTSv2: config.json, model.pth, vocab.json và ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>Lưu ý: ref.wav của mô hình tùy chỉnh của bạn luôn là giọng nói được chọn cho chuyển đổi</i>
      
 - **<custom_model_path>**: Đường dẫn đến tệp `model_name.zip`,
       tệp này phải chứa (tùy theo engine tts) tất cả các tệp bắt buộc<br>
       (xem ./lib/models.py).
 
-### For Detailed Guide with list of all Parameters to use
+### Đối với Hướng dẫn chi tiết với danh sách tất cả các Thông số cần sử dụng
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **Hoặc cho tất cả HĐH**
     ```python
      app.py --help
     ```
@@ -391,12 +391,12 @@ MẸO: nếu cần thêm khoảng dừng, hãy thêm '[pause:3]' cho 3 giây, v.
 
 <a id="docker"></a>
 ### Docker
-1. **Clone the Repository**:
+1. **Sao chép kho lưu trữ**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. **Xây dựng thùng chứa**
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ MẸO: nếu cần thêm khoảng dừng, hãy thêm '[pause:3]' cho 3 giây, v.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Run the Container:**
+4. **Chạy Container:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
-- NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
-  across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
+- LƯU Ý: MPS không tiếp xúc trong docker nên phải sử dụng CPU
+- GHI CHÚ: khối lượng được đặt tên `e2a_venvs` giữ cho các động cơ TTS được cài đặt trong venv của riêng chúng (GPT-SoVITS, ZONOS, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, v.v.)
+  qua các container chạy, vì vậy chúng không được cài đặt lại mỗi lần. Để đặt lại chúng: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Công cụ
 Các công cụ độc lập, chạy với Python của riêng e2a (`python_env`, được tạo bởi lần khởi chạy đầu tiên của e2a).
 
 <a id="preload-models"></a>
-### Preload models for offline installs: `tools/preload_models.py`
-Downloads every model e2a uses (TTS engines and their fine-tunes, voice conversion, stanza, pyannote, demucs,
-music interludes, argos-translate packages, tesseract data, jieba, and the voices) into one folder laid out
-exactly like `./models`, i.e. a USB key. On the offline machine, copy that folder into e2a's `./models`
-and the `voices` folder written beside it into e2a's `./voices`.
-Every finished job is recorded in `<models_dir>/.e2a_downloads.json`: a rerun skips what is done and starts
-again what was cut (ctrl-c, crash, unplugged key) after removing its partial files.
+### Các mô hình tải trước để cài đặt ngoại tuyến: `tools/preload_models.py`
+Tải xuống mọi mô hình e2a sử dụng (công cụ TTS và các giai điệu tinh tế, chuyển đổi giọng nói, đoạn, pyannote, demucs,
+các đoạn nhạc xen kẽ, các gói dịch argos, dữ liệu tesseract, jieba và giọng nói) vào một thư mục được đặt ra
+chính xác như `./models`, tức là chìa khóa USB. Trên máy ngoại tuyến, sao chép thư mục đó vào e2a's `./models`
+và `voices` thư mục được viết bên cạnh nó vào e2a's `./voices`.
+Mỗi công việc đã hoàn thành được ghi lại trong `<models_dir>/.e2a_downloads.json`: chạy lại bỏ qua những gì đã làm và bắt đầu
+một lần nữa những gì đã bị cắt (ctrl-c, crash, unplugged key) sau khi loại bỏ các tập tin một phần của nó.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ again what was cut (ctrl-c, crash, unplugged key) after removing its partial fil
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` lists the jobs and their state (done, interrupted, todo) without downloading anything.
+   - `--dry_run` liệt kê các công việc và trạng thái của chúng (done, interrupted, todo) mà không cần tải xuống bất cứ thứ gì.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Translate ebooks out of e2a: `translate_ebook.sh` / `translate_ebook.cmd`
-Translates EPUB/AZW3 files, a whole folder (`-r` for its subfolders) or a list of paths (`@list.txt`)
-into translated ebooks, offline, with the Argos Translate calibre plugin shipped in
-`tools/argostranslate-calibre-plugin.zip`. Independent of the audiobook conversion: it only writes ebooks.
-It needs calibre (already required by e2a) and runs on e2a's `python_env` and argos-translate packages:
-a language pair e2a already uses is not downloaded again, a missing one is downloaded on first use.
-The plugin is installed on first use into e2a's own calibre profile (`./run`), your calibre is left untouched.
-`--to fra,ara,spa` translates into several languages at once, one ebook per language, and `--to all` into every
-language the source reaches (`--from`, else each book's own language; installed ones only with `--no_download`).
-`--list --from eng` lists the languages English translates into (installed, downloadable, or through English for
-another source).
-Other formats calibre's `ebook-convert` reads (PDF, DOCX, MOBI, TXT, ...) are converted to EPUB once, before the
-first language, and translated as EPUB: `--from` is needed when they carry no language, as PDF and TXT often do.
-Without `-o` or `--output_dir`, each translation is saved beside its book as `<name>.<lang>.<ext>`,
-and a book whose translation already exists is skipped (`--overwrite` to translate it again).
-The launchers in e2a's folder run `tools/translate_ebook.py` with `python_env`, nothing to activate,
-from any folder (relative paths are taken from where it is started):
+### Dịch sách điện tử ra khỏi e2a: `translate_ebook.sh`/`translate_ebook.cmd`
+Dịch các tệp EPUB/AZW3, toàn bộ thư mục (`-r` cho các thư mục con của nó) hoặc danh sách các đường dẫn (`@list.txt`)
+vào sách điện tử đã dịch, ngoại tuyến, với plugin Argos Translate calibre được vận chuyển trong
+`tools/argostranslate-calibre-plugin.zip`. Không phụ thuộc vào việc chuyển đổi sách nói: nó chỉ viết sách điện tử.
+Nó cần calibre (đã được yêu cầu bởi e2a) và chạy trên các gói `python_env` và argos-translate của e2a:
+một cặp ngôn ngữ e2a đã sử dụng sẽ không được tải xuống lại, một ngôn ngữ bị thiếu sẽ được tải xuống trong lần sử dụng đầu tiên.
+Plugin được cài đặt trong lần sử dụng đầu tiên vào cấu hình calibre của riêng e2a (`./run`), calibre của bạn không bị ảnh hưởng.
+`--to fra,ara,spa` dịch sang nhiều ngôn ngữ cùng một lúc, một ebook cho mỗi ngôn ngữ và `--to all` cho mỗi
+ngôn ngữ nguồn đạt đến (`--from`, nếu không thì ngôn ngữ riêng của mỗi cuốn sách; những ngôn ngữ được cài đặt chỉ với `--no_download`).
+`--list --from eng` liệt kê các ngôn ngữ tiếng Anh được dịch sang (đã cài đặt, có thể tải xuống hoặc thông qua tiếng Anh cho
+một nguồn khác).
+Các định dạng khác của calibre `ebook-convert` đọc (PDF, DOCX, MOBI, txt, ...) được chuyển đổi sang EPUB một lần, trước khi
+ngôn ngữ đầu tiên và được dịch là EPUB: `--from` là cần thiết khi chúng không có ngôn ngữ, như PDF và txt thường làm.
+Nếu không có `-o` hoặc `--output_dir`, mỗi bản dịch được lưu bên cạnh cuốn sách của nó là `<name>.<lang>.<ext>`,
+và một cuốn sách có bản dịch đã tồn tại bị bỏ qua (`--overwrite` để dịch lại).
+Các trình khởi chạy trong thư mục của e2a chạy `tools/translate_ebook.py` với `python_env`, không có gì để kích hoạt,
+từ bất kỳ thư mục nào (các đường dẫn tương đối được lấy từ nơi bắt đầu):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ from any folder (relative paths are taken from where it is started):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Or directly with `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Started with any other Python,
-     the script starts itself again with `python_env`'s.
-   - **Docker**: run it inside the e2a container, e.g. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     with paths seen from the container.
-   - **Speed**: argostranslate runs on its own defaults (CTranslate2 picks the threads and the fastest compute type,
-     int8 on CPU), not on e2a's 1 thread in float32. Set `ARGOS_INTRA_THREADS` or `ARGOS_COMPUTE_TYPE` to override them.
+   - Hoặc trực tiếp với `python_env`Python của: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Bắt đầu với bất kỳ Python nào khác,
+     tập lệnh bắt đầu lại với `python_env`'s
+   - **Docker**: chạy nó bên trong thùng chứa e2a, ví dụ: `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     với các đường dẫn được nhìn thấy từ thùng chứa.
+   - **Tốc độ**: argostranslate chạy trên mặc định của riêng nó (CTranslate2 chọn các chủ đề và loại tính toán nhanh nhất,
+     int8 trên CPU), không phải trên 1 luồng của e2a trong float32. Đặt `ARGOS_INTRA_THREADS` hoặc `ARGOS_COMPUTE_TYPE` để ghi đè lên chúng.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ lại bản gốc. Bạn phải lên kế hoạch cho quy trình tương tự v�
 thành một mô hình ebook2audiobook đã tinh chỉnh chính thức, vui lòng liên hệ với chúng tôi và chúng tôi sẽ thêm nó vào danh sách thiết lập sẵn.
 
 <a id="reverting-to-older-versions"></a>
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Quay lại Phiên bản cũ hơn
+Có thể tìm thấy bản phát hành -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
