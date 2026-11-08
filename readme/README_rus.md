@@ -112,7 +112,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Возможности
-- 🔧 ** Поддерживаемые двигатели TTS **: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Поддерживаемые двигатели TTS**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Преобразование нескольких форматов файлов**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Текстовое поле** для прямого преобразования короткого текста в аудио
 - 🔍 **Сканирование OCR** для файлов с текстовыми страницами в виде изображений
@@ -182,7 +182,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 <a id="instructions"></a>
-### Instructions
+### Инструкции
 1. **Клонировать репозиторий**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
@@ -195,7 +195,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Примечание для пользователей MacOS: для установки отсутствующих программ установлен homebrew.</i>
+     <i>Примечание для пользователей MacOS: для установки отсутствующих программ устанавливается homebrew.</i>
      
    - **Лаунчер для Mac**  
      Дважды щёлкните `Mac Ebook2Audiobook Launcher.command`
@@ -206,7 +206,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ebook2audiobook.cmd
      ```
      или
-     Двойной щелчок `ebook2audiobook.cmd`
+     Дважды щёлкните `ebook2audiobook.cmd`
 
      <i>Примечание для пользователей Windows: устанавливается scoop для установки отсутствующих программ без прав администратора.</i>
    
@@ -221,7 +221,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 чтобы веб-страница смогла повторно подключиться к новому сокету соединения.**
 
 <a id="basic-usage"></a>
-### Основное использование
+### Базовое использование
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Пример загрузки Zip пользовательской модели
-  (должен быть ZIP-файл, содержащий обязательные файлы модели. Пример для XTTSv2: config.json, model.pth, vocab.json и ref.wav)
+###  Пример загрузки пользовательской модели в zip
+  (должен быть .zip-файл с обязательными файлами модели. Пример для XTTSv2: config.json, model.pth, vocab.json и ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Примечание: ref.wav вашей пользовательской модели всегда является голосом, выбранным для преобразования</i>
+     <i>Примечание: ref.wav вашей пользовательской модели всегда является голосом, выбранным для конвертации</i>
      
 - **<custom_model_path>**: Путь к файлу `model_name.zip`,
       который должен содержать (в зависимости от движка tts) все обязательные файлы<br>
       (см. ./lib/models.py).
 
-### Подробное руководство со списком всех используемых параметров
+### Подробное руководство со списком всех доступных параметров
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -391,12 +391,12 @@ SML tags available:
 
 <a id="docker"></a>
 ### Docker
-1. Клонирование исходного кода
+1. **Клонировать репозиторий**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Постройте контейнер**
+2. **Собрать контейнер**
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ SML tags available:
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Запустите контейнер:**
+4. **Запустить контейнер:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- ПРИМЕЧАНИЕ: MPS не отображается в докере, поэтому необходимо использовать процессор
-- ПРИМЕЧАНИЕ: именованный том `e2a_venvs` сохраняет двигатели TTS, установленные в их собственном венве (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM и т. д.)
-  между контейнерными трассами, поэтому они не переустанавливаются каждый раз. Чтобы сбросить их: `docker volume rm e2a_venvs`
+- ПРИМЕЧАНИЕ: MPS недоступен в Docker, поэтому необходимо использовать CPU
+- ПРИМЕЧАНИЕ: именованный том `e2a_venvs` сохраняет TTS-движки, установленные в собственных venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM и т. д.),
+  между запусками контейнера, поэтому они не переустанавливаются каждый раз. Чтобы сбросить их: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Инструменты
-Автономные инструменты, работающие с собственным Python e2a (`python_env`, созданный первым запуском e2a).
+Автономные инструменты, запускаемые собственным Python e2a (`python_env`, создаётся при первом запуске e2a).
 
 <a id="preload-models"></a>
-### Предварительная загрузка моделей для автономных установок: `tools/preload_models.py`
-Загружает каждую модель, которую использует e2a (движки TTS и их тонкие настройки, преобразование голоса, строфа, pyannote, demucs,
-музыкальные интерлюдии, пакеты argos-translate, данные tesseract, jieba и голоса) в одну папку
-в точности как `./models`, т.е. USB-ключ. На автономном компьютере скопируйте эту папку в e2a `./models`
-и `voices` папка, написанная рядом с ней в e2a `./voices`.
-Каждое законченное задание записывается в `<models_dir>/.e2a_downloads.json`: повторный запуск пропускает то, что сделано, и запускается
-снова то, что было вырезано (ctrl-c, crash, unplugged key) после удаления его частичных файлов.
+### Предзагрузка моделей для офлайн-установки: `tools/preload_models.py`
+Скачивает все модели, которые использует e2a (TTS-движки и их дообученные версии, преобразование голоса, stanza, pyannote, demucs,
+музыкальные интерлюдии, пакеты argos-translate, данные tesseract, jieba и голоса), в одну папку со структурой
+точно как у `./models`, например на USB-накопитель. На офлайн-машине скопируйте эту папку в `./models` e2a,
+а записанную рядом с ней папку `voices` — в `./voices` e2a.
+Каждая завершённая задача записывается в `<models_dir>/.e2a_downloads.json`: повторный запуск пропускает выполненное и заново запускает
+прерванное (ctrl-c, сбой, извлечённый накопитель), предварительно удалив частично скачанные файлы.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ Podman Compose (i.e. cuda 12.8:
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` перечисляет задания и их состояние (done, interrupted, todo), ничего не загружая.
+   - `--dry_run` выводит список задач и их состояние (выполнена, прервана, ожидает) без загрузки чего-либо.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Перевод электронных книг из e2a: `translate_ebook.sh`/`translate_ebook.cmd`
-Переводит файлы EPUB/AZW3, целую папку (`-r` для вложенных папок) или список путей (`@list.txt`)
-в переведенные электронные книги, в автономном режиме, с плагином Argos Translate calibre, поставляемым в
-`tools/argostranslate-calibre-plugin.zip`. Независимо от преобразования аудиокниги: он пишет только электронные книги.
-Требуется калибр (уже требуется e2a) и работает на e2a `python_env` и пакеты argos-translate:
-языковая пара, которую уже использует e2a, не загружается снова, отсутствующая загружается при первом использовании.
-Плагин устанавливается при первом использовании в собственный профиль калибра e2a (`./run`), ваш калибр остается нетронутым.
-`--to fra,ara,spa` переводится сразу на несколько языков, по одной электронной книге на каждый язык и по `--to all` на каждый
-язык, которого достигает источник (`--from`, в противном случае язык каждой книги; установленные только с `--no_download`).
-`--list --from eng` перечислены языки, на которые переводится английский язык (установленные, загружаемые или через английский язык для
-другого источника.
-Другие форматы `ebook-convert` чтений calibre (PDF, DOCX, Mobi, TXT, ...) преобразуются в EPUB один раз, перед
-первый язык, и переводится как EPUB: `--from` необходим, когда они не несут языка, как это часто делают PDF и TXT.
-Без `-o` или `--output_dir` каждый перевод сохраняется рядом с его книгой как `<name>.<lang>.<ext>`,
-и книга, перевод которой уже существует, пропускается (`--overwrite`, чтобы перевести ее снова).
-Средства запуска в папке e2a запускают `tools/translate_ebook.py` с `python_env`, активировать нечего,
-из любой папки (относительные пути берутся с того места, где она запущена):
+### Перевод электронных книг вне e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+Переводит файлы EPUB/AZW3, целую папку (`-r` для её подпапок) или список путей (`@list.txt`)
+в переведённые электронные книги, офлайн, с помощью плагина calibre Argos Translate, поставляемого в
+`tools/argostranslate-calibre-plugin.zip`. Не зависит от конвертации в аудиокнигу: он только создаёт электронные книги.
+Требуется calibre (уже необходимый для e2a); работает на `python_env` и пакетах argos-translate из e2a:
+языковая пара, которую e2a уже использует, повторно не скачивается, отсутствующая скачивается при первом использовании.
+Плагин устанавливается при первом использовании в собственный профиль calibre e2a (`./run`), ваш calibre остаётся нетронутым.
+`--to fra,ara,spa` переводит сразу на несколько языков, по одной книге на язык, а `--to all` — на все
+языки, достижимые из исходного (`--from`, иначе собственный язык каждой книги; с `--no_download` — только установленные языковые пары).
+`--list --from eng` выводит языки, на которые переводится английский (установленные, доступные для загрузки или через английский для
+другого исходного языка).
+Другие форматы, которые читает `ebook-convert` из calibre (PDF, DOCX, MOBI, TXT, ...), один раз конвертируются в EPUB перед
+первым языком и переводятся как EPUB: `--from` нужен, если в них не указан язык, что часто бывает с PDF и TXT.
+Без `-o` или `--output_dir` каждый перевод сохраняется рядом со своей книгой как `<name>.<lang>.<ext>`,
+а книга, перевод которой уже существует, пропускается (`--overwrite`, чтобы перевести её заново).
+Лаунчеры в папке e2a запускают `tools/translate_ebook.py` через `python_env`, ничего активировать не нужно,
+из любой папки (относительные пути отсчитываются от места запуска):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ options:
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Или напрямую с `python_env`Python's: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Начато с любого другого Python,
-     скрипт начинается снова с `python_env`S
-   - **Docker**: запустите его внутри контейнера e2a, например `docker exec -it <container> python3 tools/translate_ebook.py ...`
+   - Или напрямую через Python из `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). При запуске любым другим Python
+     скрипт перезапускает себя с Python из `python_env`.
+   - **Docker**: запускайте его внутри контейнера e2a, например `docker exec -it <container> python3 tools/translate_ebook.py ...`
      с путями, видимыми из контейнера.
-   - **Скорость**: argostranslate работает по умолчанию (CTranslate2 выбирает потоки и самый быстрый тип вычислений,
-     int8 на процессоре), а не на потоке e2a 1 в float32. Установите `ARGOS_INTRA_THREADS` или `ARGOS_COMPUTE_TYPE`, чтобы переопределить их.
+   - **Скорость**: argostranslate работает со своими настройками по умолчанию (CTranslate2 выбирает число потоков и самый быстрый тип вычислений,
+     int8 на CPU), а не с одним потоком в float32, как e2a. Задайте `ARGOS_INTRA_THREADS` или `ARGOS_COMPUTE_TYPE`, чтобы переопределить их.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]

@@ -112,7 +112,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Funkce
-- 🔧 ** Podporované motory TTS **: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Podporované motory TTS**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Převod více formátů souborů**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Textové pole** pro přímý převod krátkého textu na zvuk
 - 🔍 **OCR skenování** pro soubory s textovými stránkami ve formě obrázků
@@ -183,7 +183,7 @@ Proto byste měli nejprve ručně odstranit veškerý text, který nechcete pře
 
 <a id="instructions"></a>
 ### Pokyny
-1. **Klonovat repo**
+1. **Naklonujte repozitář**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ Proto byste měli nejprve ručně odstranit veškerý text, který nechcete pře
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Poznámka pro uživatele MacOS: homebrew je nainstalován pro instalaci chybějících programů.</i>
+     <i>Poznámka pro uživatele MacOS: pro instalaci chybějících programů se instaluje homebrew.</i>
      
    - **Spouštěč pro Mac**  
      Dvakrát klikněte na `Mac Ebook2Audiobook Launcher.command`
@@ -206,7 +206,7 @@ Proto byste měli nejprve ručně odstranit veškerý text, který nechcete pře
      ebook2audiobook.cmd
      ```
      nebo
-     Dvojklik `ebook2audiobook.cmd`
+     Dvakrát klikněte na `ebook2audiobook.cmd`
 
      <i>Poznámka pro uživatele Windows: pro instalaci chybějících programů bez administrátorských oprávnění se instaluje scoop.</i>
    
@@ -221,7 +221,7 @@ Proto byste měli nejprve ručně odstranit veškerý text, který nechcete pře
 aby se webová stránka mohla znovu připojit k novému připojovacímu socketu.**
 
 <a id="basic-usage"></a>
-### Základní  použití
+### Základní použití
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ aby se webová stránka mohla znovu připojit k novému připojovacímu socketu.
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Příklad nahrání vlastního modelu na zip
-  (musí být .zip soubor obsahující povinné soubory modelu. Příklad pro XTTSv2: config.json, model.pth, vocab.json a ref.wav)
+###  Příklad nahrání vlastního modelu v zipu
+  (musí jít o soubor .zip obsahující povinné soubory modelu. Příklad pro XTTSv2: config.json, model.pth, vocab.json a ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ aby se webová stránka mohla znovu připojit k novému připojovacímu socketu.
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Poznámka: ref.wav vašeho vlastního modelu je vždy hlasem vybraným pro konverzi</i>
+     <i>Poznámka: ref.wav vašeho vlastního modelu je vždy hlas zvolený pro převod</i>
      
 - **<custom_model_path>**: Cesta k souboru `model_name.zip`,
       který musí obsahovat (podle TTS enginu) všechny povinné soubory<br>
       (viz ./lib/models.py).
 
-### Podrobný průvodce se seznamem všech parametrů, které se mají použít
+### Podrobný návod se seznamem všech dostupných parametrů
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -391,12 +391,12 @@ TIP: pokud je potřeba o něco delší pauza, přidejte '[pause:3]' pro 3 s atd.
 
 <a id="docker"></a>
 ### Docker
-1. **Klonování úložiště**:
+1. **Naklonujte repozitář**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Postav kontejner**
+2. **Sestavte kontejner**
 ```bash
     Windows:
         Docker:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- POZNÁMKA: MPS není vystaven v dockeru, takže musí být použit procesor
-- POZNÁMKA: pojmenovaný svazek `e2a_venvs` udržuje motory TTS nainstalované ve svém vlastním venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM atd.)
-  napříč kontejnerovými jízdami, takže nejsou pokaždé přeinstalovány. Pro jejich resetování: `docker volume rm e2a_venvs`
+- POZNÁMKA: MPS není v Dockeru zpřístupněno, proto je nutné použít CPU
+- POZNÁMKA: pojmenovaný svazek `e2a_venvs` uchovává TTS enginy nainstalované ve vlastních venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM atd.)
+  mezi spuštěními kontejneru, takže se pokaždé znovu neinstalují. Pro jejich resetování: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Nástroje
-Samostatné nástroje běží s vlastním Pythonem e2a (`python_env`, vytvořený prvním spuštěním e2a).
+Samostatné nástroje spouštěné vlastním Pythonem e2a (`python_env`, vytvořený při prvním spuštění e2a).
 
 <a id="preload-models"></a>
-### Předem načíst modely pro offline instalace: `tools/preload_models.py`
-Ke stažení každý model e2a používá (TTS motory a jejich jemné doladění, konverze hlasu, stanza, pyannote, demucs,
-hudební mezihry, balíčky argos-translate, data tesseract, jieba a hlasy) do jedné složky rozložené
-stejně jako `./models`, tj. USB klíč. V offline počítači zkopírujte tuto složku do e2a's `./models`
-a k `voices` složka napsaná vedle ní do složky e2a `./voices`.
-Každá dokončená úloha je zaznamenána v `<models_dir>/.e2a_downloads.json`: opakované spuštění přeskočí, co bylo provedeno, a začne
-opět to, co bylo vyříznuto (ctrl-c, havárie, odpojený klíč) po odstranění jeho dílčích souborů.
+### Předběžné stažení modelů pro offline instalace: `tools/preload_models.py`
+Stáhne všechny modely, které e2a používá (TTS enginy a jejich doladěné verze, převod hlasu, stanza, pyannote, demucs,
+hudební mezihry, balíčky argos-translate, data tesseract, jieba a hlasy), do jedné složky uspořádané
+přesně jako `./models`, např. na USB disk. Na offline počítači zkopírujte tuto složku do `./models` v e2a
+a složku `voices` zapsanou vedle ní do `./voices` v e2a.
+Každá dokončená úloha se zaznamená do `<models_dir>/.e2a_downloads.json`: opakované spuštění přeskočí hotové a znovu spustí
+přerušené (ctrl-c, pád, odpojený disk) po odstranění jeho částečných souborů.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ opět to, co bylo vyříznuto (ctrl-c, havárie, odpojený klíč) po odstraněn
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` uvádí úlohy a jejich stav (hotovo, přerušeno, úkol) bez stahování.
+   - `--dry_run` vypíše úlohy a jejich stav (hotovo, přerušeno, čeká) bez stahování čehokoli.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Přeložit e-knihy z e2a: `translate_ebook.sh`/`translate_ebook.cmd`
-Přeložte soubory EPUB/AZW3, celou složku (`-r` pro její podsložky) nebo seznam cest (`@list.txt`)
-do přeložených e-knih, offline, s pluginem Argos Translate Calibre dodaným v
-`tools/argostranslate-calibre-plugin.zip`. Nezávisle na konverzi audioknih: píše pouze e-knihy.
-Potřebuje Calibre (již vyžadováno e2a) a běží na balíčcích e2a `python_env` a argos-translate:
-jazykový pár, který e2a již používá, není znovu stažen, chybějící je stažen při prvním použití.
-Plugin je nainstalován při prvním použití do vlastního profilu kalibru e2a (`./run`), váš kalibr zůstane nedotčen.
-`--to fra,ara,spa` překládá do několika jazyků najednou, jednu e-knihu na jazyk a `--to all` do každého
-jazyk, kterého zdroj dosáhne (`--from`, jinak vlastní jazyk každé knihy; nainstalované pouze s `--no_download`).
-`--list --from eng` uvádí seznam jazyků, které angličtina překládá do (nainstalované, ke stažení nebo prostřednictvím angličtiny pro
-jiný zdroj).
-Jiné formáty Calibre s `ebook-convert` čteními (PDF, DOCX, mobi, TXT, ...) jsou převedeny na EPUB jednou, před
-první jazyk a přeloženo jako EPUB: `--from` je potřeba, když nemají žádný jazyk, jak to často dělají PDF a TXT.
-Bez `-o` nebo `--output_dir` je každý překlad uložen vedle své knihy jako `<name>.<lang>.<ext>`,
-a kniha, jejíž překlad již existuje, je přeskočena (`--overwrite` pro opětovný překlad).
-Spouštěče ve složce e2a běží `tools/translate_ebook.py` s `python_env`, nic k aktivaci,
-z libovolné složky (relativní cesty jsou převzaty z místa, kde je spuštěna):
+### Překlad e-knih mimo e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+Přeloží soubory EPUB/AZW3, celou složku (`-r` pro její podsložky) nebo seznam cest (`@list.txt`)
+do přeložených e-knih, offline, pomocí pluginu calibre Argos Translate dodávaného v
+`tools/argostranslate-calibre-plugin.zip`. Nezávislé na převodu do audioknihy: zapisuje pouze e-knihy.
+Vyžaduje calibre (které e2a už potřebuje) a běží na `python_env` a balíčcích argos-translate z e2a:
+jazykový pár, který e2a už používá, se znovu nestahuje, chybějící se stáhne při prvním použití.
+Plugin se při prvním použití nainstaluje do vlastního profilu calibre e2a (`./run`), vaše calibre zůstane nedotčené.
+`--to fra,ara,spa` překládá do několika jazyků najednou, jedna e-kniha na jazyk, a `--to all` do všech
+jazyků dosažitelných ze zdroje (`--from`, jinak vlastní jazyk každé knihy; s `--no_download` jen nainstalované jazykové páry).
+`--list --from eng` vypíše jazyky, do kterých se překládá z angličtiny (nainstalované, ke stažení nebo přes angličtinu pro
+jiný zdrojový jazyk).
+Ostatní formáty, které čte `ebook-convert` z calibre (PDF, DOCX, MOBI, TXT, ...), se jednou převedou do EPUB, před
+prvním jazykem, a přeloží se jako EPUB: `--from` je potřeba, když neuvádějí žádný jazyk, což se u PDF a TXT často stává.
+Bez `-o` nebo `--output_dir` se každý překlad uloží vedle své knihy jako `<name>.<lang>.<ext>`,
+a kniha, jejíž překlad už existuje, se přeskočí (`--overwrite` pro nový překlad).
+Spouštěče ve složce e2a spouštějí `tools/translate_ebook.py` s `python_env`, není třeba nic aktivovat,
+z libovolné složky (relativní cesty se berou od místa spuštění):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ z libovolné složky (relativní cesty jsou převzaty z místa, kde je spuštěn
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Nebo přímo s `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Začínáme s jiným Pythonem,
-     skript se znovu spustí s `python_env`S
+   - Nebo přímo s Pythonem z `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Pokud se spustí jiným Pythonem,
+     skript se sám znovu spustí s tím z `python_env`.
    - **Docker**: spusťte jej uvnitř kontejneru e2a, např. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     s cestami viditelnými z kontejneru.
-   - **Rychlost**: argostranslate běží na vlastních výchozích hodnotách (CTranslate2 vybírá vlákna a nejrychlejší výpočetní typ,
-     int8 na CPU), nikoli na 1 závitu e2a v float32. Nastavte `ARGOS_INTRA_THREADS` nebo `ARGOS_COMPUTE_TYPE`, abyste je přepsali.
+     s cestami, jak je vidí kontejner.
+   - **Rychlost**: argostranslate běží na vlastních výchozích nastaveních (CTranslate2 volí vlákna a nejrychlejší typ výpočtu,
+     int8 na CPU), ne na jednom vlákně e2a ve float32. Pro přepsání nastavte `ARGOS_INTRA_THREADS` nebo `ARGOS_COMPUTE_TYPE`.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -633,7 +633,7 @@ udělat oficiální doladěný model ebook2audiobook, kontaktujte nás a my jej 
 
 <a id="reverting-to-older-versions"></a>
 ## Návrat ke starším verzím
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+Vydání najdete -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```

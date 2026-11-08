@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 ছবি হিসেবে টেক্সট পৃষ্ঠা সহ ফাইলের জন্য **OCR স্ক্যানিং**
 - 🔊 **উচ্চমানের টেক্সট-টু-স্পিচ**, প্রায় রিয়েল-টাইম থেকে প্রায় বাস্তব ভয়েস পর্যন্ত
 - 🗣️ আপনার নিজের ভয়েস ফাইল ব্যবহার করে **ঐচ্ছিক ভয়েস ক্লোনিং**
-- 🌐 ** 1696 টি ভাষা সমর্থন করে ** () [supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- 🌐 **1696 টি ভাষা সমর্থন করে** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **কম সম্পদ-বান্ধব** — **2 GB RAM / 1 GB VRAM (ন্যূনতম)**-এ চলে
 - 🎵 **অডিওবুক আউটপুট ফরম্যাট**: mono or stereo , , , , , , , , , `aac` `flac` `mp3` `m4b` `m4a` `mp4` `mov` `ogg` `wav` `webm`
 - 🧠 **SML ট্যাগ সমর্থিত** — বিরতি, থামা, ভয়েস পরিবর্তন ইত্যাদির সূক্ষ্ম নিয়ন্ত্রণ () [see below](#sml-tags-available)
@@ -140,14 +140,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## সমর্থিত ভাষা
-| **আরবি (ar)**    | **চীনা (zh)**    | **ইংরেজি (en)**   | **স্প্যানিশ (es)**   |
+| **আরবি (ar)** | **চীনা (zh)** | **ইংরেজি (en)** | **স্প্যানিশ (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| **ফরাসি (fr)**    | **জার্মান (de)**     | **ইতালীয় (it)**   | * **পর্তুগীজ (pt)** |
-| **পোলিশ (pl)**    | **তুর্কি (tr)**    | **রাশিয়ান (ru)**   | * **ডাচ (nl)**     |
-| **চেক (cs)**     | **জাপানি (ja)**   | **হিন্দি (hi)**     | **বাংলা (bn)**   |
-| **হাঙ্গেরীয় (hu)** | **কোরিয়ান (ko)**     | **ভিয়েতনামী (vi)**| **সুইডিশ (sv)**   |
-| **Persian (fa)**   | ** *Yoruba (yo)**     | **Swahili (sw)** * **ইন্দোনেশিয়ান (id)**|
-| **স্লোভাক (sk)**    | **ক্রোয়েশিয়ান (hr)**   | **তামিল (ta)**     | **ডেনিশ (da)**    |
+| **ফরাসি (fr)** | **জার্মান (de)** | **ইতালীয় (it)** | **পর্তুগিজ (pt)** |
+| **পোলিশ (pl)** | **তুর্কি (tr)** | **রাশিয়ান (ru)** | **ডাচ (nl)** |
+| **চেক (cs)** | **জাপানি (ja)** | **হিন্দি (hi)** | **বাংলা (bn)** |
+| **হাঙ্গেরীয় (hu)** | **কোরিয়ান (ko)** | **ভিয়েতনামী (vi)** | **সুইডিশ (sv)** |
+| **ফারসি (fa)** | **ইয়োরুবা (yo)** | **সোয়াহিলি (sw)** | **ইন্দোনেশিয়ান (id)** |
+| **স্লোভাক (sk)** | **ক্রোয়েশিয়ান (hr)** | **তামিল (ta)** | **ডেনিশ (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
@@ -182,8 +182,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 <a id="instructions"></a>
-### নির্দেশাবলী 
-1. ** রেপো ক্লোন করুন **
+### নির্দেশাবলী
+1. **রিপোজিটরি ক্লোন করুন**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>MacOS ব্যবহারকারীদের জন্য দ্রষ্টব্য: অনুপস্থিত প্রোগ্রামগুলি ইনস্টল করার জন্য হোমব্রিউ ইনস্টল করা হয়েছে ।</i>
+     <i>MacOS ব্যবহারকারীদের জন্য নোট: অনুপস্থিত প্রোগ্রাম ইনস্টল করতে homebrew ইনস্টল করা হয়।</i>
      
    - **Mac লঞ্চার**  
      `Mac Ebook2Audiobook Launcher.command`-এ ডাবল ক্লিক করুন
@@ -206,7 +206,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ebook2audiobook.cmd
      ```
      অথবা
-     দুবার ক্লিক করুন `ebook2audiobook.cmd`
+     `ebook2audiobook.cmd`-এ ডাবল ক্লিক করুন
 
      <i>Windows ব্যবহারকারীদের জন্য নোট: প্রশাসক অনুমতি ছাড়াই অনুপস্থিত প্রোগ্রাম ইনস্টল করতে scoop ইনস্টল করা হয়।</i>
    
@@ -221,7 +221,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 যাতে ওয়েব পৃষ্ঠাটি নতুন কানেকশন সকেটে পুনরায় সংযুক্ত হতে পারে।**
 
 <a id="basic-usage"></a>
-### মৌলিক  ব্যবহার
+### প্রাথমিক ব্যবহার
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  কাস্টম মডেল জিপ আপলোডের উদাহরণ
-  (বাধ্যতামূলক মডেল ফাইল ধারণকারী একটি .zip ফাইল হতে হবে । XTTSv2 এর উদাহরণ: config.json, model.pth, vocab.json এবং ref.wav)
+###  কাস্টম মডেল Zip আপলোডের উদাহরণ
+  (প্রয়োজনীয় মডেল ফাইলসহ একটি .zip ফাইল হতে হবে। XTTSv2-এর উদাহরণ: config.json, model.pth, vocab.json এবং ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>দ্রষ্টব্য: আপনার কাস্টম মডেলের ref.wav সবসময় রূপান্তর জন্য নির্বাচিত ভয়েস</i>
+     <i>নোট: আপনার কাস্টম মডেলের ref.wav সবসময় রূপান্তরের জন্য নির্বাচিত ভয়েস</i>
      
 - **<custom_model_path>**: `model_name.zip` ফাইলের পথ,
       যাতে (tts ইঞ্জিন অনুযায়ী) সমস্ত বাধ্যতামূলক ফাইল থাকতে হবে<br>
       (দেখুন ./lib/models.py)।
 
-### ব্যবহার করার জন্য সমস্ত প্যারামিটারগুলির তালিকা সহ বিস্তারিত গাইডের জন্য
+### ব্যবহারযোগ্য সব প্যারামিটারের তালিকাসহ বিস্তারিত নির্দেশিকা
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **অথবা সমস্ত ওএসের জন্য **
+   - **অথবা সব OS-এর জন্য**
     ```python
      app.py --help
     ```
@@ -391,12 +391,12 @@ SML tags available:
 
 <a id="docker"></a>
 ### Docker
-1. ** রিপোজিটরি ক্লোন করুন **:
+1. **রিপোজিটরি ক্লোন করুন**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. ** কন্টেইনার তৈরি করুন **
+2. **কন্টেইনার বিল্ড করুন**
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ SML tags available:
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. ** কনটেইনারটি চালান:**
+4. **কন্টেইনার চালান:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- দ্রষ্টব্য: এমপিদের ডকারে প্রকাশ করা হয় না তাই সিপিইউ অবশ্যই ব্যবহার করতে হবে
-- দ্রষ্টব্য: নামযুক্ত ভলিউম `e2a_venvs` tTS ইঞ্জিনগুলি তাদের নিজস্ব Venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM ইত্যাদি) এ ইনস্টল করে রাখে
-  কন্টেইনার রান জুড়ে, তাই তারা প্রতিবার পুনরায় ইনস্টল করা হয় না । তাদের রিসেট করতে: `docker volume rm e2a_venvs`
+- নোট: Docker-এ MPS উন্মুক্ত নয়, তাই CPU ব্যবহার করতে হবে
+- নোট: নামযুক্ত ভলিউম `e2a_venvs` নিজ নিজ venv-এ ইনস্টল করা TTS ইঞ্জিনগুলো (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM ইত্যাদি)
+  কন্টেইনারের প্রতিটি রানের মধ্যে সংরক্ষণ করে, তাই প্রতিবার আবার ইনস্টল করতে হয় না। সেগুলো রিসেট করতে: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## টুলস
-স্বতন্ত্র সরঞ্জাম, e2a এর নিজস্ব পাইথন দিয়ে চালান (`python_env`, e2a এর প্রথম লঞ্চ দ্বারা তৈরি) ।
+স্বতন্ত্র টুল, যা e2a-এর নিজস্ব Python (`python_env`, e2a প্রথমবার চালু করার সময় তৈরি হয়) দিয়ে চলে।
 
 <a id="preload-models"></a>
-### অফলাইন ইনস্টলগুলির জন্য প্রি-লোড মডেল: `tools/preload_models.py`
-প্রতিটি মডেল e2a ব্যবহার করে ডাউনলোড করে (TTS ইঞ্জিন এবং তাদের সূক্ষ্ম সুর, ভয়েস রূপান্তর, স্টানজা, পাইয়ানোট, ডেমুকস,
-মিউজিক ইন্টারলুডস, আরগোস-ট্রান্সলেট প্যাকেজ, টেসার্যাক্ট ডেটা, জিবা এবং ভয়েসেস) এক ফোল্ডারে রাখা হয়েছে
-ঠিক যেমন `./models`, অর্থাৎ একটি USB কী । অফলাইন মেশিনে, সেই ফোল্ডারটি e2a এর মধ্যে কপি করুন `./models`
-এবং `voices` এর পাশে লেখা ফোল্ডারটি e2a `./voices`.
-প্রতিটি সমাপ্ত কাজ রেকর্ড করা হয় `<models_dir>/.e2a_downloads.json`: একটি পুনরায় চালানো যা করা হয় তা এড়িয়ে যায় এবং শুরু হয়
-এর আংশিক ফাইলগুলি অপসারণের পরে আবার কী কাটা হয়েছিল (ctrl-c, ক্র্যাশ, আনপ্লাগড কী) ।
+### অফলাইন ইনস্টলের জন্য মডেল আগেভাগে ডাউনলোড: `tools/preload_models.py`
+e2a যে সব মডেল ব্যবহার করে (TTS ইঞ্জিন ও তাদের ফাইন-টিউন, ভয়েস রূপান্তর, stanza, pyannote, demucs,
+সংগীত বিরতি, argos-translate প্যাকেজ, tesseract ডেটা, jieba এবং ভয়েসগুলো) সেগুলো একটি ফোল্ডারে ডাউনলোড করে, যার গঠন
+হুবহু `./models`-এর মতো, যেমন একটি USB ড্রাইভ। অফলাইন মেশিনে সেই ফোল্ডারটি e2a-এর `./models`-এ কপি করুন
+এবং তার পাশে লেখা `voices` ফোল্ডারটি e2a-এর `./voices`-এ।
+প্রতিটি সম্পন্ন কাজ `<models_dir>/.e2a_downloads.json`-এ লিপিবদ্ধ হয়: আবার চালালে সম্পন্ন কাজগুলো বাদ দেওয়া হয় এবং
+বাধাপ্রাপ্ত কাজগুলো (ctrl-c, ক্র্যাশ, খুলে ফেলা ড্রাইভ) তাদের আংশিক ফাইল মুছে আবার শুরু করা হয়।
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ Podman Compose (i.e. cuda 12.8:
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` কিছু ডাউনলোড না করে চাকরি এবং তাদের অবস্থা (সম্পন্ন, বিঘ্নিত, টডো) তালিকাভুক্ত করে ।
+   - `--dry_run` কিছু ডাউনলোড না করেই কাজগুলো ও তাদের অবস্থা (সম্পন্ন, বাধাপ্রাপ্ত, অপেক্ষমাণ) তালিকাভুক্ত করে।
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### E2a থেকে ইবুক অনুবাদ করুন: `translate_ebook.sh`/`translate_ebook.cmd`
-EPUB/AZW3 ফাইল অনুবাদ করে, একটি সম্পূর্ণ ফোল্ডার (`-r` এর সাবফোল্ডারের জন্য) বা পথের একটি তালিকা (`@list.txt`)
-অনুবাদিত ইবুকগুলিতে, অফলাইনে, আরগোস অনুবাদ ক্যালিবার প্লাগইনটি প্রেরণ করা হয়েছে
-`tools/argostranslate-calibre-plugin.zip`. অডিওবুক রূপান্তর থেকে স্বাধীন: এটি শুধুমাত্র ইবুক লেখে ।
-এটি ক্যালিবার প্রয়োজন (ইতিমধ্যে e2a দ্বারা প্রয়োজনীয়) এবং e2a এর `python_env` এবং argos-translate প্যাকেজগুলিতে চলে:
-একটি ভাষা জোড় e2a ইতিমধ্যে ব্যবহার করা হয় না আবার ডাউনলোড করা হয়, একটি অনুপস্থিত এক প্রথম ব্যবহার ডাউনলোড করা হয় ।
-প্লাগইনটি e2a এর নিজস্ব ক্যালিবার প্রোফাইলে (`./run`) প্রথম ব্যবহারে ইনস্টল করা হয়েছে, আপনার ক্যালিবারটি স্পর্শ করা হয়নি ।
-`--to fra,ara,spa` একবারে বেশ কয়েকটি ভাষায় অনুবাদ করে, প্রতি ভাষায় একটি ইবুক, এবং `--to all` প্রতিটি
-উৎস যে ভাষায় পৌঁছায় (`--from`, অন্যথায় প্রতিটি বইয়ের নিজস্ব ভাষা; শুধুমাত্র সঙ্গে ইনস্টল করা `--no_download`).
-`--list --from eng` ভাষাগুলি ইংরেজি অনুবাদ করে (ইনস্টল করা, ডাউনলোডযোগ্য, বা এর জন্য ইংরেজির মাধ্যমে
-অন্য একটি উৎস) ।
-অন্যান্য ফরম্যাটের ক্যালিবারের `ebook-convert` পঠন (পিডিএফ, ডকএক্স, এমওবিআই, টিএক্সটি, ...) একবার ইপিইউবিতে রূপান্তরিত হয়, আগে
-প্রথম ভাষা, এবং ইপিইউবি হিসাবে অনুবাদ করা হয়েছে: `--from` যখন তারা কোনও ভাষা বহন করে না তখন প্রয়োজন হয়, যেমন পিডিএফ এবং টিএক্সটি প্রায়শই করে ।
-ছাড়া `-o` অথবা `--output_dir`, প্রতিটি অনুবাদ তার বইয়ের পাশাপাশি সংরক্ষণ করা হয় `<name>.<lang>.<ext>`,
-এবং একটি বই যার অনুবাদ ইতিমধ্যে বিদ্যমান (`--overwrite` এটি আবার অনুবাদ করতে) ।
-E2a 'র ফোল্ডারে লঞ্চার চালানো `tools/translate_ebook.py` সঙ্গে `python_env`, সক্রিয় করার মতো কিছু নেই,
-যে কোনও ফোল্ডার থেকে (আপেক্ষিক পথগুলি যেখান থেকে শুরু হয় সেখান থেকে নেওয়া হয়):
+### e2a-এর বাইরে ইবুক অনুবাদ: `translate_ebook.sh` / `translate_ebook.cmd`
+EPUB/AZW3 ফাইল, একটি পুরো ফোল্ডার (এর সাবফোল্ডারের জন্য `-r`) বা পাথের একটি তালিকা (`@list.txt`)
+অফলাইনে অনূদিত ইবুকে রূপান্তর করে, এই ফাইলে থাকা Argos Translate calibre প্লাগইন দিয়ে:
+`tools/argostranslate-calibre-plugin.zip`। অডিওবুক রূপান্তর থেকে স্বাধীন: এটি শুধু ইবুক লেখে।
+এর জন্য calibre প্রয়োজন (যা e2a-এর জন্য আগে থেকেই দরকার) এবং এটি e2a-এর `python_env` ও argos-translate প্যাকেজে চলে:
+e2a ইতিমধ্যে যে ভাষা-জোড়া ব্যবহার করে তা আবার ডাউনলোড হয় না, অনুপস্থিত জোড়া প্রথম ব্যবহারে ডাউনলোড হয়।
+প্লাগইনটি প্রথম ব্যবহারে e2a-এর নিজস্ব calibre প্রোফাইলে (`./run`) ইনস্টল হয়, আপনার calibre অপরিবর্তিত থাকে।
+`--to fra,ara,spa` একসাথে কয়েকটি ভাষায় অনুবাদ করে, প্রতি ভাষায় একটি ইবুক, আর `--to all` উৎস যে সব
+ভাষায় পৌঁছায় তার প্রতিটিতে (`--from`, নইলে প্রতিটি বইয়ের নিজস্ব ভাষা; `--no_download` দিলে কেবল ইনস্টল করা ভাষা-জোড়া)।
+`--list --from eng` সেই ভাষাগুলোর তালিকা দেখায় যেগুলোতে ইংরেজি থেকে অনুবাদ হয় (ইনস্টল করা, ডাউনলোডযোগ্য, অথবা অন্য উৎস ভাষার জন্য
+ইংরেজির মাধ্যমে)।
+calibre-এর `ebook-convert` যে অন্যান্য ফরম্যাট পড়ে (PDF, DOCX, MOBI, TXT, ...) সেগুলো প্রথম ভাষার আগে
+একবার EPUB-এ রূপান্তরিত হয় এবং EPUB হিসেবে অনূদিত হয়: যখন তাতে কোনো ভাষা উল্লেখ থাকে না, যেমন PDF ও TXT-এ প্রায়ই হয়, তখন `--from` প্রয়োজন।
+`-o` বা `--output_dir` ছাড়া প্রতিটি অনুবাদ তার বইয়ের পাশে `<name>.<lang>.<ext>` নামে সংরক্ষিত হয়,
+এবং যে বইয়ের অনুবাদ আগে থেকেই আছে তা বাদ দেওয়া হয় (আবার অনুবাদ করতে `--overwrite`)।
+e2a-এর ফোল্ডারের লঞ্চারগুলো `python_env` দিয়ে `tools/translate_ebook.py` চালায়, কিছু সক্রিয় করতে হয় না,
+যেকোনো ফোল্ডার থেকে (আপেক্ষিক পাথ যেখান থেকে চালু করা হয় সেখান থেকে ধরা হয়):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ E2a 'র ফোল্ডারে লঞ্চার চালানো `tools/t
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - অথবা সরাসরি `python_env` এর পাইথন: `./python_env/bin/python tools/translate_ebook.py ...`
-     (উইন্ডোজ: `python_env\Scripts\python.exe tools\translate_ebook.py ...`) । অন্য কোন পাইথন দিয়ে শুরু,
-     স্ক্রিপ্টটি আবার শুরু হয় `python_env`S
-   - **ডকার**: এটি e2a কন্টেইনারের ভিতরে চালান, যেমন `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     কন্টেইনার থেকে দেখা পাথ সহ ।
-   - **Speed**: argostranslate নিজস্ব ডিফল্টে চলে (CTranslate2 থ্রেড এবং দ্রুততম গণনার ধরন বেছে নেয়,
-     সিপিইউতে int8), ফ্লোট 32 এ e2a এর 1 থ্রেডে নয় । সেট করুন `ARGOS_INTRA_THREADS` অথবা `ARGOS_COMPUTE_TYPE` তাদের ওভাররাইড করতে ।
+   - অথবা সরাসরি `python_env`-এর Python দিয়ে: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`)। অন্য কোনো Python দিয়ে চালু করলে,
+     স্ক্রিপ্টটি নিজেকে `python_env`-এর Python দিয়ে আবার চালু করে।
+   - **Docker**: এটি e2a কন্টেইনারের ভেতরে চালান, যেমন `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     কন্টেইনার থেকে দেখা পাথসহ।
+   - **গতি**: argostranslate নিজস্ব ডিফল্ট সেটিংসে চলে (CTranslate2 থ্রেড ও দ্রুততম কম্পিউট টাইপ বেছে নেয়,
+     CPU-তে int8), e2a-এর float32-এ 1 থ্রেডে নয়। এগুলো বদলাতে `ARGOS_INTRA_THREADS` বা `ARGOS_COMPUTE_TYPE` সেট করুন।
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -633,7 +633,7 @@ examples:
 
 <a id="reverting-to-older-versions"></a>
 ## পুরোনো সংস্করণে ফিরে যাওয়া
-রিলিজ পাওয়া যাবে -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+রিলিজগুলো পাওয়া যাবে -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
@@ -827,10 +827,10 @@ if config['default_role'] in roles:
 -->
 
 ## ক্রেডিট
--  - টেক্সট-টু-স্পীচের জন্য একটি গভীর শেখার টুলকিট, গবেষণা এবং উত্পাদনে যুদ্ধ-পরীক্ষিত । [Coqui-tts](https://github.com/idiap/coqui-ai-TTS)
--  - দ্রুত এবং স্থানীয় নিউরাল টেক্সট-টু-স্পিচ ইঞ্জিন । [Piper-tts](https://github.com/OHF-Voice/piper1-gpl)
--  -- Zonos2 এর জন্য ggml ইনফারেন্স কোড । [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp)
--  - ggml দ্বারা চালিত অডিও মডেলের জন্য একটি অল-ইন-ওয়ান, খাঁটি C++ ইনফারেন্স ইঞ্জিন । [Audio.cpp](https://github.com/0xShug0/audio.cpp)
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- টেক্সট-টু-স্পিচের জন্য একটি ডিপ লার্নিং টুলকিট, গবেষণা ও প্রোডাকশনে পরীক্ষিত।
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- দ্রুত ও লোকাল নিউরাল টেক্সট-টু-স্পিচ ইঞ্জিন।
+- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2-এর জন্য ggml ইনফারেন্স কোড।
+- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- ggml-চালিত অডিও মডেলের জন্য একটি অল-ইন-ওয়ান, বিশুদ্ধ C++ ইনফারেন্স ইঞ্জিন।
 
 <a id="special-thanks"></a>
 ## বিশেষ ধন্যবাদ

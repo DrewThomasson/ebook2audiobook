@@ -17,7 +17,7 @@
 
 ### التشغيل محليًا
 
-التعليمات [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
 
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
 
@@ -47,7 +47,7 @@
 <a id="demos"></a>
 ## تجريبي
 
-**عرض تجريبي صوتي افتراضي جديد **
+**عرض تجريبي صوتي افتراضي جديد**
 
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
@@ -58,7 +58,7 @@ https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea
 
 https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
-** صوت يوم ممطر **
+**صوت يوم ممطر**
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
@@ -70,7 +70,7 @@ https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
 https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
-مثال
+**مثال**
 
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 </details>
@@ -112,18 +112,18 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## السمات
-- 🔧 ** محركات TTS المدعومة**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
-- 📚 **تحويل تنسيقات ملفات متعددة **: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
+- 🔧 **محركات TTS المدعومة**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 📚 **تحويل صيغ ملفات متعددة**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** لتحويل نص قصير في الصوت مباشرة
-- 🔍 ** مسح التعرف الضوئي على الحروف ** للملفات التي تحتوي على صفحات نصية كصور
-- 🔊 ** تحويل النص إلى كلام عالي الجودة ** من الصوت القريب من الصوت الحقيقي إلى الصوت القريب من الصوت الحقيقي
-- 🗣️ ** استنساخ صوتي اختياري ** باستخدام ملفك الصوتي الخاص
+- 🔍 **مسح التعرف الضوئي على الحروف** للملفات التي تحتوي على صفحات نصية كصور
+- 🔊 **تحويل النص إلى كلام عالي الجودة** من الصوت القريب من الصوت الحقيقي إلى الصوت القريب من الصوت الحقيقي
+- 🗣️ **استنساخ صوتي اختياري** باستخدام ملفك الصوتي الخاص
 - 🌐 **يدعم 1696 لغة** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
-- 💻 ** صديقة للموارد المنخفضة ** — تعمل على ** ذاكرة وصول عشوائي بسعة 2 جيجابايت/ذاكرة وصول عشوائي بسعة 1 جيجابايت (الحد الأدنى )**
-- 🎵 ** تنسيقات إخراج الكتاب الصوتي **: أحادي أو ستيريو `aac`، `flac`، `mp3`، `m4b`، `m4a`، `mp4`، `mov`، `ogg`، `wav`، `webm`
-- 🧠 ** علامات SML مدعومة** — تحكم دقيق في الفواصل والإيقاف المؤقت والتبديل الصوتي والمزيد ([see below](#sml-tags-available))
-- 🧩 ** نموذج مخصص اختياري ** باستخدام النموذج المدرّب الخاص بك (XTTSv2، VITS، FAIRSEQ، PIPER، آخرون عند الطلب)
-- 🎛️ ** نماذج مسبقة الضبط دقيقة ** تم تدريبها من قبل فريق E2A<br/>
+- 💻 **صديقة للموارد المنخفضة** — تعمل على **ذاكرة وصول عشوائي بسعة 2 جيجابايت/ذاكرة وصول عشوائي بسعة 1 جيجابايت (الحد الأدنى )**
+- 🎵 **تنسيقات إخراج الكتاب الصوتي**: أحادي أو ستيريو `aac`، `flac`، `mp3`، `m4b`، `m4a`، `mp4`، `mov`، `ogg`، `wav`، `webm`
+- 🧠 **علامات SML مدعومة** — تحكم دقيق في الفواصل والإيقاف المؤقت والتبديل الصوتي والمزيد ([see below](#sml-tags-available))
+- 🧩 **نموذج مخصص اختياري** باستخدام النموذج المدرّب الخاص بك (XTTSv2، VITS، FAIRSEQ، PIPER، آخرون عند الطلب)
+- 🎛️ **نماذج مسبقة الضبط دقيقة** تم تدريبها من قبل فريق E2A<br/>
      <i>(اتصل بنا إذا كنت بحاجة إلى طرز إضافية مضبوطة، أو إذا كنت ترغب في مشاركة طرزك في قائمة الإعداد المسبق الرسمية)</i>
 
 
@@ -140,14 +140,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## اللغات المدعومة
-|** العربية (ar )**|** الصينية (zh )**|** الإنجليزية (en )**|** الإسبانية (الإسبانية )**|
+| **العربية (ar)** | **الصينية (zh)** | **الإنجليزية (en)** | **الإسبانية (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-|** الفرنسية (fr )**|** الألمانية (de )**|** الإيطالية (it   )**|** البرتغالية (pt )**|
-|**البولندية (pl )**|** التركية (tr )**|** الروسية (ru )**|** الهولندية (nl )**|
-|** التشيكية (cs )**|** اليابانية (ja )**|** الهندية (hi )**|** البنغالية (bn )**|
-|** المجرية (hu )**|** الكورية (ko )**|** الفيتنامية (vi )**|** السويدية (sv )**|
-|** الفارسية (fa )**|** يوروبا (yo )**|** السواحلية (sw )**|** الإندونيسية (id )**|
-|** السلوفاكية (sk )**|** الكرواتية (hr )**|** التاميلية (ta )**|** الدنماركية (da )**|
+| **الفرنسية (fr)** | **الألمانية (de)** | **الإيطالية (it)** | **البرتغالية (pt)** |
+| **البولندية (pl)** | **التركية (tr)** | **الروسية (ru)** | **الهولندية (nl)** |
+| **التشيكية (cs)** | **اليابانية (ja)** | **الهندية (hi)** | **البنغالية (bn)** |
+| **المجرية (hu)** | **الكورية (ko)** | **الفيتنامية (vi)** | **السويدية (sv)** |
+| **الفارسية (fa)** | **اليوروبا (yo)** | **السواحيلية (sw)** | **الإندونيسية (id)** |
+| **السلوفاكية (sk)** | **الكرواتية (hr)** | **التاميلية (ta)** | **الدنماركية (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
@@ -156,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
-- **أفضل النتائج**: `.epub` أو `.mobi` للكشف التلقائي عن الفصل
+- **أفضل النتائج**: `.epub` أو `.mobi` للكشف التلقائي عن الفصول
 
 <a id="output-and-process-formats"></a>
 ## تنسيقات المخرجات والعمليات
@@ -164,8 +164,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - يمكن تغيير تنسيق العملية في lib/conf.py
 
 ## تتوفر علامات SML
-- `[break]` — صمت (نطاق عشوائي **0.3–0.6 ثانية **)
-- `[pause]` — صمت (نطاق عشوائي **1.0–1.6 ثانية **)
+- `[break]` — صمت (نطاق عشوائي **0.3–0.6 ثانية**)
+- `[pause]` — صمت (نطاق عشوائي **1.0–1.6 ثانية**)
 - `[pause:N]` — وقفة ثابتة (**N ثانية**)
 - `[voice:/path/to/voice/file]...[/voice]` — تبديل الصوت من الصوت الافتراضي أو المحدد من واجهة المستخدم الرسومية/واجهة سطر الأوامر
 - `[emotion:sadness]...[/emotion]` — Zonos فقط: العاطفة للمرور (السعادة، الحزن، الاشمئزاز، الخوف، المفاجأة، الغضب، الآخر، المحايد) أو مزيج مثل `[emotion:sadness=0.7,neutral=0.3]` ؛ تتجاهله محركات أخرى
@@ -177,13 +177,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 للتأكد من أن مشكلتك غير موجودة بالفعل.**
 
 ملاحظة
-** يفتقر تنسيق EPUB إلى أي بنية قياسية مثل ما هو فصل أو فقرة أو مقدمة وما إلى ذلك.<br>
+**يفتقر تنسيق EPUB إلى أي بنية قياسية مثل ما هو فصل أو فقرة أو مقدمة وما إلى ذلك.<br>
 لذلك يجب عليك أولاً إزالة أي نص لا تريد تحويله إلى صوت يدويًا.**
 
 
 <a id="instructions"></a>
 ### التعليمات
-1. **استنساخ اتفاقية إعادة الشراء**
+1. **استنساخ المستودع**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,23 +195,23 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>ملاحظة لمستخدمي MacOS: يتم تثبيت المشروب المنزلي لتثبيت البرامج المفقودة.</i>
+     <i>ملاحظة لمستخدمي MacOS: يتم تثبيت homebrew لتثبيت البرامج المفقودة.</i>
      
    - **Mac Launcher**
      النقر المضاعف, النقر على زر الفأرة مرتين `Mac Ebook2Audiobook Launcher.command`
 
 
-   - ويندوز
+   - **Windows**  
      ```bash
      ebook2audiobook.cmd
      ```
      أو
-     النقر المضاعف, النقر على زر الفأرة مرتين `ebook2audiobook.cmd`
+     انقر نقرًا مزدوجًا على `ebook2audiobook.cmd`
 
-     <i>ملاحظة لمستخدمي Windows: تم تثبيت SCOOP لتثبيت البرامج المفقودة دون امتيازات المسؤول.</i>
+     <i>ملاحظة لمستخدمي Windows: يتم تثبيت scoop لتثبيت البرامج المفقودة دون صلاحيات المسؤول.</i>
    
-1. **افتح تطبيق الويب **: انقر فوق عنوان URL المقدم في الوحدة الطرفية للوصول إلى تطبيق الويب وتحويل الكتب الإلكترونية. `http://localhost:7860/`
-2. ** للرابط العام **:
+1. **افتح تطبيق الويب**: انقر فوق عنوان URL المقدم في الوحدة الطرفية للوصول إلى تطبيق الويب وتحويل الكتب الإلكترونية. `http://localhost:7860/`
+2. **للرابط العام**:
    `./ebook2audiobook.command --share` (Linux/MacOS)
    ويندوز `ebook2audiobook.cmd --share`
    `python app.py --share` (جميع أنظمة التشغيل)
@@ -221,12 +221,12 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 للسماح لصفحة الويب بإعادة الاتصال بمقبس الاتصال الجديد.**
 
 <a id="basic-usage"></a>
-### استخدام أساسي
+### الاستخدام الأساسي
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
@@ -239,28 +239,28 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  مثال على تحميل الرمز البريدي للنموذج المخصص
-  (يجب أن يكون ملف .zip يحتوي على ملفات النموذج الإلزامية. مثال على XTTSv2: config.json، model.pth، vocab.json و ref.wav)
+###  مثال على رفع نموذج مخصص بصيغة zip
+  (يجب أن يكون ملف .zip يحتوي على ملفات النموذج الإلزامية. مثال لـ XTTSv2: config.json وmodel.pth وvocab.json وref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>ملاحظة: ref.wav لطرازك المخصص هو دائمًا الصوت المحدد للتحويل</i>
+     <i>ملاحظة: ملف ref.wav الخاص بنموذجك المخصص هو دائمًا الصوت المختار للتحويل</i>
      
-- **<custom_model_path>المسار إلى `model_name.zip` ملف
-      والتي يجب أن تحتوي (وفقًا لمحرك TTS) على جميع الملفات الإلزامية<br>
+- **<custom_model_path>**: مسار ملف `model_name.zip`،
+      والذي يجب أن يحتوي (حسب محرك TTS) على جميع الملفات الإلزامية<br>
       (انظر ./lib/models.py).
 
-### للحصول على دليل مفصل مع قائمة بجميع المعلمات لاستخدامها
+### دليل مفصل مع قائمة بجميع المعاملات المتاحة
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --help
      ```
@@ -413,7 +413,7 @@ SML tags available:
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **قم بتشغيل الحاوية :**
+4. **تشغيل الحاوية:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,31 +449,31 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- ملاحظة: لا يتم الكشف عن MPS في جهاز الإرساء لذلك يجب استخدام وحدة المعالجة المركزية
-- ملاحظة: وحدة التخزين المسماة `e2a_venvs` يحافظ على تثبيت محركات TTS في venv الخاصة بهم (GPT - SoVITS، Zonos، OmniVoice، F5 - TTS، Orpheus، Spark - TTS، ChatTTS، OpenVoice، MeloTTS، CSM، إلخ.)
-  عبر عمليات تشغيل الحاويات، بحيث لا يتم إعادة تثبيتها في كل مرة. لإعادة تعيينها: `docker volume rm e2a_venvs`
+- ملاحظة: MPS غير متاح داخل Docker لذا يجب استخدام CPU
+- ملاحظة: وحدة التخزين المسماة `e2a_venvs` تحتفظ بمحركات TTS المثبتة في venv خاص بكل منها (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM إلخ.)
+  عبر مرات تشغيل الحاوية، فلا يُعاد تثبيتها في كل مرة. لإعادة تعيينها: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## الأدوات
-أدوات مستقلة، تعمل مع بايثون e2a الخاصة (`python_env`، التي تم إنشاؤها بواسطة الإطلاق الأول لـ e2a).
+أدوات مستقلة تعمل بـ Python الخاص بـ e2a (`python_env`، الذي يُنشأ عند أول تشغيل لـ e2a).
 
 <a id="preload-models"></a>
-### التحميل المسبق لنماذج التثبيت دون اتصال بالإنترنت: `tools/preload_models.py`
-يقوم بتنزيل كل طراز يستخدمه e2a (محركات TTS وضبطها الدقيق، تحويل الصوت، مقطع، pyannote، demucs،
-فواصل الموسيقى، حزم ترجمة argos، بيانات tesseract، jieba، والأصوات) في مجلد واحد تم وضعه
-تمامًا مثل `./models`، أي مفتاح USB. على الجهاز غير المتصل، انسخ هذا المجلد إلى e2a's `./models`
-و `voices` مجلد مكتوب بجانبه في e2a `./voices`.
-يتم تسجيل كل مهمة منتهية في `<models_dir>/.e2a_downloads.json`: تتخطى إعادة التشغيل ما تم إنجازه وتبدأ
-مرة أخرى ما تم قصه (مفتاح ctrl - c، تعطل، مفصول) بعد إزالة ملفاته الجزئية.
+### التحميل المسبق للنماذج للتثبيت دون اتصال: `tools/preload_models.py`
+ينزّل كل النماذج التي يستخدمها e2a (محركات TTS ونسخها المضبوطة، تحويل الصوت، stanza، pyannote، demucs،
+الفواصل الموسيقية، حزم argos-translate، بيانات tesseract، jieba، والأصوات) في مجلد واحد منظم
+تمامًا مثل `./models`، أي مفتاح USB. على الجهاز غير المتصل، انسخ هذا المجلد إلى `./models` في e2a
+والمجلد `voices` المكتوب بجانبه إلى `./voices` في e2a.
+تُسجَّل كل مهمة مكتملة في `<models_dir>/.e2a_downloads.json`: إعادة التشغيل تتخطى ما اكتمل وتعيد بدء
+ما انقطع (ctrl-c، تعطل، فصل المفتاح) بعد حذف ملفاته الجزئية.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` يسرد الوظائف وحالتها (منتهية، متقطعة، مهمة) دون تنزيل أي شيء.
+   - `--dry_run` يعرض المهام وحالتها (مكتملة، منقطعة، معلّقة) دون تنزيل أي شيء.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,38 +506,38 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### ترجمة الكتب الإلكترونية من e2a: `translate_ebook.sh`/`translate_ebook.cmd`
-يترجم ملفات EPUB/AZW3، مجلد كامل (`-r` لمجلداتها الفرعية) أو قائمة المسارات (`@list.txt`)
-في الكتب الإلكترونية المترجمة، دون اتصال بالإنترنت، مع شحن المكون الإضافي Argos Translate calibre
+### ترجمة الكتب الإلكترونية خارج e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+يترجم ملفات EPUB/AZW3، أو مجلدًا كاملًا (`-r` لمجلداته الفرعية) أو قائمة مسارات (`@list.txt`)
+إلى كتب إلكترونية مترجمة، دون اتصال، باستخدام إضافة calibre المسماة Argos Translate والمرفقة في
 `tools/argostranslate-calibre-plugin.zip`. مستقل عن تحويل الكتاب الصوتي: فهو يكتب الكتب الإلكترونية فقط.
-يحتاج إلى عيار (مطلوب بالفعل من قبل e2a) ويعمل على حزم e2a `python_env` و ARGOS - TRANSLATE:
-لا يتم تنزيل زوج اللغات e2a الذي يستخدمه بالفعل مرة أخرى، ويتم تنزيل واحد مفقود عند الاستخدام الأول.
-يتم تثبيت المكون الإضافي عند الاستخدام الأول في ملف تعريف العيار الخاص بـ e2a (`./run`)، ويتم ترك العيار الخاص بك دون مساس.
-`--to fra,ara,spa` يترجم إلى عدة لغات في وقت واحد، كتاب إلكتروني واحد لكل لغة، و `--to all` إلى كل
-اللغة التي يصل إليها المصدر (`--from`، أو لغة كل كتاب ؛ مثبتة فقط مع `--no_download`).
-`--list --from eng` يسرد اللغات التي تترجمها اللغة الإنجليزية إلى (مثبتة أو قابلة للتنزيل أو من خلال اللغة الإنجليزية
-- مصدر آخر ؟
-تنسيقات أخرى عيار `ebook-convert` يتم تحويل القراءات (PDF، DOCX، MOBI، TXT، ...) إلى EPUB مرة واحدة، قبل
-اللغة الأولى، وتترجم إلى EPUB: `--from` مطلوبة عندما لا تحمل أي لغة، كما يفعل PDF و TXT في كثير من الأحيان.
-بدون `-o` أو `--output_dir`، يتم حفظ كل ترجمة بجانب كتابها كـ `<name>.<lang>.<ext>`،
-ويتم تخطي الكتاب الذي توجد ترجمته بالفعل (`--overwrite` لترجمته مرة أخرى).
-تعمل المشغلات في مجلد e2a على `tools/translate_ebook.py` مع `python_env`، ولا يوجد شيء لتنشيطه،
-من أي مجلد (يتم أخذ المسارات النسبية من حيث بدأت):
+يحتاج إلى calibre (المطلوب أصلًا من e2a) ويعمل على `python_env` وحزم argos-translate الخاصة بـ e2a:
+زوج اللغات الذي يستخدمه e2a بالفعل لا يُنزَّل مرة أخرى، والزوج المفقود يُنزَّل عند أول استخدام.
+تُثبَّت الإضافة عند أول استخدام في ملف تعريف calibre الخاص بـ e2a (`./run`)، ويبقى calibre الخاص بك دون تغيير.
+`--to fra,ara,spa` يترجم إلى عدة لغات دفعة واحدة، كتاب إلكتروني لكل لغة، و`--to all` إلى كل
+لغة يصل إليها المصدر (`--from`، وإلا فلغة كل كتاب؛ أزواج اللغات المثبتة فقط مع `--no_download`).
+`--list --from eng` يعرض اللغات التي تُترجَم إليها الإنجليزية (المثبتة، القابلة للتنزيل، أو عبر الإنجليزية
+لمصدر آخر).
+الصيغ الأخرى التي يقرأها `ebook-convert` في calibre (PDF، DOCX، MOBI، TXT، ...) تُحوَّل إلى EPUB مرة واحدة، قبل
+اللغة الأولى، وتُترجَم بصيغة EPUB: يلزم `--from` عندما لا تحمل أي لغة، كما هو الحال غالبًا مع PDF وTXT.
+بدون `-o` أو `--output_dir`، تُحفظ كل ترجمة بجانب كتابها باسم `<name>.<lang>.<ext>`،
+ويُتخطّى الكتاب الذي توجد ترجمته مسبقًا (`--overwrite` لترجمته مرة أخرى).
+المشغّلات في مجلد e2a تشغّل `tools/translate_ebook.py` باستخدام `python_env`، دون أي تفعيل،
+من أي مجلد (تُحسب المسارات النسبية من مكان التشغيل):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - أو مباشرة مع `python_env`بايثون Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (ويندوز: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). بدأت مع أي بايثون أخرى،
-     يبدأ النص نفسه مرة أخرى `python_env`السبت
-   - **عامل الإرساء**: قم بتشغيله داخل حاوية e2a، على سبيل المثال `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     مع المسارات المرئية من الحاوية.
-   - **السرعة**: تعمل ARGOSTRANSLATE على افتراضياتها الخاصة (تختار CTranslate2 الخيوط وأسرع نوع حساب،
-     int8 على وحدة المعالجة المركزية)، وليس على خيط e2a 1 في float32. اضبط `ARGOS_INTRA_THREADS` أو `ARGOS_COMPUTE_TYPE` لتجاوزها.
+   - أو مباشرة باستخدام Python الخاص بـ `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). إذا شُغّل بأي Python آخر،
+     يعيد السكربت تشغيل نفسه باستخدام Python الخاص بـ `python_env`.
+   - **Docker**: شغّله داخل حاوية e2a، مثلًا `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     مع المسارات كما تُرى من داخل الحاوية.
+   - **السرعة**: يعمل argostranslate بإعداداته الافتراضية (يختار CTranslate2 عدد الخيوط وأسرع نوع حساب،
+     int8 على CPU)، وليس بخيط واحد بدقة float32 كما في e2a. اضبط `ARGOS_INTRA_THREADS` أو `ARGOS_COMPUTE_TYPE` لتغييرها.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ examples:
 كنموذج ebook2audiobook رسمي مضبوط بدقة، لذا يرجى الاتصال بنا وسنضيفه إلى قائمة الإعدادات المسبقة.
 
 <a id="reverting-to-older-versions"></a>
-## العودة إلى الإصدارات القديمة
-يمكن العثور على الإطلاقات -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## الرجوع إلى إصدارات أقدم
+يمكن العثور على الإصدارات -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
@@ -644,8 +644,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 -  وحدة المعالجة المركزية بطيئة (أفضل في وحدة المعالجة المركزية للخادم smp) بينما يمكن أن يكون لوحدة معالجة الرسومات تحويل في الوقت الفعلي تقريبًا.
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (لا يحتوي على استنساخ صوتي بدون لقطة على الرغم من ذلك، وهو صوت سيري عالي الجودة، لكنه أسرع بكثير على وحدة المعالجة المركزية).
-- "أواجه مشكلات في التبعية" - ما عليك سوى استخدام عامل الرصيف، وهو مكتفي ذاتيًا تمامًا وله وضع مقطوع الرأس،
-   إضافة add `--help` المعلمة في نهاية أمر تشغيل عامل الإرساء لمزيد من المعلومات.
+- "أواجه مشكلات في التبعيات" - استخدم Docker فقط، فهو مكتفٍ ذاتيًا بالكامل ويحتوي على وضع headless،
+   أضف المعامل `--help` في نهاية أمر docker run لمزيد من المعلومات.
 - "أواجه مشكلة صوتية مبتورة! "- يرجى إصدار عدد من هذا،
    نحن لا نتحدث كل لغة ونحتاج إلى نصيحة من المستخدمين لضبط منطق تقسيم الجملة.😊
 

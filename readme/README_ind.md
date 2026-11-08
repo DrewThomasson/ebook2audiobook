@@ -112,7 +112,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Fitur
-- 🔧 ** Mesin tts didukung**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Mesin tts didukung**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Mengonversi berbagai format file**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Area Teks** untuk langsung mengonversi teks pendek menjadi audio
 - 🔍 **Pemindaian OCR** untuk file dengan halaman teks berupa gambar
@@ -140,14 +140,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Bahasa yang Didukung
-| **Arabic (ar )**|**Chinese (zh)**|**English (en )**|** Spanish (es )**|
+| **Arab (ar)** | **Tionghoa (zh)** | **Inggris (en)** | **Spanyol (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| **French (fr )**|**German (de )**|**Italian (it )**|** Portuguese (pt )**|
-| **Polish (pl )**|**Turkish (tr )**|**Russian (ru )**|** Dutch (nl     )**|
-| ** Bahasa Ceko (cs )**|** Bahasa Jepang (ja )**|** Bahasa Hindi (hi )**|** Bahasa Bengali (bn )**|
-| ** Bahasa Hongaria (hu )**|** Bahasa Korea (ko )**|** Bahasa Vietnam (vi )**|** Bahasa Swedia (sv )**|
-| **Persia (fa )**   | **Yoruba (yo )**     | **Swahili (sw )**   | **Indonesia (id )**|
-| **Bahasa Slowakia (sk )**|**Bahasa Kroasia (hr )**|** Bahasa Tamil (ta )**|** Bahasa Denmark (da )**|
+| **Prancis (fr)** | **Jerman (de)** | **Italia (it)** | **Portugis (pt)** |
+| **Polandia (pl)** | **Turki (tr)** | **Rusia (ru)** | **Belanda (nl)** |
+| **Ceko (cs)** | **Jepang (ja)** | **Hindi (hi)** | **Bengali (bn)** |
+| **Hongaria (hu)** | **Korea (ko)** | **Vietnam (vi)** | **Swedia (sv)** |
+| **Persia (fa)** | **Yoruba (yo)** | **Swahili (sw)** | **Indonesia (id)** |
+| **Slowakia (sk)** | **Kroasia (hr)** | **Tamil (ta)** | **Denmark (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
@@ -182,8 +182,8 @@ Jadi Anda harus terlebih dahulu menghapus secara manual teks apa pun yang tidak 
 
 
 <a id="instructions"></a>
-### Instruksi
-1. **Kloning repo**
+### Petunjuk
+1. **Kloning repositori**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ Jadi Anda harus terlebih dahulu menghapus secara manual teks apa pun yang tidak 
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Catatan untuk pengguna MacOS: homebrew diinstal untuk menginstal program yang hilang.</i>
+     <i>Catatan untuk pengguna MacOS: homebrew dipasang untuk memasang program yang belum ada.</i>
      
    - **Peluncur Mac**  
      Klik dua kali `Mac Ebook2Audiobook Launcher.command`
@@ -206,7 +206,7 @@ Jadi Anda harus terlebih dahulu menghapus secara manual teks apa pun yang tidak 
      ebook2audiobook.cmd
      ```
      atau
-     Klik ganda `ebook2audiobook.cmd`
+     Klik dua kali `ebook2audiobook.cmd`
 
      <i>Catatan untuk pengguna Windows: scoop dipasang untuk memasang program yang hilang tanpa hak istimewa administrator.</i>
    
@@ -239,8 +239,8 @@ agar halaman web dapat terhubung kembali ke soket koneksi yang baru.**
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Contoh Unggahan Zip Model Kustom
-  (harus berupa file .zip yang berisi file model wajib. Contoh untuk XTTSv2: config.json, model.pth, vocab.json dan ref.wav)
+###  Contoh Unggah Model Kustom dalam Zip
+  (harus berupa file .zip yang berisi file model wajib. Contoh untuk XTTSv2: config.json, model.pth, vocab.json, dan ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ agar halaman web dapat terhubung kembali ke soket koneksi yang baru.**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Catatan: ref.wav model kustom Anda selalu suara yang dipilih untuk konversi</i>
+     <i>Catatan: ref.wav dari model kustom Anda selalu menjadi suara yang dipilih untuk konversi</i>
      
 - **<custom_model_path>**: Jalur ke file `model_name.zip`,
       yang harus berisi (sesuai mesin tts) semua file wajib<br>
       (lihat ./lib/models.py).
 
-### Untuk Panduan Terperinci dengan daftar semua Parameter yang akan digunakan
+### Panduan Lengkap dengan Daftar Semua Parameter yang Dapat Digunakan
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -391,7 +391,7 @@ TIPS: jika perlu jeda lebih lama, tambahkan '[pause:3]' untuk 3 dtk. dll.
 
 <a id="docker"></a>
 ### Docker
-1. **Kloning Repositori**:
+1. **Kloning repositori**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
@@ -413,7 +413,7 @@ TIPS: jika perlu jeda lebih lama, tambahkan '[pause:3]' untuk 3 dtk. dll.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Jalankan Kontainer :**
+4. **Jalankan kontainer:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- CATATAN: MPS tidak terpapar di docker sehingga CPU harus digunakan
-- CATATAN: volume bernama `e2a_venvs` membuat mesin tts tetap terpasang di venv mereka sendiri (GPT - SoVITS, Zonos, OmniVoice, F5 - tts, Orpheus, Spark - tts, ChatTTS, OpenVoice, MeloTTS, CSM, dll.)
-  di seluruh kontainer berjalan, sehingga mereka tidak diinstal ulang setiap kali. Untuk mengatur ulang: `docker volume rm e2a_venvs`
+- CATATAN: MPS tidak tersedia di Docker sehingga CPU harus digunakan
+- CATATAN: volume bernama `e2a_venvs` menyimpan mesin TTS yang terpasang di venv masing-masing (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, dll.)
+  di antara setiap kali kontainer dijalankan, sehingga tidak dipasang ulang setiap kali. Untuk meresetnya: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
-## Alat 
-Alat mandiri, dijalankan dengan Python e2a sendiri (`python_env`, dibuat dengan peluncuran pertama e2a).
+## Alat
+Alat mandiri yang dijalankan dengan Python milik e2a sendiri (`python_env`, dibuat saat e2a pertama kali dijalankan).
 
 <a id="preload-models"></a>
-### Model pramuat untuk pemasangan offline: `tools/preload_models.py`
-Mengunduh setiap model yang digunakan e2a (mesin tts dan fine - tune - nya, konversi suara, stanza, pyannote, demucs,
-selingan musik, paket argos - translate, data tesseract, jieba, dan suara - suara) ke dalam satu folder yang ditata
-persis seperti `./models`, yaitu kunci USB. Di mesin offline, salin folder itu ke e2a's `./models`
-dan `voices` folder yang ditulis di sampingnya ke dalam folder e2a `./voices`.
-Setiap pekerjaan yang selesai dicatat dalam `<models_dir>/.e2a_downloads.json`: tayangan ulang melewatkan apa yang dilakukan dan dimulai
-lagi apa yang dipotong (ctrl - c, crash, kunci dicabut) setelah menghapus file parsialnya.
+### Pramuat model untuk instalasi offline: `tools/preload_models.py`
+Mengunduh semua model yang digunakan e2a (mesin TTS dan hasil fine-tune-nya, konversi suara, stanza, pyannote, demucs,
+selingan musik, paket argos-translate, data tesseract, jieba, dan suara) ke satu folder yang tersusun
+persis seperti `./models`, misalnya flashdisk USB. Di mesin offline, salin folder tersebut ke `./models` milik e2a
+dan folder `voices` yang ditulis di sebelahnya ke `./voices` milik e2a.
+Setiap tugas yang selesai dicatat di `<models_dir>/.e2a_downloads.json`: menjalankan ulang akan melewati yang sudah selesai dan memulai
+ulang yang terputus (ctrl-c, crash, flashdisk dicabut) setelah menghapus file parsialnya.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ lagi apa yang dipotong (ctrl - c, crash, kunci dicabut) setelah menghapus file p
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` mencantumkan pekerjaan dan keadaannya (selesai, terputus, todo) tanpa mengunduh apa pun.
+   - `--dry_run` menampilkan daftar tugas dan statusnya (selesai, terputus, tertunda) tanpa mengunduh apa pun.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Terjemahkan ebook dari e2a: `translate_ebook.sh`/`translate_ebook.cmd`
-Menerjemahkan file EPUB/AZW3, seluruh folder (`-r` untuk subfoldernya) atau daftar jalur (`@list.txt`)
-ke dalam ebook terjemahan, offline, dengan plugin kaliber Argos Translate yang dikirimkan dalam
-`tools/argostranslate-calibre-plugin.zip`. Independen dari konversi buku audio: hanya menulis ebook.
-Dibutuhkan kaliber (sudah disyaratkan oleh e2a) dan berjalan pada paket `python_env` dan argos - translate e2a:
-pasangan bahasa yang sudah digunakan e2a tidak diunduh lagi, yang hilang diunduh pada penggunaan pertama.
-Plugin diinstal pada penggunaan pertama ke profil kaliber e2a sendiri (`./run`), kaliber Anda tidak tersentuh.
-`--to fra,ara,spa` diterjemahkan ke dalam beberapa bahasa sekaligus, satu ebook per bahasa, dan `--to all` ke dalam setiap
-bahasa yang dicapai sumber (`--from`, jika tidak, bahasa masing - masing buku; yang diinstal hanya dengan `--no_download`).
-`--list --from eng` mencantumkan bahasa yang diterjemahkan bahasa Inggris ke dalam (diinstal, dapat diunduh, atau melalui bahasa Inggris untuk
+### Terjemahkan ebook di luar e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+Menerjemahkan file EPUB/AZW3, seluruh folder (`-r` untuk subfoldernya) atau daftar path (`@list.txt`)
+menjadi ebook terjemahan, secara offline, dengan plugin calibre Argos Translate yang disertakan di
+`tools/argostranslate-calibre-plugin.zip`. Terpisah dari konversi audiobook: alat ini hanya menulis ebook.
+Alat ini memerlukan calibre (sudah diwajibkan oleh e2a) dan berjalan di `python_env` serta paket argos-translate milik e2a:
+pasangan bahasa yang sudah digunakan e2a tidak diunduh lagi, pasangan yang belum ada diunduh saat pertama kali digunakan.
+Plugin dipasang saat pertama kali digunakan ke profil calibre milik e2a sendiri (`./run`), calibre Anda tidak diubah.
+`--to fra,ara,spa` menerjemahkan ke beberapa bahasa sekaligus, satu ebook per bahasa, dan `--to all` ke setiap
+bahasa yang dapat dicapai dari sumber (`--from`, jika tidak, bahasa masing-masing buku; dengan `--no_download` hanya pasangan bahasa yang terpasang).
+`--list --from eng` menampilkan bahasa-bahasa tujuan terjemahan dari bahasa Inggris (terpasang, dapat diunduh, atau melalui bahasa Inggris untuk
 sumber lain).
-Kaliber format lain `ebook-convert` dibaca (PDF, DOCX, Mobi, TXT, ...) dikonversi ke EPUB sekali, sebelum
-bahasa pertama, dan diterjemahkan sebagai EPUB: `--from` diperlukan ketika mereka tidak membawa bahasa, seperti yang sering dilakukan oleh PDF dan TXT.
-Tanpa `-o` atau `--output_dir`, setiap terjemahan disimpan di samping bukunya sebagai `<name>.<lang>.<ext>`,
-dan buku yang terjemahannya sudah ada dilewati (`--overwrite` untuk menerjemahkannya lagi).
-Peluncur di folder e2a berjalan `tools/translate_ebook.py` dengan `python_env`, tidak ada yang diaktifkan,
-dari folder mana pun (jalur relatif diambil dari tempat dimulai):
+Format lain yang dibaca `ebook-convert` milik calibre (PDF, DOCX, MOBI, TXT, ...) dikonversi ke EPUB sekali, sebelum
+bahasa pertama, lalu diterjemahkan sebagai EPUB: `--from` diperlukan jika file tidak menyertakan bahasa, seperti yang sering terjadi pada PDF dan TXT.
+Tanpa `-o` atau `--output_dir`, setiap terjemahan disimpan di sebelah bukunya sebagai `<name>.<lang>.<ext>`,
+dan buku yang terjemahannya sudah ada akan dilewati (`--overwrite` untuk menerjemahkannya lagi).
+Peluncur di folder e2a menjalankan `tools/translate_ebook.py` dengan `python_env`, tidak ada yang perlu diaktifkan,
+dari folder mana pun (path relatif dihitung dari lokasi peluncuran):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ dari folder mana pun (jalur relatif diambil dari tempat dimulai):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Atau langsung dengan `python_env`Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Dimulai dengan Python lainnya,
-     skrip dimulai lagi dengan `python_env`s
-   - **Docker**: jalankan di dalam wadah e2a, misalnya `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     dengan jalur yang terlihat dari kontainer.
-   - **Kecepatan**:argostranslate berjalan pada standarnya sendiri (CTranslate2 memilih utas dan jenis komputasi tercepat,
-     int8 pada CPU), bukan pada 1 ulir e2a di float32. Atur `ARGOS_INTRA_THREADS` atau `ARGOS_COMPUTE_TYPE` untuk menimpanya.
+   - Atau langsung dengan Python dari `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Jika dijalankan dengan Python lain,
+     skrip akan menjalankan ulang dirinya dengan Python dari `python_env`.
+   - **Docker**: jalankan di dalam kontainer e2a, misalnya `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     dengan path sebagaimana terlihat dari kontainer.
+   - **Kecepatan**: argostranslate berjalan dengan pengaturan bawaannya sendiri (CTranslate2 memilih jumlah thread dan jenis komputasi tercepat,
+     int8 di CPU), bukan dengan 1 thread float32 milik e2a. Atur `ARGOS_INTRA_THREADS` atau `ARGOS_COMPUTE_TYPE` untuk menimpanya.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,7 +632,7 @@ yang asli. Anda harus merencanakan proses yang sama untuk models.py. Jika Anda i
 sebagai model ebook2audiobook resmi yang disetel halus, silakan hubungi kami dan kami akan menambahkannya ke daftar preset.
 
 <a id="reverting-to-older-versions"></a>
-## Mengembalikan ke Versi yang lebih lama
+## Kembali ke Versi Lama
 Rilis dapat ditemukan -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7

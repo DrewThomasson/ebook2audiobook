@@ -6,7 +6,7 @@ CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/
 使用高级TTS引擎等等。<br/>
 支持语音克隆和1696种语言！
 > 重要
-* *此工具仅适用于非DRM、合法获得的电子书。* * <br>
+**此工具仅适用于非DRM、合法获得的电子书。** <br>
 作者对本软件的任何滥用或由此产生的任何法律后果概不负责。<br>
 请负责任地使用此工具，并遵守所有适用法律。
 
@@ -17,7 +17,7 @@ CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/
 
 ### 本地运行
 
-说明 [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
 
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
 
@@ -47,30 +47,30 @@ CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/
 <a id="demos"></a>
 ## 演示
 
-* *新建默认语音演示* *
+**新建默认语音演示**
 
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
 <details>
   <summary>更多演示</summary>
 
-* * ASMR语音* *
+**ASMR语音**
 
 https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
-* *雨天之声* *
+**雨天之声**
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
-* * Scarlett Voice * *
+**Scarlett Voice**
 
 https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
-* * David Attenborough之声* *
+**David Attenborough之声**
 
 https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
-示例
+**示例**
 
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 </details>
@@ -112,18 +112,18 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## 特点
-- 🔧 * *支持的TTS引擎* * ： `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
-- 📚 * *转换多种文件格式* * ： `.epub`、`.mobi`、`.azw3`、`.fb2`、`.lrf`、`.rb`、`.snb`、`.tcr`、`.pdf`、`.txt`、`.rtf`、`.doc`、`.docx`、`.html`、`.odt`、`.azw`、`.tiff`、`.tif`、`.png`、`.jpg`、`.jpeg`、`.bmp`、 `.zip`
-- 💻 * * TextArea * *直接转换音频中的短文本
-- 🔍 * * OCR扫描* *用于将文本页面作为图像的文件
-- 🔊 * *高质量的文本转语音* *从近乎实时到近乎真实的语音
-- 🗣️ * *可选语音克隆* *使用您自己的语音文件
-- 🌐 * *支持1696种语言* * ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
-- 💻 * *低资源友好* * —运行于* * 2 GB RAM/1 GB VRAM （最低） * *
-- 🎵 * *有声读物输出格式* * ：单声道或立体声 `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
-- 🧠 * *支持SML标签* * —精细控制中断、暂停、语音切换等([see below](#sml-tags-available))
-- 🧩 * *可选的自定义模型* *使用您自己的训练模型（ XTTSv2、VITS、FAIRSEQ、PIPER等）
-- 🎛️ * *由E2A团队培训的微调预设模型* *<br/>
+- 🔧 **支持的TTS引擎** ： `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 📚 **转换多种文件格式** ： `.epub`、`.mobi`、`.azw3`、`.fb2`、`.lrf`、`.rb`、`.snb`、`.tcr`、`.pdf`、`.txt`、`.rtf`、`.doc`、`.docx`、`.html`、`.odt`、`.azw`、`.tiff`、`.tif`、`.png`、`.jpg`、`.jpeg`、`.bmp`、 `.zip`
+- 💻 **TextArea**直接转换音频中的短文本
+- 🔍 **OCR扫描**用于将文本页面作为图像的文件
+- 🔊 **高质量的文本转语音**从近乎实时到近乎真实的语音
+- 🗣️ **可选语音克隆**使用您自己的语音文件
+- 🌐 **支持1696种语言** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 💻 **低资源友好** —运行于**2 GB RAM/1 GB VRAM （最低）**
+- 🎵 **有声读物输出格式** ：单声道或立体声 `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
+- 🧠 **支持SML标签** —精细控制中断、暂停、语音切换等([see below](#sml-tags-available))
+- 🧩 **可选的自定义模型**使用您自己的训练模型（ XTTSv2、VITS、FAIRSEQ、PIPER等）
+- 🎛️ **由 E2A 团队训练的微调预设模型**<br/>
      <i> （如果您需要其他微调模型，或者您想将您的模型分享到官方预设列表，请联系我们）</i>
 
 
@@ -136,18 +136,18 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - CUDA、ROCm、JETSON
 - MPS （苹果硅CPU ）
 
-* <i>现代TTS引擎在CPU上非常慢，因此请使用较低质量的TTS ，如YourTTS、Tacotron2等。</i>
+*<i>现代TTS引擎在CPU上非常慢，因此请使用较低质量的TTS ，如YourTTS、Tacotron2等。</i>
 
 <a id="supported-languages"></a>
 ## 支持的语言
-| * *阿拉伯语(ar) * * | * *中文(zh) * * | * *英语(en) * * | * *西班牙语(es) * * |
+| **阿拉伯语 (ar)** | **中文 (zh)** | **英语 (en)** | **西班牙语 (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| * *法语(fr) * * | * *德语(de) * * | * *意大利语(it) * * | * *葡萄牙语(pt) * * |
-| * *波兰语(pl) * * | * *土耳其语(tr) * * | * *俄语(ru) * * | * *荷兰语(nl) * * |
-| * *捷克语(cs) * * | * *日语(ja) * * | * *印地语(hi) * * | * *孟加拉语(bn) * * |
-| * *匈牙利语(hu) * * | * *韩语(ko) * * | * *越南语(vi) * * | * *瑞典语(sv) * * |
-| * *波斯语(fa) * * | * *约鲁巴语(yo) * * | * *斯瓦希里语(sw) * * | * *印度尼西亚语(id) * * |
-| * *斯洛伐克语(sk) * * | * *克罗地亚语(hr) * * | * *泰米尔语(ta) * * | * *丹麦语(da) * * |
+| **法语 (fr)** | **德语 (de)** | **意大利语 (it)** | **葡萄牙语 (pt)** |
+| **波兰语 (pl)** | **土耳其语 (tr)** | **俄语 (ru)** | **荷兰语 (nl)** |
+| **捷克语 (cs)** | **日语 (ja)** | **印地语 (hi)** | **孟加拉语 (bn)** |
+| **匈牙利语 (hu)** | **韩语 (ko)** | **越南语 (vi)** | **瑞典语 (sv)** |
+| **波斯语 (fa)** | **约鲁巴语 (yo)** | **斯瓦希里语 (sw)** | **印度尼西亚语 (id)** |
+| **斯洛伐克语 (sk)** | **克罗地亚语 (hr)** | **泰米尔语 (ta)** | **丹麦语 (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
@@ -156,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
-- * *最佳结果* * ： `.epub` 或者 `.mobi` 用于自动章节检测
+- **最佳结果** ： `.epub` 或者 `.mobi` 用于自动章节检测
 
 <a id="output-and-process-formats"></a>
 ## 输出和过程格式
@@ -164,107 +164,107 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 过程格式可以在lib/conf.py中更改
 
 ## SML标签可用
-- `[break]` —静音（随机范围* * 0.3–0.6秒* * ）
-- `[pause]` —静音（随机范围* * 1.0–1.6秒* * ）
-- `[pause:N]` —固定暂停（ * * N秒* * ）
+- `[break]` —静音（随机范围**0.3–0.6秒** ）
+- `[pause]` —静音（随机范围**1.0–1.6秒** ）
+- `[pause:N]` —固定暂停（ **N秒** ）
 - `[voice:/path/to/voice/file]...[/voice]` —从GUI/CLI从默认或所选语音切换语音
-- `[emotion:sadness]...[/emotion]` —仅限Zonos ：对一段经文的情感（幸福、悲伤、厌恶、恐惧、惊讶、愤怒、其他、中立）或类似的混合 `[emotion:sadness=0.7,neutral=0.3]`；其他引擎忽略它
+- `[emotion:sadness]...[/emotion]` — 仅限 Zonos：为一段文字指定情绪（幸福、悲伤、厌恶、恐惧、惊讶、愤怒、其他、中性），或像 `[emotion:sadness=0.7,neutral=0.3]` 这样的混合；其他引擎会忽略它
 
-* *查看我们的另一个专门用于在您的电子书中自动添加SML的存储库- > [E2A-SML](https://github.com/DrewThomasson/E2A-SML) * *
+**查看我们的另一个专门用于在您的电子书中自动添加SML的存储库- > [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
 > 重要
-* *在发布安装或错误问题之前，请仔细搜索已打开和已关闭的问题选项卡<br>
-以确保您的问题不存在。* *
+**在发布安装或错误问题之前，请仔细搜索已打开和已关闭的问题选项卡<br>
+以确保您的问题不存在。**
 
 注
-* * EPUB格式缺少任何标准结构，如章节、段落、前言等。<br>
-因此，您应该首先手动删除任何不想在音频中转换的文本。* *
+**EPUB格式缺少任何标准结构，如章节、段落、前言等。<br>
+因此，您应该首先手动删除任何不想在音频中转换的文本。**
 
 
 <a id="instructions"></a>
-### 指南
-1. * *克隆回购* *
+### 使用说明
+1. **克隆仓库**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
 	```
 
-2. * *安装/运行ebook2audiobook * * ：
+2. **安装/运行ebook2audiobook** ：
 
-   - * * Linux/MacOS * *
+   - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>MacOS用户注意事项：安装自制软件即可安装丢失的程序。</i>
+     <i>MacOS 用户注意：会安装 homebrew 来安装缺失的程序。</i>
      
-   - * * Mac启动器* *
+   - **Mac启动器**
      双击 `Mac Ebook2Audiobook Launcher.command`
 
 
-   - Windows
+   - **Windows**  
      ```bash
      ebook2audiobook.cmd
      ```
-     或者
+     或
      双击 `ebook2audiobook.cmd`
 
-     <i>Windows用户注意事项：安装SCOOP是为了安装缺失的程序，无需管理员权限。</i>
+     <i>Windows 用户注意：会安装 scoop，以便在无需管理员权限的情况下安装缺失的程序。</i>
    
-1. * *打开Web应用程序* * ：单击终端中提供的URL以访问Web应用程序并转换电子书。`http://localhost:7860/`
-2. * *对于公开链接* * ：
+1. **打开Web应用程序** ：单击终端中提供的URL以访问Web应用程序并转换电子书。`http://localhost:7860/`
+2. **对于公开链接** ：
    `./ebook2audiobook.command --share` （ Linux/MacOS ）
    `ebook2audiobook.cmd --share` (Windows)
    所有操作系统 `python app.py --share`
 
 > 重要
-* *如果脚本停止并再次运行，则需要刷新gradio GUI界面<br>
-让网页重新连接到新的连接套接字。* *
+**如果脚本停止并再次运行，则需要刷新gradio GUI界面<br>
+让网页重新连接到新的连接套接字。**
 
 <a id="basic-usage"></a>
 ### 基本用法
-   - * * Linux/MacOS * * ：
+   - **Linux/MacOS** ：
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
-   - Windows
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
-  - * * [--ebook] * * ：电子书文件的路径
-  - * * [--voice] * * ：语音克隆文件路径（可选）
-  - * * [--language] * * ： ISO-639-3中的语言代码（即： ita代表意大利语， eng代表英语， deu代表德语... ）。<br>
+  - **[--ebook]** ：电子书文件的路径
+  - **[--voice]** ：语音克隆文件路径（可选）
+  - **[--language]** ： ISO-639-3中的语言代码（即： ita代表意大利语， eng代表英语， deu代表德语... ）。<br>
     默认语言为eng ，对于./lib/lang.py中设置的默认语言， --language是可选的。<br>
     还支持ISO-639-1 2字母代码。
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  自定义模型Zip上传示例
-  （必须是包含必需模型文件的.zip文件。XTTSv2的示例： config.json、model.pth、vocab.json和ref.wav ）
-   - * * Linux/MacOS * *
+###  自定义模型 Zip 上传示例
+  （必须是包含必需模型文件的 .zip 文件。XTTSv2 示例：config.json、model.pth、vocab.json 和 ref.wav）
+   - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-   - Windows
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>注意：您的自定义模型的ref.wav始终是选择用于转换的声音</i>
+     <i>注意：自定义模型中的 ref.wav 始终是转换所使用的声音</i>
      
-- **<custom_model_path>路径至 `model_name.zip` 文件
-      其中必须包含（根据TTS引擎）所有必需文件<br>
+- **<custom_model_path>**：`model_name.zip` 文件的路径，
+      该文件必须包含（取决于 TTS 引擎）所有必需文件<br>
       （参见./lib/models.py ）。
 
-### 有关详细指南，其中列出了要使用的所有参数
-   - * * Linux/MacOS * *
+### 详细指南及所有可用参数列表
+   - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
      ```
-   - Windows
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - * *或适用于所有操作系统* *
+   - **或适用于所有操作系统**
     ```python
      app.py --help
     ```
@@ -387,16 +387,16 @@ SML tags available:
 ```
 
 注意：在gradio/gui模式下，要取消正在运行的转化，只需单击电子书上传组件中的[X]即可。
-提示：如果需要稍作停顿，请添加[pause:3]'持续3秒，以此类推。
+提示：如果需要更长的停顿，请添加 '[pause:3]' 表示 3 秒，以此类推。
 
 <a id="docker"></a>
 ### Docker
-1. * *克隆存储库* * ：
+1. **克隆仓库**：
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. * *构建容器* *
+2. **构建容器**
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ SML tags available:
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. * *运行容器： * *
+4. **运行容器：**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,31 +449,31 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- 注意： MPS不会在docker中公开，因此必须使用CPU
-- 注意：命名卷`e2a_venvs`将TTS引擎安装在自己的venv中（ GPT-SoVITS、Zonos、OmniVoice、F5-TTS、Orpheus、Spark-TTS、ChatTTS、OpenVoice、MeloTTS、CSM等）
-  跨容器运行，因此它们不会每次都重新安装。要重置它们： `docker volume rm e2a_venvs`
+- 注意：MPS 未在 Docker 中开放，因此必须使用 CPU
+- 注意：命名卷 `e2a_venvs` 会将 TTS 引擎保留在各自的 venv 中（GPT-SoVITS、Zonos、OmniVoice、F5-TTS、Orpheus、Spark-TTS、ChatTTS、OpenVoice、MeloTTS、CSM 等），
+  在多次运行容器之间保持不变，因此不会每次都重新安装。如需重置：`docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## 工具
-独立工具，使用e2a自己的Python （`python_env` ，由e2a的首次启动创建）运行。
+独立工具，使用 e2a 自带的 Python 运行（`python_env`，在首次启动 e2a 时创建）。
 
 <a id="preload-models"></a>
-### 离线安装预加载模型： `tools/preload_models.py`
-下载e2a使用的每个型号（ TTS引擎及其微调、语音转换、节、pyannote、demucs、
-音乐插曲、argos-翻译包、tesseract数据、jieba和声音）整合到一个文件夹中
-完全一样 `./models`，即USB密钥。在脱机机器上，将该文件夹复制到e2a的 `./models`
-和 `voices` 在其旁边写入e2a的文件夹 `./voices`.
-每个完成的作业都记录在 `<models_dir>/.e2a_downloads.json`：重新运行跳过已完成的内容并开始
-删除部分文件后再次切割（ ctrl-c、crash、unplugged key ）。
-   - * * Linux/MacOS * *
+### 为离线安装预加载模型：`tools/preload_models.py`
+将 e2a 使用的所有模型（TTS 引擎及其微调模型、语音转换、stanza、pyannote、demucs、
+音乐间奏、argos-translate 语言包、tesseract 数据、jieba 以及声音）下载到一个文件夹中，其结构
+与 `./models` 完全相同，例如 U 盘。在离线机器上，将该文件夹复制到 e2a 的 `./models`，
+并将写在其旁边的 `voices` 文件夹复制到 e2a 的 `./voices`。
+每个完成的任务都会记录在 `<models_dir>/.e2a_downloads.json` 中：再次运行时会跳过已完成的任务，
+并在删除部分文件后重新开始被中断的任务（ctrl-c、崩溃、U 盘被拔出）。
+   - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
      ```
-   - Windows
+   - **Windows**
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run`列出作业及其状态（完成、中断、待办） ，无需下载任何内容。
+   - `--dry_run` 列出所有任务及其状态（已完成、已中断、待处理），不下载任何内容。
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,38 +506,38 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### 从e2a翻译电子书： `translate_ebook.sh`/`translate_ebook.cmd`
-翻译EPUB/AZW3文件，整个文件夹（`-r` 子文件夹）或路径列表（`@list.txt`)
-使用Argos Translate calibre插件离线翻译成已翻译的电子书，
-`tools/argostranslate-calibre-plugin.zip`.独立于有声读物转换：它只写电子书。
-它需要calibre （ e2a已经要求）并在e2a的`python_env`和argos-translate软件包上运行：
-e2a已使用的语言对不会再次下载，缺失的语言对会在首次使用时下载。
-该插件在首次使用时安装到e2a自己的calibre配置文件(`./run`)中，您的calibre保持不变。
-`--to fra,ara,spa` 同时翻译成几种语言，每种语言一本电子书， `--to all` 变成每一个
-源达到的语言（`--from` ，否则每本书自己的语言；仅安装`--no_download` ）。
-`--list --from eng`列出了英语翻译成的语言（已安装、可下载或通过英语翻译为
-添加其他源
-其他格式calibre的`ebook-convert`读数（ PDF、DOCX、MOBI、TXT等）在
-第一语言，翻译为EPUB ： `--from` 当它们不支持任何语言时，就像PDF和TXT经常做的那样。
-没有`-o`或`--output_dir` ，每个翻译都保存在其书旁边为`<name>.<lang>.<ext>` ，
-并跳过一本翻译已经存在的书（`--overwrite`表示再次翻译）。
-E2a文件夹中的启动器运行`tools/translate_ebook.py`与`python_env` ，无需激活，
-从任何文件夹（相对路径是从开始的地方开始的） ：
-   - * * Linux/MacOS * *
+### 在 e2a 之外翻译电子书：`translate_ebook.sh` / `translate_ebook.cmd`
+将 EPUB/AZW3 文件、整个文件夹（`-r` 包含其子文件夹）或路径列表（`@list.txt`）
+离线翻译为电子书，使用的是随附于以下位置的 Argos Translate calibre 插件：
+`tools/argostranslate-calibre-plugin.zip`。独立于有声书转换：它只输出电子书。
+它需要 calibre（e2a 本身已需要），并使用 e2a 的 `python_env` 和 argos-translate 语言包运行：
+e2a 已使用的语言对不会重复下载，缺失的语言对会在首次使用时下载。
+插件会在首次使用时安装到 e2a 自己的 calibre 配置目录（`./run`）中，不会改动你的 calibre。
+`--to fra,ara,spa` 一次翻译成多种语言，每种语言一本电子书；`--to all` 则翻译成源语言
+可达的所有语言（`--from`，否则为每本书自身的语言；使用 `--no_download` 时仅限已安装的语言对）。
+`--list --from eng` 列出英语可以翻译成的语言（已安装、可下载，或对于其他源语言
+经由英语中转）。
+calibre 的 `ebook-convert` 可读取的其他格式（PDF、DOCX、MOBI、TXT 等）会在翻译第一种语言之前
+先转换为 EPUB（仅一次），再按 EPUB 翻译：当文件未标明语言时（PDF 和 TXT 常常如此）需要 `--from`。
+未指定 `-o` 或 `--output_dir` 时，每个译本都会以 `<name>.<lang>.<ext>` 保存在原书旁边，
+已有译本的书会被跳过（使用 `--overwrite` 重新翻译）。
+e2a 文件夹中的启动脚本会用 `python_env` 运行 `tools/translate_ebook.py`，无需激活任何环境，
+可在任意文件夹中运行（相对路径以启动位置为准）：
+   - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
-   - Windows
+   - **Windows**
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - 或者直接使用`python_env`的Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     （ Windows ： `python_env\Scripts\python.exe tools\translate_ebook.py ...` ）。从任何其他Python开始，
-     脚本再次以 `python_env`南
-   - * * Docker * * ：在e2a容器中运行，例如`docker exec -it <container> python3 tools/translate_ebook.py ...`
-     从容器中看到的路径。
-   - * *速度* * ： argostranslate根据自己的默认值运行（ CTranslate2选择线程和最快的计算类型，
-     cPU上的int8 ） ，而不是在e2a的float32中的1个线程上。设置`ARGOS_INTRA_THREADS`或`ARGOS_COMPUTE_TYPE`以覆盖它们。
+   - 或直接使用 `python_env` 的 Python：`./python_env/bin/python tools/translate_ebook.py ...`
+     （Windows：`python_env\Scripts\python.exe tools\translate_ebook.py ...`）。如果用其他 Python 启动，
+     脚本会自动改用 `python_env` 的 Python 重新启动。
+   - **Docker**：在 e2a 容器内运行，例如 `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     路径需使用容器内可见的路径。
+   - **速度**：argostranslate 使用其自身的默认设置（由 CTranslate2 选择线程数和最快的计算类型，
+     CPU 上为 int8），而不是 e2a 的单线程 float32。可设置 `ARGOS_INTRA_THREADS` 或 `ARGOS_COMPUTE_TYPE` 进行覆盖。
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ examples:
 作为官方ebook2audiobook微调模型，因此请联系我们，我们会将其添加到预设列表中。
 
 <a id="reverting-to-older-versions"></a>
-## 正在还原为旧版本
-可以找到发布- > [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## 回退到旧版本
+发布版本可在此找到 -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
@@ -766,7 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 ## 训练模型等的额外过度杀伤（所有支持的Coqui-tts模型和piper-tts在一个简单的命令中）
 - 有关这个@ DrewThomasson的信息，他目前正在开发这个， [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] 为所有coqui-tts模型制作一个易于使用的训练GUI ， [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) 完成于 [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] 为 [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) 中的所有 coqui-tts 模型制作易用的训练 GUI，已在 [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) 中完成
 
 
 ## 贡献者的Python代码规范化信息
