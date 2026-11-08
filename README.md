@@ -13,8 +13,14 @@ Use this tool responsibly and in accordance with all applicable laws.
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
 ### Thanks to support ebook2audiobook developers!
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
-[![JOB](https://img.shields.io/badge/JOB-607D8B?style=for-the-badge&logo=Litecoin&logoColor=white)](https://secure.job-currency.com/_spec/short_r.php/0BJCp4)
+<p>
+  <a href="https://ko-fi.com/athomasson2" target="_blank">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4" target="_blank">
+    <img src="https://img.shields.io/badge/Job--Currency-D4AF37?style=for-the-badge&logo=bitcoin&logoColor=black" alt="Job-Currency">
+  </a>
+</p>
 
 ### Run locally
 [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
