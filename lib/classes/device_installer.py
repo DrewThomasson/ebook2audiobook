@@ -94,26 +94,43 @@ class DeviceInstaller():
             return None
         return device_info if isinstance(device_info, dict) else None
 
+    def link_os_libgomp(self, env_dir:str, device_info:Union[dict, None])->None:
+        # Jetson (aarch64, glibc's small static TLS reserve): a wheel's own libgomp copy (auditwheel renames it, e.g.
+        # scikit_learn.libs/libgomp-947d5fa1.so.1.0.0) is a second libgomp in the process, which cannot load once torch's
+        # took the reserve ("cannot allocate memory in static TLS block"). Every <package>.libs copy in the environment
+        # (python_env or an engine's venv) becomes a link to the OS libgomp torch loads, so the process only ever has that
+        # one. Already linked copies are left alone: cheap enough to run at every engine start, which fixes existing venvs
+        if not device_info or device_info.get('os') != 'linux' or not ('jetpack' in device_info.get('note', '').lower() or device_info.get('name') == devices['JETSON']['proc']):
+            return
+        # libgomp.so.1 is the runtime soname (package libgomp1), libgomp.so only comes with a gcc dev package
+        libgomp_src = next((path for path in ('/usr/lib/aarch64-linux-gnu/libgomp.so.1', '/usr/lib/aarch64-linux-gnu/libgomp.so') if os.path.exists(path)), None)
+        if libgomp_src is None:
+            return
+        for libgomp_dst in glob(os.path.join(env_dir, 'lib', 'python*', 'site-packages', '*.libs', 'libgomp*')):
+            if os.path.islink(libgomp_dst) and os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
+                continue
+            msg = legends['msg_symlink_libgomp']
+            print(msg)
+            try:
+                # the link replaces the copy in one step: a failure never leaves the package without its libgomp
+                link_tmp = f'{libgomp_dst}.e2a'
+                if os.path.lexists(link_tmp):
+                    os.unlink(link_tmp)
+                os.symlink(libgomp_src, link_tmp)
+                os.replace(link_tmp, libgomp_dst)
+            except OSError as e:
+                error = legends['error_symlink_libgomp'].format(file=libgomp_dst, error=e)
+                print(error)
+
     def check_pyvenv(self, tag:str)->list:
-        # NATIVE only. jetson wheels are cp310 only, whatever the OS ships.
-        if tag in ['jetson51', 'jetson60', 'jetson61']:
-            return [3, 10]
-        # once python_env exists its interpreter is fixed, and .device_info.json is
-        # the record of what it was built with — so the file wins over any
-        # recomputation. Otherwise an OS python upgrade would silently disagree
-        # with the venv actually on disk. Delete .device_info.json to re-detect.
-        device_info = self.load_device_info()
-        if device_info is not None:
-            pyvenv = device_info.get('pyvenv')
-            if isinstance(pyvenv, list) and len(pyvenv) == 2:
-                return list(pyvenv)
-        # clamp the OS interpreter into [min_python_version, max_python_version].
-        os_version = tuple(sys.version_info[:2])
-        if os_version >= max_python_version:
-            return list(max_python_version)
-        if os_version < min_python_version:
+        # fixed per device, the same rule the launchers create python_env with: jetson wheels are cp310 only
+        # (min_python_version), every other device runs max_python_version, which all other prebuilt wheels (py-pkg
+        # +vulkan ones included) target. Never read from .device_info.json nor the OS python: it lives next to the
+        # app, so it outlives a python_env the launcher recreated, and an older venv's record would pick wheels the
+        # new venv cannot load
+        if tag in ['jetson5', 'jetson6', 'jetson7']:
             return list(min_python_version)
-        return list(os_version)
+        return list(max_python_version)
 
     def check_device_info(self, mode:str)->str:
         if mode == NATIVE:
@@ -135,10 +152,20 @@ class DeviceInstaller():
         elif mode == BUILD_DOCKER:
             name, tag, msg = self.check_hardware
             os_env = 'manylinux_2_28'
-            pyvenv = [3, 10] if tag in ['jetson51', 'jetson60', 'jetson61'] else list(max_python_version)
-            arch = archs['AARCH64'] if name in [devices['JETSON']['proc'], devices['MPS']['proc']] else self.arch
-            if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
+            pyvenv = self.check_pyvenv(tag)
+            arch = archs['AARCH64'] if name in [devices['JETSON']['proc'], devices['MPS']['proc']] or (self.system == systems['MACOS'] and self.arch == archs['ARM64']) else self.arch
+            # a macOS host's containers run in a VM without its GPU: no MPS, no Vulkan there
+            if name in [devices['JETSON']['proc'], devices['MPS']['proc']] or (self.system == systems['MACOS'] and name == devices['VULKAN']['proc']):
                 name = tag = devices['CPU']['proc']
+            elif name in [devices['CPU']['proc'], devices['VULKAN']['proc']]:
+                # the image is Linux with python max_python_version, so Vulkan is decided for that, not for the host's
+                # python: a Vulkan GPU on the host (passed in with --device=/dev/dri) and the wheels for the image
+                linux_arch = archs['X86_64'] if arch == archs['AMD64'] else arch
+                if (name == devices['VULKAN']['proc'] or self.vulkan_gpus()) and self.vulkan_wheels_ok(tuple(pyvenv), f'{os_env}_{linux_arch}'):
+                    name = tag = devices['VULKAN']['proc']
+                    arch = linux_arch
+                else:
+                    name = tag = devices['CPU']['proc']
             device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": re.sub(r'[^\w\s-]', '', msg.replace('!', ''))}
             try:
                 with open(device_info_json, 'w', encoding='utf-8') as f:
@@ -172,6 +199,73 @@ class DeviceInstaller():
             return version(pkg)
         except PackageNotFoundError:
             return False
+
+    def vulkan_gpus(self)->list:
+        # names of the real Vulkan GPUs the system loader sees: integrated, discrete or virtual.
+        # Software renderers (lavapipe/llvmpipe, SwiftShader: VK_PHYSICAL_DEVICE_TYPE_CPU) don't count
+        import ctypes
+        try:
+            vk = ctypes.CDLL('vulkan-1.dll' if self.system == systems['WINDOWS'] else 'libvulkan.so.1')
+        except OSError:
+            return []
+        class AppInfo(ctypes.Structure):
+            _fields_ = [('sType', ctypes.c_int), ('pNext', ctypes.c_void_p), ('pApplicationName', ctypes.c_char_p), ('applicationVersion', ctypes.c_uint32), ('pEngineName', ctypes.c_char_p), ('engineVersion', ctypes.c_uint32), ('apiVersion', ctypes.c_uint32)]
+        class InstInfo(ctypes.Structure):
+            _fields_ = [('sType', ctypes.c_int), ('pNext', ctypes.c_void_p), ('flags', ctypes.c_uint32), ('pApplicationInfo', ctypes.POINTER(AppInfo)), ('enabledLayerCount', ctypes.c_uint32), ('ppEnabledLayerNames', ctypes.c_void_p), ('enabledExtensionCount', ctypes.c_uint32), ('ppEnabledExtensionNames', ctypes.c_void_p)]
+        vk.vkCreateInstance.restype = ctypes.c_int
+        vk.vkCreateInstance.argtypes = [ctypes.POINTER(InstInfo), ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p)]
+        vk.vkEnumeratePhysicalDevices.restype = ctypes.c_int
+        vk.vkEnumeratePhysicalDevices.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint32), ctypes.c_void_p]
+        vk.vkGetPhysicalDeviceProperties.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        vk.vkDestroyInstance.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        app = AppInfo(0, None, b'e2a', 0, None, 0, (1 << 22) | (1 << 12))  # VK_STRUCTURE_TYPE_APPLICATION_INFO, Vulkan 1.1
+        info = InstInfo(1, None, 0, ctypes.pointer(app), 0, None, 0, None)  # VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO
+        inst = ctypes.c_void_p()
+        if vk.vkCreateInstance(ctypes.byref(info), None, ctypes.byref(inst)) != 0:
+            return []
+        names = []
+        try:
+            count = ctypes.c_uint32(0)
+            if vk.vkEnumeratePhysicalDevices(inst, ctypes.byref(count), None) == 0 and count.value:
+                devs = (ctypes.c_void_p * count.value)()
+                vk.vkEnumeratePhysicalDevices(inst, ctypes.byref(count), devs)
+                for dev in devs:
+                    props = ctypes.create_string_buffer(1024)  # VkPhysicalDeviceProperties is 824 bytes
+                    vk.vkGetPhysicalDeviceProperties(dev, props)
+                    if int.from_bytes(props.raw[16:20], 'little') in (1, 2, 3):  # deviceType: integrated, discrete, virtual
+                        names.append(props.raw[20:276].split(b'\0')[0].decode(errors='replace'))
+        finally:
+            vk.vkDestroyInstance(inst, None)
+        return names
+
+    def vulkan_wheels_ok(self, py:tuple, plat:str)->bool:
+        # the +vulkan torch / torchaudio (and torchcodec on macOS) wheels exist on py-pkg for this Python and platform
+        # (e.g. (3, 12), 'manylinux_2_28_x86_64'). A GitHub release asset answers 302 (redirect to its storage) when
+        # present, 404 when not: no redirect is followed, nothing is downloaded
+        import urllib.request, urllib.error
+        entry = torch_matrix.get(devices['VULKAN']['proc'])
+        if not entry:
+            return False
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, *args, **kwargs):
+                return None
+        opener = urllib.request.build_opener(NoRedirect)
+        torch_ver = entry['last']
+        py_tag = f'cp{py[0]}{py[1]}'
+        wheel_end = f"{devices['VULKAN']['proc']}-{py_tag}-{py_tag}-{plat}.whl"
+        urls = [f'{default_jetson_url}/torch/torch-{torch_ver}%2B{wheel_end}', f'{default_jetson_url}/torchaudio/torchaudio-{self.torchaudio_version(torch_ver)}%2B{wheel_end}']
+        if plat.startswith('macosx') and entry.get('codec'):
+            urls.append(f"{default_jetson_url}/torchcodec/torchcodec-{entry['codec']}%2B{wheel_end}")
+        for url in urls:
+            try:
+                code = opener.open(urllib.request.Request(url, method='HEAD'), timeout=15).status
+            except urllib.error.HTTPError as e:
+                code = e.code
+            except Exception:
+                return False
+            if code not in (200, 302):
+                return False
+        return True
 
     def detect_platform_tag(self)->str:
         if self.system == systems['WINDOWS']:
@@ -278,18 +372,16 @@ class DeviceInstaller():
             if not m1 or not m2:
                 msg = legends['msg_jetpack_unknown']
                 return ('unknown', msg)
+            # L4T major -> JetPack major: R35 = 5, R36 = 6, R38+ = 7 (tags jetson5 / jetson6 / jetson7)
             l4t_major = int(m1.group(1))
-            rev = m2.group(1)
-            parts = rev.split('.')
-            rev_major = int(parts[0])
             if l4t_major < 35:
                 msg = legends['msg_jetpack_old'].format(version=l4t_major)
                 return ('unsupported', msg)
             if l4t_major == 35:
-                return ('51', msg)
-            if rev_major == 2:
-                return ('60', msg)
-            return ('61', msg)
+                return ('5', msg)
+            if l4t_major == 36:
+                return ('6', msg)
+            return ('7', msg)
 
         def has_amd_gpu_pci():
             if self.system == systems['MACOS']:
@@ -457,6 +549,26 @@ class DeviceInstaller():
                 return False
             return False
 
+        def vulkan_ok()->str:
+            # the Vulkan GPU name when the +vulkan torch applies here, else ''. Needs this OS / arch in torch_matrix,
+            # a real Vulkan GPU (macOS: every Mac on 11+ has a Metal GPU, the wheel brings MoltenVK), and the wheels for
+            # this venv's Python on py-pkg. Already installed: no network, so an offline start keeps the Vulkan torch
+            entry = torch_matrix.get(devices['VULKAN']['proc'])
+            arch_tag = self.detect_arch_tag()
+            if not entry or self.system not in entry['os'] or arch_tag not in entry['arch']:
+                return ''
+            if self.system == systems['MACOS']:
+                gpu = 'Metal (MoltenVK)'
+            else:
+                gpus = self.vulkan_gpus()
+                if not gpus:
+                    return ''
+                gpu = gpus[0]
+            torch_ver = entry['last']
+            if self.get_package_version('torch') == f"{torch_ver}+{devices['VULKAN']['proc']}":
+                return gpu
+            return gpu if self.vulkan_wheels_ok(self.python_version, f'{self.detect_platform_tag()}_{arch_tag}') else ''
+
         def _normalize_version(v:str)->tuple:
             '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
             m = re.search(r'(\d+)\.(\d+)(?:\.(\d+))?', v or '')
@@ -476,7 +588,7 @@ class DeviceInstaller():
             tag_letters = re.match(r'[a-zA-Z]+', forced_tag)
             if tag_letters:
                 tag_letters = tag_letters.group(0).lower()
-                name = devices['CUDA']['proc'] if tag_letters == 'cu' else devices['ROCM']['proc'] if tag_letters == devices['ROCM']['proc'] else devices['JETSON']['proc'] if tag_letters == devices['JETSON']['proc'] else devices['XPU']['proc'] if tag_letters == devices['XPU']['proc'] else devices['MPS']['proc'] if tag_letters == devices['MPS']['proc'] else devices['CPU']['proc']
+                name = devices['CUDA']['proc'] if tag_letters == 'cu' else devices['ROCM']['proc'] if tag_letters == devices['ROCM']['proc'] else devices['JETSON']['proc'] if tag_letters == devices['JETSON']['proc'] else devices['XPU']['proc'] if tag_letters == devices['XPU']['proc'] else devices['MPS']['proc'] if tag_letters == devices['MPS']['proc'] else devices['VULKAN']['proc'] if tag_letters == devices['VULKAN']['proc'] else devices['CPU']['proc']
                 devices[name.upper()]['found'] = True
                 tag = forced_tag
                 if forced_tag in ['cu128', 'cu129', 'rocm7.2.1'] and self.system == systems['WINDOWS']:
@@ -954,7 +1066,7 @@ class DeviceInstaller():
                 # 1) Level Zero / SYCL runtime detection via ctypes (primary)
                 try:
                     import ctypes
-                    libze = None
+                    lib_ze = None
                     if os.name == 'nt':
                         candidates = ['ze_loader.dll']
                         oneapi_root = os.environ.get('ONEAPI_ROOT', '')
@@ -987,7 +1099,7 @@ class DeviceInstaller():
                     # next candidate and keep the last failure for the note.
                     for lib_name in candidates:
                         try:
-                            libze = ctypes.CDLL(lib_name)
+                            lib_ze = ctypes.CDLL(lib_name)
                         except OSError:
                             continue
                         try:
@@ -1169,6 +1281,22 @@ class DeviceInstaller():
                 name = devices['MPS']['proc']
                 tag = devices['MPS']['proc']
             # ============================================================
+            # VULKAN
+            # ============================================================
+            # CUDA, ROCm, XPU and Jetson keep their torch. Otherwise (MPS, or nothing usable found, including a GPU
+            # whose CUDA/ROCm runtime did not answer) the +vulkan torch is used when vulkan_ok(), ahead of MPS: the
+            # +vulkan wheels keep MPS on Apple Silicon, so MPS stays found and selectable. Intel macOS always takes it
+            if tag in (None, devices['MPS']['proc']):
+                vulkan_gpu = vulkan_ok()
+                if not vulkan_gpu and self.system == systems['MACOS'] and self.detect_arch_tag() == archs['X86_64']:
+                    # PyTorch has no Intel macOS wheel after 2.2.2: the +vulkan build is the only current torch there
+                    vulkan_gpu = 'Metal (MoltenVK)'
+                if vulkan_gpu:
+                    devices['VULKAN']['found'] = True
+                    name = devices['VULKAN']['proc']
+                    tag = devices['VULKAN']['proc']
+                    msg = legends['msg_vulkan_selected'].format(gpu=vulkan_gpu)
+            # ============================================================
             # CPU
             # ============================================================
             if tag is None:
@@ -1276,9 +1404,11 @@ class DeviceInstaller():
         packages.append(self.select_pkg('transformers'))
         if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
             overrides['llvmlite'] = 'llvmlite==0.44.0'
-            overrides['numba'] = 'numba==0.61.0'
+            #overrides['numba'] = 'numba==0.61.0'
+            #overrides['pymupdf'] = 'pymupdf<2.0'
             packages.append(overrides['llvmlite'])
-            packages.append(overrides['numba'])
+            #packages.append(overrides['numba'])
+            #packages.append(overrides['pymupdf'])
         try:
             with open(requirements_file, 'r') as f:
                 contents = f.read().replace('\r', '\n')
@@ -1297,6 +1427,8 @@ class DeviceInstaller():
                         if overrides[head] is None:
                             continue
                         pkg = overrides[head]
+                    if pkg in packages:
+                        continue
                     packages.append(pkg)
             missing_packages = []
             for package in packages:
@@ -1411,6 +1543,9 @@ class DeviceInstaller():
                 msg = legends['msg_installing_missing']
                 print(msg)
                 base_cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir)
+                base_cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir)
+                if self.system == systems['MACOS'] and platform.machine().lower() in ('x86_64', 'amd64'):
+                    base_cmd += ['--only-binary', 'llvmlite,numba,pymupdf']
                 pins = [spec for spec in overrides.values() if spec]
                 for dpkg in self.device_pkgs:
                     try:
@@ -1576,7 +1711,7 @@ class DeviceInstaller():
         #   torch <  2.9 -> no torchcodec     -> pyannote 3.4.0 -> hub 1.x (use_auth_token via sitecustomize)
         # transformers itself is not part of this split: it follows the torch floor,
         # see select_pkg('transformers') and transformers_caps.
-        # torch_matrix tags with codec '' (cu118/cu121/cu124, rocm<=6.2.4, jetson*)
+        # torch_matrix tags with codec '' (cu118/cu121/cu124, rocm<=6.2.4, jetson5/jetson6)
         # top out below 2.9 and must stay on the old branch.
         # (2, 9) is the same boundary _needs_reinstall() uses to decide whether
         # torchcodec gets installed at all.
@@ -1706,7 +1841,8 @@ class DeviceInstaller():
     def finalize_exclusive_packages(self)->int:
         try:
             for pkg, choices in self.exclusive_pkgs.items():
-                keep = re.split(r'[<>=!\[;]', self.select_pkg(pkg), 1)[0].strip()
+                spec = self.select_pkg(pkg)
+                keep = re.split(r'[<>=!\[;]', spec, 1)[0].strip()
                 installed = [choice for choice in choices if self.get_package_version(choice)]
                 losers = [choice for choice in installed if choice != keep]
                 # also repair an env already hollowed out by a previous swap
@@ -1718,7 +1854,8 @@ class DeviceInstaller():
                 if installed:
                     subprocess.call(self._uv_pip('uninstall', *installed))
                 self.clean_pkg_dir(pkg)
-                subprocess.check_call(self._uv_pip('install', '--cache-dir', self.pip_cache_dir, keep))
+                # install the full spec, not the bare name: keeps caps like onnxruntime-gpu<1.27 (CUDA 12)
+                subprocess.check_call(self._uv_pip('install', '--cache-dir', self.pip_cache_dir, spec))
             return 0
         except Exception as e:
             error = f'finalize_exclusive_packages() error: {e}'
@@ -1791,17 +1928,14 @@ class DeviceInstaller():
                     tag = device_info.get('tag')
                     if tag in ['unknown','unsupported']:
                         return 0
-                    key = 'last' if self.python_version >= (3, 12) else 'base'
                     matrix_entry = torch_matrix.get(tag)
                     if not matrix_entry:
                         error = legends['error_no_torch_matrix'].format(tag=tag)
                         print(error)
                         return 1
-                    torch_version_matrix = matrix_entry.get(key) or matrix_entry['base']
+                    # one python per device (check_pyvenv), so one torch version per row: 'last'
+                    torch_version_matrix = matrix_entry['last']
                     torchcodec_version_matrix = matrix_entry.get('codec') or ''
-                    if device_info['os'] == 'macosx_11_0' and device_info['arch'] == archs['X86_64']:
-                        torch_version_matrix = '2.2.2'
-                        torchcodec_version_matrix = ''  # 2.2.2 < 2.9, no torchcodec
                     torch_version_current_full = self.get_package_version('torch')
                     torch_version_current_base = None
                     current_tag = None
@@ -1818,7 +1952,6 @@ class DeviceInstaller():
                             print(msg)
                             os_env = device_info['os']
                             arch = device_info['arch']
-                            toolkit_version = ''.join(c for c in tag if c.isdigit())
                             tag_dir = 'cpu' if device_info['name'] == devices['MPS']['proc'] else tag
                             py_major, py_minor = device_info['pyvenv']
                             tag_py = f'cp{py_major}{py_minor}'
@@ -1832,12 +1965,18 @@ class DeviceInstaller():
                             subprocess.check_call(self._uv_pip('install', '--no-cache', 'filelock', 'typing-extensions', 'jinja2', 'fsspec', 'networkx', 'sympy'))
                             if device_info['name'] == devices['JETSON']['proc']:
                                 url = default_jetson_url
-                                torch_pkg = f"{url}/torch-v{toolkit_version}/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
-                                torchaudio_pkg = f"{url}/torchaudio-v{toolkit_version}/torchaudio-{self.torchaudio_version(torchaudio_version_matrix)}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
+                                torch_pkg = f"{url}/torch/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
+                                torchaudio_pkg = f"{url}/torchaudio/torchaudio-{self.torchaudio_version(torchaudio_version_matrix)}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
                                 subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torch_pkg))
                                 subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torchaudio_pkg))
                                 subprocess.check_call(self._uv_pip('install', '--no-cache', 'scikit-learn'))
                                 subprocess.check_call(self._uv_pip('install', '--no-cache', 'scipy'))
+                            elif device_info['name'] == devices['VULKAN']['proc']:
+                                # +vulkan torch / torchaudio from py-pkg (build-torch-vulkan.sh / .cmd)
+                                url = default_jetson_url
+                                torch_pkg = f"{url}/torch/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
+                                torchaudio_pkg = f"{url}/torchaudio/torchaudio-{torchaudio_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
+                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torch_pkg, torchaudio_pkg))
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
                                 url = default_pytorch_amd_url
                                 real_tag = tag.replace('win-', '')
@@ -1860,17 +1999,28 @@ class DeviceInstaller():
                                 subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torch_pkg, torchaudio_pkg))
                             else:
                                 url = default_pytorch_url
+                                url_nightly = default_pytorch_nightly_url
+                                # uv gives --extra-index-url priority over --index-url and by default stops at the
+                                # first index that has the package: without unsafe-best-match a stable pin that the
+                                # nightly index lacks (e.g. torch==2.2.2 on intel macOS) finds no version at all
                                 torch_url_tag = tag_dir
-                                torchaudio_url_tag = 'cu130' if tag_dir.startswith('cu') and tag_dir[2:].isdigit() and int(tag_dir[2:]) > 130 else tag_dir
+                                torchaudio_url_tag = tag_dir
                                 if self.system == systems['WINDOWS'] and tag.startswith('win-cu'):
                                     torch_url_tag = tag.replace('win-', '')
-                                subprocess.check_call(self._uv_pip('install', '--reinstall-package', 'torch', '--no-cache', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}'))
-                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchaudio=={torchaudio_version_matrix}', '--index-url', f'{url}/{torchaudio_url_tag}'))
+                                subprocess.check_call(self._uv_pip('install', '--reinstall-package', 'torch', '--no-cache', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}', '--extra-index-url', f'{url_nightly}/{torch_url_tag}', '--index-strategy', 'unsafe-best-match'))
+                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchaudio=={torchaudio_version_matrix}', '--index-url', f'{url}/{torchaudio_url_tag}', '--extra-index-url', f'{url_nightly}/{torchaudio_url_tag}', '--index-strategy', 'unsafe-best-match'))
                             if not self.check_numpy():
                                 return 1
                             #### torchcodec installation
                             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and torchcodec_version_matrix:
-                                if is_cpu_aarch64_linux:
+                                if device_info['name'] == devices['JETSON']['proc']:
+                                    # jetson7 (torch >= 2.9): no aarch64 torchcodec on PyPI, built like torch/torchaudio
+                                    torchcodec_wheel_url = f"{default_jetson_url}/torchcodec/torchcodec-{torchcodec_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
+                                    rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torchcodec_wheel_url))
+                                elif device_info['name'] == devices['VULKAN']['proc'] and self.system == systems['MACOS']:
+                                    torchcodec_wheel_url = f"{default_jetson_url}/torchcodec/torchcodec-{torchcodec_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
+                                    rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torchcodec_wheel_url))
+                                elif is_cpu_aarch64_linux:
                                     torchcodec_wheel_url = f"{default_torchcodec_arm_url}/{tag}/torchcodec-{torchcodec_version_matrix}%2B{tag}-{tag_py}-{tag_py}-manylinux_2_27_{arch}.{os_env}_{arch}.whl"
                                     rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torchcodec_wheel_url))
                                 else:
@@ -1879,7 +2029,7 @@ class DeviceInstaller():
                                         print(msg)
                                         rc = subprocess.call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', f'torchcodec-xpu', 'torchlib-xpu', '--extra-index-url', f'{default_pytorch_url}/xpu'))
                                     else:
-                                        torchcodec_index_url = f'{default_pytorch_url}/cpu' if device_info['name'] == devices['ROCM']['proc'] else f'{default_pytorch_url}/{tag_dir}'
+                                        torchcodec_index_url = f'{default_pytorch_url}/cpu' if device_info['name'] in [devices['ROCM']['proc'], devices['VULKAN']['proc']] else f'{default_pytorch_url}/{tag_dir}'
                                         rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url))
                                 if rc == 0:
                                     try:
@@ -1900,24 +2050,7 @@ class DeviceInstaller():
                             error = legends['error_torch_install'].format(e=e)
                             print(error)
                             return 1
-                    if device_info['os'] == 'linux' and ('jetpack' in device_info.get('note', '').lower() or device_info['name'] == devices['JETSON']['proc']):
-                        libgomp_src = '/usr/lib/aarch64-linux-gnu/libgomp.so'
-                        if os.path.exists(libgomp_src):
-                            libs_list = ['ctranslate2.libs', 'scikit_learn.libs']
-                            libs_dir = os.path.join('python_env', 'lib', f'python{sys.version_info.major}.{sys.version_info.minor}', 'site-packages')
-                            for lib in libs_list:
-                                lib_path = os.path.join(libs_dir, lib)
-                                if os.path.isdir(lib_path):
-                                    for libgomp_dst in glob(os.path.join(lib_path, 'libgomp*')):
-                                        if os.path.islink(libgomp_dst):
-                                            if os.path.realpath(libgomp_dst) == os.path.realpath(libgomp_src):
-                                                continue
-                                            os.unlink(libgomp_dst)
-                                        else:
-                                            os.unlink(libgomp_dst)
-                                        msg = legends['msg_symlink_libgomp']
-                                        print(msg)
-                                        os.symlink(libgomp_src, libgomp_dst)
+                    self.link_os_libgomp('python_env', device_info)
                     gpu_info = _probe_gpus()
                     device_info_dict['gpu_count'] = gpu_info['count']
                     device_info_dict['gpu_backend'] = gpu_info['backend']

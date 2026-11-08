@@ -386,9 +386,6 @@ span[data-testid="block-info"] {
 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
 	display: none !important;
 }               
-#gr_fine_tuned_list {
-	height: 80px !important;
-}
 #gr_voice_list {
 	height: 60px !important;
 }

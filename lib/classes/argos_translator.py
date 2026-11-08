@@ -1,5 +1,8 @@
 import os, time, threading, regex as re
-import argostranslate.package, argostranslate.translate
+import argostranslate.package, argostranslate.translate, argostranslate.settings
+# the package index lives beside the packages in models/argos-translate (argos defaults to ~/.local/share), so a copied
+# or offline models folder still lists its pairs; offline, update_package_index() only logs and keeps this file
+argostranslate.settings.local_package_index = argostranslate.settings.package_data_dir.parent / 'index.json'
 
 from iso639 import Lang
 from lib.conf_lang import language_mapping

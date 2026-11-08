@@ -1,0 +1,67 @@
+# .github/workflows/Legends-i18n.yml
+# Syncs lib/lang/legends_<iso3>.py with lib/lang/legends_eng.py whenever the English
+# legends or the language list (legends_iso1 in lib/lang/__init__.py) change.
+# Loop-safe: triggers only on legends_eng.py and __init__.py; the bot commit touches
+# the other legends_<iso3>.py files and tools/legends_i18n/* only, so it never re-triggers itself.
+# Partial progress (MyMemory quota reached) is committed before the job is marked failed;
+# re-running the workflow resumes from the keys still missing.
+# No marketplace actions used (repo policy restricts to owner-only actions).
+
+name: Sync legends translations
+
+on:
+  push:
+    branches: [main, 'v*']
+    paths:
+      - 'lib/lang/legends_eng.py'
+      - 'lib/lang/__init__.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: legends-i18n-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MYMEMORY_EMAIL: ${{ secrets.MYMEMORY_EMAIL }}
+    steps:
+      - name: Checkout branch tip (manual, no actions)
+        run: |
+          git init .
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "$GITHUB_REF_NAME"
+          git checkout --force -B "$GITHUB_REF_NAME" FETCH_HEAD
+
+      - name: Update translations
+        id: sync
+        run: |
+          set +e
+          python3 tools/legends_i18n/update_legends.py
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add lib/lang tools/legends_i18n/baseline_legends_eng.py
+          if git diff --cached --quiet; then
+            echo 'No translation changes to commit'
+            exit 0
+          fi
+          git commit -m 'i18n: sync legends translations with English source [skip ci]'
+          if ! git push origin "HEAD:${GITHUB_REF_NAME}"; then
+            echo "::error::${GITHUB_REF_NAME} moved during the run, translations not pushed. Re-run this workflow to sync."
+            exit 1
+          fi
+
+      - name: Report incomplete sync
+        if: steps.sync.outputs.rc != '0'
+        run: |
+          echo "::error::update_legends.py exited with ${{ steps.sync.outputs.rc }}: some keys are still missing (see the Update translations log). Re-run this workflow later to resume."
+          exit 1

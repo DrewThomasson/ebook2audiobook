@@ -8,7 +8,7 @@ ARG PYTHON_VERSION=3.12
 # and its Level Zero loader (libze1 1.8.12) predates zesInit.
 FROM python:${PYTHON_VERSION}-slim-trixie
 
-ARG APP_VERSION=26.10.1
+ARG APP_VERSION=26.11.1
 ARG DEVICE_TAG=cu130
 ARG DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu130", "note": "default device"}'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
@@ -42,7 +42,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	DOCKER_DEVICE_STR=${DOCKER_DEVICE_STR} \
 	PIP_BREAK_SYSTEM_PACKAGES=1 \
 	PATH="/root/.cargo/bin:${PATH}" \
-	IN_DOCKER=1
+	IN_DOCKER=1 \
+	UV_PYTHON_INSTALL_DIR="/app/lib/classes/tts_engines/venvs/.python" \
+	UV_LINK_MODE="copy"
 
 WORKDIR /app
 
@@ -140,7 +142,22 @@ RUN set -eux; \
 		|| { echo 'no OpenCL ICD registered: the UR opencl adapter has zero devices and torch.stft fails CL_DEVICE_NOT_FOUND'; exit 1; }; \
 	ls -1 /etc/OpenCL/vendors/
 
-RUN python3 -m pip install --no-cache-dir --upgrade pip 'setuptools<82' wheel
+# Vulkan user-mode drivers — runs only when DEVICE_TAG=vulkan. The GPU comes in with --device=/dev/dri (compose
+# profile vulkan), but like OpenCL above, the driver side lives in the image:
+# libvulkan1           the system loader: native Vulkan engine builds (ZONOS2) load it; the +vulkan torch wheel
+#                      carries its own copy
+# mesa-vulkan-drivers  the ICDs behind /dev/dri: RADV (AMD), ANV (Intel), NVK (NVIDIA on nouveau)
+# vulkan-tools         vulkaninfo, to check the GPU from inside the container
+RUN set -eux; \
+	if [ "${DEVICE_TAG}" != "vulkan" ]; then \
+		echo "DEVICE_TAG='${DEVICE_TAG}' — skipping Vulkan drivers"; exit 0; \
+	fi; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends libvulkan1 mesa-vulkan-drivers vulkan-tools; \
+	rm -rf /var/lib/apt/lists/*; \
+	ls -1 /usr/share/vulkan/icd.d/
+
+RUN python3 -m pip install --no-cache-dir --upgrade pip 'setuptools<82' wheel uv
 
 # Rust toolchain
 RUN set -eux; \

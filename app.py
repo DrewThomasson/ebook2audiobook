@@ -159,7 +159,7 @@ Gradio/GUI:
 ebook2audiobook.cmd
 Headless mode:
 ebook2audiobook.cmd --headless --ebook '/path/to/file' --language eng
-Linux/Mac natvie mode:
+Linux/Mac native mode:
 Gradio/GUI:
 ./ebook2audiobook.command
 Headless mode:
@@ -182,41 +182,42 @@ Podman Compose:
 Docker run image:
 Gradio/GUI:
 CPU:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
 CUDA:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
 ROCM:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
 XPU:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
 JETSON:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" --runtime nvidia  --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[51/60/61 etc...]
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc...]
 Headless mode:
 CPU:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 CUDA:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 ROCM:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 XPU:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 JETSON:
-{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+{wsl_cmd} docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 Docker Compose (i.e. cuda 12.8:
 Run Gradio GUI:
-{wsl_cmd} {wsl_extra} docker compose --profile gpu up --no-log-prefix
+{wsl_cmd} {wsl_extra} docker compose --profile cuda up --no-log-prefix
 Run Headless mode:
-{wsl_cmd} {wsl_extra} docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+{wsl_cmd} {wsl_extra} docker compose --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 Podman Compose (i.e. cuda 12.8:
 Run Gradio GUI:
-{wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu up
+{wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile cuda up
 Run Headless mode:
-{wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+{wsl_cmd} {wsl_extra} podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 SML tags available:
 [break] — silence (random range 0.3–0.6 sec.)
 [pause] — silence (random range 1.0–1.6 sec.)
 [pause:N] — fixed pause (N sec.)
 [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+[emotion:sad]...[/emotion] — Zonos only: emotion for a passage (happy, sad, angry, surprised, valence, arousal; also fear, disgust, neutral) or a mix like [emotion:sad=0.7,angry=0.2]; other engines ignore it
 ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
@@ -228,10 +229,10 @@ SML tags available:
     all_group.add_argument(cli_options[1], type=str, help='Optional. The only values are: podman and compose. without this option standard docker buildx is used.')
     parser.add_argument(cli_options[2], type=str, help='Session to resume the conversion in case of interruption, crash, or reuse of custom models and custom cloning voices.')
 
-    gui_group = parser.add_argument_group('**** The following option are for gradio/gui mode only', 'Optional')
+    gui_group = parser.add_argument_group('**** The following option is for gradio/gui mode only', 'Optional')
     gui_group.add_argument(cli_options[3], action='store_true', help='''Enable a public shareable Gradio link.''')
 
-    headless_group = parser.add_argument_group('**** The followin cli_options are for --headless mode only')
+    headless_group = parser.add_argument_group('**** The following options are for --headless mode only')
     headless_group.add_argument(cli_options[4], action='store_true', help='Run the script in headless mode')
     headless_group.add_argument(cli_options[5], type=str, help='Path to the ebook file for conversion. Cannot be used when --ebooks_dir or --text is present.')
     headless_group.add_argument(cli_options[6], type=str, help='Relative or absolute path of the directory containing the files to convert. Cannot be used when --ebook or --text is present.')
@@ -252,24 +253,25 @@ Keys may be absolute paths or basenames. Example:
 Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.''')
     headless_optional_group.add_argument(cli_options[13], type=str, default=TTS_ENGINES['XTTS'], choices=tts_engine_list_keys+tts_engine_list_values, help=f'''Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
 Default depends on the selected language. The tts engine should be compatible with the chosen language''')
-    headless_optional_group.add_argument(cli_options[14], type=str, default=None, help='Path to the custom model zip file cntaining mandatory model files. Please refer to ./lib/models.py')
+    headless_optional_group.add_argument(cli_options[14], type=str, default=None, help='Path to the custom model zip file containing mandatory model files. Please refer to ./lib/models.py')
     headless_optional_group.add_argument(cli_options[15], type=str, default=default_fine_tuned, help='Fine tuned model path. Default is builtin model.')
     headless_optional_group.add_argument(cli_options[16], type=str, default=default_output_format, help=f'Output audio format. Default is {default_output_format} set in ./lib/conf.py')
     headless_optional_group.add_argument(cli_options[17], type=str, default=default_output_channel, help=f'Output audio channel. Default is {default_output_channel} set in ./lib/conf.py')
-    headless_optional_group.add_argument(cli_options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['temperature'], help=f"""(xtts only, optional) Temperature for the model.
+    headless_optional_group.add_argument(cli_options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['temperature'], help=f"""(xtts, gptsovits, orpheus, sparktts, chattts and csm, optional) Temperature for the model. gptsovits default {default_engine_settings[TTS_ENGINES['GPTSOVITS']]['temperature']}, orpheus default {default_engine_settings[TTS_ENGINES['ORPHEUS']]['temperature']}, sparktts default {default_engine_settings[TTS_ENGINES['SPARKTTS']]['temperature']}, chattts default {default_engine_settings[TTS_ENGINES['CHATTTS']]['temperature']}, csm default {default_engine_settings[TTS_ENGINES['CSM']]['temperature']}.
 Default to config.json model. Higher temperatures lead to more creative outputs.""")
     headless_optional_group.add_argument(cli_options[19], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder.
 Default to config.json model. Not applied to custom models.""")
     headless_optional_group.add_argument(cli_options[20], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[21], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself.
+    headless_optional_group.add_argument(cli_options[21], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty'], help=f"""(xtts, gptsovits, orpheus and chattts, optional) A penalty that prevents the autoregressive decoder from repeating itself. gptsovits default {default_engine_settings[TTS_ENGINES['GPTSOVITS']]['repetition_penalty']}, orpheus default {default_engine_settings[TTS_ENGINES['ORPHEUS']]['repetition_penalty']} (1.1 at least keeps it stable), chattts default {default_engine_settings[TTS_ENGINES['CHATTTS']]['repetition_penalty']}.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[22], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_k'], help=f"""(xtts only, optional) Top-k sampling.
+    headless_optional_group.add_argument(cli_options[22], type=int, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_k'], help=f"""(xtts, gptsovits, sparktts, chattts and csm, optional) Top-k sampling. gptsovits default {default_engine_settings[TTS_ENGINES['GPTSOVITS']]['top_k']}, sparktts default {default_engine_settings[TTS_ENGINES['SPARKTTS']]['top_k']}, chattts default {default_engine_settings[TTS_ENGINES['CHATTTS']]['top_k']}, csm default {default_engine_settings[TTS_ENGINES['CSM']]['top_k']}.
 Lower values mean more likely outputs and increased audio generation speed.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[23], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_p'], help=f"""(xtts only, optional) Top-p sampling.
+    headless_optional_group.add_argument(cli_options[23], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['top_p'], help=f"""(xtts, gptsovits, orpheus, sparktts and chattts, optional) Top-p sampling. gptsovits default {default_engine_settings[TTS_ENGINES['GPTSOVITS']]['top_p']}, orpheus default {default_engine_settings[TTS_ENGINES['ORPHEUS']]['top_p']}, sparktts default {default_engine_settings[TTS_ENGINES['SPARKTTS']]['top_p']}, chattts default {default_engine_settings[TTS_ENGINES['CHATTTS']]['top_p']}.
 Lower values mean more likely outputs and increased audio generation speed. Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[24], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation.
+    headless_optional_group.add_argument(cli_options[24], type=float, default=default_engine_settings[TTS_ENGINES['XTTS']]['speed'], help=f"""(xtts, gptsovits and chattts, optional) Speed factor for the speech generation. gptsovits default {default_engine_settings[TTS_ENGINES['GPTSOVITS']]['speed']}.
+chattts takes its own speed level instead, an integer from 0 (slowest) to 9, default {default_engine_settings[TTS_ENGINES['CHATTTS']]['speed']}.
 Default to config.json model.""")
     headless_optional_group.add_argument(cli_options[25], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient.
 Default to config.json model.""")
@@ -277,6 +279,15 @@ Default to config.json model.""")
 Default to config.json model.""")
     headless_optional_group.add_argument(cli_options[27], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model.
 Default to config.json model.""")
+    headless_optional_group.add_argument(cli_options[37], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'], help=f"""(zonos only, optional) Speaking rate: 0 lets the model pick its own pace,
+otherwise about 10 is slow, 15 is natural narration, 30 is very fast. Default {default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate']}.""")
+    headless_optional_group.add_argument(cli_options[38], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'], help=f"""(zonos only, optional) Emotion strength, multiplier on the emotion mix (0-2).
+Default {default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']}.""")
+    headless_optional_group.add_argument(cli_options[39], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'], help=f"""(zonos only, optional) Emotion guidance, 1.0 is off, about 1.5 makes the emotion clearer (1-3).
+Default {default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']}.""")
+    headless_optional_group.add_argument(cli_options[40], type=str, nargs='?', const=True, default=None, help=f"""(zonos only, optional) Enable emotion. Alone, every emotion is at 0 (the plain cloned voice);
+followed by a mix like happy=0.5,sad=0.2 it uses that mix. Names: happy, sad, angry, surprised (0 to 1),
+valence, arousal (-1 to 1).""")
     headless_optional_group.add_argument(cli_options[28], type=str, help='Path to the output directory. Default is set in ./lib/conf.py')
     headless_optional_group.add_argument(cli_options[29], type=str, default='', help='Audiobookshelf server URL (e.g. http://localhost:13378).')
     headless_optional_group.add_argument(cli_options[30], type=str, default='', help='Audiobookshelf API token.')
@@ -387,6 +398,45 @@ Default to config.json model.""")
             args['xtts_enable_text_splitting'] = False
             args['bark_text_temp'] = args['text_temp']
             args['bark_waveform_temp'] = args['waveform_temp']
+            args['zonos_speaking_rate'] = args['speaking_rate']
+            args['zonos_emotion_strength'] = args['emotion_strength']
+            args['zonos_emotion_cfg_scale'] = args['emotion_cfg_scale']
+            # shared with xtts: the argparse defaults above are xtts' values, so gptsovits takes an
+            # option only when it is on the command line, otherwise its own default
+            for option, key in ((cli_options[24], 'speed'), (cli_options[22], 'top_k'), (cli_options[23], 'top_p'), (cli_options[18], 'temperature'), (cli_options[21], 'repetition_penalty')):
+                args[f'gptsovits_{key}'] = args[key] if option in sys.argv else default_engine_settings[TTS_ENGINES['GPTSOVITS']][key]
+            # same for orpheus (its speaker is the --fine_tuned preset)
+            for option, key in ((cli_options[23], 'top_p'), (cli_options[18], 'temperature'), (cli_options[21], 'repetition_penalty')):
+                args[f'orpheus_{key}'] = args[key] if option in sys.argv else default_engine_settings[TTS_ENGINES['ORPHEUS']][key]
+            # same for sparktts
+            for option, key in ((cli_options[22], 'top_k'), (cli_options[23], 'top_p'), (cli_options[18], 'temperature')):
+                args[f'sparktts_{key}'] = args[key] if option in sys.argv else default_engine_settings[TTS_ENGINES['SPARKTTS']][key]
+            # same for chattts (its speed is a 0-9 level, rounded from --speed)
+            for option, key in ((cli_options[22], 'top_k'), (cli_options[23], 'top_p'), (cli_options[18], 'temperature'), (cli_options[21], 'repetition_penalty'), (cli_options[24], 'speed')):
+                args[f'chattts_{key}'] = args[key] if option in sys.argv else default_engine_settings[TTS_ENGINES['CHATTTS']][key]
+            args['chattts_speed'] = min(max(int(round(float(args['chattts_speed']))), 0), 9)
+            # same for csm
+            for option, key in ((cli_options[22], 'top_k'), (cli_options[18], 'temperature')):
+                args[f'csm_{key}'] = args[key] if option in sys.argv else default_engine_settings[TTS_ENGINES['CSM']][key]
+            args['zonos_emotion_enabled'] = args.get('enable_emotion') is not None
+            if args['zonos_emotion_enabled']:
+                emotion = {name: 0.0 for name in default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']}
+                if args['enable_emotion'] is not True:
+                    # --enable_emotion happy=0.5,sad=0.2: named sliders, the others stay at 0
+                    try:
+                        for item in str(args['enable_emotion']).split(','):
+                            name, _, value = item.partition('=')
+                            name = name.strip().lower()
+                            low = -1.0 if name in ('valence', 'arousal') else 0.0
+                            if name not in emotion or not low <= float(value) <= 1.0:
+                                raise ValueError(name)
+                            emotion[name] = float(value)
+                    except ValueError:
+                        error = legends['error_zonos_emotion_format']
+                        print(error)
+                        sys.exit(1)
+                for name, value in emotion.items():
+                    args[f'zonos_emotion_{name}'] = value
             args['translate_enabled'] = False
             _user_translate_raw = args.get('translate')
             args['translate'] = None

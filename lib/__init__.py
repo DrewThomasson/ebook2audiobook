@@ -10,7 +10,7 @@ from .conf import (
     requirements_file, components_dir, root_dir, tmp_dir, run_dir, gradio_cache_dir, tmp_expire, max_ebook_textarea_length,
     tts_dir, voice_formats, voices_dir, default_output_split, default_output_split_hours,
     default_abs_url, default_abs_api_token, default_abs_library,
-    default_py_major, default_py_minor, default_pytorch_url, default_pytorch_amd_url, default_torchcodec_arm_url, default_jetson_url,
+    default_py_major, default_py_minor, default_pytorch_url, default_pytorch_amd_url, default_pytorch_nightly_url, default_torchcodec_arm_url, default_jetson_url,
     torch_matrix, torchaudio_max, transformers_caps, cuda_version_range, rocm_version_range, mps_version_range, xpu_version_range, jetson_version_range,
     voices_url, detect_gpu_script, default_vram_flush_ratio
 )
@@ -33,7 +33,8 @@ from .conf_models import (
 )
 
 from .conf_interlude import (
-    interlude_duration_range, interlude_fade_in_range, interlude_fade_out_range, interlude_classifier_repo, interlude_genre_min_score,
+    interlude_duration_range, interlude_fade_in_range, interlude_fade_out_range, interlude_duck_db, interlude_duck_threshold, interlude_duck_ratio,
+    interlude_duck_attack, interlude_duck_release, interlude_classifier_repo, interlude_genre_min_score,
     interlude_templates, interlude_moods, interlude_genre_styles, interlude_classifier_languages, interlude_neutral_style, interlude_neutral_moods
 )
 
@@ -51,7 +52,7 @@ __all__ = [
     "requirements_file", "components_dir", "root_dir", "tmp_dir", "run_dir", "gradio_cache_dir", "tmp_expire", "max_ebook_textarea_length", 
     "tts_dir", "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours",
     "default_abs_url", "default_abs_api_token", "default_abs_library",
-    "default_py_major", "default_py_minor", "default_pytorch_url", "default_pytorch_amd_url", "default_torchcodec_arm_url", "default_jetson_url",
+    "default_py_major", "default_py_minor", "default_pytorch_url", "default_pytorch_nightly_url", "default_pytorch_amd_url", "default_torchcodec_arm_url", "default_jetson_url",
     "torch_matrix", "torchaudio_max", "transformers_caps", "cuda_version_range", "rocm_version_range", "mps_version_range", "xpu_version_range", "jetson_version_range",
     "voices_url", "detect_gpu_script", "default_vram_flush_ratio",
 
@@ -71,6 +72,7 @@ __all__ = [
     "sml_tag_keys", "default_speaker",
     
     # from conf_interlude
-    "interlude_duration_range", "interlude_fade_in_range", "interlude_fade_out_range", "interlude_classifier_repo", "interlude_genre_min_score", "interlude_templates",
+    "interlude_duration_range", "interlude_fade_in_range", "interlude_fade_out_range", "interlude_duck_db", "interlude_duck_threshold", "interlude_duck_ratio",
+    "interlude_duck_attack", "interlude_duck_release", "interlude_classifier_repo", "interlude_genre_min_score", "interlude_templates",
     "interlude_moods", "interlude_genre_styles", "interlude_classifier_languages", "interlude_neutral_style", "interlude_neutral_moods"
 ]

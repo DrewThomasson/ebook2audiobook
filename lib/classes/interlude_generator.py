@@ -386,7 +386,7 @@ class InterludeGenerator:
             # MusicGen levels vary a lot between prompts: peak-normalize to -1 dBFS
             peak = float(np.abs(audio).max())
             if peak > 0:
-                audio = audio * (0.89 / peak)
+                audio = audio * (0.76 / peak)
             os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
             # written next to the target then renamed: a crash or kill mid-write never leaves a truncated interlude for the next run to reuse
             root, ext = os.path.splitext(output_path)

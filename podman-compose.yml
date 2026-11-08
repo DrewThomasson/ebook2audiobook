@@ -28,7 +28,7 @@
 #
 #   DEVICE_TAG=cpu      podman-compose -f podman-compose.yml --profile cpu    up
 #   DEVICE_TAG=cu130    podman-compose -f podman-compose.yml --profile cuda   up
-#   DEVICE_TAG=jetson51 podman-compose -f podman-compose.yml --profile jetson up
+#   DEVICE_TAG=jetson5 podman-compose -f podman-compose.yml --profile jetson up
 #   DEVICE_TAG=rocm     podman-compose -f podman-compose.yml --profile rocm   up
 #   (add HSA_OVERRIDE_GFX_VERSION=x.y.z in front when the launcher printed one)
 #   DEVICE_TAG=xpu      podman-compose -f podman-compose.yml --profile xpu    up
@@ -50,7 +50,7 @@ x-common: &common
     context: .
     dockerfile: Dockerfile
     args:
-      APP_VERSION: ${APP_VERSION:-26.10.1}
+      APP_VERSION: ${APP_VERSION:-26.11.1}
       DEVICE_TAG: ${DEVICE_TAG:-cpu}
       # A null value means "resolve from the environment at build time, and if
       # unset leave the Dockerfile default alone". These are exactly the vars
@@ -79,6 +79,7 @@ x-common: &common
     - ./models:/app/models:rw
     - ./voices:/app/voices:rw
     - ./tmp:/app/tmp:rw
+    - e2a_venvs:/app/lib/classes/tts_engines/venvs:rw
   restart: unless-stopped
 
 services:
@@ -133,3 +134,16 @@ services:
       - /dev/dri
     group_add:
       - "${RENDER_GID:-44}"
+
+  # --- Vulkan: AMD / Intel / NVIDIA (nouveau) through Mesa ------------------
+  ebook2audiobook-vulkan:
+    <<: *common
+    profiles: [vulkan]
+    devices:
+      - /dev/dri
+    group_add:
+      - "${RENDER_GID:-44}"
+
+volumes:
+  e2a_venvs:
+    name: e2a_venvs

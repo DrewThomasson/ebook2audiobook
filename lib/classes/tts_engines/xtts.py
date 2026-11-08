@@ -141,7 +141,7 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                     if not any(c.isalnum() for c in part):
                         continue
                     else:
-                        trim_audio_buffer = 0.006
+                        trim_audio_buffer = 0.01
                         if part.endswith("'"):
                             part = part[:-1]
                         part = part.replace('.', ' ;\n')

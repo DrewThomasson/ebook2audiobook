@@ -1,10 +1,11 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 Kibadilishaji cha CPU/GPU kutoka E-Kitabu hadi kitabu cha sauti chenye sura na metadata<br/>
 kwa kutumia injini za hali ya juu za TTS na mengi zaidi.<br/>
-Kinaunga mkono unakili wa sauti na lugha 1158!
-> Muhimu
+Inasaidia kupiga picha za sauti na lugha 1696!
+> [!IMPORTANT]
 **Zana hii imekusudiwa kutumika tu na vitabu pepe visivyo na DRM, vilivyopatikana kihalali.** <br>
 Waandishi hawawajibikii matumizi mabaya yoyote ya programu hii au matokeo yoyote ya kisheria yanayotokana nayo. <br>
 Tumia zana hii kwa uwajibikaji na kwa kufuata sheria zote zinazotumika.
@@ -27,10 +28,12 @@ Tumia zana hii kwa uwajibikaji na kwa kufuata sheria zote zinazotumika.
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### Endesha kwa Mbali
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### Kiolesura cha GUI
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@ Tumia zana hii kwa uwajibikaji na kwa kufuata sheria zote zinazotumika.
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## Onyesho
 
 **Onyesho la Sauti Mpya ya Chaguo-msingi**  
@@ -73,43 +77,48 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## README.md
 
+<a id="table-of-contents"></a>
 ## Jedwali la Yaliyomo
-- [ebook2audiobook](#-ebook2audiobook)
-- [Vipengele](#features)
-- [Kiolesura cha GUI](#gui-interface)
-- [Onyesho](#demos)
-- [Lugha Zinazoungwa Mkono](#supported-languages)
-- [Mahitaji ya Chini](#hardware-requirements)
-- [Matumizi](#instructions)
-  - [Endesha kwa Ndani](#instructions)
-    - [Kuzindua Kiolesura cha Wavuti cha Gradio](#instructions)
-    - [Matumizi ya Msingi ya Headless](#basic-usage)
-    - [Matumizi ya Modeli Maalum ya XTTS ya Headless](#example-of-custom-model-zip-upload)
-    - [Matokeo ya amri ya usaidizi](#help-command-output)
-  - [Endesha kwa Mbali](#run-remotely)
+- [ebook2audiobook](#ebook2audiobook)
+- [Features](#features)
+- [GUI Interface](#gui-interface)
+- [Demos](#demos)
+- [Supported Languages](#supported-languages)
+- [Minimum Requirements](#hardware-requirements)
+- [Usage](#instructions)
+  - [Run Locally](#instructions)
+    - [Launching Gradio Web Interface](#instructions)
+    - [Basic Headless Usage](#basic-usage)
+    - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
+    - [Help command output](#help-command-output)
+  - [Run Remotely](#run-remotely)
   - [Docker](#docker)
-    - [Hatua za Kuendesha](#docker)
-  
-- [Sauti Zilizopambwa](#cloned-voices)
-- [Miundo ya TTS Iliyorekebishwa](#fine-tuned-tts-models)
-  - [Mkusanyiko wa Modeli za TTS Zilizoboreshwa](#fine-tuned-tts-collection)
+    - [Steps to Run](#docker)
+- [Tools](#tools)
+  - [Preload models for offline installs](#preload-models)
+  - [Translate ebooks out of e2a](#translate-ebooks)
+
+- [Cloned Voices](#cloned-voices)
+- [Fine Tuned TTS models](#fine-tuned-tts-models)
+  - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
-- [Miundo ya eBook Inayoungwa Mkono](#supported-ebook-formats)
-- [Miundo ya Matokeo](#output-and-process-formats)
-- [Rudi kwa Toleo la zamani](#reverting-to-older-versions)
-- [Matatizo ya Kawaida](#common-issues)
-- [Shukrani za Pekee](#special-thanks)
-- [Jedwali la Yaliyomo](#table-of-contents)
+- [Supported eBook Formats](#supported-ebook-formats)
+- [Output Formats](#output-and-process-formats)
+- [Revert to older Version](#reverting-to-older-versions)
+- [Common Issues](#common-issues)
+- [Special Thanks](#special-thanks)
+- [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## Vipengele
-- 🔧 **Injini za TTS zinazoungwa mkono**: `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
+- 🔧 **Injini za TTS zinatumika**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Badilisha miundo mingi ya faili**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Eneo la Maandishi** ili kubadilisha moja kwa moja maandishi mafupi kuwa sauti
 - 🔍 **Uchanganuzi wa OCR** kwa faili zenye kurasa za maandishi kama picha
 - 🔊 **Maandishi-kwa-usemi ya ubora wa juu**, kutoka karibu wakati halisi hadi sauti karibu halisi
 - 🗣️ **Unakili wa sauti wa hiari** kwa kutumia faili yako mwenyewe ya sauti
-- 🌐 **Inaunga mkono lugha 1158** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Rafiki kwa rasilimali ndogo** — inaendeshwa kwa **2 GB RAM / 1 GB VRAM (kima cha chini)**
 - 🎵 **Miundo ya matokeo ya kitabu cha sauti**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Lebo za SML zinaungwa mkono** — udhibiti wa kina wa mapumziko, vituo, ubadilishaji wa sauti na zaidi ([see below](#sml-tags-available))
@@ -118,34 +127,38 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      <i>(Wasiliana nasi ikiwa unahitaji modeli za ziada zilizoboreshwa, au ikiwa ungependa kushiriki zako kwenye orodha rasmi ya mipangilio iliyowekwa awali)</i>
 
 
+<a id="hardware-requirements"></a>
 ##  Mahitaji ya Maunzi
 - RAM 2GB chini, 8GB inapendekezwa.
 - VRAM 1GB chini, 4GB inapendekezwa.
 - Uboreshaji umewezeshwa ikiwa unaendeshwa kwenye windows (Docker pekee).
 - CPU, XPU (intel, AMD, ARM)*.
-- CUDA, ROCm, JETSON
+- CUDA, Rocm, JETSON
 - MPS (CPU ya Apple Silicon)
 
 *<i> Injini za kisasa za TTS ni polepole sana kwenye CPU, kwa hivyo tumia TTS za ubora wa chini kama YourTTS, Tacotron2 n.k.</i>
 
+<a id="supported-languages"></a>
 ## Lugha Zinazoungwa Mkono
-| **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
+| **Kiarabu (ar)**    | **Kichina (zh)**    | **Kiingereza (sw)**   | **Kihispania (es)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| **French (fr)**    | **German (de)**     | **Italian (it)**   | **Portuguese (pt)** |
-| **Polish (pl)**    | **Turkish (tr)**    | **Russian (ru)**   | **Dutch (nl)**     |
-| **Czech (cs)**     | **Japanese (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
-| **Hungarian (hu)** | **Korean (ko)**     | **Vietnamese (vi)**| **Swedish (sv)**   |
-| **Persian (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesian (id)**|
-| **Slovak (sk)**    | **Croatian (hr)**   | **Tamil (ta)**     | **Danish (da)**    |
-- [**+1130 lugha na lahaja hapa**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+| **Kifaransa (fr)**    | **Kijerumani (de)**     | **Kiitaliano (it)**   | **Kireno (pt)** |
+| **Kipolishi (pl)**    | **Kituruki (tr)**    | **Kirusi (ru)**   | **Kiholanzi (nl)**     |
+| **Cheki (cs)**     | **Kijapani (ja)**   | **Kihindi (hi)**     | **Kibengali (bn)**   |
+| **Hungarian (hu)** | **Kikorea (ko)**     | **Kivietinamu (vi)**| **Kiswidi (sv)**   |
+| **Kiajemi (fa)**   | **Yoruba (yo)**     | **Kiswahili (sw)**   | **Kiindonesia (id)**|
+| **Kislovakia (sk)**    | **Kikroeshia (hr)**   | **Kitamil (ta)**     | **Kidenmaki (da)**    |
+- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## Miundo ya eBook Inayoungwa Mkono
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Matokeo bora**: `.epub` au `.mobi` kwa utambuzi wa sura kiotomatiki
 
+<a id="output-and-process-formats"></a>
 ## Miundo ya Matokeo na uchakataji
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - Muundo wa uchakataji unaweza kubadilishwa katika lib/conf.py
@@ -155,6 +168,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — ukimya (anuwai nasibu **1.0–1.6 sec.**)
 - `[pause:N]` — pumziko maalum (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — badilisha sauti kutoka kwa sauti ya chaguo-msingi au iliyochaguliwa kutoka GUI/CLI
+- `[emotion:sadness]...[/emotion]` — Kanda pekee: hisia kwa ajili ya kifungu (furaha, huzuni, chukizo, hofu, mshangao, hasira, nyingine, kutokuwamo) au mchanganyiko kama `[emotion:sadness=0.7,neutral=0.3]`; injini nyingine hupuuza
 
 **Angalia repo yetu nyingine iliyojikita katika kuongeza SML kiotomatiki katika eBook yako -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -162,13 +176,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **Kabla ya kutuma tatizo la usakinishaji au hitilafu, tafuta kwa makini katika KICHUPO cha matatizo yaliyofunguliwa na yaliyofungwa<br>
 ili kuhakikisha tatizo lako halipo tayari.**
 
->[!NOTE]
+Kidokezo
 **Muundo wa EPUB hauna muundo wowote wa kawaida kama vile sura ni nini, aya, dibaji n.k.<br>
 Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubadilishwa kuwa sauti.**
 
 
-### Instructions 
-1. **Clone repo**
+<a id="instructions"></a>
+### Maelekezo
+1. **Nakili (clone) hazina**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -180,7 +195,7 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>Kumbuka kwa watumiaji wa MacOS: homebrew husakinishwa ili kusakinisha programu zinazokosekana.</i>
      
    - **Kizinduzi cha Mac**  
      Bofya mara mbili `Mac Ebook2Audiobook Launcher.command`
@@ -190,8 +205,8 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     au
+     Bofya mara mbili `ebook2audiobook.cmd`
 
      <i>Kumbuka kwa watumiaji wa Windows: scoop husakinishwa ili kusakinisha programu zinazokosekana bila ruhusa za msimamizi.</i>
    
@@ -199,13 +214,14 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
 2. **Kwa Kiungo cha Umma**:
    `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
-   `python app.py --share` (all OS)
+   `python app.py --share` (OS zote)
 
 > [!IMPORTANT]
 **Ikiwa hati itasimamishwa na kuendeshwa tena, unahitaji kuonyesha upya kiolesura chako cha GUI cha gradio<br>
 ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
 
-### Basic  Usage
+<a id="basic-usage"></a>
+### Matumizi ya Msingi
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -222,8 +238,9 @@ ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
     Misimbo ya herufi 2 ya ISO-639-1 pia inaungwa mkono.
 
 
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+<a id="example-of-custom-model-zip-upload"></a>
+###  Mfano wa Kupakia Modeli Maalum kwa Zip
+  (lazima iwe faili ya .zip yenye faili za lazima za modeli. Mfano wa XTTSv2: config.json, model.pth, vocab.json na ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -232,13 +249,13 @@ ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>Kumbuka: ref.wav ya modeli yako maalum ndiyo sauti inayochaguliwa kila mara kwa ubadilishaji</i>
      
 - **<custom_model_path>**: Njia ya faili ya `model_name.zip`,
       ambayo lazima iwe na (kulingana na injini ya tts) faili zote za lazima<br>
       (angalia ./lib/models.py).
 
-### For Detailed Guide with list of all Parameters to use
+### Mwongozo wa Kina wenye Orodha ya Vigezo Vyote Vinavyoweza Kutumika
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -247,7 +264,7 @@ ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **Au kwa mifumo yote ya uendeshaji**
     ```python
      app.py --help
     ```
@@ -365,19 +382,21 @@ SML tags available:
 	[pause] — silence (random range **1.0–1.6 sec.**)
 	[pause:N] — fixed pause (**N sec.**)
 	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
 
 ```
 
 KUMBUKA: katika hali ya gradio/gui, ili kughairi ubadilishaji unaoendelea, bonyeza tu [X] kutoka kwa kipengele cha upakiaji wa eBook.
 KIDOKEZO: ikiwa inahitaji pumziko zaidi, ongeza '[pause:3]' kwa sekunde 3 n.k.
 
+<a id="docker"></a>
 ### Docker
-1. **Clone the Repository**:
+1. **Nakili (clone) hazina**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. **Jenga kontena**
 ```bash
     Windows:
         Docker:
@@ -394,44 +413,192 @@ KIDOKEZO: ikiwa inahitaji pumziko zaidi, ongeza '[pause:3]' kwa sekunde 3 n.k.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Run the Container:**
+4. **Endesha kontena:**
 ```bash
 Docker run image:
     Gradio/GUI:
         CPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
         CUDA:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
         ROCM:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
         XPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
         JETSON:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --runtime nvidia  --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[51/60/61 etc...]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc...]
     Headless mode:
         CPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         CUDA:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         ROCM:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         XPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         JETSON:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 Docker Compose (i.e. cuda 12.8:
         Run Gradio GUI:
-               DEVICE_TAG=cu128 docker compose --profile gpu up --no-log-prefix
+               DEVICE_TAG=cu128 docker compose --profile cuda up --no-log-prefix
         Run Headless mode:
-               DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+               DEVICE_TAG=cu128 docker compose --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 Podman Compose (i.e. cuda 12.8:
         Run Gradio GUI:
-               DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu up
+               DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda up
         Run Headless mode:
-               DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+               DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
+- KUMBUKA: MPS haipatikani ndani ya Docker kwa hiyo lazima CPU itumike
+- KUMBUKA: volume iliyopewa jina `e2a_venvs` huhifadhi injini za TTS zilizosakinishwa katika venv zao wenyewe (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM n.k.)
+  kati ya uendeshaji mmoja wa kontena na mwingine, kwa hiyo hazisakinishwi upya kila mara. Ili kuziweka upya: `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
+## Zana
+Zana zinazojitegemea, zinazoendeshwa kwa Python ya e2a yenyewe (`python_env`, inayoundwa e2a inapozinduliwa mara ya kwanza).
+
+<a id="preload-models"></a>
+### Pakua modeli mapema kwa usakinishaji nje ya mtandao: `tools/preload_models.py`
+Hupakua kila modeli ambayo e2a hutumia (injini za TTS na matoleo yake yaliyoboreshwa, ubadilishaji wa sauti, stanza, pyannote, demucs,
+vipande vya muziki vya mpito, vifurushi vya argos-translate, data ya tesseract, jieba, na sauti) kwenye folda moja iliyopangwa
+sawasawa na `./models`, kwa mfano kifaa cha USB. Kwenye kompyuta isiyo na mtandao, nakili folda hiyo kwenye `./models` ya e2a
+na folda ya `voices` iliyoandikwa kando yake kwenye `./voices` ya e2a.
+Kila kazi iliyokamilika hurekodiwa katika `<models_dir>/.e2a_downloads.json`: kuendesha tena huruka kilichokamilika na huanza
+upya kilichokatizwa (ctrl-c, programu kuanguka, kifaa kuchomolewa) baada ya kufuta faili zake ambazo hazijakamilika.
+   - **Linux/MacOS**
+     ```bash
+     ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
+     ```
+   - **Windows**
+     ```bash
+     python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
+     ```
+   - `--dry_run` huorodhesha kazi na hali zao (imekamilika, imekatizwa, inasubiri) bila kupakua chochote.
+
+```bash
+usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
+                         [--audiocpp_packages AUDIOCPP_PACKAGES] [--refresh] [--dry_run]
+                         models_dir
+
+Download every model e2a uses into one folder laid out exactly like ./models (i.e. a USB key for offline
+installs).
+
+positional arguments:
+  models_dir            Target folder, i.e. /media/user/KEY/models or E:\models
+
+options:
+  -h, --help            show this help message and exit
+  --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
+                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
+                        ta,jieba,voices
+  --skip SKIP           Comma list of categories to leave out
+  --languages LANGUAGES
+                        Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
+                        tunes for these only, multilingual models only for engines speaking one of them
+  --audiocpp_packages AUDIOCPP_PACKAGES
+                        audiocpp_server category: auto (the packages this machine runs, GPU and CPU), all
+                        (every platform, for a key used elsewhere), or a comma list of audiocpp_packages
+                        keys from lib/conf_models.py
+  --refresh             Run every job again, even those already marked done (files already there are still
+                        not downloaded twice)
+  --dry_run             List every download job with its state (done, interrupted, todo) and exit
+```
+
+<a id="translate-ebooks"></a>
+### Tafsiri vitabu pepe nje ya e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+Hutafsiri faili za EPUB/AZW3, folda nzima (`-r` kwa folda zake ndogo) au orodha ya njia (`@list.txt`)
+kuwa vitabu pepe vilivyotafsiriwa, nje ya mtandao, kwa programu-jalizi ya calibre ya Argos Translate inayokuja ndani ya
+`tools/argostranslate-calibre-plugin.zip`. Inajitegemea kutoka kwa ubadilishaji wa kitabu cha sauti: huandika vitabu pepe tu.
+Inahitaji calibre (ambayo e2a tayari inaihitaji) na huendeshwa kwa `python_env` na vifurushi vya argos-translate vya e2a:
+jozi ya lugha ambayo e2a tayari inaitumia haipakuliwi tena, inayokosekana hupakuliwa inapotumika mara ya kwanza.
+Programu-jalizi husakinishwa inapotumika mara ya kwanza kwenye wasifu wa calibre wa e2a yenyewe (`./run`), calibre yako haiguswi.
+`--to fra,ara,spa` hutafsiri katika lugha kadhaa kwa wakati mmoja, kitabu pepe kimoja kwa kila lugha, na `--to all` katika kila
+lugha ambayo chanzo kinaifikia (`--from`, la sivyo lugha ya kila kitabu; kwa `--no_download` ni jozi za lugha zilizosakinishwa pekee).
+`--list --from eng` huorodhesha lugha ambazo Kiingereza hutafsiriwa kwenda (zilizosakinishwa, zinazoweza kupakuliwa, au kupitia Kiingereza kwa
+chanzo kingine).
+Miundo mingine ambayo `ebook-convert` ya calibre husoma (PDF, DOCX, MOBI, TXT, ...) hubadilishwa kuwa EPUB mara moja, kabla ya
+lugha ya kwanza, na kutafsiriwa kama EPUB: `--from` inahitajika zisipobainisha lugha, kama ilivyo mara nyingi kwa PDF na TXT.
+Bila `-o` au `--output_dir`, kila tafsiri huhifadhiwa kando ya kitabu chake kama `<name>.<lang>.<ext>`,
+na kitabu ambacho tafsiri yake tayari ipo huachwa (`--overwrite` ili kukitafsiri tena).
+Vizinduzi vilivyo kwenye folda ya e2a huendesha `tools/translate_ebook.py` kwa `python_env`, hakuna cha kuamilisha,
+kutoka folda yoyote (njia za jamaa huchukuliwa kutoka mahali kilipoanzishwa):
+   - **Linux/MacOS**
+     ```bash
+     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ```
+   - **Windows**
+     ```bash
+     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     ```
+   - Au moja kwa moja kwa Python ya `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Kikianzishwa kwa Python nyingine yoyote,
+     hati hujianzisha upya kwa Python ya `python_env`.
+   - **Docker**: iendeshe ndani ya kontena la e2a, kwa mfano `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     kwa njia kama zinavyoonekana kutoka ndani ya kontena.
+   - **Kasi**: argostranslate huendeshwa kwa chaguo-msingi zake (CTranslate2 huchagua nyuzi na aina ya hesabu iliyo ya haraka zaidi,
+     int8 kwenye CPU), si kwa uzi 1 wa float32 wa e2a. Weka `ARGOS_INTRA_THREADS` au `ARGOS_COMPUTE_TYPE` ili kuzibadilisha.
+
+```bash
+usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
+                          [--overwrite] [-m {replace,bilingual}] [--device {cpu,cuda,auto}]
+                          [--batch_size BATCH_SIZE] [--no_cache] [--no_download] [--allow_changes] [--list]
+                          [books ...]
+
+Translate ebooks offline, out of e2a, with the Argos Translate calibre plugin
+(tools/argostranslate-calibre-plugin.zip). EPUB/AZW3 are translated as they are, the other formats
+calibre's ebook-convert reads (PDF, DOCX, MOBI, ...) are converted to EPUB once, before the first
+language, and their translations saved as EPUB. It runs on e2a's python_env and argos-translate packages
+(models/argos-translate): a language pair e2a already uses is not downloaded again, a missing one is
+downloaded on first use (direct or through English). The plugin is installed into e2a's own calibre
+profile (run/) on first use, your calibre setup is left untouched.
+Translated paths are printed on stdout, progress and logs on stderr.
+
+positional arguments:
+  books                 Ebook files (EPUB, AZW3, or PDF, DOCX, MOBI... converted to EPUB first) or folders
+                        to translate; @list.txt reads paths from a file, one per line
+
+options:
+  -h, --help            show this help message and exit
+  -t, --to LANG[,LANG...]
+                        Target language(s), ISO-639-1 or ISO-639-3 codes, comma separated for several (fr,
+                        fra or fra,ara,spa): one translated ebook per language. all: every language the
+                        source reaches (see --list --from), installed ones only with --no_download
+  -f, --from LANG       Source language, ISO-639-1 or ISO-639-3 code (default: read from each book)
+  -r, --recursive       Also look for books in the subfolders of the given folders
+  -o, --output OUTPUT   Output file, single input only, same extension as the input, .epub for a converted
+                        one (default: <name>.<lang>.<ext> next to the input)
+  --output_dir OUTPUT_DIR
+                        Write the translations into this folder (subfolders are mirrored with -r) instead of
+                        next to each book
+  --overwrite           Translate again even if the output file already exists (skipped otherwise)
+  -m, --mode {replace,bilingual}
+                        replace: the translation replaces the text. bilingual: each paragraph is followed by
+                        its translation, saved as <name>.<lang>.bilingual.<ext> (default: replace)
+  --device {cpu,cuda,auto}
+                        Device argostranslate runs on (default: cpu)
+  --batch_size BATCH_SIZE
+                        Segments sent to the translation worker per request (default: 16)
+  --no_cache            Neither read nor write the translation cache (run/argos_translate/cache.sqlite), the
+                        one that makes a second run of the same book near instant
+  --no_download         Never download a missing argos-translate package, fail instead
+  --allow_changes       Only when argostranslate is missing from python_env: install it even if packages
+                        already there would change version
+  --list                List the installed and the downloadable language pairs, then exit. With --from
+                        and/or --to: only their pairs, plus the targets a source reaches through English
+
+examples:
+  translate_ebook.py book.epub --to fr
+  translate_ebook.py book.epub --to fra,ara,spa
+  translate_ebook.py book.azw3 --from en --to deu -o /path/to/book_deu.azw3
+  translate_ebook.py /path/to/books -r --to es,it --output_dir /path/to/books_translated
+  translate_ebook.py book.epub --from eng --to all
+  translate_ebook.py @books.txt --to ita --mode bilingual
+  translate_ebook.py --list
+  translate_ebook.py --list --from eng
+```
+
+<a id="cloned-voices"></a>
 ## Sauti Zilizopambwa
 Unaweza kupakia sauti yoyote ya sauti katika muundo wowote wa sauti unaotumika, muda unaofaa ni karibu 1 hadi 5 mn.
 Haijalishi ikiwa rekodi ina mandharinyuma ya kelele au muziki unaocheza juu yake — E2A itakusafishia sauti.
@@ -439,7 +606,9 @@ Haijalishi ikiwa rekodi ina mandharinyuma ya kelele au muziki unaocheza juu yake
 Orodha ya sauti zilizojengwa ndani ni hasa kwa Kiingereza. Ikiwa unahitaji sauti katika lugha zingine kuwa rasmi
 imeongezwa kwenye orodha, tafadhali wasiliana nasi na tutayaweka baada ya kutathminiwa.
 
+<a id="fine-tuned-tts-models"></a>
 ## Modeli za TTS Zilizoboreshwa (fine-tuned)
+<a id="fine-tune-your-own-tts-model"></a>
 #### Fanya vizuri modeli yako ya TTS
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -449,6 +618,7 @@ imeongezwa kwenye orodha, tafadhali wasiliana nasi na tutayaweka baada ya kutath
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### Mkusanyiko wa Modeli za TTS Zilizoboreshwa
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -461,19 +631,21 @@ nakala ya conf.py asili ili kila sasisho la ebook2audiobook utahifadhi conf.py y
 tena ile asili. Lazima upange mchakato huo huo kwa models.py. Ikiwa unataka kuifanya modeli yako maalum
 kuwa modeli rasmi iliyoboreshwa ya ebook2audiobook, tafadhali wasiliana nasi na tutaiongeza kwenye orodha ya mipangilio iliyowekwa awali.
 
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+<a id="reverting-to-older-versions"></a>
+## Kurudi kwenye Matoleo ya Zamani
+Matoleo yanaweza kupatikana -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## Matatizo ya Kawaida:
 - GPU yangu ya NVIDIA/ROCm/XPU/MPS haitambuliki?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU ni polepole (bora kwenye CPU smp ya seva) huku GPU ikiweza kuwa na ubadilishaji wa karibu wakati halisi.
-   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+ [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Hata hivyo haina unakili wa sauti wa zero-shot, na ni sauti za ubora wa Siri, lakini ni haraka zaidi kwenye cpu).
 - "Nina matatizo ya utegemezi" - Tumia tu docker, imejitosheleza kabisa na ina hali ya headless,
-   ongeza kigezo `--help` mwishoni mwa amri ya docker run kwa maelezo zaidi.
+   ongeza kigezo  mwishoni mwa amri ya docker run kwa maelezo zaidi. `--help`
 - "Ninapata tatizo la sauti iliyokatwa!" - TAFADHALI FUNGUA ISSUE KUHUSU HILI,
    hatuzungumzi kila lugha na tunahitaji ushauri kutoka kwa watumiaji ili kuboresha mantiki ya kugawanya sentensi.😊
 
@@ -483,7 +655,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Hakiki Vizuizi/Sura kabla ya kuanza ubadilishaji
 - [x] Hariri kwa sentensi iliyobadilishwa kwa mabadiliko ya maandishi ya kina
 - [x] Tengeneza intros za muziki, maingiliano, na miisho; hariri miingiliano na miisho
-- [x] Ujumuishaji wa lebo za SML kwa sauti, pumziko, mapumziko, na mabadiliko zaidi 
+- [x] Ujumuishaji wa lebo za SML kwa sauti, pumziko, mapumziko, na mabadiliko zaidi
 - [x] Taarifa za vigezo -h -help katika lugha tofauti
 - [x] Uchanganuzi wa OCR kwa PDF / JPG / BMP / PNG / TIFF
 - [x] Folda ya Notebooks [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
@@ -501,47 +673,63 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Utambuzi wa Kifaa cha GPU
 - [x] Zuia sauti yoyote ya kumbukumbu ya mandharinyuma kwa ajili ya upakiaji wa sauti
 - [x] Upakiaji wa modeli mahususi iliyotengenezwa vizuri
-- [ ] [Tengeneza programu ya IOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Tengeneza programu ya android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 
 #### Maombi ya Mtumiaji
 - [ ] Ongeza modeli ya lugha ya Kireno cha Ulaya kwa angalau xttsv2, fairseq, vits, piper (msaada unakaribishwa)
 - [ ] Ongeza modeli ya lugha ya Kisindhi kwa angalau xttsv2, fairseq, vits, piper (msaada unakaribishwa)
 
 #### Injini za TTS
-- [x] XTTSv2
-- [x] ngano
-- [x] Fairseq
-- [x] VITS
-- [x] Tacotron2
-- [x] YourTTS
-- [x] Usipoteze muda wan
-- [x] GlowTTS
-- [x] Piper
-- [ ] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)
-- [ ] OpenVoice (https://github.com/myshell-ai/OpenVoice)
-- [ ] msemo wa samaki (https://github.com/fishaudio/fish-speech)
-- [ ] ChatTTS (https://github.com/2noise/ChatTTS)
-- [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
-- [ ] F5-TTS (https://github.com/swivid/f5-tts)
-- [ ] sanduku la mazungumzo (https://github.com/resemble-ai/chatterbox)
-- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
-- [ ] Spark-TTS (https://github.com/sparkaudio/spark-tts)
-- [ ] index-tts (https://github.com/index-tts/index-tts)
-- [ ] MeloTTS (https://github.com/myshell-ai/MeloTTS)
-- [ ] Kokoro-TTS (https://github.com/hexgrad/kokoro)
-- [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
-- [ ] Kanda (https://github.com/Zyphra/Zonos)
-- [ ] Mtindo-TTS2 (https://github.com/yl4579/StyleTTS2)
-- [ ] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
-- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
-- [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
-- [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
+- [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
+- [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1)
+- [x] Kuzungumza kwa Samaki/Sauti ya Samaki (https://github.com/fishaudio/fish-speech)[cite: 1)
+- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
+- [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1)
+- [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
+- [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1)
+- [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1)
+- [x] TTS za sauti (https://github.com/voxtral/voxtral-tts)[cite: 1]
+- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1)
+- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1)
+- [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1)
+- [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
+- [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
+- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1)
+- [x] TTS ya Nukta (https://github.com/dot-audio/dots-tts)[cite: 1)
+- [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1)
+- [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1)
+- [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1)
+- [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
+- [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
+- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1)
+- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1)
+- [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
+- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
+- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1)
+- [x] TTS ya Irodori (https://github.com/irodori-tts/irodori-tts)[cite: 1)
+- [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
+- [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
+- [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
+- [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
+- [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
+- [x] Kobe (https://github.com/neonbjb/tortoise-tts)[cite: 1)
+- [x] Kanda (https://github.com/Zyphra/Zonos)[cite: 1)
+- [x] Gome (https://github.com/suno-ai/bark)[cite: 1]
+- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
+- [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
+- [x] ChatTTS (https://github.com/2noise/ChatTTS)
+- [x] Spark-TTS (https://github.com/sparkaudio/spark-tts)
+- [x] MeloTTS (https://github.com/myshell-ai/MeloTTS)
+- [x] CSM (https://github.com/SesameAILabs/csm)
 
 #### Tafsiri ya Readme
 - [x] Kiarabu (ara)
 - [x] Kichina (zho)
-- [x] English (eng)
+- [x] Kiingereza (Eng)
 - [x] Kihispania (spa)
 - [x] Kifaransa (fra)
 - [x] Kijerumani (deu)
@@ -566,13 +754,13 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Kislovakia (slk)
 - [x] Kikroeshia (hrv)
 
-#### 🐍 Uoanifu wa OS
-- [x] 🍎 Mac Intel x86
+#### Utangamano wa 💻 OS
 - [x] 🪟 Windows x86
+- [x] Windows 🪟 YA MKONO
+- [x] 🍎 Mac Intel x86
+- [x] 🍎 Apple Silicon Mac
 - [x] 🐧 Linux x86
-- [x] 🖥️🍏 Apple Silicon Mac
-- [x] 🪟💪 ARM Windows
-- [x] 🐧💪 ARM Linux
+- [x] 🐧 ARM LINUX
 
 **********
 
@@ -628,9 +816,9 @@ if config['default_role'] in roles:
 
 ## Mchango wa maunzi kwa majaribio ya beta unahitajika
 Tunakubali aina yoyote ya maunzi ili kujaribu maendeleo yetu kama vile:
-- Nvidia supporting cuda >= 11.8
-- XPU intel cards
-- ROCm AMD cards supporting ROCm >=5.7
+- Nvidia kusaidia cuda >= 11.8
+- Kadi za intel za XPU
+- Kadi za AMD za Rocm zinazounga mkono Rocm >=5.7
 
 @DrewThomasson ikiwa unataka kusaidia kwa namna yoyote ile! 😃
 <!--
@@ -638,5 +826,12 @@ Tunakubali aina yoyote ya maunzi ili kujaribu maendeleo yetu kama vile:
 - Kura ya maoni imefunguliwa hapa https://github.com/DrewThomasson/ebook2audiobook/discussions/889
 -->
 
+## Credits
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Zana ya kujifunza kwa kina kwa ajili ya Maandishi-kwa-maongezi, iliyojaribiwa katika utafiti na uzalishaji.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
+- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml inference code for Zonos2.
+- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Injini safi ya makadirio ya C++ kwa modeli za sauti, inayoendeshwa na ggml.
+
+<a id="special-thanks"></a>
 ## Shukrani za Pekee
 Kwa wachangiaji wote wa kifedha na msimbo, kila mchango na pendekezo husaidia kuboresha ubora wa E2A.

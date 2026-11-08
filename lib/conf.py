@@ -30,7 +30,8 @@ cli_options = [
     '--speed', '--enable_text_splitting', '--text_temp',
     '--waveform_temp', '--output_dir', 
     '--abs_url', '--abs_api_token', '--abs_library', '--enable_interlude',
-    '--version', '--workflow', '--docker_device', '--help'
+    '--version', '--workflow', '--docker_device', '--help',
+    '--speaking_rate', '--emotion_strength', '--emotion_cfg_scale', '--enable_emotion'
 ]
 
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
@@ -49,6 +50,8 @@ BUILD_DOCKER = 'build_docker'
 # ---------------------------------------------------------------------
 # Python environment references
 # ---------------------------------------------------------------------
+# python per device (DeviceInstaller.check_pyvenv, both launchers): jetson = min_python_version (cp310 wheels only),
+# every other device = max_python_version. Nothing else picks a python
 min_python_version = (3,10)
 max_python_version = (3,12)
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
@@ -65,6 +68,10 @@ devices = {
     "ROCM": {"proc": "rocm", "found": False},
     "XPU": {"proc": "xpu", "found": False},
     "JETSON": {"proc": "jetson", "found": False},
+    # Vulkan: torch is installed from the +vulkan wheels (py-pkg) when no CUDA/ROCm/XPU/Jetson torch applies, ahead of
+    # MPS (they keep MPS on Apple Silicon). At run time only engines with "vulkan": True in default_engine_settings
+    # (native GPU builds) run on it, the others switch to CPU with an alert (lib/core.py)
+    "VULKAN": {"proc": "vulkan", "found": False}
 }
 
 device_info_json = '.device_info.json'
@@ -75,45 +82,48 @@ default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wi
 default_py_major = sys.version_info.major
 default_py_minor = sys.version_info.minor
 default_pytorch_url = 'https://download.pytorch.org/whl'
+default_pytorch_nightly_url = 'https://download.pytorch.org/whl/nightly'
 default_pytorch_amd_url = 'https://repo.radeon.com/rocm/windows'
 default_torchcodec_arm_url = 'https://download.pytorch.org/whl'
 default_jetson_url = 'https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download'
 
 torch_matrix = {
     # CPU
-    "cpu":       {"os": list(systems.values()), "arch": list(archs.values()), "base": "2.7.1", "last": "2.14.1", "codec": "0.17.0"},
+    "cpu":        {"os": list(systems.values()), "arch": list(archs.values()), "last": "2.14.1", "codec": "0.17.0"},
     # CUDA
-    "cu118":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.7.1",  "codec": ""},
-    "cu121":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.5.1", "last": "2.5.1",  "codec": ""},
-    "cu124":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.6.0", "last": "2.6.0",  "codec": ""},
-    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.11.1"},
-    "cu128":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.11.0", "codec": "0.11.1"},
-    "win-cu128":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.9.1", "codec": "0.9.0"},
-    "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "base": "2.7.1", "last": "2.13.0", "codec": "0.17.0"},
-    "win-cu129":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.7.1", "last": "2.8.0", "codec": "0.8.0"},
-    "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.17.0"},
-    "cu132":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.17.0"},
+    "cu118":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "last": "2.7.1",  "codec": ""},
+    "cu121":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "last": "2.5.1",  "codec": ""},
+    "cu124":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "last": "2.6.0",  "codec": ""},
+    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.11.1"},
+    "cu128":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "last": "2.11.0", "codec": "0.11.1"},
+    "win-cu128":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "last": "2.9.1", "codec": "0.9.0"},
+    "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "last": "2.13.0", "codec": "0.17.0"},
+    "win-cu129":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "last": "2.8.0", "codec": "0.8.0"},
+    "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"},
+    "cu132":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"},
     # ROCm
-    "rocm5.7":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.3.1",  "last": "2.3.1",  "codec": ""},
-    "rocm6.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.4.1",  "last": "2.4.1",  "codec": ""},
-    "rocm6.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.6.0",  "last": "2.6.0",  "codec": ""},
-    "rocm6.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.5.1",  "last": "2.5.1",  "codec": ""},
-    "rocm6.2.4": {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.7.1",  "last": "2.7.1",  "codec": ""},
-    "rocm6.3":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.7.1",  "last": "2.9.1",  "codec": "0.9.1"},
-    "rocm6.4":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.7.1",  "last": "2.9.1",  "codec": "0.9.1"},
-    "rocm7.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.10.0", "last": "2.10.0", "codec": "0.10.0"},
-    "rocm7.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.13.0", "codec": "0.17.0"},
-    "rocm7.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.14.1", "codec": "0.17.0"},
-    "rocm7.14":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "base": "2.11.0", "last": "2.14.1", "codec": "0.17.0"},
-    "win-rocm7.2.1": {"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "base": "2.9.1",  "last": "2.9.1",  "codec": "0.9.1"},
+    "rocm5.7":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.3.1",  "codec": ""},
+    "rocm6.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.4.1",  "codec": ""},
+    "rocm6.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.6.0",  "codec": ""},
+    "rocm6.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.5.1",  "codec": ""},
+    "rocm6.2.4": {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.7.1",  "codec": ""},
+    "rocm6.3":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.9.1",  "codec": "0.9.1"},
+    "rocm6.4":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.9.1",  "codec": "0.9.1"},
+    "rocm7.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.10.0", "codec": "0.10.0"},
+    "rocm7.1":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.13.0", "codec": "0.17.0"},
+    "rocm7.2":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.14.1", "codec": "0.17.0"},
+    "rocm7.14":  {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.14.1", "codec": "0.17.0"},
+    "win-rocm7.2.1": {"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "last": "2.9.1",  "codec": "0.9.1"},
     # MPS
-    "mps":       {"os": [systems['MACOS']], "arch": [archs['ARM64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.17.0"},
+    "mps":       {"os": [systems['MACOS']], "arch": [archs['ARM64']], "last": "2.14.1", "codec": "0.17.0"},
     # XPU
-    "xpu":       {"os": [systems['LINUX'], systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "base": "2.7.1", "last": "2.14.1", "codec": "0.16.0"},
+    "xpu":       {"os": [systems['LINUX'], systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "last": "2.14.1", "codec": "0.16.0"},
     # JETSON
-    "jetson51":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.4.1", "last": "2.4.1", "codec": ""},
-    "jetson60":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.4.0", "last": "2.4.0", "codec": ""},
-    "jetson61":  {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "base": "2.5.0", "last": "2.5.0", "codec": ""},
+    "jetson5":   {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "last": "2.3.1", "codec": ""},
+    "jetson6":   {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "last": "2.8.0", "codec": ""},
+    "jetson7":   {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "last": "2.9.1", "codec": "0.9.1"},
+    # VULKAN:
+    "vulkan":    {"os": [systems['LINUX'], systems['WINDOWS'], systems['MACOS']], "arch": [archs['X86_64'], archs['AMD64'], archs['ARM64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"}
 }
 
 torchaudio_max = '2.11.0'
@@ -122,7 +132,7 @@ cuda_version_range = {"min": (11,8), "max": (13,2)}
 rocm_version_range = {"min": (5,7), "max": (7,2)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
-jetson_version_range = {"min": (5,1), "max": (6,1)}
+jetson_version_range = {"min": (5,1), "max": (7,0)}
 
 ############### SETTINGS BELOW CAN BE MODIFIED ###############
 
@@ -156,6 +166,7 @@ os.environ['CALIBRE_CONFIG_DIRECTORY'] = run_dir
 os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
 os.environ['DO_NOT_TRACK'] = 'TRUE'
+os.environ['HF_HUB_CACHE'] = tts_dir
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
 os.environ['HF_HOME'] = tts_dir
 os.environ['HF_DATASETS_CACHE'] = tts_dir
@@ -165,6 +176,8 @@ os.environ['TTS_CACHE'] = tts_dir
 os.environ['TORCH_HOME'] = tts_dir
 os.environ['TTS_HOME'] = models_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
+os.environ['UV_CACHE_DIR'] = os.path.join(root_dir,'.uv_cache')
+os.environ['UV_LINK_MODE'] = 'copy'
 os.environ['XDG_CONFIG_HOME'] = f'{models_dir}/config'
 os.environ['ARGOS_PACKAGES_DIR'] = f'{models_dir}/argos-translate/packages'
 os.environ['ARGOS_COMPUTE_TYPE'] = 'float32'
@@ -224,6 +237,12 @@ interface_concurrency_limit = 1 # or None for unlimited multiple parallele user 
 interface_component_options = {
     "gr_tab_xtts_params": True,
     "gr_tab_bark_params": True,
+    "gr_tab_zonos_params": True,
+    "gr_tab_gptsovits_params": True,
+    "gr_tab_orpheus_params": True,
+    "gr_tab_sparktts_params": True,
+    "gr_tab_chattts_params": True,
+    "gr_tab_csm_params": True,
     "gr_group_voice_file": True,
     "gr_group_custom_model": True,
     "gr_tab_abs_params": True

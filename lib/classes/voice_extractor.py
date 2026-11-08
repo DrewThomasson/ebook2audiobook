@@ -1,4 +1,4 @@
-import os, subprocess, shutil, gradio as gr
+import os, subprocess, shutil, tempfile, gradio as gr
 
 from typing import Any
 from pydub import AudioSegment, silence
@@ -24,9 +24,6 @@ class VoiceExtractor:
         resolved_device = devices.get(resolved_device_name, devices['CPU'])
         self.device = resolved_device['proc'] if resolved_device.get('found') else devices['CPU']['proc']
         self.output_dir = self.session['voice_dir']
-        self.demucs_dir = os.path.join(self.output_dir,'htdemucs', voice_name)
-        self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
-        self.proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
         self.final_voice_file = final_voice_file if final_voice_file is not None else os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
         self.silence_threshold = -60
         self.is_gui_process = session['is_gui_process']
@@ -34,6 +31,17 @@ class VoiceExtractor:
             self.progress_bar=gr.Progress(track_tqdm=False)
         models = load_engine_presets(session['tts_engine'])
         self.samplerate = models[session['fine_tuned']]['samplerate']
+        # one private scratch dir per run beside the final file: work files never share a name with an existing voice
+        # or a concurrent run, and os.replace() into the final file never crosses mounts. The final file is only written
+        # by that last os.replace(): never the ffmpeg output of its own input, never a half-processed voice
+        final_dir = os.path.dirname(self.final_voice_file)
+        os.makedirs(final_dir, exist_ok=True)
+        # fixed short prefix: the dir name never grows with voice_name (NAME_MAX, windows MAX_PATH)
+        self.work_dir = tempfile.mkdtemp(prefix='.e2a_voice_', dir=final_dir)
+        self.demucs_dir = os.path.join(self.work_dir, 'htdemucs')
+        self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
+        self.work_voice_file = os.path.join(self.work_dir, 'work.wav')
+        self.proc_voice_file = os.path.join(self.work_dir, 'proc.wav')
         os.makedirs(self.demucs_dir, exist_ok=True)
 
     def _validate_format(self)->tuple[bool,str]:
@@ -50,7 +58,7 @@ class VoiceExtractor:
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
-            self.wav_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
+            self.wav_file = self.work_voice_file
             cmd = [
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
                 '-ac', '1', '-y', self.wav_file
@@ -261,22 +269,36 @@ class VoiceExtractor:
 
     def normalize_audio(self, src_file:str, proc_file:str, dst_file:str)->tuple[bool, str]:
         try:
+            import json, math
             msg = legends['msg_normalize_audio']
             print(msg)
             if self.is_gui_process:
                 self.progress_bar(0, desc=msg)
+            target_i = -16.0
+            target_tp = -1.5
+            # pass 1: measure only (no audio written) to get integrated loudness + true peak
+            analyze_cmd = [
+                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', src_file,
+                '-af', f'loudnorm=I={target_i}:TP={target_tp}:print_format=json',
+                '-f', 'null', '-'
+            ]
+            analyze = subprocess.run(analyze_cmd, capture_output=True, text=True, errors='replace')
+            stderr_text = analyze.stderr or ''
+            gain_db = 0.0
+            try:
+                stats = json.loads(stderr_text[stderr_text.rindex('{'):stderr_text.rindex('}') + 1])
+                input_i = float(stats['input_i'])
+                input_tp = float(stats['input_tp'])
+                if math.isfinite(input_i) and math.isfinite(input_tp):
+                    # one static gain for the whole file, capped so the true peak stays under target_tp
+                    gain_db = min(target_i - input_i, target_tp - input_tp)
+            except Exception as e:
+                print(f'normalize_audio() loudness analysis failed, keeping original level: {e}')
+            # pass 2: linear time-invariant only -> rumble cut below any voice f0 + one constant gain
             cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-progress', 'pipe:2', '-i', src_file]
             filter_complex = (
-                'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
-                'afftdn=nf=-70,'
-                'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
-                'loudnorm=I=-14:TP=-3:LRA=7:linear=true,'
-                'equalizer=f=150:t=q:w=2:g=1,'
-                'equalizer=f=250:t=q:w=2:g=-3,'
-                'equalizer=f=3000:t=q:w=2:g=2,'
-                'equalizer=f=5500:t=q:w=2:g=-4,'
-                'equalizer=f=9000:t=q:w=2:g=-2,'
-                'highpass=f=63[audio]'
+                'highpass=f=40:poles=2,'
+                f'volume={gain_db:.2f}dB[audio]'
             )
             cmd += [
                 '-filter_complex', filter_complex,
@@ -323,30 +345,34 @@ class VoiceExtractor:
                 print(msg)
                 if self.is_gui_process:
                     self.progress_bar(int(result), desc=msg)
-                if result:
-                    result, status, msg = self._detect_background()
+                self.voice_track = self.wav_file
+            if result:
+                result, status, msg = self._detect_background()
+                print(msg)
+                if self.is_gui_process:
+                    self.progress_bar(int(result), desc=msg)
+                if result and status:
+                    self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
+                    result, msg = self._demucs_voice()
                     print(msg)
                     if self.is_gui_process:
                         self.progress_bar(int(result), desc=msg)
-                    if result:
-                        if status:
-                            result, msg = self._demucs_voice()
-                            print(msg)
-                            if self.is_gui_process:
-                                self.progress_bar(int(result), desc=msg)
-                        else:
-                            self.voice_track = self.wav_file
-                        if result:
-                            result, msg = self._trim_and_clean(self.silence_threshold)
-                            print(msg)
-                            if self.is_gui_process:
-                                self.progress_bar(int(result), desc=msg)
-                            if result:
-                                result, msg = self.normalize_audio(self.voice_track, self.proc_voice_file, self.final_voice_file)
-                                print(msg)
-                                if self.is_gui_process:
-                                    self.progress_bar(int(result), desc=msg)
+            if result:
+                result, msg = self._trim_and_clean(self.silence_threshold)
+                print(msg)
+                if self.is_gui_process:
+                    self.progress_bar(int(result), desc=msg)
+            if result:
+                result, msg = self.normalize_audio(self.voice_track, self.proc_voice_file, self.final_voice_file)
+                print(msg)
+                if self.is_gui_process:
+                    self.progress_bar(int(result), desc=msg)
+                if result:
+                    self.voice_track = self.final_voice_file
+            if result and os.path.abspath(self.voice_track) != os.path.abspath(self.final_voice_file):
+                shutil.copyfile(self.voice_track, self.final_voice_file)
         except Exception as e:
+            result = False
             msg = f'extract_voice() error: {e}'
-        shutil.rmtree(self.demucs_dir, ignore_errors = True)
+        shutil.rmtree(self.work_dir, ignore_errors = True)
         return result, msg

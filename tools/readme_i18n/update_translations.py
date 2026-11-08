@@ -26,14 +26,19 @@ LANGS = {
 }
 PROTECT = re.compile(
     r'(`[^`\n]+`'
-    r'|!\[[^\]]*\]\([^)]+\)'
-    r'|\]\([^)]+\)'
+    r'|!\[[^\]]+\]\([^)]+\)'
+    r'|\[[^\]]+\]\([^)]+\)'
     r'|https?://\S+'
     r'|<[^>\n]+>'
-    r'|\{[^}\n]*\}'
+    r'|{[^}\n]+}'
     r'|\[pause:\d+\]'
     r'|&\w+;)'
 )
+# names MT translates when they stand alone (Windows -> Fenster/Janelas, Docker -> Sztauer/Acoplagem):
+# a text holding no other word is kept as is, never sent to MT
+KEEP = re.compile(r'\b(?:Windows|Linux|MacOS|Docker|ARM)\b')
+MARKER = re.compile(r'⟦\s*(\d+)\s*⟧')
+STRAY = re.compile(r'[⟦⟧]')
 LINE_PREFIX = re.compile(r'^(\s*(?:[-*+]\s+|\d+\.\s+|#{1,6}\s+|>\s+)?(?:\[[ x]\]\s+)?)')
 FENCE = re.compile(r'```[\s\S]*?```')
 
@@ -43,7 +48,7 @@ def load_cache()->dict:
     return {}
 
 def save_cache(cache:dict)->None:
-    CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding='utf-8')
+    CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding='utf-8', newline='\n')
 
 def split_blocks(text:str)->list:
     lines:list = text.split('\n')
@@ -68,14 +73,20 @@ def join_blocks(blocks:list)->str:
 def block_key(block:list)->str:
     return '\n'.join(block)
 
-def is_frozen_block(block:list)->bool:
-    text:str = block_key(block)
-    if '```' in text:
-        return True
+def frozen_lines(block:list)->list:
+    # the lines kept from English: a whole table, else the code fences and their content only, so the
+    # headings, prose and list items of a block holding a fence are translated too
     stripped:list = [l for l in (line.strip() for line in block) if l]
     if stripped and all(l.startswith('|') for l in stripped):
-        return True
-    return False
+        return [True] * len(block)
+    mask:list = []
+    in_fence:bool = False
+    for line in block:
+        fence:bool = line.lstrip().startswith('```')
+        mask.append(in_fence or fence)
+        if fence:
+            in_fence = not in_fence
+    return mask
 
 def block_tokens(block:list)->list:
     return sorted(tok for line in block for tok in PROTECT.findall(line))
@@ -88,12 +99,41 @@ def protect(text:str)->tuple:
     return PROTECT.sub(repl, text), tokens
 
 def restore(text:str, tokens:list)->Optional[str]:
-    for i, tok in enumerate(tokens):
-        ph:str = f'\u27e6{i}\u27e7'
-        if ph not in text:
-            return None
-        text = text.replace(ph, tok)
-    return text
+    # every placeholder back exactly once (MT may pad it with spaces), else None: no marker MT broke or glued to a word
+    # is ever left in the text. Callable replacement: a token is literal text, its backslashes (windows paths) are no regex escapes
+    if sorted(int(i) for i in MARKER.findall(text)) != list(range(len(tokens))) or STRAY.search(MARKER.sub('', text)):
+        return None
+    return MARKER.sub(lambda m: tokens[int(m.group(1))], text)
+
+def realign_tokens(tr_line:str, eng_tokens:list)->Optional[str]:
+    # tokens MT kept stay where they are, the ones it altered are swapped in place for the missing English ones
+    # (in English order), extra ones are dropped. None when MT lost tokens entirely: no position left to put them back
+    pool:list = list(eng_tokens)
+    kept:list = []
+    for tok in PROTECT.findall(tr_line):
+        if tok in pool:
+            pool.remove(tok)
+            kept.append(True)
+        else:
+            kept.append(False)
+    spare = iter(pool)
+    flags = iter(kept)
+    removed:bool = False
+    def repl(m)->str:
+        nonlocal removed
+        if next(flags):
+            return m.group(0)
+        tok:Optional[str] = next(spare, None)
+        if tok is None:
+            removed = True
+            return ''
+        return tok
+    fixed:str = PROTECT.sub(repl, tr_line)
+    if list(spare):
+        return None
+    if removed:
+        fixed = re.sub(r'(?<=\S) {2,}', ' ', fixed).rstrip()
+    return fixed
 
 def mymemory(text:str, lang:str)->str:
     params = {
@@ -128,16 +168,34 @@ def chunk_text(text:str)->list:
         chunks.append(current)
     return chunks
 
+def translate_segments(text:str, lang:str)->str:
+    # tokens never reach MT: only the prose between them is translated, each token stays verbatim in its own place
+    out:list = []
+    pos:int = 0
+    for m in [*PROTECT.finditer(text), None]:
+        segment:str = text[pos:m.start() if m else len(text)]
+        s = re.match(r'^(\s*)(.*?)(\s*)$', segment, re.S)
+        if re.search(r'[A-Za-z]', KEEP.sub('', s.group(2))):
+            segment = s.group(1) + ' '.join(mymemory(chunk, lang) for chunk in chunk_text(s.group(2))).strip() + s.group(3)
+            time.sleep(THROTTLE)
+        out.append(segment)
+        if m:
+            out.append(m.group(0))
+            pos = m.end()
+    return ''.join(out).replace('\n', ' ')
+
 def translate_text(text:str, lang:str, cache:dict)->str:
-    key:str = f'{lang}|{text}'
-    if key in cache:
-        return cache[key]
     protected, tokens = protect(text)
-    if not re.search(r'[A-Za-z]', protected):
+    # before the cache: an older run may hold the MT of a name that stands alone
+    if not re.search(r'[A-Za-z]', KEEP.sub('', protected)):
         return text
+    key:str = f'{lang}|{text}'
+    if key in cache and not STRAY.search(cache[key]):
+        return cache[key]
     translated:str = ' '.join(mymemory(chunk, lang) for chunk in chunk_text(protected))
     restored:Optional[str] = restore(translated, tokens)
-    result:str = restored if restored is not None else text
+    # markers lost or broken: segment mode, never tokens pushed to the end of the line
+    result:str = restored if restored is not None else translate_segments(text, lang)
     result = result.replace('\n', ' ')
     cache[key] = result
     time.sleep(THROTTLE)
@@ -152,9 +210,7 @@ def translate_line(line:str, lang:str, cache:dict)->str:
     return prefix + translate_text(body, lang, cache)
 
 def translate_block(block:list, lang:str, cache:dict)->list:
-    if is_frozen_block(block):
-        return block
-    return [translate_line(line, lang, cache) for line in block]
+    return [line if frozen else translate_line(line, lang, cache) for line, frozen in zip(block, frozen_lines(block))]
 
 def patch_line(old_line:str, new_line:str, tr_line:str)->Optional[str]:
     old_protected, old_tokens = protect(old_line)
@@ -171,12 +227,16 @@ def patch_line(old_line:str, new_line:str, tr_line:str)->Optional[str]:
     return patched
 
 def patch_block(old_block:list, new_block:list, tr_block:list, lang:str, cache:dict)->list:
-    if is_frozen_block(new_block):
+    mask:list = frozen_lines(new_block)
+    if all(mask):
         return new_block
     if len(old_block) != len(new_block) or len(tr_block) != len(old_block):
         return translate_block(new_block, lang, cache)
     out:list = []
-    for old_line, new_line, tr_line in zip(old_block, new_block, tr_block):
+    for old_line, new_line, tr_line, frozen in zip(old_block, new_block, tr_block, mask):
+        if frozen:
+            out.append(new_line)
+            continue
         if old_line == new_line:
             out.append(tr_line)
             continue
@@ -188,16 +248,18 @@ def patch_block(old_block:list, new_block:list, tr_block:list, lang:str, cache:d
     return out
 
 def harvest_block(eng_block:list, tr_block:list, lang:str, cache:dict)->None:
-    if is_frozen_block(eng_block) or len(eng_block) != len(tr_block):
+    if len(eng_block) != len(tr_block):
         return
-    for eng_line, tr_line in zip(eng_block, tr_block):
+    for eng_line, tr_line, frozen in zip(eng_block, tr_block, frozen_lines(eng_block)):
+        if frozen:
+            continue
         m = LINE_PREFIX.match(eng_line)
         prefix:str = m.group(1) if m else ''
         eng_body:str = eng_line[len(prefix):]
         if not tr_line.startswith(prefix):
             continue
         tr_body:str = tr_line[len(prefix):]
-        if not (eng_body.strip() and tr_body.strip() and eng_body != tr_body):
+        if not (eng_body.strip() and tr_body.strip() and eng_body != tr_body) or STRAY.search(tr_body):
             continue
         if sorted(PROTECT.findall(eng_body)) != sorted(PROTECT.findall(tr_body)):
             continue
@@ -207,21 +269,55 @@ def audit_and_repair(out_blocks:list, new_blocks:list, lang:str, cache:dict)->tu
     repaired:list = []
     notes:list = []
     for idx, (tr_block, eng_block) in enumerate(zip(out_blocks, new_blocks)):
-        if is_frozen_block(eng_block):
+        mask:list = frozen_lines(eng_block)
+        if all(mask):
             if block_key(tr_block) != block_key(eng_block):
                 notes.append(f'block {idx+1}: frozen content (code/table) restored from English')
-                repaired.append(eng_block)
-            else:
-                repaired.append(tr_block)
-        elif block_tokens(tr_block) != block_tokens(eng_block):
-            notes.append(f'block {idx+1}: inline code/links/tags differ from English, block retranslated')
-            for line in eng_block:
-                m = LINE_PREFIX.match(line)
-                prefix:str = m.group(1) if m else ''
-                cache.pop(f'{lang}|{line[len(prefix):]}', None)
+            repaired.append(eng_block)
+            continue
+        if len(tr_block) != len(eng_block):
+            notes.append(f'block {idx+1}: line count differs from English, block retranslated')
             repaired.append(translate_block(eng_block, lang, cache))
-        else:
-            repaired.append(tr_block)
+            continue
+        if any(tr_line != eng_line for tr_line, eng_line, frozen in zip(tr_block, eng_block, mask) if frozen):
+            notes.append(f'block {idx+1}: code restored from English')
+            tr_block = [eng_line if frozen else tr_line for tr_line, eng_line, frozen in zip(tr_block, eng_block, mask)]
+        if any(mask):
+            # prose beside code, kept in English when a block holding a fence was frozen whole: translated now
+            translated:list = [translate_line(eng_line, lang, cache) if not frozen and tr_line == eng_line else tr_line for tr_line, eng_line, frozen in zip(tr_block, eng_block, mask)]
+            changed:int = sum(1 for before, after in zip(tr_block, translated) if before != after)
+            if changed:
+                notes.append(f'block {idx+1}: {changed} line(s) beside code translated')
+            tr_block = translated
+        fixed_block:list = []
+        realigned:int = 0
+        retranslated:int = 0
+        for tr_line, eng_line, frozen in zip(tr_block, eng_block, mask):
+            _, eng_tokens = protect(eng_line)
+            stray:bool = bool(STRAY.search(tr_line))
+            if frozen or (not stray and sorted(PROTECT.findall(tr_line)) == sorted(eng_tokens)):
+                fixed_block.append(tr_line)
+                continue
+            m = LINE_PREFIX.match(eng_line)
+            prefix:str = m.group(1) if m else ''
+            eng_body:str = eng_line[len(prefix):]
+            fixed_line:Optional[str] = None if stray else realign_tokens(tr_line, eng_tokens)
+            if fixed_line is None:
+                # a token lost or an MT marker left in the text: retranslated now around its tokens,
+                # once written the line has all its tokens and no later run would pick it up again
+                fixed_line = prefix + translate_segments(eng_body, lang)
+                retranslated += 1
+            else:
+                realigned += 1
+            fixed_block.append(fixed_line)
+            tr_body:str = fixed_line[len(prefix):] if fixed_line.startswith(prefix) else fixed_line
+            if eng_body.strip():
+                cache[f'{lang}|{eng_body}'] = tr_body
+        if realigned:
+            notes.append(f'block {idx+1}: inline code/links/tags altered by MT on {realigned} line(s), English tokens put back in place')
+        if retranslated:
+            notes.append(f'block {idx+1}: {retranslated} line(s) lost tokens or kept MT markers, retranslated around their tokens')
+        repaired.append(fixed_block)
     return repaired, notes
 
 def verify(lang_text:str, eng_text:str)->list:
@@ -240,7 +336,7 @@ def rebuild(new_blocks:list, lang:str, cache:dict)->list:
 def main()->int:
     new_src:str = README.read_text(encoding='utf-8')
     if not BASELINE.exists():
-        BASELINE.write_text(new_src, encoding='utf-8')
+        BASELINE.write_text(new_src, encoding='utf-8', newline='\n')
         print('baseline seeded from current README.md, translations assumed in sync')
         return 0
     old_src:str = BASELINE.read_text(encoding='utf-8')
@@ -289,10 +385,10 @@ def main()->int:
             if problems:
                 raise RuntimeError(f'[{iso3}] still inconsistent after rebuild: {"; ".join(problems)}')
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(out_text, encoding='utf-8')
+        target.write_text(out_text, encoding='utf-8', newline='\n')
         save_cache(cache)
         print(f'[{iso3}] updated')
-    BASELINE.write_text(new_src, encoding='utf-8')
+    BASELINE.write_text(new_src, encoding='utf-8', newline='\n')
     print('baseline updated')
     return 0
 
