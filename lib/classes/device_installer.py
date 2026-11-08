@@ -1066,7 +1066,7 @@ class DeviceInstaller():
                 # 1) Level Zero / SYCL runtime detection via ctypes (primary)
                 try:
                     import ctypes
-                    libze = None
+                    lib_ze = None
                     if os.name == 'nt':
                         candidates = ['ze_loader.dll']
                         oneapi_root = os.environ.get('ONEAPI_ROOT', '')
@@ -1099,7 +1099,7 @@ class DeviceInstaller():
                     # next candidate and keep the last failure for the note.
                     for lib_name in candidates:
                         try:
-                            libze = ctypes.CDLL(lib_name)
+                            lib_ze = ctypes.CDLL(lib_name)
                         except OSError:
                             continue
                         try:
