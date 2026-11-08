@@ -182,7 +182,7 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
 
 
 <a id="instructions"></a>
-### Instructions 
+### Maelekezo
 1. **Clone repo**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
@@ -195,7 +195,7 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>Kumbuka kwa watumiaji wa MacOS: bango la nyumbani limewekwa ili kusakinisha programu zinazokosekana.</i>
      
    - **Kizinduzi cha Mac**  
      Bofya mara mbili `Mac Ebook2Audiobook Launcher.command`
@@ -205,8 +205,8 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     au 
+     Bofya mara mbili `ebook2audiobook.cmd`
 
      <i>Kumbuka kwa watumiaji wa Windows: scoop husakinishwa ili kusakinisha programu zinazokosekana bila ruhusa za msimamizi.</i>
    
@@ -221,7 +221,7 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
 ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
 
 <a id="basic-usage"></a>
-### Basic  Usage
+### Matumizi ya Msingi
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+###  Mfano wa Upakiaji wa Zip ya Mfano Maalum
+  (lazima iwe faili ya .zip iliyo na faili za lazima za modeli. Mfano wa XTTSv2: config.json, model.pth, vocab.json na ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>Kumbuka: ref.wav ya mtindo wako mahususi daima ni sauti iliyochaguliwa kwa uongofu</i>
      
 - **<custom_model_path>**: Njia ya faili ya `model_name.zip`,
       ambayo lazima iwe na (kulingana na injini ya tts) faili zote za lazima<br>
       (angalia ./lib/models.py).
 
-### For Detailed Guide with list of all Parameters to use
+### Kwa Mwongozo wa Kina wenye orodha ya Vigezo vyote vya kutumia
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **Au kwa OS zote **
     ```python
      app.py --help
     ```
@@ -391,12 +391,12 @@ KIDOKEZO: ikiwa inahitaji pumziko zaidi, ongeza '[pause:3]' kwa sekunde 3 n.k.
 
 <a id="docker"></a>
 ### Docker
-1. **Clone the Repository**:
+1. **Fungua Hifadhi**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. **Jenga kontena**
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ KIDOKEZO: ikiwa inahitaji pumziko zaidi, ongeza '[pause:3]' kwa sekunde 3 n.k.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Run the Container:**
+4. **Endesha Kontena:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
-- NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
-  across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
+- KUMBUKA: WABUNGE hawaonekani kwenye kizimbani kwa hivyo CPU lazima itumike
+- KUMBUKA: juzuu iliyoitwa `e2a_venvs` inaweka injini za TTS zilizowekwa kwenye venv yao (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM n.k.)
+  kwenye kontena, kwa hivyo haziwekwi tena kila wakati. Ili kuziweka upya: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Zana
 Zana za kujitegemea, zinaendeshwa na Python ya e2a (`python_env`, iliyoundwa na uzinduzi wa kwanza wa e2a).
 
 <a id="preload-models"></a>
-### Preload models for offline installs: `tools/preload_models.py`
-Downloads every model e2a uses (TTS engines and their fine-tunes, voice conversion, stanza, pyannote, demucs,
-music interludes, argos-translate packages, tesseract data, jieba, and the voices) into one folder laid out
-exactly like `./models`, i.e. a USB key. On the offline machine, copy that folder into e2a's `./models`
-and the `voices` folder written beside it into e2a's `./voices`.
-Every finished job is recorded in `<models_dir>/.e2a_downloads.json`: a rerun skips what is done and starts
-again what was cut (ctrl-c, crash, unplugged key) after removing its partial files.
+### Modeli za kupakia mapema kwa usakinishaji wa nje ya mtandao: `tools/preload_models.py`
+Inapakua kila modeli ya e2a inatumia (injini za TTS na sauti zao nzuri, ubadilishaji wa sauti, stanza, pyannote, demucs,
+muziki huingilia kati, vifurushi vya tafsiri ya hoja, data ya tesseract, jieba, na sauti) katika folda moja iliyowekwa
+kama `./models`, yaani ufunguo wa USB. Kwenye mashine ya nje ya mtandao, nakili folda hiyo kwenye e2a `./models`
+na ... `voices` folda iliyoandikwa kando yake katika e2a `./voices`.
+Kila kazi iliyokamilika inarekodiwa kwa `<models_dir>/.e2a_downloads.json`: kurudi nyuma kunaruka kile kinachofanywa na kuanza
+tena kile kilichokatwa (ctrl-c, ajali, ufunguo usio na plagi) baada ya kuondoa faili zake za sehemu.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ again what was cut (ctrl-c, crash, unplugged key) after removing its partial fil
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` lists the jobs and their state (done, interrupted, todo) without downloading anything.
+   - `--dry_run` huorodhesha kazi na hali yake (imekamilika, imekatizwa, kufanya) bila kupakua chochote.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Translate ebooks out of e2a: `translate_ebook.sh` / `translate_ebook.cmd`
-Translates EPUB/AZW3 files, a whole folder (`-r` for its subfolders) or a list of paths (`@list.txt`)
-into translated ebooks, offline, with the Argos Translate calibre plugin shipped in
-`tools/argostranslate-calibre-plugin.zip`. Independent of the audiobook conversion: it only writes ebooks.
-It needs calibre (already required by e2a) and runs on e2a's `python_env` and argos-translate packages:
-a language pair e2a already uses is not downloaded again, a missing one is downloaded on first use.
-The plugin is installed on first use into e2a's own calibre profile (`./run`), your calibre is left untouched.
-`--to fra,ara,spa` translates into several languages at once, one ebook per language, and `--to all` into every
-language the source reaches (`--from`, else each book's own language; installed ones only with `--no_download`).
-`--list --from eng` lists the languages English translates into (installed, downloadable, or through English for
-another source).
-Other formats calibre's `ebook-convert` reads (PDF, DOCX, MOBI, TXT, ...) are converted to EPUB once, before the
-first language, and translated as EPUB: `--from` is needed when they carry no language, as PDF and TXT often do.
-Without `-o` or `--output_dir`, each translation is saved beside its book as `<name>.<lang>.<ext>`,
-and a book whose translation already exists is skipped (`--overwrite` to translate it again).
-The launchers in e2a's folder run `tools/translate_ebook.py` with `python_env`, nothing to activate,
-from any folder (relative paths are taken from where it is started):
+### Tafsiri vitabu vya kielektroniki kati ya e2a: `translate_ebook.sh`/`translate_ebook.cmd`
+Hutafsiri faili za EPUB/AZW3, folda nzima (`-r` kwa folda zake ndogo) au orodha ya njia (`@list.txt`)
+katika vitabu vya kielektroniki vilivyotafsiriwa, nje ya mtandao, na programu-jalizi ya kiwango cha Tafsiri ya Argos imesafirishwa
+`tools/argostranslate-calibre-plugin.zip`. Kujitegemea kwa uongofu wa vitabu vya sauti: inaandika tu vitabu vya kielektroniki.
+Inahitaji kiwango (tayari kinahitajika na e2a) na inaendeshwa kwenye vifurushi vya e2a's `python_env` na argos-translate:
+jozi ya lugha ambayo e2a tayari inatumia haijapakuliwa tena, inayokosekana inapakuliwa wakati wa matumizi ya kwanza.
+Programu-jalizi imewekwa kwenye matumizi ya kwanza kwenye wasifu wa kiwango cha e2a mwenyewe (`./run`), kiwango chako kimeachwa bila kuguswa.
+`--to fra,ara,spa` hutafsiriwa katika lugha kadhaa kwa wakati mmoja, kitabu kimoja kwa kila lugha, na `--to all` katika kila
+lugha ambayo chanzo kinafikia (`--from`, vinginevyo lugha ya kila kitabu; zilizowekwa tu na `--no_download`).
+`--list --from eng` huorodhesha lugha ambazo Kiingereza hutafsiri katika (imewekwa, inaweza kupakuliwa, au kupitia Kiingereza kwa
+chanzo kingine).
+Maumbizo mengine ya kalenda `ebook-convert` yanasomeka (PDF, DOCX, mobi, TXT, ...) hubadilishwa kuwa EPUB mara moja, kabla ya
+lugha ya kwanza, na kutafsiriwa kama EPUB: `--from` inahitajika wakati hawana lugha, kama PDF na TXT mara nyingi hufanya.
+Bila `-o` au `--output_dir`, kila tafsiri inahifadhiwa kando ya kitabu chake kama `<name>.<lang>.<ext>`,
+na kitabu ambacho tafsiri yake tayari ipo kimerukwa (`--overwrite` kutafsiri tena).
+Vizinduzi katika folda ya e2a vinaendesha `tools/translate_ebook.py` na `python_env`, hakuna cha kuamilisha,
+kutoka kwenye folda yoyote (njia zinazohusiana zinachukuliwa kutoka mahali ilipoanza):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ from any folder (relative paths are taken from where it is started):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Or directly with `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Started with any other Python,
-     the script starts itself again with `python_env`'s.
-   - **Docker**: run it inside the e2a container, e.g. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     with paths seen from the container.
-   - **Speed**: argostranslate runs on its own defaults (CTranslate2 picks the threads and the fastest compute type,
-     int8 on CPU), not on e2a's 1 thread in float32. Set `ARGOS_INTRA_THREADS` or `ARGOS_COMPUTE_TYPE` to override them.
+   - Au moja kwa moja na `python_env`Python: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Ilianza na Python nyingine yoyote,
+     hati inaanza tena na `python_env`s
+   - **Docker**: iendeshe ndani ya kontena la e2a, k.m. `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     na njia zinazoonekana kutoka kwenye chombo.
+   - **Kasi**: argostranslate inajiendesha yenyewe (CTranslate2 huchagua nyuzi na aina ya haraka zaidi ya kompyuta,
+     int8 kwenye CPU), sio kwenye uzi 1 wa e2a katika float32. Weka `ARGOS_INTRA_THREADS` au `ARGOS_COMPUTE_TYPE` ili kuzibatilisha.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ tena ile asili. Lazima upange mchakato huo huo kwa models.py. Ikiwa unataka kuif
 kuwa modeli rasmi iliyoboreshwa ya ebook2audiobook, tafadhali wasiliana nasi na tutaiongeza kwenye orodha ya mipangilio iliyowekwa awali.
 
 <a id="reverting-to-older-versions"></a>
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Kurejea kwenye Matoleo ya zamani
+Matoleo yanaweza kupatikana -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
