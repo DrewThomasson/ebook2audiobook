@@ -36,7 +36,8 @@ class VoiceExtractor:
         # by that last os.replace(): never the ffmpeg output of its own input, never a half-processed voice
         final_dir = os.path.dirname(self.final_voice_file)
         os.makedirs(final_dir, exist_ok=True)
-        self.work_dir = tempfile.mkdtemp(prefix=f'.{self.voice_name}_', dir=final_dir)
+        # fixed short prefix: the dir name never grows with voice_name (NAME_MAX, windows MAX_PATH)
+        self.work_dir = tempfile.mkdtemp(prefix='.e2a_voice_', dir=final_dir)
         self.demucs_dir = os.path.join(self.work_dir, 'htdemucs')
         self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
         self.work_voice_file = os.path.join(self.work_dir, 'work.wav')

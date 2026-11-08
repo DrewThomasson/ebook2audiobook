@@ -1,3 +1,4 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
@@ -27,10 +28,12 @@ Gunakan alat ini secara bertanggung jawab dan sesuai dengan semua hukum yang ber
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### Jalankan dari jarak jauh
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### Antarmuka GUI
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@ Gunakan alat ini secara bertanggung jawab dan sesuai dengan semua hukum yang ber
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## Demo
 
 **Demo Suara Default Baru**  
@@ -73,8 +77,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## README.md
 
+<a id="table-of-contents"></a>
 ## Daftar Isi
-- [ebook2audiobook](#-ebook2audiobook)
+- [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
@@ -105,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## Fitur
 - 🔧 ** Mesin tts didukung**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Mengonversi berbagai format file**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
@@ -121,6 +127,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      <i>(Hubungi kami jika Anda memerlukan model yang disetel halus tambahan, atau jika Anda ingin membagikan milik Anda ke daftar preset resmi)</i>
 
 
+<a id="hardware-requirements"></a>
 ##  Persyaratan Perangkat Keras
 - RAM 2GB min, 8GB direkomendasikan.
 - VRAM 1GB min, 4GB direkomendasikan.
@@ -131,6 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 *<i> Mesin TTS modern sangat lambat di CPU, jadi gunakan TTS berkualitas lebih rendah seperti YourTTS, Tacotron2 dll.</i>
 
+<a id="supported-languages"></a>
 ## Bahasa yang Didukung
 | **Arabic (ar )**|**Chinese (zh)**|**English (en )**|** Spanish (es )**|
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -143,12 +151,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## Format eBook yang Didukung
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Hasil terbaik**: `.epub` atau `.mobi` untuk deteksi bab otomatis
 
+<a id="output-and-process-formats"></a>
 ## Format Keluaran dan proses
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - Format proses dapat diubah di lib/conf.py
@@ -171,6 +181,7 @@ Surat Utang
 Jadi Anda harus terlebih dahulu menghapus secara manual teks apa pun yang tidak ingin Anda konversi menjadi audio.**
 
 
+<a id="instructions"></a>
 ### Instructions 
 1. **Clone repo**
 	```bash
@@ -209,6 +220,7 @@ Jadi Anda harus terlebih dahulu menghapus secara manual teks apa pun yang tidak 
 **Jika skrip dihentikan dan dijalankan lagi, Anda perlu menyegarkan antarmuka GUI gradio Anda<br>
 agar halaman web dapat terhubung kembali ke soket koneksi yang baru.**
 
+<a id="basic-usage"></a>
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
@@ -226,6 +238,7 @@ agar halaman web dapat terhubung kembali ke soket koneksi yang baru.**
     Kode ISO-639-1 2 huruf juga didukung.
 
 
+<a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
@@ -376,6 +389,7 @@ SML tags available:
 CATATAN: dalam mode gradio/gui, untuk membatalkan konversi yang sedang berjalan, cukup klik [X] dari komponen unggah eBook.
 TIPS: jika perlu jeda lebih lama, tambahkan '[pause:3]' untuk 3 dtk. dll.
 
+<a id="docker"></a>
 ### Docker
 1. **Clone the Repository**:
 ```bash
@@ -439,6 +453,7 @@ Podman Compose (i.e. cuda 12.8:
 - NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
   across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
 ## Alat 
 Alat mandiri, dijalankan dengan Python e2a sendiri (`python_env`, dibuat dengan peluncuran pertama e2a).
 
@@ -583,6 +598,7 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
+<a id="cloned-voices"></a>
 ## Suara Kloning
 Anda dapat mengunggah audio suara apa pun dalam format audio yang didukung, durasi ideal adalah sekitar 1 hingga 5 mn.
 Tidak masalah jika rekaman memiliki latar belakang berisik atau musik yang diputar di atasnya — E2A akan membersihkan suara untuk Anda.
@@ -590,7 +606,9 @@ Tidak masalah jika rekaman memiliki latar belakang berisik atau musik yang diput
 Daftar suara kloning bawaan terutama dalam bahasa Inggris. Jika Anda membutuhkan suara dalam bahasa lain untuk secara resmi
 ditambahkan ke daftar, silakan hubungi kami dan kami akan menambahkannya setelah ditinjau.
 
+<a id="fine-tuned-tts-models"></a>
 ## Model TTS yang Disetel Halus (fine-tuned)
+<a id="fine-tune-your-own-tts-model"></a>
 #### Selaraskan model tts Anda sendiri
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -600,6 +618,7 @@ ditambahkan ke daftar, silakan hubungi kami dan kami akan menambahkannya setelah
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### Koleksi Model TTS yang Disetel Halus
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -612,12 +631,14 @@ salinan conf.py asli sehingga pada setiap pembaruan ebook2audiobook Anda akan me
 yang asli. Anda harus merencanakan proses yang sama untuk models.py. Jika Anda ingin menjadikan model kustom Anda sendiri
 sebagai model ebook2audiobook resmi yang disetel halus, silakan hubungi kami dan kami akan menambahkannya ke daftar preset.
 
+<a id="reverting-to-older-versions"></a>
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## Masalah Umum:
 - GPU NVIDIA/ROCm/XPU/MPS saya tidak terdeteksi?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU lambat (lebih baik di CPU smp server) sementara GPU dapat melakukan konversi hampir waktu nyata.
@@ -811,5 +832,6 @@ Kami menerima segala jenis perangkat keras untuk menguji pengembangan kami seper
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- kode inferensi ggml untuk Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Mesin inferensi C++ murni all - in - one untuk model audio, didukung oleh ggml.
 
+<a id="special-thanks"></a>
 ## Terima Kasih Khusus
 Kepada semua kontributor keuangan dan kode, setiap kontribusi dan saran membantu meningkatkan kualitas E2A.

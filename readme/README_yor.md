@@ -1,3 +1,4 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
@@ -27,10 +28,12 @@ Lo ọ̀pá-ìṣẹ́ yìí pẹ̀lú ojúṣe àti ní ìbámu pẹ̀lú gbogb
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### Ṣíṣe ní Òkèèrè
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### Wíwo GUI
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@ Lo ọ̀pá-ìṣẹ́ yìí pẹ̀lú ojúṣe àti ní ìbámu pẹ̀lú gbogb
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## Àwọn Àfihàn
 
 **Àfihàn Ohùn Àpẹẹrẹ Tuntun**  
@@ -73,8 +77,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## README.md
 
+<a id="table-of-contents"></a>
 ## Àkójọ Àwọn Àkóónú
-- [ebook2audiobook](#-ebook2audiobook)
+- [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
@@ -105,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## Àwọn Ẹ̀yà
 - 🔧 **TTS Engines ni atilẹyin**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Yí àwọn ọ̀nà fáìlì púpọ̀ padà**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
@@ -121,6 +127,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      <i>(Kàn sí wa tí o bá nílò àwọn àwòṣe àfikún tí a ti ṣàtúnṣe, tàbí tí o bá fẹ́ pín tìrẹ sí àkójọ preset oníṣẹ́-aṣẹ)</i>
 
 
+<a id="hardware-requirements"></a>
 ##  Àwọn Ìbéèrè Ohun-èlò
 - RAM 2GB tó kéré jù, 8GB ní ìṣedéédéé.
 - VRAM 1GB tó kéré jù, 4GB ní ìṣedéédéé.
@@ -131,6 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 *<i> Àwọn ẹ̀rọ TTS òde-òní lọ́ra gan-an lórí CPU, nítorí náà lo TTS olódodo kékeré bíi YourTTS, Tacotron2 àti bẹ́ẹ̀ bẹ́ẹ̀ lọ.</i>
 
+<a id="supported-languages"></a>
 ## Àwọn Èdè Tí A Ṣe Àtìlẹ́yìn Fún
 Èdè Lárúbáwá (ar) **Èdè Ṣáínà (zh)** * Èdè Gẹ̀ẹ́sì (en)* * Èdè Sípáníìṣì (es) **Èdè Sípáníìṣì (es)** Èdè Sípáníìṣì (es) **Èdè Sípáníìṣì (es)** Èdè Sípán
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -143,12 +151,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## Àwọn Ọ̀nà eBook Tí A Ṣe Àtìlẹ́yìn Fún
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Àbájáde tó dára jù**: `.epub` tàbí `.mobi` fún ìdánimọ̀ orí lọ́nà aládàáṣiṣẹ́
 
+<a id="output-and-process-formats"></a>
 ## Àwọn Ọ̀nà Ìjáde àti ìṣíṣẹ́
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - A lè yí ọ̀nà ìṣíṣẹ́ padà nínú lib/conf.py
@@ -171,6 +181,7 @@ láti rí i dájú pé ìṣòro rẹ kò tíì sí.**
 Nítorí náà o gbọ́dọ̀ kọ́kọ́ yọ ọ̀rọ̀ èyíkéyìí tí o kò fẹ́ yí padà sí ohùn pẹ̀lú ọwọ́.**
 
 
+<a id="instructions"></a>
 ### Instructions 
 1. **Clone repo**
 	```bash
@@ -209,6 +220,7 @@ Nítorí náà o gbọ́dọ̀ kọ́kọ́ yọ ọ̀rọ̀ èyíkéyìí tí o
 **Tí a bá dúró kọ̀ǹpútà-ìtọ́ni tí a sì tún ṣe é, o nílò láti tún wíwo GUI gradio rẹ ṣe<br>
 láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket ìsopọ̀ tuntun.**
 
+<a id="basic-usage"></a>
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
@@ -226,6 +238,7 @@ láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket �
     Àwọn àmì ISO-639-1 oníléta 2 náà ni a ṣe àtìlẹ́yìn fún.
 
 
+<a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
@@ -376,6 +389,7 @@ SML tags available:
 ÀKÍYÈSÍ: ní ìpò gradio/gui, láti fagilé ìyípadà tó ń lọ lọ́wọ́, kàn tẹ̀ [X] láti inú ẹ̀yà ìgbéga eBook.
 ÌMỌ̀RÀN: tí ó bá nílò ìdúró díẹ̀ síi, ṣàfikún '[pause:3]' fún ìṣẹ́jú-àáyá 3 àti bẹ́ẹ̀ bẹ́ẹ̀ lọ.
 
+<a id="docker"></a>
 ### Docker
 1. **Clone the Repository**:
 ```bash
@@ -439,6 +453,7 @@ Podman Compose (i.e. cuda 12.8:
 - NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
   across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
 ## Àwọn irin iṣẹ́
 Àwọn irinṣẹ́ tí ó dúró ṣánṣán, sáré pẹ̀lú Python ti e2a fúnra rẹ̀ (`python_env`, tí a ṣẹ̀dá nípa ìfilọ̀ àkọ́kọ́ ti e2a).
 
@@ -583,6 +598,7 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
+<a id="cloned-voices"></a>
 ## Àwọn Oríṣun àwòrán, Cloned Voices
 O lè gbé ohùn ohùn èyíkéyìí sókè nínú èyíkéyìí nínú àwọn fọ́mù ohùn tí a ṣe àtìlẹyìn, iye tí ó dára ni nǹkan bí 1 sí 5 mn.
 Kò ṣe pàtàkì bí àkọsílẹ̀ náà bá ní ìpìlẹ̀ ariwo tàbí orin tí ó ń ṣeré lórí rẹ̀ — E2A yóò fọ ohùn náà fún ọ.
@@ -590,7 +606,9 @@ Kò ṣe pàtàkì bí àkọsílẹ̀ náà bá ní ìpìlẹ̀ ariwo tàbí or
 Èdè Gẹ̀ẹ́sì ni àtòjọ àwọn ohùn tí wọ́n kọ́ sínú rẹ̀. Tí o bá nílò ohùn ní èdè mìíràn kí ó lè jẹ́ ti ìjọba.
 àfikún sí àtòjọ náà, jọ̀wọ́ kàn sí wa a ó sì fi kún un lẹ́yìn àtúnyẹ̀wò.
 
+<a id="fine-tuned-tts-models"></a>
 ## Àwọn àwòṣe TTS Tí A Ti Ṣàtúnṣe (fine-tuned)
+<a id="fine-tune-your-own-tts-model"></a>
 #### Tún àwòṣe TTS tìrẹ ṣe dáadáa
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -600,6 +618,7 @@ Kò ṣe pàtàkì bí àkọsílẹ̀ náà bá ní ìpìlẹ̀ ariwo tàbí or
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### Àkójọ Àwọn Àwòṣe TTS Tí A Ti Ṣàtúnṣe
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -612,12 +631,14 @@ O ní òmìnira láti ṣàtúnṣe libs/conf.py láti ṣàfikún tàbí yọ �
 ìpilẹ̀ padà. O gbọ́dọ̀ gbèrò ìṣẹ̀lẹ̀ kan náà fún models.py. Tí o bá fẹ́ sọ àwòṣe àdáni tìrẹ
 di àwòṣe ebook2audiobook oníṣẹ́-aṣẹ tí a ti ṣàtúnṣe, jọ̀wọ́ kàn sí wa a ó sì fi kún àkójọ preset.
 
+<a id="reverting-to-older-versions"></a>
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## Àwọn Ìṣòro Tó Wọ́pọ̀:
 - A kò rí GPU NVIDIA/ROCm/XPU/MPS mi?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU lọ́ra (ó dára jù lórí CPU smp sáfà) nígbà tí GPU lè ní ìyípadà tó fẹ́rẹ̀ jẹ́ àkókò gidi.
@@ -811,5 +832,6 @@ A gba irú ohun-èlò èyíkéyìí láti dán ìdàgbàsókè wa wò bíi:
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml kóódù ìfihàn fún Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) - Ẹrọ ìfihàn C++ tí ó mọ́ fún àwọn àwòṣe ohùn, tí ggml ń lò.
 
+<a id="special-thanks"></a>
 ## Ọpẹ́ Pàtàkì
 Fún gbogbo àwọn olùpínlẹ̀ owó àti kóódù, ìfowópamọ́ àti àbá kọ̀ọ̀kan ń ṣe ìrànlọ́wọ́ láti mú kí E2A dára sí i.

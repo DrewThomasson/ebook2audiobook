@@ -1,3 +1,4 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
@@ -27,10 +28,12 @@ Instructions [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?sty
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### exécuter à distance
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### Interface GUI
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@ Instructions [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?sty
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## Démos
 
 **Nouvelle démo vocale par défaut **
@@ -73,8 +77,9 @@ roue des futurs
 
 ## Lisezmoi.md
 
+<a id="table-of-contents"></a>
 ## Table des matières
-- [ebook2audiobook](#-ebook2audiobook)
+- [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
@@ -105,6 +110,7 @@ roue des futurs
 - [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## Caractéristiques
 - 🔧 ** Moteurs TTS pris en charge** : `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Convertir plusieurs formats de fichiers ** : `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
@@ -121,6 +127,7 @@ roue des futurs
      <i>(Contactez-nous si vous avez besoin de modèles affinés supplémentaires ou si vous souhaitez partager le vôtre avec la liste officielle des préréglages)</i>
 
 
+<a id="hardware-requirements"></a>
 ##  Exigences Matérielles
 - 2 Go de RAM minimum, 8 Go recommandés.
 - 1 Go de VRAM minimum, 4 Go recommandés.
@@ -131,6 +138,7 @@ roue des futurs
 
 *<i> Les moteurs TTS modernes sont très lents sur le processeur, alors utilisez des TTS de qualité inférieure comme YourTTS, Tacotron2, etc.</i>
 
+<a id="supported-languages"></a>
 ## Langues prises en charge
 | **Arabe (ar)**    | **Chinois (zh)**    | **Anglais (en)**   | **Espagnol (es)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -143,12 +151,14 @@ roue des futurs
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## Formats de livres électroniques pris en charge
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Meilleurs résultats** : `.epub` ou `.mobi` pour la détection automatique de chapitre
 
+<a id="output-and-process-formats"></a>
 ## Formats de sortie et de processus
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - Le format du processus peut être modifié dans lib/conf.py
@@ -171,6 +181,7 @@ REMARQUE
 Vous devez donc d'abord supprimer manuellement tout texte que vous ne souhaitez pas convertir en audio.**
 
 
+<a id="instructions"></a>
 ### Instructions
 1. **Cloner repo**
 	```bash
@@ -209,6 +220,7 @@ Vous devez donc d'abord supprimer manuellement tout texte que vous ne souhaitez 
 **Si le script est arrêté et exécuté à nouveau, vous devez actualiser votre interface graphique gradio<br>
 pour permettre à la page Web de se reconnecter à la nouvelle prise de connexion.**
 
+<a id="basic-usage"></a>
 ### Utilisation de base
    - **Linux/MacOS** :
      ```bash
@@ -226,6 +238,7 @@ pour permettre à la page Web de se reconnecter à la nouvelle prise de connexio
     Les codes ISO-639-1 à 2 lettres sont également pris en charge.
 
 
+<a id="example-of-custom-model-zip-upload"></a>
 ###  Exemple de téléchargement zip de modèle personnalisé
   (doit être un fichier .zip contenant les fichiers modèles obligatoires. Exemple pour XTTSv2 : config.json, model.pth, vocab.json et ref.wav)
    - **Linux/MacOS**
@@ -376,6 +389,7 @@ SML tags available:
 REMARQUE : en mode gradio/gui, pour annuler une conversion en cours, cliquez simplement sur le [X] du composant de téléchargement de livre électronique.
 ASTUCE : s'il a besoin de plus de pause, ajoutez «[pause:3] » pendant 3 secondes, etc.
 
+<a id="docker"></a>
 ### Docker
 1. **Cloner le référentiel** :
 ```bash
@@ -439,6 +453,7 @@ Podman Compose (i.e. cuda 12.8:
 - REMARQUE : le volume nommé `e2a_venvs` conserve les moteurs TTS installés dans leur propre venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, etc.)
   à travers les passages de conteneurs, de sorte qu'ils ne sont pas réinstallés à chaque fois. Pour les réinitialiser : `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
 ## Outils
 Outils autonomes, exécutés avec le propre Python d'e2a (`python_env`, créé par le premier lancement d'e2a).
 
@@ -583,6 +598,7 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
+<a id="cloned-voices"></a>
 ## Voix clonées
 Vous pouvez télécharger n'importe quel audio vocal dans n'importe lequel des formats audio pris en charge, la durée idéale est d'environ 1 à 5 min.
 Peu importe si l'enregistrement a un fond bruyant ou de la musique qui y joue — E2A nettoiera la voix pour vous.
@@ -590,7 +606,9 @@ Peu importe si l'enregistrement a un fond bruyant ou de la musique qui y joue �
 La liste des voix clonées intégrée est principalement en anglais. Si vous avez besoin de voix dans d'autres langues pour être officiellement
 ajouté à la liste, veuillez nous contacter et nous les ajouterons après vérification.
 
+<a id="fine-tuned-tts-models"></a>
 ## Modèles TTS affinés
+<a id="fine-tune-your-own-tts-model"></a>
 #### Affinez votre propre modèle TTS
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -600,6 +618,7 @@ ajouté à la liste, veuillez nous contacter et nous les ajouterons après véri
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### Collection TTS affinée
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -612,12 +631,14 @@ une copie du fichier conf.py original, donc à chaque mise à jour de ebook2audi
 revenir à l'original. Vous devez planifier le même processus pour models.py. Si vous souhaitez créer votre propre modèle personnalisé
 en tant que modèle officiel ebook2audiobook affiné, veuillez nous contacter et nous l'ajouterons à la liste des préréglages.
 
+<a id="reverting-to-older-versions"></a>
 ## Revenir à des versions plus anciennes
 Les versions peuvent être trouvées -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## Questions courantes :
 - Mon GPU NVIDIA/ROCm/XPU/MPS n'est pas détecté ? ? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  Le processeur est lent (mieux sur le processeur smp du serveur) tandis que le GPU peut avoir une conversion presque en temps réel.
@@ -811,5 +832,6 @@ Nous acceptons tout type de matériel pour tester notre développement comme :
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- code d'inférence ggml pour Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) - Un moteur d'inférence C++ pur tout-en-un pour les modèles audio, alimenté par ggml.
 
+<a id="special-thanks"></a>
 ## Remerciements particuliers
 Pour tous les contributeurs financiers et de code, chaque contribution et suggestion contribue à améliorer la qualité d'E2A.

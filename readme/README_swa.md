@@ -1,3 +1,4 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
@@ -27,10 +28,12 @@ Tumia zana hii kwa uwajibikaji na kwa kufuata sheria zote zinazotumika.
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### Endesha kwa Mbali
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### Kiolesura cha GUI
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@ Tumia zana hii kwa uwajibikaji na kwa kufuata sheria zote zinazotumika.
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## Onyesho
 
 **Onyesho la Sauti Mpya ya Chaguo-msingi**  
@@ -73,8 +77,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## README.md
 
+<a id="table-of-contents"></a>
 ## Jedwali la Yaliyomo
-- [ebook2audiobook](#-ebook2audiobook)
+- [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
@@ -105,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## Vipengele
 - 🔧 ** Injini za TTS zinatumika **: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Badilisha miundo mingi ya faili**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
@@ -121,6 +127,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      <i>(Wasiliana nasi ikiwa unahitaji modeli za ziada zilizoboreshwa, au ikiwa ungependa kushiriki zako kwenye orodha rasmi ya mipangilio iliyowekwa awali)</i>
 
 
+<a id="hardware-requirements"></a>
 ##  Mahitaji ya Maunzi
 - RAM 2GB chini, 8GB inapendekezwa.
 - VRAM 1GB chini, 4GB inapendekezwa.
@@ -131,6 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 *<i> Injini za kisasa za TTS ni polepole sana kwenye CPU, kwa hivyo tumia TTS za ubora wa chini kama YourTTS, Tacotron2 n.k.</i>
 
+<a id="supported-languages"></a>
 ## Lugha Zinazoungwa Mkono
 | **Kiarabu (ar)**    | **Kichina (zh)**    | **Kiingereza (sw)**   | **Kihispania (es)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -143,12 +151,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## Miundo ya eBook Inayoungwa Mkono
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Matokeo bora**: `.epub` au `.mobi` kwa utambuzi wa sura kiotomatiki
 
+<a id="output-and-process-formats"></a>
 ## Miundo ya Matokeo na uchakataji
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - Muundo wa uchakataji unaweza kubadilishwa katika lib/conf.py
@@ -171,6 +181,7 @@ Kidokezo
 Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubadilishwa kuwa sauti.**
 
 
+<a id="instructions"></a>
 ### Instructions 
 1. **Clone repo**
 	```bash
@@ -209,6 +220,7 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
 **Ikiwa hati itasimamishwa na kuendeshwa tena, unahitaji kuonyesha upya kiolesura chako cha GUI cha gradio<br>
 ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
 
+<a id="basic-usage"></a>
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
@@ -226,6 +238,7 @@ ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
     Misimbo ya herufi 2 ya ISO-639-1 pia inaungwa mkono.
 
 
+<a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
@@ -376,6 +389,7 @@ SML tags available:
 KUMBUKA: katika hali ya gradio/gui, ili kughairi ubadilishaji unaoendelea, bonyeza tu [X] kutoka kwa kipengele cha upakiaji wa eBook.
 KIDOKEZO: ikiwa inahitaji pumziko zaidi, ongeza '[pause:3]' kwa sekunde 3 n.k.
 
+<a id="docker"></a>
 ### Docker
 1. **Clone the Repository**:
 ```bash
@@ -439,6 +453,7 @@ Podman Compose (i.e. cuda 12.8:
 - NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
   across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
 ## Zana
 Zana za kujitegemea, zinaendeshwa na Python ya e2a (`python_env`, iliyoundwa na uzinduzi wa kwanza wa e2a).
 
@@ -583,6 +598,7 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
+<a id="cloned-voices"></a>
 ## Sauti Zilizopambwa
 Unaweza kupakia sauti yoyote ya sauti katika muundo wowote wa sauti unaotumika, muda unaofaa ni karibu 1 hadi 5 mn.
 Haijalishi ikiwa rekodi ina mandharinyuma ya kelele au muziki unaocheza juu yake — E2A itakusafishia sauti.
@@ -590,7 +606,9 @@ Haijalishi ikiwa rekodi ina mandharinyuma ya kelele au muziki unaocheza juu yake
 Orodha ya sauti zilizojengwa ndani ni hasa kwa Kiingereza. Ikiwa unahitaji sauti katika lugha zingine kuwa rasmi
 imeongezwa kwenye orodha, tafadhali wasiliana nasi na tutayaweka baada ya kutathminiwa.
 
+<a id="fine-tuned-tts-models"></a>
 ## Modeli za TTS Zilizoboreshwa (fine-tuned)
+<a id="fine-tune-your-own-tts-model"></a>
 #### Fanya vizuri modeli yako ya TTS
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -600,6 +618,7 @@ imeongezwa kwenye orodha, tafadhali wasiliana nasi na tutayaweka baada ya kutath
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### Mkusanyiko wa Modeli za TTS Zilizoboreshwa
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -612,12 +631,14 @@ nakala ya conf.py asili ili kila sasisho la ebook2audiobook utahifadhi conf.py y
 tena ile asili. Lazima upange mchakato huo huo kwa models.py. Ikiwa unataka kuifanya modeli yako maalum
 kuwa modeli rasmi iliyoboreshwa ya ebook2audiobook, tafadhali wasiliana nasi na tutaiongeza kwenye orodha ya mipangilio iliyowekwa awali.
 
+<a id="reverting-to-older-versions"></a>
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## Matatizo ya Kawaida:
 - GPU yangu ya NVIDIA/ROCm/XPU/MPS haitambuliki?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU ni polepole (bora kwenye CPU smp ya seva) huku GPU ikiweza kuwa na ubadilishaji wa karibu wakati halisi.
@@ -811,5 +832,6 @@ Tunakubali aina yoyote ya maunzi ili kujaribu maendeleo yetu kama vile:
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml inference code for Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Injini safi ya makadirio ya C++ kwa modeli za sauti, inayoendeshwa na ggml.
 
+<a id="special-thanks"></a>
 ## Shukrani za Pekee
 Kwa wachangiaji wote wa kifedha na msimbo, kila mchango na pendekezo husaidia kuboresha ubora wa E2A.

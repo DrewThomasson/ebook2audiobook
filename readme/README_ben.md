@@ -1,3 +1,4 @@
+<a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
@@ -27,10 +28,12 @@
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
+<a id="run-remotely"></a>
 ### দূরবর্তীভাবে চালান
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
+<a id="gui-interface"></a>
 #### গ্রাফিকাল ইন্টারফেস (GUI)
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -41,6 +44,7 @@
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<a id="demos"></a>
 ## ডেমো
 
 **নতুন ডিফল্ট ভয়েসের ডেমো**  
@@ -73,8 +77,9 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## README.md
 
+<a id="table-of-contents"></a>
 ## সূচিপত্র
-- [ebook2audiobook](#-ebook2audiobook)
+- [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
@@ -105,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Table of Contents](#table-of-contents)
 
 
+<a id="features"></a>
 ## বৈশিষ্ট্য
 - 🔧 **TTS ইঞ্জিন সমর্থিত**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **একাধিক ফাইল ফরম্যাট রূপান্তর করুন**: , , , , , , , , , , , , , , , , , , , , , , `.epub` `.mobi` `.azw3` `.fb2` `.lrf` `.rb` `.snb` `.tcr` `.pdf` `.txt` `.rtf` `.doc` `.docx` `.html` `.odt` `.azw` `.tiff` `.tif` `.png` `.jpg` `.jpeg` `.bmp` `.zip`
@@ -121,6 +127,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      (আপনার অতিরিক্ত ফাইন-টিউন করা মডেলের প্রয়োজন হলে, অথবা অফিসিয়াল প্রিসেট তালিকায় আপনার মডেল শেয়ার করতে চাইলে আমাদের সাথে যোগাযোগ করুন) <i> </i>
 
 
+<a id="hardware-requirements"></a>
 ##  হার্ডওয়্যার প্রয়োজনীয়তা
 - RAM ন্যূনতম 2GB, 8GB প্রস্তাবিত।
 - VRAM ন্যূনতম 1GB, 4GB প্রস্তাবিত।
@@ -131,6 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 *<i> আধুনিক TTS ইঞ্জিন CPU-তে খুব ধীর, তাই YourTTS, Tacotron2 ইত্যাদির মতো নিম্নমানের TTS ব্যবহার করুন।</i>
 
+<a id="supported-languages"></a>
 ## সমর্থিত ভাষা
 | **আরবি (ar)**    | **চীনা (zh)**    | **ইংরেজি (en)**   | **স্প্যানিশ (es)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
@@ -143,12 +151,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
+<a id="supported-ebook-formats"></a>
 ## সমর্থিত ই-বুক ফরম্যাট
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **সেরা ফলাফল**: স্বয়ংক্রিয় অধ্যায় শনাক্তকরণের জন্য `.epub` বা `.mobi`
 
+<a id="output-and-process-formats"></a>
 ## আউটপুট ও প্রক্রিয়াকরণ ফরম্যাট
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
 - প্রক্রিয়াকরণ ফরম্যাট lib/conf.py-তে পরিবর্তন করা যায়
@@ -171,6 +181,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 তাই আপনাকে প্রথমে ম্যানুয়ালি সেই সমস্ত টেক্সট সরিয়ে ফেলতে হবে যা আপনি অডিওতে রূপান্তর করতে চান না।**
 
 
+<a id="instructions"></a>
 ### Instructions 
 1. **Clone repo**
 	```bash
@@ -209,6 +220,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **যদি স্ক্রিপ্ট বন্ধ করে আবার চালানো হয়, তাহলে আপনাকে আপনার Gradio GUI ইন্টারফেস রিফ্রেশ করতে হবে<br>
 যাতে ওয়েব পৃষ্ঠাটি নতুন কানেকশন সকেটে পুনরায় সংযুক্ত হতে পারে।**
 
+<a id="basic-usage"></a>
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
@@ -226,6 +238,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     ২ অক্ষরের ISO-639-1 কোডও সমর্থিত।
 
 
+<a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
@@ -376,6 +389,7 @@ SML tags available:
 নোট: gradio/gui মোডে, চলমান রূপান্তর বাতিল করতে, কেবল ই-বুক আপলোড উপাদানের [X]-এ ক্লিক করুন।
 টিপ: যদি একটু বেশি বিরতির প্রয়োজন হয়, তাহলে ৩ সেকেন্ডের জন্য '[pause:3]' যোগ করুন ইত্যাদি।
 
+<a id="docker"></a>
 ### Docker
 1. **Clone the Repository**:
 ```bash
@@ -439,6 +453,7 @@ Podman Compose (i.e. cuda 12.8:
 - NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
   across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
 
+<a id="tools"></a>
 ## টুলস
 স্বতন্ত্র সরঞ্জাম, e2a এর নিজস্ব পাইথন দিয়ে চালান (`python_env`, e2a এর প্রথম লঞ্চ দ্বারা তৈরি) ।
 
@@ -583,6 +598,7 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
+<a id="cloned-voices"></a>
 ## ক্লোনড ভয়েসেস
 আপনি সমর্থিত যে কোনও অডিও ফর্ম্যাটে যে কোনও ভয়েস অডিও আপলোড করতে পারেন, আদর্শ সময়কাল প্রায় 1 থেকে 5 মিলিয়ন ।
 রেকর্ডিংয়ে শোরগোলের পটভূমি বা মিউজিক বাজছে কিনা তা বিবেচ্য নয় — E2A আপনার জন্য ভয়েস পরিষ্কার করবে ।
@@ -590,7 +606,9 @@ examples:
 বিল্ট-ইন ক্লোনড ভয়েস লিস্ট মূলত ইংরেজিতে । আপনার যদি অন্য ভাষায় কণ্ঠের প্রয়োজন হয় তবে আনুষ্ঠানিকভাবে
 তালিকায় যোগ করা হয়েছে, অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন এবং পর্যালোচনার পরে আমরা সেগুলি যোগ করব ।
 
+<a id="fine-tuned-tts-models"></a>
 ## ফাইন-টিউন করা (fine-tuned) TTS মডেল
+<a id="fine-tune-your-own-tts-model"></a>
 #### আপনার নিজস্ব টিটিএস মডেলটি সুর করুন
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
@@ -600,6 +618,7 @@ examples:
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
+<a id="fine-tuned-tts-collection"></a>
 ### ফাইন-টিউন করা TTS মডেলের সংগ্রহ
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
@@ -612,12 +631,14 @@ examples:
 ফিরিয়ে রাখতে পারেন। আপনাকে models.py-এর জন্যও একই প্রক্রিয়া পরিকল্পনা করতে হবে। আপনি যদি আপনার নিজের কাস্টম মডেলকে
 একটি অফিসিয়াল ফাইন-টিউন করা ebook2audiobook মডেল বানাতে চান, তাহলে অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন এবং আমরা এটি প্রিসেট তালিকায় যোগ করব।
 
+<a id="reverting-to-older-versions"></a>
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
+<a id="common-issues"></a>
 ## সাধারণ সমস্যা:
 - আমার NVIDIA/ROCm/XPU/MPS GPU শনাক্ত হচ্ছে না?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU ধীর (সার্ভার smp CPU-তে ভালো) যখন GPU প্রায় রিয়েল-টাইম রূপান্তর করতে পারে।
@@ -811,5 +832,6 @@ if config['default_role'] in roles:
 -  -- Zonos2 এর জন্য ggml ইনফারেন্স কোড । [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp)
 -  - ggml দ্বারা চালিত অডিও মডেলের জন্য একটি অল-ইন-ওয়ান, খাঁটি C++ ইনফারেন্স ইঞ্জিন । [Audio.cpp](https://github.com/0xShug0/audio.cpp)
 
+<a id="special-thanks"></a>
 ## বিশেষ ধন্যবাদ
 সমস্ত আর্থিক এবং কোড অবদানকারীদের জন্য, প্রতিটি অবদান এবং পরামর্শ E2A এর গুণমান উন্নত করতে সহায়তা করে ।

@@ -34,6 +34,9 @@ PROTECT = re.compile(
     r'|\[pause:\d+\]'
     r'|&\w+;)'
 )
+# names MT translates when they stand alone (Windows -> Fenster/Janelas, Docker -> Sztauer/Acoplagem):
+# a text holding no other word is kept as is, never sent to MT
+KEEP = re.compile(r'\b(?:Windows|Linux|MacOS|Docker|ARM)\b')
 MARKER = re.compile(r'⟦\s*(\d+)\s*⟧')
 STRAY = re.compile(r'[⟦⟧]')
 LINE_PREFIX = re.compile(r'^(\s*(?:[-*+]\s+|\d+\.\s+|#{1,6}\s+|>\s+)?(?:\[[ x]\]\s+)?)')
@@ -172,7 +175,7 @@ def translate_segments(text:str, lang:str)->str:
     for m in [*PROTECT.finditer(text), None]:
         segment:str = text[pos:m.start() if m else len(text)]
         s = re.match(r'^(\s*)(.*?)(\s*)$', segment, re.S)
-        if re.search(r'[A-Za-z]', s.group(2)):
+        if re.search(r'[A-Za-z]', KEEP.sub('', s.group(2))):
             segment = s.group(1) + ' '.join(mymemory(chunk, lang) for chunk in chunk_text(s.group(2))).strip() + s.group(3)
             time.sleep(THROTTLE)
         out.append(segment)
@@ -182,12 +185,13 @@ def translate_segments(text:str, lang:str)->str:
     return ''.join(out).replace('\n', ' ')
 
 def translate_text(text:str, lang:str, cache:dict)->str:
+    protected, tokens = protect(text)
+    # before the cache: an older run may hold the MT of a name that stands alone
+    if not re.search(r'[A-Za-z]', KEEP.sub('', protected)):
+        return text
     key:str = f'{lang}|{text}'
     if key in cache and not STRAY.search(cache[key]):
         return cache[key]
-    protected, tokens = protect(text)
-    if not re.search(r'[A-Za-z]', protected):
-        return text
     translated:str = ' '.join(mymemory(chunk, lang) for chunk in chunk_text(protected))
     restored:Optional[str] = restore(translated, tokens)
     # markers lost or broken: segment mode, never tokens pushed to the end of the line
