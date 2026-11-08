@@ -105,10 +105,42 @@ def force_restore(text:str, tokens:list)->str:
     for i, tok in enumerate(tokens):
         pattern = re.compile(r'\u27e6\s*' + str(i) + r'\s*\u27e7')
         if pattern.search(text):
-            text = pattern.sub(tok, text)
+            # callable replacement: a token is literal text, its backslashes (windows paths) are no regex escapes
+            text = pattern.sub(lambda m, tok=tok: tok, text)
         elif tok not in text:
             text = text.rstrip() + ' ' + tok
     return text
+
+def realign_tokens(tr_line:str, eng_tokens:list)->tuple:
+    # tokens MT kept stay where they are, the ones it altered are swapped in place for the missing English ones
+    # (in English order), extra ones are dropped; only tokens MT lost entirely have no position left and are appended
+    pool:list = list(eng_tokens)
+    kept:list = []
+    for tok in PROTECT.findall(tr_line):
+        if tok in pool:
+            pool.remove(tok)
+            kept.append(True)
+        else:
+            kept.append(False)
+    spare = iter(pool)
+    flags = iter(kept)
+    removed:bool = False
+    def repl(m)->str:
+        nonlocal removed
+        if next(flags):
+            return m.group(0)
+        tok:Optional[str] = next(spare, None)
+        if tok is None:
+            removed = True
+            return ''
+        return tok
+    fixed:str = PROTECT.sub(repl, tr_line)
+    lost:list = list(spare)
+    if removed:
+        fixed = re.sub(r'(?<=\S) {2,}', ' ', fixed).rstrip()
+    if lost:
+        fixed = fixed.rstrip() + ' ' + ' '.join(lost)
+    return fixed, bool(lost)
 
 def mymemory(text:str, lang:str)->str:
     params = {
@@ -260,13 +292,15 @@ def audit_and_repair(out_blocks:list, new_blocks:list, lang:str, cache:dict)->tu
             m = LINE_PREFIX.match(eng_line)
             prefix:str = m.group(1) if m else ''
             eng_body:str = eng_line[len(prefix):]
-            fixed_line:str = PROTECT.sub('', tr_line).rstrip()
-            for tok in eng_tokens:
-                fixed_line = fixed_line + ' ' + tok
+            fixed_line, appended = realign_tokens(tr_line, eng_tokens)
             fixed_block.append(fixed_line)
             tr_body:str = fixed_line[len(prefix):] if fixed_line.startswith(prefix) else fixed_line
-            if eng_body.strip():
-                cache[f'{lang}|{eng_body}'] = tr_body
+            key:str = f'{lang}|{eng_body}'
+            if appended:
+                # out-of-place tokens: keep it out of the cache so the next run retranslates the line
+                cache.pop(key, None)
+            elif eng_body.strip():
+                cache[key] = tr_body
         if forced:
             notes.append(f'block {idx+1}: inline code/links/tags differ on {forced} line(s), forcing English tokens locally')
         repaired.append(fixed_block)

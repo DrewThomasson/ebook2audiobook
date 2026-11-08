@@ -37,6 +37,8 @@ PROTECT = re.compile(
     r'|(?<![\w-])--[A-Za-z][\w-]*'
     r'|(?:\./)?[\w/.-]*\w\.(?:py|json|wav|mp3|epub|zip|cmd|command|sh|txt|vtt|onnx|pth|traineddata)\b'
     r'|\b[A-Za-z0-9]+(?:_[A-Za-z0-9]+)+\b'
+    r'|(?<![\w=])[a-z]+=-?\d+(?:\.\d+)?(?:,[a-z]+=-?\d+(?:\.\d+)?)*(?![\w.])'
+    r'|(?<![\w.])-?\d+\.\d+(?![\w.])'
     r'|[\u2190-\u21ff\u2300-\u23ff\u25a0-\u27bf])'
 )
 MARKER = re.compile(r'\u27e6\s*(\d+)(?:\s*\u27e7|(?!\w))|[\u301a\u3010\[]\s*(\d+)\s*[\u27e7\u301b\u3011\]]')
@@ -92,6 +94,12 @@ def missing_tokens(src:str, dst:str)->list:
         if dst.count(inner) < src.count(inner):
             lost.append(t)
     return sorted(lost)
+
+def broken_reason(src:str, dst:str)->str:
+    if src.strip() and not dst.strip():
+        return 'is empty'
+    lost:list = missing_tokens(src, dst)
+    return f'lacks {" ".join(lost)}' if lost else ''
 
 def protect(text:str)->tuple:
     tokens:list = []
@@ -207,6 +215,8 @@ def translate_value(text:str, code:str)->tuple:
         segmented = segmented or seg
         out.append(translated)
     result:str = '\n'.join(out)
+    if text.strip() and not result.strip():
+        return None, 'empty translation'
     if format_fields(result) != format_fields(text):
         return None, 'format placeholders differ from English'
     lost:list = missing_tokens(text, result)
@@ -219,7 +229,7 @@ def main()->int:
     parser.add_argument('--check', action='store_true', help='only report out-of-sync files, no network, no write, exit 1 if any')
     parser.add_argument('--langs', nargs='+', metavar='ISO3', help='translate only these languages (default: all)')
     parser.add_argument('--redo', nargs='+', metavar='KEY', default=[], help='retranslate these keys in the selected languages')
-    parser.add_argument('--fix', action='store_true', help='retranslate existing keys whose reserved tokens differ from English in the selected languages')
+    parser.add_argument('--fix', action='store_true', help='retranslate existing keys that are empty or whose reserved tokens differ from English in the selected languages')
     args = parser.parse_args()
     eng:dict = load_assign(ENG_FILE, 'legends')
     baseline:Optional[dict] = load_assign(BASELINE, 'legends') if BASELINE.exists() else None
@@ -251,7 +261,7 @@ def main()->int:
         path:Path = LANG_DIR / f'legends_{iso3}.py'
         tr:dict = load_assign(path, 'legends') if path.exists() else {}
         orphans:list = [k for k in tr if k not in eng]
-        broken:list = [k for k in eng if k in tr and missing_tokens(eng[k], tr[k])]
+        broken:list = [k for k in eng if k in tr and broken_reason(eng[k], tr[k])]
         stale:list = [k for k in eng if k in tr and (k in changed or (iso3 in selected and (k in args.redo or (args.fix and k in broken))) or format_fields(tr[k]) != format_fields(eng[k]))]
         broken = [k for k in broken if k not in stale]
         missing:list = [k for k in eng if k not in tr]
@@ -264,7 +274,7 @@ def main()->int:
                     if keys and path.exists():
                         print(f'[{iso3}]   {label}: {", ".join(keys)}')
                 for k in broken:
-                    print(f'[{iso3}]   broken: {k} lacks {" ".join(missing_tokens(eng[k], tr[k]))}')
+                    print(f'[{iso3}]   broken: {k} {broken_reason(eng[k], tr[k])}')
     if args.check:
         print('all legends files in sync' if not out_of_sync else f'{out_of_sync} file(s) out of sync')
         return 1 if out_of_sync else 0
@@ -285,7 +295,7 @@ def main()->int:
         if not s['missing'] and s['exists']:
             continue
         code:str = targets[iso3]
-        known:dict = {eng[k]: v for k, v in s['tr'].items() if k in eng and not missing_tokens(eng[k], v)}
+        known:dict = {eng[k]: v for k, v in s['tr'].items() if k in eng and not broken_reason(eng[k], v)}
         done:int = 0
         rejected:Optional[str] = None
         for key in s['missing']:
@@ -327,7 +337,7 @@ def main()->int:
         return 1
     broken_left:int = sum(len(state[iso3]['broken']) for iso3 in selected)
     if broken_left:
-        print(f'{broken_left} existing translation(s) lack reserved tokens from English, list them with --check, retranslate with --fix', file=sys.stderr)
+        print(f'{broken_left} existing translation(s) are empty or lack reserved tokens from English, list them with --check, retranslate with --fix', file=sys.stderr)
         return 1
     print('legends files in sync')
     return 0

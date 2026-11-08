@@ -530,7 +530,8 @@ def extract_custom_model(session_id)->str|None:
                     session['voice'] = final_voice_file
                     if os.path.exists(file_src):
                         os.remove(file_src)
-                    if os.path.exists(voice_ref):
+                    # a model named "ref" has ref.wav as its final voice: never delete it as the source
+                    if os.path.exists(voice_ref) and os.path.abspath(voice_ref) != os.path.abspath(final_voice_file):
                         os.remove(voice_ref)
                     return model_path
                 else:

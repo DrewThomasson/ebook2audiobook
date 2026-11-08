@@ -1,5 +1,6 @@
 .git
 .cache
+.uv_cache
 *.pyc
 __pycache__
 python_env
