@@ -112,7 +112,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Fitur
-- 🔧 ** Mesin tts didukung**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Mesin tts didukung**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Mengonversi berbagai format file**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Area Teks** untuk langsung mengonversi teks pendek menjadi audio
 - 🔍 **Pemindaian OCR** untuk file dengan halaman teks berupa gambar
@@ -140,14 +140,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Bahasa yang Didukung
-| **Arabic (ar )**|**Chinese (zh)**|**English (en )**|** Spanish (es )**|
+| **Arab (ar)** | **Tionghoa (zh)** | **Inggris (en)** | **Spanyol (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| **French (fr )**|**German (de )**|**Italian (it )**|** Portuguese (pt )**|
-| **Polish (pl )**|**Turkish (tr )**|**Russian (ru )**|** Dutch (nl     )**|
-| ** Bahasa Ceko (cs )**|** Bahasa Jepang (ja )**|** Bahasa Hindi (hi )**|** Bahasa Bengali (bn )**|
-| ** Bahasa Hongaria (hu )**|** Bahasa Korea (ko )**|** Bahasa Vietnam (vi )**|** Bahasa Swedia (sv )**|
-| **Persia (fa )**   | **Yoruba (yo )**     | **Swahili (sw )**   | **Indonesia (id )**|
-| **Bahasa Slowakia (sk )**|**Bahasa Kroasia (hr )**|** Bahasa Tamil (ta )**|** Bahasa Denmark (da )**|
+| **Prancis (fr)** | **Jerman (de)** | **Italia (it)** | **Portugis (pt)** |
+| **Polandia (pl)** | **Turki (tr)** | **Rusia (ru)** | **Belanda (nl)** |
+| **Ceko (cs)** | **Jepang (ja)** | **Hindi (hi)** | **Bengali (bn)** |
+| **Hongaria (hu)** | **Korea (ko)** | **Vietnam (vi)** | **Swedia (sv)** |
+| **Persia (fa)** | **Yoruba (yo)** | **Swahili (sw)** | **Indonesia (id)** |
+| **Slowakia (sk)** | **Kroasia (hr)** | **Tamil (ta)** | **Denmark (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 

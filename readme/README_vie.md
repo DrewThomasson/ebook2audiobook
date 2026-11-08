@@ -112,7 +112,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Tính năng
-- 🔧 ** Động cơ TTS được hỗ trợ**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Động cơ TTS được hỗ trợ**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Chuyển đổi nhiều định dạng tệp**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Vùng văn bản** để chuyển trực tiếp một đoạn văn bản ngắn thành âm thanh
 - 🔍 **Quét OCR** cho các tệp có trang văn bản dưới dạng hình ảnh
@@ -140,14 +140,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Ngôn ngữ được hỗ trợ
-| **Tiếng Ả Rập (ar)**    | ** Tiếng Trung (zh)**    | **Tiếng Anh (en)* * | * * Tiếng Tây Ban Nha (es)**   |
+| **Tiếng Ả Rập (ar)** | **Tiếng Trung (zh)** | **Tiếng Anh (en)** | **Tiếng Tây Ban Nha (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| **Tiếng Pháp (fr)**    | **Tiếng Đức (de)**     | * *Tiếng Ý (it)* * | * * Tiếng Bồ Đào Nha (pt)** |
-| **Tiếng Ba Lan * * | ** Tiếng Thổ Nhĩ Kỳ (tr)**    | **Tiếng Nga (ru)**   | **Tiếng Hà Lan (nl)**     |
-| ** Tiếng Séc (cs)**     | ** Tiếng Nhật (ja)**   | **Tiếng Hindi (hi)**     | ** Tiếng Bengal (bn)**   |
-| **Tiếng Hungary (hu)** | ** Tiếng Hàn (ko)**     | **Tiếng Việt (vi)**| ** Tiếng Thụy Điển (sv)**   |
-| ** Tiếng Ba Tư (fa)**   | ** Tiếng Yoruba (yo)**     | **Tiếng Swahili (sw)**   | ** Tiếng Indonesia (id)**|
-| **Tiếng Slovak (sk)**    | **Tiếng Croatia (hr)**   | ** Tiếng Tamil (ta)**     | ** Tiếng Đan Mạch (da)**    |
+| **Tiếng Pháp (fr)** | **Tiếng Đức (de)** | **Tiếng Ý (it)** | **Tiếng Bồ Đào Nha (pt)** |
+| **Tiếng Ba Lan (pl)** | **Tiếng Thổ Nhĩ Kỳ (tr)** | **Tiếng Nga (ru)** | **Tiếng Hà Lan (nl)** |
+| **Tiếng Séc (cs)** | **Tiếng Nhật (ja)** | **Tiếng Hindi (hi)** | **Tiếng Bengal (bn)** |
+| **Tiếng Hungary (hu)** | **Tiếng Hàn (ko)** | **Tiếng Việt (vi)** | **Tiếng Thụy Điển (sv)** |
+| **Tiếng Ba Tư (fa)** | **Tiếng Yoruba (yo)** | **Tiếng Swahili (sw)** | **Tiếng Indonesia (id)** |
+| **Tiếng Slovak (sk)** | **Tiếng Croatia (hr)** | **Tiếng Tamil (ta)** | **Tiếng Đan Mạch (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 

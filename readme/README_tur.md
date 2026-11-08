@@ -112,13 +112,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Özellikler
-- 🔧 **TTS Motorları desteklenir **: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **TTS Motorları desteklenir**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **Birden fazla dosya biçimini dönüştürme**: , , , , , , , , , , , , , , , , , , , , , , `.epub` `.mobi` `.azw3` `.fb2` `.lrf` `.rb` `.snb` `.tcr` `.pdf` `.txt` `.rtf` `.doc` `.docx` `.html` `.odt` `.azw` `.tiff` `.tif` `.png` `.jpg` `.jpeg` `.bmp` `.zip`
 - 💻 **Metin Alanı** kısa bir metni doğrudan sese dönüştürmek için
 - 🔍 **OCR taraması** metin sayfaları görüntü olan dosyalar için
 - 🔊 **Yüksek kaliteli metinden konuşmaya**, neredeyse gerçek zamanlıdan neredeyse gerçek sese kadar
 - 🗣️ **İsteğe bağlı ses klonlama** kendi ses dosyanızı kullanarak
-- 🌐 ** 1696 dili destekler ** () [supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- 🌐 **1696 dili destekler** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Düşük kaynak dostu** — **2 GB RAM / 1 GB VRAM (minimum)** ile çalışır
 - 🎵 **Sesli kitap çıktı biçimleri**: mono or stereo , , , , , , , , , `aac` `flac` `mp3` `m4b` `m4a` `mp4` `mov` `ogg` `wav` `webm`
 - 🧠 **SML etiketleri desteklenir** — kesintiler, duraklamalar, ses değiştirme ve daha fazlasının ince ayarlı kontrolü () [see below](#sml-tags-available)

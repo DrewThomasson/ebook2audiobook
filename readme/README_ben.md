@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 ছবি হিসেবে টেক্সট পৃষ্ঠা সহ ফাইলের জন্য **OCR স্ক্যানিং**
 - 🔊 **উচ্চমানের টেক্সট-টু-স্পিচ**, প্রায় রিয়েল-টাইম থেকে প্রায় বাস্তব ভয়েস পর্যন্ত
 - 🗣️ আপনার নিজের ভয়েস ফাইল ব্যবহার করে **ঐচ্ছিক ভয়েস ক্লোনিং**
-- 🌐 ** 1696 টি ভাষা সমর্থন করে ** () [supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- 🌐 **1696 টি ভাষা সমর্থন করে** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **কম সম্পদ-বান্ধব** — **2 GB RAM / 1 GB VRAM (ন্যূনতম)**-এ চলে
 - 🎵 **অডিওবুক আউটপুট ফরম্যাট**: mono or stereo , , , , , , , , , `aac` `flac` `mp3` `m4b` `m4a` `mp4` `mov` `ogg` `wav` `webm`
 - 🧠 **SML ট্যাগ সমর্থিত** — বিরতি, থামা, ভয়েস পরিবর্তন ইত্যাদির সূক্ষ্ম নিয়ন্ত্রণ () [see below](#sml-tags-available)
@@ -140,14 +140,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## সমর্থিত ভাষা
-| **আরবি (ar)**    | **চীনা (zh)**    | **ইংরেজি (en)**   | **স্প্যানিশ (es)**   |
+| **আরবি (ar)** | **চীনা (zh)** | **ইংরেজি (en)** | **স্প্যানিশ (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| **ফরাসি (fr)**    | **জার্মান (de)**     | **ইতালীয় (it)**   | * **পর্তুগীজ (pt)** |
-| **পোলিশ (pl)**    | **তুর্কি (tr)**    | **রাশিয়ান (ru)**   | * **ডাচ (nl)**     |
-| **চেক (cs)**     | **জাপানি (ja)**   | **হিন্দি (hi)**     | **বাংলা (bn)**   |
-| **হাঙ্গেরীয় (hu)** | **কোরিয়ান (ko)**     | **ভিয়েতনামী (vi)**| **সুইডিশ (sv)**   |
-| **Persian (fa)**   | ** *Yoruba (yo)**     | **Swahili (sw)** * **ইন্দোনেশিয়ান (id)**|
-| **স্লোভাক (sk)**    | **ক্রোয়েশিয়ান (hr)**   | **তামিল (ta)**     | **ডেনিশ (da)**    |
+| **ফরাসি (fr)** | **জার্মান (de)** | **ইতালীয় (it)** | **পর্তুগিজ (pt)** |
+| **পোলিশ (pl)** | **তুর্কি (tr)** | **রাশিয়ান (ru)** | **ডাচ (nl)** |
+| **চেক (cs)** | **জাপানি (ja)** | **হিন্দি (hi)** | **বাংলা (bn)** |
+| **হাঙ্গেরীয় (hu)** | **কোরিয়ান (ko)** | **ভিয়েতনামী (vi)** | **সুইডিশ (sv)** |
+| **ফারসি (fa)** | **ইয়োরুবা (yo)** | **সোয়াহিলি (sw)** | **ইন্দোনেশিয়ান (id)** |
+| **স্লোভাক (sk)** | **ক্রোয়েশিয়ান (hr)** | **তামিল (ta)** | **ডেনিশ (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
@@ -827,10 +827,10 @@ if config['default_role'] in roles:
 -->
 
 ## ক্রেডিট
--  - টেক্সট-টু-স্পীচের জন্য একটি গভীর শেখার টুলকিট, গবেষণা এবং উত্পাদনে যুদ্ধ-পরীক্ষিত । [Coqui-tts](https://github.com/idiap/coqui-ai-TTS)
--  - দ্রুত এবং স্থানীয় নিউরাল টেক্সট-টু-স্পিচ ইঞ্জিন । [Piper-tts](https://github.com/OHF-Voice/piper1-gpl)
--  -- Zonos2 এর জন্য ggml ইনফারেন্স কোড । [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp)
--  - ggml দ্বারা চালিত অডিও মডেলের জন্য একটি অল-ইন-ওয়ান, খাঁটি C++ ইনফারেন্স ইঞ্জিন । [Audio.cpp](https://github.com/0xShug0/audio.cpp)
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- টেক্সট-টু-স্পিচের জন্য একটি ডিপ লার্নিং টুলকিট, গবেষণা ও প্রোডাকশনে পরীক্ষিত।
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- দ্রুত ও লোকাল নিউরাল টেক্সট-টু-স্পিচ ইঞ্জিন।
+- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2-এর জন্য ggml ইনফারেন্স কোড।
+- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- ggml-চালিত অডিও মডেলের জন্য একটি অল-ইন-ওয়ান, বিশুদ্ধ C++ ইনফারেন্স ইঞ্জিন।
 
 <a id="special-thanks"></a>
 ## বিশেষ ধন্যবাদ

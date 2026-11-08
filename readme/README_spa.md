@@ -17,7 +17,7 @@ Utilice esta herramienta de manera responsable y de acuerdo con todas las leyes 
 
 ### Ejecutar localmente
 
-0. Instrucciones [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
 
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
 
@@ -47,7 +47,7 @@ Utilice esta herramienta de manera responsable y de acuerdo con todas las leyes 
 <a id="demos"></a>
 ## Demos
 
-**Nueva demostración de voz predeterminada **
+**Nueva demostración de voz predeterminada**
 
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
@@ -58,7 +58,7 @@ https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea
 
 https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
-** Voz de día lluvioso **
+**Voz de día lluvioso**
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
@@ -66,11 +66,11 @@ https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080
 
 https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
-** Voz de David Attenborough **
+**Voz de David Attenborough**
 
 https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
-Ejemplo
+**Ejemplo**
 
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 </details>
@@ -112,18 +112,18 @@ Ejemplo
 
 <a id="features"></a>
 ## Rasgos
-- 🔧 ** Motores TTS compatibles**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
-- 📚 **Convertir múltiples formatos de archivo **: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
+- 🔧 **Motores TTS compatibles**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 📚 **Convertir múltiples formatos de archivo**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** para convertir directamente un texto corto en audio
-- 🔍 ** Escaneo OCR ** para archivos con páginas de texto como imágenes
-- 🔊 ** Texto a voz de alta calidad ** de voz casi en tiempo real a voz casi real
-- 🗣️ ** Clonación de voz opcional ** con tu propio archivo de voz
+- 🔍 **Escaneo OCR** para archivos con páginas de texto como imágenes
+- 🔊 **Texto a voz de alta calidad** de voz casi en tiempo real a voz casi real
+- 🗣️ **Clonación de voz opcional** con tu propio archivo de voz
 - 🌐 **Admite 1696 idiomas** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
-- 💻 ** Apto para personas con pocos recursos **: funciona con **2 GB de RAM / 1 GB de VRAM (mínimo)**
-- 🎵 ** Formatos de salida de audiolibros **: mono o estéreo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
-- 🧠 ** Etiquetas SML compatibles**: control detallado de descansos, pausas, conmutación de voz y más ([see below](#sml-tags-available))
-- 🧩 ** Modelo personalizado opcional ** utilizando su propio modelo capacitado (XTTSv2, VITS, FAIRSEQ, PIPER, otros a pedido)
-- 🎛️ ** Modelos preestablecidos ajustados ** entrenados por el equipo E2A<br/>
+- 💻 **Apto para personas con pocos recursos**: funciona con **2 GB de RAM / 1 GB de VRAM (mínimo)**
+- 🎵 **Formatos de salida de audiolibros**: mono o estéreo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
+- 🧠 **Etiquetas SML compatibles**: control detallado de descansos, pausas, conmutación de voz y más ([see below](#sml-tags-available))
+- 🧩 **Modelo personalizado opcional** utilizando su propio modelo capacitado (XTTSv2, VITS, FAIRSEQ, PIPER, otros a pedido)
+- 🎛️ **Modelos preestablecidos ajustados** entrenados por el equipo E2A<br/>
      <i>(Póngase en contacto con nosotros si necesita modelos adicionales ajustados o si desea compartir los suyos con la lista preestablecida oficial)</i>
 
 
@@ -177,7 +177,7 @@ Ejemplo
 para asegurarte de que tu problema no exista ya.**
 
 Nota
-** El formato EPUB carece de una estructura estándar como lo que es un capítulo, párrafo, prefacio, etc.<br>
+**El formato EPUB carece de una estructura estándar como lo que es un capítulo, párrafo, prefacio, etc.<br>
 Por lo tanto, primero debes eliminar manualmente cualquier texto que no quieras que se convierta en audio.**
 
 
@@ -197,11 +197,11 @@ Por lo tanto, primero debes eliminar manualmente cualquier texto que no quieras 
      ```
      <i>Nota para usuarios de MacOS: se instala homebrew para instalar los programas que faltan.</i>
      
-   - ** Lanzador de Mac **
+   - **Lanzador de Mac**
      Doble clic `Mac Ebook2Audiobook Launcher.command`
 
 
-   - Ventanas
+   - **Windows**  
      ```bash
      ebook2audiobook.cmd
      ```
@@ -210,8 +210,8 @@ Por lo tanto, primero debes eliminar manualmente cualquier texto que no quieras 
 
      <i>Nota para usuarios de Windows: se instala scoop para instalar los programas que faltan sin privilegios de administrador.</i>
    
-1. **Abra la aplicación web **: haga clic en la URL proporcionada en el terminal para acceder a la aplicación web y convertir libros electrónicos. `http://localhost:7860/`
-2. **Para Enlace Público **:
+1. **Abra la aplicación web**: haga clic en la URL proporcionada en el terminal para acceder a la aplicación web y convertir libros electrónicos. `http://localhost:7860/`
+2. **Para Enlace Público**:
    `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
    TODOS (O.S) `python app.py --share`
@@ -226,7 +226,7 @@ para permitir que la página web se vuelva a conectar al nuevo socket de conexi�
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
-   - Ventanas
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
@@ -245,7 +245,7 @@ para permitir que la página web se vuelva a conectar al nuevo socket de conexi�
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-   - Ventanas
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
@@ -260,7 +260,7 @@ para permitir que la página web se vuelva a conectar al nuevo socket de conexi�
      ```bash
      ./ebook2audiobook.command --help
      ```
-   - Ventanas
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --help
      ```
@@ -469,7 +469,7 @@ lo que se interrumpió (ctrl-c, fallo, memoria desconectada) tras eliminar sus a
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
      ```
-   - Ventanas
+   - **Windows**
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
@@ -527,7 +527,7 @@ desde cualquier carpeta (las rutas relativas se toman desde donde se inicia):
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
-   - Ventanas
+   - **Windows**
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```

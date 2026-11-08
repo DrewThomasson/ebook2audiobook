@@ -118,8 +118,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 画像としてのテキストページを含むファイル向けの**OCRスキャン**
 - 🔊 **高品質なテキスト読み上げ**、ほぼリアルタイムからほぼ本物の音声まで
 - 🗣️ 独自の音声ファイルを使用した**任意の音声クローン**
-- 🌐 ** 1696言語をサポート** () [supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
-- 💻 **低リソースに優しい** — **2 GB RAM / 1 GB VRAM（最小）**で動作
+- 🌐 **1696言語をサポート** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 💻 **低リソースに優しい** — **2 GB RAM / 1 GB VRAM**（最小）で動作
 - 🎵 **オーディオブックの出力形式**: mono or stereo , , , , , , , , , `aac` `flac` `mp3` `m4b` `m4a` `mp4` `mov` `ogg` `wav` `webm`
 - 🧠 **SMLタグ対応** — 中断、一時停止、音声切り替えなどのきめ細かな制御 () [see below](#sml-tags-available)
 - 🧩 独自の学習済みモデルを使用した**任意のカスタムモデル** (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)

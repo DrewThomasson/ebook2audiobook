@@ -17,7 +17,7 @@ Utilisez cet outil de manière responsable et conformément à toutes les lois a
 
 ### Exécuter localement
 
-Instructions [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
 
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
 
@@ -47,7 +47,7 @@ Instructions [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?sty
 <a id="demos"></a>
 ## Démos
 
-**Nouvelle démo vocale par défaut **
+**Nouvelle démo vocale par défaut**
 
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
@@ -70,7 +70,7 @@ https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
 https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
-roue des futurs
+**Exemple**
 
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 </details>
@@ -112,18 +112,18 @@ roue des futurs
 
 <a id="features"></a>
 ## Caractéristiques
-- 🔧 ** Moteurs TTS pris en charge** : `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
-- 📚 **Convertir plusieurs formats de fichiers ** : `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
+- 🔧 **Moteurs TTS pris en charge** : `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 📚 **Convertir plusieurs formats de fichiers** : `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** pour convertir directement un texte court en audio
-- 🔍 ** Numérisation OCR ** pour les fichiers avec des pages de texte en tant qu'images
-- 🔊 **Du texte à la parole de haute qualité ** de la voix en temps quasi réel à la voix en temps quasi réel
-- 🗣️ ** Clonage vocal facultatif ** à l'aide de votre propre fichier vocal
+- 🔍 **Numérisation OCR** pour les fichiers avec des pages de texte en tant qu'images
+- 🔊 **Du texte à la parole de haute qualité** de la voix en temps quasi réel à la voix en temps quasi réel
+- 🗣️ **Clonage vocal facultatif** à l'aide de votre propre fichier vocal
 - 🌐 **Prend en charge 1696 langues** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
-- 💻 ** Adapté aux faibles ressources ** — fonctionne sur **2 Go de RAM / 1 Go de VRAM (minimum)**
-- 🎵 ** Formats de sortie des livres audio ** : mono ou stéréo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
-- 🧠 ** Tags SML pris en charge** — contrôle fin des pauses, des pauses, de la commutation vocale et plus encore ([see below](#sml-tags-available))
-- 🧩 ** Modèle personnalisé en option ** en utilisant votre propre modèle formé (XTTSv2, VITS, FAIRSEQ, PIPER, autres sur demande)
-- 🎛️ ** Modèles prédéfinis affinés** formés par l'équipe E2A<br/>
+- 💻 **Adapté aux faibles ressources** — fonctionne sur **2 Go de RAM / 1 Go de VRAM (minimum)**
+- 🎵 **Formats de sortie des livres audio** : mono ou stéréo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
+- 🧠 **Tags SML pris en charge** — contrôle fin des pauses, des pauses, de la commutation vocale et plus encore ([see below](#sml-tags-available))
+- 🧩 **Modèle personnalisé en option** en utilisant votre propre modèle formé (XTTSv2, VITS, FAIRSEQ, PIPER, autres sur demande)
+- 🎛️ **Modèles prédéfinis affinés** formés par l'équipe E2A<br/>
      <i>(Contactez-nous si vous avez besoin de modèles affinés supplémentaires ou si vous souhaitez partager le vôtre avec la liste officielle des préréglages)</i>
 
 
@@ -197,11 +197,11 @@ Vous devez donc d'abord supprimer manuellement tout texte que vous ne souhaitez 
      ```
      <i>Note pour les utilisateurs de MacOS : homebrew est installé pour installer les programmes manquants.</i>
      
-   - ** Lanceur Mac **
+   - **Lanceur Mac**
      Double clic `Mac Ebook2Audiobook Launcher.command`
 
 
-   - Fenêtres
+   - **Windows**  
      ```bash
      ebook2audiobook.cmd
      ```
@@ -210,8 +210,8 @@ Vous devez donc d'abord supprimer manuellement tout texte que vous ne souhaitez 
 
      <i>Remarque pour les utilisateurs de Windows : scoop est installé pour installer les programmes manquants sans privilèges d'administrateur.</i>
    
-1. **Ouvrez l'application Web ** : cliquez sur l'URL fournie dans le terminal pour accéder à l'application Web et convertir les livres électroniques. `http://localhost:7860/`
-2. **Pour le lien public ** :
+1. **Ouvrez l'application Web** : cliquez sur l'URL fournie dans le terminal pour accéder à l'application Web et convertir les livres électroniques. `http://localhost:7860/`
+2. **Pour le lien public** :
    `./ebook2audiobook.command --share` (Linux/MacOS)
    Windows. `ebook2audiobook.cmd --share`
    Tous les OS `python app.py --share`
@@ -226,7 +226,7 @@ pour permettre à la page Web de se reconnecter à la nouvelle prise de connexio
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
-   - Fenêtres
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
@@ -245,7 +245,7 @@ pour permettre à la page Web de se reconnecter à la nouvelle prise de connexio
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-   - Fenêtres
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
@@ -260,7 +260,7 @@ pour permettre à la page Web de se reconnecter à la nouvelle prise de connexio
      ```bash
      ./ebook2audiobook.command --help
      ```
-   - Fenêtres
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --help
      ```
@@ -469,7 +469,7 @@ ce qui a été interrompu (ctrl-c, plantage, clé débranchée) après avoir sup
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
      ```
-   - Fenêtres
+   - **Windows**
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
@@ -527,7 +527,7 @@ depuis n'importe quel dossier (les chemins relatifs partent de l'endroit où il 
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
-   - Fenêtres
+   - **Windows**
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```

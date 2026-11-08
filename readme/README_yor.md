@@ -140,14 +140,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Àwọn Èdè Tí A Ṣe Àtìlẹ́yìn Fún
-Èdè Lárúbáwá (ar) **Èdè Ṣáínà (zh)** * Èdè Gẹ̀ẹ́sì (en)* * Èdè Sípáníìṣì (es) **Èdè Sípáníìṣì (es)** Èdè Sípáníìṣì (es) **Èdè Sípáníìṣì (es)** Èdè Sípán
+| **Èdè Lárúbáwá (ar)** | **Èdè Ṣáínà (zh)** | **Èdè Gẹ̀ẹ́sì (en)** | **Èdè Sípáníìṣì (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-Èdè Faransé (fr)** Èdè Jẹ́mánì (de)* ** Èdè Ítálì (it)**Èdè Potogí (pt)**.
-**Polish (pl)** * **Turkish (tr)** **Russian (ru)** **Dutch (nl)**.
-**Czech (cs)** **Japanese (ja)** **Hindi (hi)** **Bengali (bn)**
-**Hungarian (hu)** **Korean (ko)** **Vietnamese (vi)** **Swedish (sv)**.
-Èdè Páṣíà (fa)* **Èdè Yorùbá (yo)** *Èdè Swahili (sw)** Èdè Indonéṣíà (id)**.
-**Slovak (sk)** ***Croatian (hr)* **Tamil (ta)** *Danish (da)**.
+| **Èdè Faransé (fr)** | **Èdè Jámánì (de)** | **Èdè Ítálì (it)** | **Èdè Pọtugí (pt)** |
+| **Èdè Pólándì (pl)** | **Èdè Tọ́kì (tr)** | **Èdè Rọ́ṣíà (ru)** | **Èdè Dọ́ọ̀ṣì (nl)** |
+| **Èdè Ṣẹ́ẹ̀kì (cs)** | **Èdè Jàpáànù (ja)** | **Èdè Híńdì (hi)** | **Èdè Bẹ̀ngálì (bn)** |
+| **Èdè Họ̀ńgárì (hu)** | **Èdè Kòríà (ko)** | **Èdè Fíẹ̀tìnámù (vi)** | **Èdè Swídìn (sv)** |
+| **Èdè Páṣíà (fa)** | **Èdè Yorùbá (yo)** | **Èdè Swahili (sw)** | **Èdè Indonéṣíà (id)** |
+| **Èdè Slofákíà (sk)** | **Èdè Kroéṣíà (hr)** | **Èdè Támílì (ta)** | **Èdè Dáníṣì (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 

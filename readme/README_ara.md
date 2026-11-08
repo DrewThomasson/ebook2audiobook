@@ -17,7 +17,7 @@
 
 ### التشغيل محليًا
 
-التعليمات [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
 
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
 
@@ -47,7 +47,7 @@
 <a id="demos"></a>
 ## تجريبي
 
-**عرض تجريبي صوتي افتراضي جديد **
+**عرض تجريبي صوتي افتراضي جديد**
 
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
@@ -58,7 +58,7 @@ https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea
 
 https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
-** صوت يوم ممطر **
+**صوت يوم ممطر**
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
@@ -70,7 +70,7 @@ https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
 https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
-مثال
+**مثال**
 
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 </details>
@@ -112,18 +112,18 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## السمات
-- 🔧 ** محركات TTS المدعومة**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **محركات TTS المدعومة**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **تحويل صيغ ملفات متعددة**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** لتحويل نص قصير في الصوت مباشرة
-- 🔍 ** مسح التعرف الضوئي على الحروف ** للملفات التي تحتوي على صفحات نصية كصور
-- 🔊 ** تحويل النص إلى كلام عالي الجودة ** من الصوت القريب من الصوت الحقيقي إلى الصوت القريب من الصوت الحقيقي
-- 🗣️ ** استنساخ صوتي اختياري ** باستخدام ملفك الصوتي الخاص
+- 🔍 **مسح التعرف الضوئي على الحروف** للملفات التي تحتوي على صفحات نصية كصور
+- 🔊 **تحويل النص إلى كلام عالي الجودة** من الصوت القريب من الصوت الحقيقي إلى الصوت القريب من الصوت الحقيقي
+- 🗣️ **استنساخ صوتي اختياري** باستخدام ملفك الصوتي الخاص
 - 🌐 **يدعم 1696 لغة** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
-- 💻 ** صديقة للموارد المنخفضة ** — تعمل على ** ذاكرة وصول عشوائي بسعة 2 جيجابايت/ذاكرة وصول عشوائي بسعة 1 جيجابايت (الحد الأدنى )**
-- 🎵 ** تنسيقات إخراج الكتاب الصوتي **: أحادي أو ستيريو `aac`، `flac`، `mp3`، `m4b`، `m4a`، `mp4`، `mov`، `ogg`، `wav`، `webm`
-- 🧠 ** علامات SML مدعومة** — تحكم دقيق في الفواصل والإيقاف المؤقت والتبديل الصوتي والمزيد ([see below](#sml-tags-available))
-- 🧩 ** نموذج مخصص اختياري ** باستخدام النموذج المدرّب الخاص بك (XTTSv2، VITS، FAIRSEQ، PIPER، آخرون عند الطلب)
-- 🎛️ ** نماذج مسبقة الضبط دقيقة ** تم تدريبها من قبل فريق E2A<br/>
+- 💻 **صديقة للموارد المنخفضة** — تعمل على **ذاكرة وصول عشوائي بسعة 2 جيجابايت/ذاكرة وصول عشوائي بسعة 1 جيجابايت (الحد الأدنى )**
+- 🎵 **تنسيقات إخراج الكتاب الصوتي**: أحادي أو ستيريو `aac`، `flac`، `mp3`، `m4b`، `m4a`، `mp4`، `mov`، `ogg`، `wav`، `webm`
+- 🧠 **علامات SML مدعومة** — تحكم دقيق في الفواصل والإيقاف المؤقت والتبديل الصوتي والمزيد ([see below](#sml-tags-available))
+- 🧩 **نموذج مخصص اختياري** باستخدام النموذج المدرّب الخاص بك (XTTSv2، VITS، FAIRSEQ، PIPER، آخرون عند الطلب)
+- 🎛️ **نماذج مسبقة الضبط دقيقة** تم تدريبها من قبل فريق E2A<br/>
      <i>(اتصل بنا إذا كنت بحاجة إلى طرز إضافية مضبوطة، أو إذا كنت ترغب في مشاركة طرزك في قائمة الإعداد المسبق الرسمية)</i>
 
 
@@ -140,14 +140,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## اللغات المدعومة
-|** العربية (ar )**|** الصينية (zh )**|** الإنجليزية (en )**|** الإسبانية (الإسبانية )**|
+| **العربية (ar)** | **الصينية (zh)** | **الإنجليزية (en)** | **الإسبانية (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-|** الفرنسية (fr )**|** الألمانية (de )**|** الإيطالية (it   )**|** البرتغالية (pt )**|
-|**البولندية (pl )**|** التركية (tr )**|** الروسية (ru )**|** الهولندية (nl )**|
-|** التشيكية (cs )**|** اليابانية (ja )**|** الهندية (hi )**|** البنغالية (bn )**|
-|** المجرية (hu )**|** الكورية (ko )**|** الفيتنامية (vi )**|** السويدية (sv )**|
-|** الفارسية (fa )**|** يوروبا (yo )**|** السواحلية (sw )**|** الإندونيسية (id )**|
-|** السلوفاكية (sk )**|** الكرواتية (hr )**|** التاميلية (ta )**|** الدنماركية (da )**|
+| **الفرنسية (fr)** | **الألمانية (de)** | **الإيطالية (it)** | **البرتغالية (pt)** |
+| **البولندية (pl)** | **التركية (tr)** | **الروسية (ru)** | **الهولندية (nl)** |
+| **التشيكية (cs)** | **اليابانية (ja)** | **الهندية (hi)** | **البنغالية (bn)** |
+| **المجرية (hu)** | **الكورية (ko)** | **الفيتنامية (vi)** | **السويدية (sv)** |
+| **الفارسية (fa)** | **اليوروبا (yo)** | **السواحيلية (sw)** | **الإندونيسية (id)** |
+| **السلوفاكية (sk)** | **الكرواتية (hr)** | **التاميلية (ta)** | **الدنماركية (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
@@ -164,8 +164,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - يمكن تغيير تنسيق العملية في lib/conf.py
 
 ## تتوفر علامات SML
-- `[break]` — صمت (نطاق عشوائي **0.3–0.6 ثانية **)
-- `[pause]` — صمت (نطاق عشوائي **1.0–1.6 ثانية **)
+- `[break]` — صمت (نطاق عشوائي **0.3–0.6 ثانية**)
+- `[pause]` — صمت (نطاق عشوائي **1.0–1.6 ثانية**)
 - `[pause:N]` — وقفة ثابتة (**N ثانية**)
 - `[voice:/path/to/voice/file]...[/voice]` — تبديل الصوت من الصوت الافتراضي أو المحدد من واجهة المستخدم الرسومية/واجهة سطر الأوامر
 - `[emotion:sadness]...[/emotion]` — Zonos فقط: العاطفة للمرور (السعادة، الحزن، الاشمئزاز، الخوف، المفاجأة، الغضب، الآخر، المحايد) أو مزيج مثل `[emotion:sadness=0.7,neutral=0.3]` ؛ تتجاهله محركات أخرى
@@ -177,7 +177,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 للتأكد من أن مشكلتك غير موجودة بالفعل.**
 
 ملاحظة
-** يفتقر تنسيق EPUB إلى أي بنية قياسية مثل ما هو فصل أو فقرة أو مقدمة وما إلى ذلك.<br>
+**يفتقر تنسيق EPUB إلى أي بنية قياسية مثل ما هو فصل أو فقرة أو مقدمة وما إلى ذلك.<br>
 لذلك يجب عليك أولاً إزالة أي نص لا تريد تحويله إلى صوت يدويًا.**
 
 
@@ -201,7 +201,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      النقر المضاعف, النقر على زر الفأرة مرتين `Mac Ebook2Audiobook Launcher.command`
 
 
-   - ويندوز
+   - **Windows**  
      ```bash
      ebook2audiobook.cmd
      ```
@@ -210,8 +210,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
      <i>ملاحظة لمستخدمي Windows: يتم تثبيت scoop لتثبيت البرامج المفقودة دون صلاحيات المسؤول.</i>
    
-1. **افتح تطبيق الويب **: انقر فوق عنوان URL المقدم في الوحدة الطرفية للوصول إلى تطبيق الويب وتحويل الكتب الإلكترونية. `http://localhost:7860/`
-2. ** للرابط العام **:
+1. **افتح تطبيق الويب**: انقر فوق عنوان URL المقدم في الوحدة الطرفية للوصول إلى تطبيق الويب وتحويل الكتب الإلكترونية. `http://localhost:7860/`
+2. **للرابط العام**:
    `./ebook2audiobook.command --share` (Linux/MacOS)
    ويندوز `ebook2audiobook.cmd --share`
    `python app.py --share` (جميع أنظمة التشغيل)
@@ -226,7 +226,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
@@ -245,7 +245,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
@@ -260,7 +260,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command --help
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      ebook2audiobook.cmd --help
      ```
@@ -469,7 +469,7 @@ Podman Compose (i.e. cuda 12.8:
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
@@ -527,7 +527,7 @@ options:
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
-   - ويندوز
+   - **Windows**
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```

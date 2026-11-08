@@ -112,14 +112,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## 기능
-- 🔧 * * TTS 엔진 지원 * *: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **TTS 엔진 지원**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
 - 📚 **여러 파일 형식 변환**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 짧은 텍스트를 직접 오디오로 변환하는 **텍스트 영역**
 - 🔍 이미지로 된 텍스트 페이지가 있는 파일을 위한 **OCR 스캔**
 - 🔊 **고품질 텍스트 음성 변환**, 거의 실시간부터 거의 실제 음성까지
 - 🗣️ 자신의 음성 파일을 사용한 **선택적 음성 복제**
 - 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
-- 💻 **저사양 친화적** — **2 GB RAM / 1 GB VRAM(최소)**에서 실행
+- 💻 **저사양 친화적** — **2 GB RAM / 1 GB VRAM**(최소)에서 실행
 - 🎵 **오디오북 출력 형식**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **SML 태그 지원** — 중단, 멈춤, 음성 전환 등의 세밀한 제어 ([see below](#sml-tags-available))
 - 🧩 자신이 학습한 모델을 사용한 **선택적 커스텀 모델** (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)
@@ -140,14 +140,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## 지원 언어
-| * * Arabic (ar) * * | * * Chinese (zh) * * | * * English (en) * * | * * Spanish (es) * * |
+| **아랍어 (ar)** | **중국어 (zh)** | **영어 (en)** | **스페인어 (es)** |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| * * 프랑스어 (fr) * * | * * 독일어 (de) * * | * * 이탈리아어 (it) * * | * * 포르투갈어 (pt) * * |
-| * * 폴란드어 * * | * * 터키어 (tr) * * | * * 러시아어 (ru) * * | * * 네덜란드어 (nl) * * |
-| * * 체코어 (cs) * * | * * 일본어 (ja) * * | * * 힌디어 (hi) * * | * * 벵골어 (bn) * * |
-| * * 헝가리어 (hu) * * | * * 한국어 (ko) * * | * * 베트남어 (vi) * * | * * 스웨덴어 (sv) * * |
-| * * 페르시아어 (fa) * * | * * 요루바어 (yo) * * | * * 스와힐리어 (sw) * * | * * 인도네시아어 (id) * * |
-| * * 슬로바키아어 (sk) * * | * * 크로아티아어 (hr) * * | * * 타밀어 (ta) * * | * * 덴마크어 (da) * * |
+| **프랑스어 (fr)** | **독일어 (de)** | **이탈리아어 (it)** | **포르투갈어 (pt)** |
+| **폴란드어 (pl)** | **터키어 (tr)** | **러시아어 (ru)** | **네덜란드어 (nl)** |
+| **체코어 (cs)** | **일본어 (ja)** | **힌디어 (hi)** | **벵골어 (bn)** |
+| **헝가리어 (hu)** | **한국어 (ko)** | **베트남어 (vi)** | **스웨덴어 (sv)** |
+| **페르시아어 (fa)** | **요루바어 (yo)** | **스와힐리어 (sw)** | **인도네시아어 (id)** |
+| **슬로바키아어 (sk)** | **크로아티아어 (hr)** | **타밀어 (ta)** | **덴마크어 (da)** |
 - [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
