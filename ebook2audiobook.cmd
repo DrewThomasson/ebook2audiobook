@@ -82,11 +82,15 @@ set "TEMP=%SAFE_SCRIPT_DIR%\run"
 if not exist "%TMP%" mkdir "%TMP%" >nul 2>&1
 set "UV_INSTALL_DIR=%SAFE_USERPROFILE%\.local\bin"
 set "UV_INSTALLER_PS1=https://astral.sh/uv/install.ps1"
+set "UV_CACHE_DIR=%SCRIPT_DIR%\.uv_cache"
+set "UV_LINK_MODE=copy"
 set "SCOOP_BUCKETS_URL=https://github.com/hu3rror/scoop-muggle.git"
 set "SCOOP_HOME=%SAFE_USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
-set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
+set "PHONEMIZER_ESPEAK_PATH=%SCOOP_SHIMS%\espeak-ng.exe"
+set "ESPEAK_DATA_PATH=%SCOOP_HOME%\apps\espeak-ng\current\espeak-ng-data"
+set "PHONEMIZER_ESPEAK_LIBRARY=%SCOOP_HOME%\apps\espeak-ng\current\libespeak-ng.dll"
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
 set "TESSDATA_BASE_URL=https://github.com/tesseract-ocr/tessdata_best/raw/main"
@@ -334,11 +338,8 @@ if errorlevel 1 (
 	goto :restart_script
 )
 :: native + build_docker: python comes from uv (installed in uv's own dir), the OS python is never used
-for /f "tokens=1,2 delims=." %%a in ("%PYTHON_VERSION%") do set /a "PY_CUR=%%a*100+%%b"
-for /f "tokens=1,2 delims=." %%a in ("%MIN_PYTHON_VERSION%") do set /a "PY_MIN=%%a*100+%%b"
-for /f "tokens=1,2 delims=." %%a in ("%MAX_PYTHON_VERSION%") do set /a "PY_MAX=%%a*100+%%b"
-if "%SCRIPT_MODE%"=="%NATIVE%" if %PY_CUR% lss %PY_MIN% set "PYTHON_VERSION=%MIN_PYTHON_VERSION%"
-if "%SCRIPT_MODE%"=="%NATIVE%" if %PY_CUR% gtr %PY_MAX% set "PYTHON_VERSION=%MAX_PYTHON_VERSION%"
+rem python per device, as DeviceInstaller.check_pyvenv: Windows has no jetson, so always MAX_PYTHON_VERSION
+set "PYTHON_VERSION=%MAX_PYTHON_VERSION%"
 uv python find --system --python-preference only-managed %PYTHON_VERSION% >nul 2>&1
 if errorlevel 1 (
 	echo Installing python %PYTHON_VERSION% via uv...
@@ -364,15 +365,15 @@ if errorlevel 1 (
 	)
 	echo Installing Scoop…
 	"%PS_EXE%" %PS_ARGS% -Command "irm get.scoop.sh -OutFile '%TEMP%\install_scoop.ps1'"
-	"%PS_EXE%" %PS_ARGS% -File "%TEMP%\install_scoop.ps1" -RunAsAdmin
-	del "%TEMP%\install_scoop.ps1" >nul 2>&1
-	if errorlevel 1 (
+	"%PS_EXE%" %PS_ARGS% -File "%TEMP%\install_scoop.ps1" -RunAsAdmin || (
+		del "%TEMP%\install_scoop.ps1" >nul 2>&1
 		net session >nul 2>&1
 		if not errorlevel 1 (
 			goto :restart_script
 		)
 		exit /b 1
 	)
+	del "%TEMP%\install_scoop.ps1" >nul 2>&1
 	findstr /i /x "scoop" "%INSTALLED_LOG%" >nul 2>&1
 	if errorlevel 1 echo scoop>>"%INSTALLED_LOG%"
 	"%PS_EXE%" %PS_ARGS% -Command "scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git"
@@ -396,7 +397,7 @@ if defined _MISSING_BUCKETS (
 	echo Scoop Buckets are not installed.
 	echo Installing Scoop Buckets…
 	"%PS_EXE%" %PS_ARGS% -Command "$WarningPreference='SilentlyContinue'; scoop install git; scoop bucket add muggle %SCOOP_BUCKETS_URL%; scoop bucket add extras; scoop bucket add versions"
-	call git config --global credential.helper
+	call "%SCOOP_SHIMS%\git.exe" config --global credential.helper
 	del "%SAFE_SCRIPT_DIR%\.after-scoop" >nul 2>&1
 	echo %ESC%[32m=============== Scoop Buckets OK ===============%ESC%[0m
 )
@@ -608,6 +609,20 @@ if "%SCRIPT_MODE%"=="%NATIVE%" (
 			rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
 			if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" goto :failed
 		) else (
+			rem another python than PYTHON_VERSION, e.g. 3.11 from an older install: --allow-existing would swap the interpreter
+			rem but keep the packages in the old Lib and the .provisioned marker, leaving an empty venv never reprovisioned
+			rem DisableDelayedExpansion is in force here so !VAR! stays literal: compare on the for variables, test with if defined
+			set "VENV_PYVER="
+			for /f "tokens=2 delims==" %%v in ('findstr /b /c:"version_info" /c:"version " "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\pyvenv.cfg"') do for /f "tokens=1,2 delims=. " %%a in ("%%v") do if "%%a.%%b"=="%PYTHON_VERSION%" set "VENV_PYVER=%%a.%%b"
+			if not defined VENV_PYVER (
+				echo %PYTHON_ENV% is not python %PYTHON_VERSION% - removing and recreating...
+				rmdir /s /q "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%"
+				if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" goto :failed
+			)
+		)
+	)
+	if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\" (
+		if exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\pyvenv.cfg" (
 			uv venv "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%" --python "%PY_CMD%" --allow-existing >nul 2>&1
 			if errorlevel 1 (
 				echo %PYTHON_ENV% is inconsistent - removing and recreating...
@@ -810,6 +825,8 @@ if /i "%DEVICE_TAG:~0,2%"=="cu" (
     set "cmd_options=--device=/dev/kfd --device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
     set "cmd_options=--device=/dev/dri"
+) else if /i "%DEVICE_TAG%"=="vulkan" (
+    set "cmd_options=--device=/dev/dri"
 ) else if /i "%DEVICE_TAG%"=="mps" (
     set "cmd_options="
 ) else if /i "%DEVICE_TAG%"=="cpu" (
@@ -830,6 +847,8 @@ if /i "%DEVICE_TAG%"=="cpu" (
     set "COMPOSE_PROFILES=rocm"
 ) else if /i "%DEVICE_TAG%"=="xpu" (
     set "COMPOSE_PROFILES=xpu"
+) else if /i "%DEVICE_TAG%"=="vulkan" (
+    set "COMPOSE_PROFILES=vulkan"
 ) else (
     set "COMPOSE_PROFILES=cpu"
 )
@@ -914,9 +933,9 @@ if "%DOCKER_MODE%"=="podman" (
 	%wsl_cmd% docker image prune --force
 	echo Docker image ready. To run your docker:
 	echo GUI mode:
-	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" !cmd_options! --rm -it -p 7860:7860 %DOCKER_IMG_NAME%
+	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" !cmd_options! --rm -it -p 7860:7860 %DOCKER_IMG_NAME%
 	echo Headless mode:
-	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options! --rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice "/app/custom_voice/voice.wav" etc..]
+	echo     %wsl_cmd% docker run -v ".\ebooks:/app/ebooks" -v ".\audiobooks:/app/audiobooks" -v ".\models:/app/models" -v ".\voices:/app/voices" -v ".\tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "D:\path\to\custom\voices:/app/custom_voice" !cmd_options! --rm -it -p 7860:7860 %DOCKER_IMG_NAME% --headless --ebook "/app/ebooks/myfile.pdf" [--voice "/app/custom_voice/voice.wav" etc..]
 )
 if "%DOCKER_DESKTOP%"=="1" (
 	set "wsl_cmd=wsl --user root -d %DOCKER_WSL_CONTAINER% --"

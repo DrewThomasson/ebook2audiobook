@@ -31,12 +31,17 @@ def build_interface(args:dict)->gr.Blocks:
         voice_options = []
         tts_engine_options = []
         custom_model_options = []
-        fine_tuned_options = []
         audiobook_options = []
         options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
         page_size = 15
         visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
         visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
+        visible_gr_tab_zonos_params = interface_component_options['gr_tab_zonos_params']
+        visible_gr_tab_gptsovits_params = interface_component_options['gr_tab_gptsovits_params']
+        visible_gr_tab_orpheus_params = interface_component_options['gr_tab_orpheus_params']
+        visible_gr_tab_sparktts_params = interface_component_options['gr_tab_sparktts_params']
+        visible_gr_tab_chattts_params = interface_component_options['gr_tab_chattts_params']
+        visible_gr_tab_csm_params = interface_component_options['gr_tab_csm_params']
         visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
         visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
         visible_gr_tab_abs_params = interface_component_options['gr_tab_abs_params']
@@ -56,8 +61,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_voice_highlight_css = gr.HTML(value='', elem_classes=['gr-voice-highlight-css'])
                                     gr_ebook_textarea = gr.Textbox(show_label=True, label=legends['gr_ebook_textarea'], elem_id='gr_ebook_textarea', visible=False, lines=8, max_length=max_ebook_textarea_length)
                                     with gr.Row(elem_id='gr_row_ebook_mode') as gr_row_ebook_mode:
-                                        gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[(legends['gr_ebook_mode_file'],ebook_modes['SINGLE']), (legends['gr_ebook_mode_directory'],ebook_modes['DIRECTORY']), (legends['gr_ebook_mode_text'],ebook_modes['TEXT'])], interactive=True, scale=2)
                                         gr_blocks_preview = gr.Checkbox(label=legends['gr_blocks_preview'], elem_id='gr_blocks_preview', value=False, interactive=True, scale=1)
+                                        gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[(legends['gr_ebook_mode_file'],ebook_modes['SINGLE']), (legends['gr_ebook_mode_directory'],ebook_modes['DIRECTORY']), (legends['gr_ebook_mode_text'],ebook_modes['TEXT'])], interactive=True, scale=2)
                                         gr_interlude_enabled = gr.Checkbox(label=legends['gr_interlude_enabled'], elem_id='gr_interlude_enabled', value=False, interactive=True, scale=1)
                                 with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                     gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value=legends['gr_language_markdown'])
@@ -84,14 +89,13 @@ def build_interface(args:dict)->gr.Blocks:
                                     gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
                                 with gr.Group(elem_id='gr_group_models', elem_classes=['gr-group']):
                                     gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', elem_classes=['gr-markdown'], value=legends['gr_models_markdown'])
-                                    gr_fine_tuned_list = gr.Dropdown(label=legends['gr_fine_tuned_list'], elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                     gr_group_custom_model = gr.Group(visible=False)
                                     with gr_group_custom_model:
                                         gr_custom_model_file = gr.File(show_label=True, label=legends['gr_custom_model_file'], elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=100)
-                                        gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
-                                        with gr_row_custom_model_list:
-                                            gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
-                                            gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                    gr_row_custom_model_list = gr.Row(elem_id='gr_row_custom_model_list')
+                                    with gr_row_custom_model_list:
+                                        gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
+                                        gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 with gr.Group(elem_id='gr_group_output_format'):
                                     gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value=legends['gr_output_markdown'])
                                     with gr.Row(elem_id='gr_row_output_format'):
@@ -238,6 +242,290 @@ def build_interface(args:dict)->gr.Blocks:
                                 value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
                                 elem_id='gr_bark_waveform_temp',
                                 info=legends['gr_bark_waveform_temp_info']
+                            )
+                    with gr.Tab(legends['gr_tab_zonos_params'], elem_id='gr_tab_zonos_params', elem_classes='gr-tab', visible=False) as gr_tab_zonos_params:
+                        gr_markdown_tab_zonos_params = gr.Markdown(
+                            elem_id='gr_markdown_tab_zonos_params',
+                            value=f"### {legends['gr_markdown_tab_zonos_params_title']}\n{legends['gr_markdown_tab_zonos_params_desc']}"
+                        )
+                        with gr.Group(elem_id='gr_group_zonos_params', elem_classes=['gr-group']):
+                            gr_zonos_speaking_rate = gr.Slider(
+                                label=legends['gr_zonos_speaking_rate'],
+                                minimum=0.0,
+                                maximum=40.0,
+                                step=0.5,
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate']),
+                                elem_id='gr_zonos_speaking_rate',
+                                info=legends['gr_zonos_speaking_rate_info']
+                            )
+                        with gr.Group(elem_id='gr_group_zonos_emotion', elem_classes=['gr-group']):
+                            gr_zonos_emotion_enabled = gr.Checkbox(
+                                label=legends['gr_zonos_emotion_enabled'],
+                                value=bool(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled']),
+                                elem_id='gr_zonos_emotion_enabled',
+                                info=legends['gr_zonos_emotion_enabled_info']
+                            )
+                        # ZONOS2: every slider at 0 is the plain cloned voice, each one moves away from it
+                        with gr.Group(elem_id='gr_group_zonos_emotion_sliders', elem_classes=['gr-group'], visible=bool(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled'])) as gr_group_zonos_emotion_sliders:
+                                    gr_zonos_emotion_happy = gr.Slider(
+                                        label=legends['gr_zonos_emotion_happy'],
+                                        minimum=0.0,
+                                        maximum=1.0,
+                                        step=0.01,
+                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy']),
+                                        elem_id='gr_zonos_emotion_happy'
+                                    )
+                                    gr_zonos_emotion_sad = gr.Slider(
+                                        label=legends['gr_zonos_emotion_sad'],
+                                        minimum=0.0,
+                                        maximum=1.0,
+                                        step=0.01,
+                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad']),
+                                        elem_id='gr_zonos_emotion_sad'
+                                    )
+                                    gr_zonos_emotion_angry = gr.Slider(
+                                        label=legends['gr_zonos_emotion_angry'],
+                                        minimum=0.0,
+                                        maximum=1.0,
+                                        step=0.01,
+                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry']),
+                                        elem_id='gr_zonos_emotion_angry'
+                                    )
+                                    gr_zonos_emotion_surprised = gr.Slider(
+                                        label=legends['gr_zonos_emotion_surprised'],
+                                        minimum=0.0,
+                                        maximum=1.0,
+                                        step=0.01,
+                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised']),
+                                        elem_id='gr_zonos_emotion_surprised'
+                                    )
+                                    gr_zonos_emotion_valence = gr.Slider(
+                                        label=legends['gr_zonos_emotion_valence'],
+                                        minimum=-1.0,
+                                        maximum=1.0,
+                                        step=0.01,
+                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence']),
+                                        elem_id='gr_zonos_emotion_valence',
+                                        info=legends['gr_zonos_emotion_valence_info']
+                                    )
+                                    gr_zonos_emotion_arousal = gr.Slider(
+                                        label=legends['gr_zonos_emotion_arousal'],
+                                        minimum=-1.0,
+                                        maximum=1.0,
+                                        step=0.01,
+                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal']),
+                                        elem_id='gr_zonos_emotion_arousal',
+                                        info=legends['gr_zonos_emotion_arousal_info']
+                                    )
+                                    gr_zonos_emotion_strength = gr.Slider(
+                                        label=legends['gr_zonos_emotion_strength'],
+                                        minimum=0.0,
+                                        maximum=2.0,
+                                        step=0.05,
+                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']),
+                                        elem_id='gr_zonos_emotion_strength',
+                                        info=legends['gr_zonos_emotion_strength_info']
+                                    )
+                                    gr_zonos_emotion_cfg_scale = gr.Slider(
+                                        label=legends['gr_zonos_emotion_cfg_scale'],
+                                        minimum=1.0,
+                                        maximum=3.0,
+                                        step=0.05,
+                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']),
+                                        elem_id='gr_zonos_emotion_cfg_scale',
+                                        info=legends['gr_zonos_emotion_cfg_scale_info']
+                                    )
+                    with gr.Tab(legends['gr_tab_gptsovits_params'], elem_id='gr_tab_gptsovits_params', elem_classes='gr-tab', visible=False) as gr_tab_gptsovits_params:
+                        gr_markdown_tab_gptsovits_params = gr.Markdown(
+                            elem_id='gr_markdown_tab_gptsovits_params',
+                            value=f"### {legends['gr_markdown_tab_gptsovits_params_title']}\n{legends['gr_markdown_tab_gptsovits_params_desc']}"
+                        )
+                        with gr.Group(elem_id='gr_group_gptsovits_params', elem_classes=['gr-group']):
+                            gr_gptsovits_speed = gr.Slider(
+                                label=legends['gr_gptsovits_speed'],
+                                minimum=0.6,
+                                maximum=1.65,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['GPTSOVITS']]['speed']),
+                                elem_id='gr_gptsovits_speed',
+                                info=legends['gr_gptsovits_speed_info']
+                            )
+                            gr_gptsovits_top_k = gr.Slider(
+                                label=legends['gr_gptsovits_top_k'],
+                                minimum=1,
+                                maximum=100,
+                                step=1,
+                                value=int(default_engine_settings[TTS_ENGINES['GPTSOVITS']]['top_k']),
+                                elem_id='gr_gptsovits_top_k',
+                                info=legends['gr_gptsovits_top_k_info']
+                            )
+                            gr_gptsovits_top_p = gr.Slider(
+                                label=legends['gr_gptsovits_top_p'],
+                                minimum=0.0,
+                                maximum=1.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['GPTSOVITS']]['top_p']),
+                                elem_id='gr_gptsovits_top_p',
+                                info=legends['gr_gptsovits_top_p_info']
+                            )
+                            gr_gptsovits_temperature = gr.Slider(
+                                label=legends['gr_gptsovits_temperature'],
+                                minimum=0.0,
+                                maximum=1.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['GPTSOVITS']]['temperature']),
+                                elem_id='gr_gptsovits_temperature',
+                                info=legends['gr_gptsovits_temperature_info']
+                            )
+                            gr_gptsovits_repetition_penalty = gr.Slider(
+                                label=legends['gr_gptsovits_repetition_penalty'],
+                                minimum=0.0,
+                                maximum=2.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['GPTSOVITS']]['repetition_penalty']),
+                                elem_id='gr_gptsovits_repetition_penalty',
+                                info=legends['gr_gptsovits_repetition_penalty_info']
+                            )
+                    with gr.Tab(legends['gr_tab_orpheus_params'], elem_id='gr_tab_orpheus_params', elem_classes='gr-tab', visible=False) as gr_tab_orpheus_params:
+                        gr_markdown_tab_orpheus_params = gr.Markdown(
+                            elem_id='gr_markdown_tab_orpheus_params',
+                            value=f"### {legends['gr_markdown_tab_orpheus_params_title']}\n{legends['gr_markdown_tab_orpheus_params_desc']}"
+                        )
+                        with gr.Group(elem_id='gr_group_orpheus_params', elem_classes=['gr-group']):
+                            gr_orpheus_temperature = gr.Slider(
+                                label=legends['gr_orpheus_temperature'],
+                                minimum=0.1,
+                                maximum=1.5,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['ORPHEUS']]['temperature']),
+                                elem_id='gr_orpheus_temperature',
+                                info=legends['gr_orpheus_temperature_info']
+                            )
+                            gr_orpheus_top_p = gr.Slider(
+                                label=legends['gr_orpheus_top_p'],
+                                minimum=0.1,
+                                maximum=1.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['ORPHEUS']]['top_p']),
+                                elem_id='gr_orpheus_top_p',
+                                info=legends['gr_orpheus_top_p_info']
+                            )
+                            gr_orpheus_repetition_penalty = gr.Slider(
+                                label=legends['gr_orpheus_repetition_penalty'],
+                                minimum=1.1,
+                                maximum=2.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['ORPHEUS']]['repetition_penalty']),
+                                elem_id='gr_orpheus_repetition_penalty',
+                                info=legends['gr_orpheus_repetition_penalty_info']
+                            )
+                    with gr.Tab(legends['gr_tab_sparktts_params'], elem_id='gr_tab_sparktts_params', elem_classes='gr-tab', visible=False) as gr_tab_sparktts_params:
+                        gr_markdown_tab_sparktts_params = gr.Markdown(
+                            elem_id='gr_markdown_tab_sparktts_params',
+                            value=f"### {legends['gr_markdown_tab_sparktts_params_title']}\n{legends['gr_markdown_tab_sparktts_params_desc']}"
+                        )
+                        with gr.Group(elem_id='gr_group_sparktts_params', elem_classes=['gr-group']):
+                            gr_sparktts_temperature = gr.Slider(
+                                label=legends['gr_sparktts_temperature'],
+                                minimum=0.1,
+                                maximum=1.5,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['SPARKTTS']]['temperature']),
+                                elem_id='gr_sparktts_temperature',
+                                info=legends['gr_sparktts_temperature_info']
+                            )
+                            gr_sparktts_top_k = gr.Slider(
+                                label=legends['gr_sparktts_top_k'],
+                                minimum=1,
+                                maximum=100,
+                                step=1,
+                                value=int(default_engine_settings[TTS_ENGINES['SPARKTTS']]['top_k']),
+                                elem_id='gr_sparktts_top_k',
+                                info=legends['gr_sparktts_top_k_info']
+                            )
+                            gr_sparktts_top_p = gr.Slider(
+                                label=legends['gr_sparktts_top_p'],
+                                minimum=0.1,
+                                maximum=1.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['SPARKTTS']]['top_p']),
+                                elem_id='gr_sparktts_top_p',
+                                info=legends['gr_sparktts_top_p_info']
+                            )
+                    with gr.Tab(legends['gr_tab_chattts_params'], elem_id='gr_tab_chattts_params', elem_classes='gr-tab', visible=False) as gr_tab_chattts_params:
+                        gr_markdown_tab_chattts_params = gr.Markdown(
+                            elem_id='gr_markdown_tab_chattts_params',
+                            value=f"### {legends['gr_markdown_tab_chattts_params_title']}\n{legends['gr_markdown_tab_chattts_params_desc']}"
+                        )
+                        with gr.Group(elem_id='gr_group_chattts_params', elem_classes=['gr-group']):
+                            gr_chattts_temperature = gr.Slider(
+                                label=legends['gr_chattts_temperature'],
+                                minimum=0.05,
+                                maximum=1.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['CHATTTS']]['temperature']),
+                                elem_id='gr_chattts_temperature',
+                                info=legends['gr_chattts_temperature_info']
+                            )
+                            gr_chattts_top_k = gr.Slider(
+                                label=legends['gr_chattts_top_k'],
+                                minimum=1,
+                                maximum=100,
+                                step=1,
+                                value=int(default_engine_settings[TTS_ENGINES['CHATTTS']]['top_k']),
+                                elem_id='gr_chattts_top_k',
+                                info=legends['gr_chattts_top_k_info']
+                            )
+                            gr_chattts_top_p = gr.Slider(
+                                label=legends['gr_chattts_top_p'],
+                                minimum=0.1,
+                                maximum=1.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['CHATTTS']]['top_p']),
+                                elem_id='gr_chattts_top_p',
+                                info=legends['gr_chattts_top_p_info']
+                            )
+                            gr_chattts_repetition_penalty = gr.Slider(
+                                label=legends['gr_chattts_repetition_penalty'],
+                                minimum=1.0,
+                                maximum=2.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['CHATTTS']]['repetition_penalty']),
+                                elem_id='gr_chattts_repetition_penalty',
+                                info=legends['gr_chattts_repetition_penalty_info']
+                            )
+                            gr_chattts_speed = gr.Slider(
+                                label=legends['gr_chattts_speed'],
+                                minimum=0,
+                                maximum=9,
+                                step=1,
+                                value=int(default_engine_settings[TTS_ENGINES['CHATTTS']]['speed']),
+                                elem_id='gr_chattts_speed',
+                                info=legends['gr_chattts_speed_info']
+                            )
+                    with gr.Tab(legends['gr_tab_csm_params'], elem_id='gr_tab_csm_params', elem_classes='gr-tab', visible=False) as gr_tab_csm_params:
+                        gr_markdown_tab_csm_params = gr.Markdown(
+                            elem_id='gr_markdown_tab_csm_params',
+                            value=f"### {legends['gr_markdown_tab_csm_params_title']}\n{legends['gr_markdown_tab_csm_params_desc']}"
+                        )
+                        with gr.Group(elem_id='gr_group_csm_params', elem_classes=['gr-group']):
+                            gr_csm_temperature = gr.Slider(
+                                label=legends['gr_csm_temperature'],
+                                minimum=0.1,
+                                maximum=1.5,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['CSM']]['temperature']),
+                                elem_id='gr_csm_temperature',
+                                info=legends['gr_csm_temperature_info']
+                            )
+                            gr_csm_top_k = gr.Slider(
+                                label=legends['gr_csm_top_k'],
+                                minimum=1,
+                                maximum=100,
+                                step=1,
+                                value=int(default_engine_settings[TTS_ENGINES['CSM']]['top_k']),
+                                elem_id='gr_csm_top_k',
+                                info=legends['gr_csm_top_k_info']
                             )
                     with gr.Tab(legends['gr_tab_abs_params'], elem_id='gr_tab_abs_params', elem_classes='gr-tab', visible=visible_gr_tab_abs_params) as gr_tab_abs_params:
                         with gr.Row(elem_id='gr_row1_abs'):
@@ -423,7 +711,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['status'] = status_tags['READY']
                             session['cancellation_requested'] = False
                             outputs = list(gr.update(interactive=True) for _ in range(len(outputs_enable_components)))
-                            outputs[23] = gr.update()
+                            outputs[outputs_enable_components.index(gr_modal)] = gr.update()
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             enabled_convert_btn = False
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
@@ -434,7 +722,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     enabled_convert_btn = True
                             elif session['ebook_mode'] == ebook_modes['TEXT']:
                                 enabled_convert_btn = True
-                            outputs[24] = gr.update(interactive=enabled_convert_btn)
+                            outputs[outputs_enable_components.index(gr_convert_btn)] = gr.update(interactive=enabled_convert_btn)
                             audiobook = session.get('audiobook')
                             enabled_upload_btn = bool(
                                 audiobook
@@ -443,7 +731,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 and session.get('abs_api_token')
                                 and session.get('abs_library')
                             )
-                            outputs[25] = gr.update(interactive=enabled_upload_btn)
+                            outputs[outputs_enable_components.index(gr_abs_upload_btn)] = gr.update(interactive=enabled_upload_btn)
                             enabled_edit_btn = bool(audiobook) and session.get('audiobook_edit_block_id') is None
                             visible_export_btn = False
                             if audiobook and os.path.isfile(str(audiobook)) and session.get('session_dir'):
@@ -455,8 +743,8 @@ def build_interface(args:dict)->gr.Blocks:
                                         base_name = part_match.group(1)
                                         process_dir = os.path.join(session['session_dir'], hashlib.md5(base_name.encode()).hexdigest())
                                 visible_export_btn = os.path.exists(os.path.join(process_dir, f"__edit_pending_{base_name}{Path(audiobook).suffix.lower()}"))
-                            outputs[26] = gr.update(interactive=enabled_edit_btn)
-                            outputs[27] = gr.update(visible=visible_export_btn, interactive=enabled_edit_btn)
+                            outputs[outputs_enable_components.index(gr_audiobook_edit_btn)] = gr.update(interactive=enabled_edit_btn)
+                            outputs[outputs_enable_components.index(gr_audiobook_export_btn)] = gr.update(visible=visible_export_btn, interactive=enabled_edit_btn)
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             return tuple(outputs)
                 except Exception as e:
@@ -466,16 +754,16 @@ def build_interface(args:dict)->gr.Blocks:
                 return outputs
 
             def _disable_on_voice_upload()->tuple:
-                outputs = tuple([gr.update(interactive=False) for _ in range(10)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(9)])
                 return outputs + (gr.update(visible='hidden'), gr.update(visible='hidden'))
 
             def _enable_on_voice_upload(session_id:str, ebook_src:str, ebook_textarea:str, ebook_mode:str)->tuple:
                 visible_buttons = 'hidden'
                 enabled_convert_btn = False
                 session = context.get_session(session_id)
-                outputs = tuple([gr.update(interactive=False) for _ in range(9)])
+                outputs = tuple([gr.update(interactive=False) for _ in range(8)])
                 if session and session.get('id', False):
-                    outputs = tuple([gr.update(interactive=True) for _ in range(9)])
+                    outputs = tuple([gr.update(interactive=True) for _ in range(8)])
                     enabled_convert_btn = True if (ebook_src and ebook_mode != ebook_modes['TEXT']) or (ebook_textarea and ebook_mode == ebook_modes['TEXT']) else enabled_convert_btn
                     visible_buttons = True if session['voice'] is not None else visible_buttons
                 return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_buttons), gr.update(visible=visible_buttons))
@@ -484,10 +772,11 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple([gr.update(interactive=False) for _ in range(11)])
                 return outputs + (gr.update(visible='hidden'),)
 
-            def _enable_on_custom_upload(custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
+            def _enable_on_custom_upload(session_id:str, custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
                 outputs = tuple([gr.update(interactive=True) for _ in range(10)])
                 enabled_convert_btn = True if ebook_data or ebook_textarea else False
-                visible_custom_model_del_btn = True if custom_model is not None else False
+                session = context.get_session(session_id)
+                visible_custom_model_del_btn = True if session and _is_custom_model(session.get('custom_model_dir'), custom_model) else False
                 return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_custom_model_del_btn))
 
             def _show_gr_modal(type:str, msg:str)->str:
@@ -647,11 +936,29 @@ def build_interface(args:dict)->gr.Blocks:
                         )
                         visible_xtts = False
                         visible_bark = False
+                        visible_zonos = False
+                        visible_gptsovits = False
+                        visible_orpheus = False
+                        visible_sparktts = False
+                        visible_chattts = False
+                        visible_csm = False
                         if session['tts_engine'] == TTS_ENGINES['XTTS']:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
-                        visible_group_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
+                        elif session['tts_engine'] == TTS_ENGINES['ZONOS']:
+                            visible_zonos = visible_gr_tab_zonos_params
+                        elif session['tts_engine'] == TTS_ENGINES['GPTSOVITS']:
+                            visible_gptsovits = visible_gr_tab_gptsovits_params
+                        elif session['tts_engine'] == TTS_ENGINES['ORPHEUS']:
+                            visible_orpheus = visible_gr_tab_orpheus_params
+                        elif session['tts_engine'] == TTS_ENGINES['SPARKTTS']:
+                            visible_sparktts = visible_gr_tab_sparktts_params
+                        elif session['tts_engine'] == TTS_ENGINES['CHATTTS']:
+                            visible_chattts = visible_gr_tab_chattts_params
+                        elif session['tts_engine'] == TTS_ENGINES['CSM']:
+                            visible_csm = visible_gr_tab_csm_params
+                        visible_group_custom_model = visible_gr_group_custom_model if session['tts_engine'] in tts_engines_with_custom_model else False
                         visible_voice_buttons = True if session.get('voice') is not None else False
                         visible_row_voice_player = _row_voice_player_visible(session.get('ebook_mode'), False)
                         visible_custom_model_del_btn = True if session['custom_model'] is not None else False
@@ -672,6 +979,12 @@ def build_interface(args:dict)->gr.Blocks:
                         return (
                             gr.update(visible=visible_xtts),
                             gr.update(visible=visible_bark),
+                            gr.update(visible=visible_zonos),
+                            gr.update(visible=visible_gptsovits),
+                            gr.update(visible=visible_orpheus),
+                            gr.update(visible=visible_sparktts),
+                            gr.update(visible=visible_chattts),
+                            gr.update(visible=visible_csm),
                             gr.update(visible=visible_ebook_src, value=ebook_data, file_count=ebook_file_count),
                             gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                             gr.update(value=session['ebook_mode']),
@@ -685,7 +998,6 @@ def build_interface(args:dict)->gr.Blocks:
                             _update_gr_tts_engine_list(session_id),
                             gr.update(value=_show_rating(session['tts_engine'])),
                             _update_gr_custom_model_list(session_id),
-                            _update_gr_fine_tuned_list(session_id),
                             gr.update(value=session['output_format']),
                             gr.update(value=session['output_channel']),
                             gr.update(value=bool(session['output_split'])),
@@ -705,6 +1017,8 @@ def build_interface(args:dict)->gr.Blocks:
                             _search_abs_libraries(session_id, session.get('abs_url', ''), session.get('abs_api_token', '')),
                             gr.update(interactive=abs_upload_enabled),
                             gr.update(value=''),
+                            gr.update(value=bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled']))),
+                            gr.update(visible=bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled']))),
                         )
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
@@ -740,6 +1054,12 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(label=legends['gr_tab_main']),
                             gr.update(label=legends['gr_tab_xtts_params']),
                             gr.update(label=legends['gr_tab_bark_params']),
+                            gr.update(label=legends['gr_tab_zonos_params']),
+                            gr.update(label=legends['gr_tab_gptsovits_params']),
+                            gr.update(label=legends['gr_tab_orpheus_params']),
+                            gr.update(label=legends['gr_tab_sparktts_params']),
+                            gr.update(label=legends['gr_tab_chattts_params']),
+                            gr.update(label=legends['gr_tab_csm_params']),
                             gr.update(label=legends['gr_tab_abs_params']),
                             gr.update(value=legends['gr_import_markdown']),
                             gr.update(label=legends['gr_ebook_textarea']),
@@ -754,7 +1074,6 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=legends['gr_device_markdown']),
                             gr.update(value=_show_rating(session['tts_engine'])),
                             gr.update(value=legends['gr_models_markdown']),
-                            gr.update(label=legends['gr_fine_tuned_list']),
                             gr.update(label=legends['gr_custom_model_file_engine'].format(engine=session['tts_engine'].upper(), files=', '.join(models[default_fine_tuned]['files']))),
                             gr.update(value=legends['gr_output_markdown']),
                             gr.update(label=legends['gr_output_format_list']),
@@ -775,6 +1094,40 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=f"### {legends['gr_markdown_tab_bark_params_title']}\n{legends['gr_markdown_tab_bark_params_desc']}"),
                             gr.update(label=legends['gr_bark_text_temp'], info=legends['gr_bark_text_temp_info']),
                             gr.update(label=legends['gr_bark_waveform_temp'], info=legends['gr_bark_waveform_temp_info']),
+                            gr.update(value=f"### {legends['gr_markdown_tab_zonos_params_title']}\n{legends['gr_markdown_tab_zonos_params_desc']}"),
+                            gr.update(label=legends['gr_zonos_speaking_rate'], info=legends['gr_zonos_speaking_rate_info']),
+                            gr.update(label=legends['gr_zonos_emotion_enabled'], info=legends['gr_zonos_emotion_enabled_info']),
+                            gr.update(label=legends['gr_zonos_emotion_happy']),
+                            gr.update(label=legends['gr_zonos_emotion_sad']),
+                            gr.update(label=legends['gr_zonos_emotion_angry']),
+                            gr.update(label=legends['gr_zonos_emotion_surprised']),
+                            gr.update(label=legends['gr_zonos_emotion_valence'], info=legends['gr_zonos_emotion_valence_info']),
+                            gr.update(label=legends['gr_zonos_emotion_arousal'], info=legends['gr_zonos_emotion_arousal_info']),
+                            gr.update(label=legends['gr_zonos_emotion_strength'], info=legends['gr_zonos_emotion_strength_info']),
+                            gr.update(label=legends['gr_zonos_emotion_cfg_scale'], info=legends['gr_zonos_emotion_cfg_scale_info']),
+                            gr.update(value=f"### {legends['gr_markdown_tab_gptsovits_params_title']}\n{legends['gr_markdown_tab_gptsovits_params_desc']}"),
+                            gr.update(label=legends['gr_gptsovits_speed'], info=legends['gr_gptsovits_speed_info']),
+                            gr.update(label=legends['gr_gptsovits_top_k'], info=legends['gr_gptsovits_top_k_info']),
+                            gr.update(label=legends['gr_gptsovits_top_p'], info=legends['gr_gptsovits_top_p_info']),
+                            gr.update(label=legends['gr_gptsovits_temperature'], info=legends['gr_gptsovits_temperature_info']),
+                            gr.update(label=legends['gr_gptsovits_repetition_penalty'], info=legends['gr_gptsovits_repetition_penalty_info']),
+                            gr.update(value=f"### {legends['gr_markdown_tab_orpheus_params_title']}\n{legends['gr_markdown_tab_orpheus_params_desc']}"),
+                            gr.update(label=legends['gr_orpheus_temperature'], info=legends['gr_orpheus_temperature_info']),
+                            gr.update(label=legends['gr_orpheus_top_p'], info=legends['gr_orpheus_top_p_info']),
+                            gr.update(label=legends['gr_orpheus_repetition_penalty'], info=legends['gr_orpheus_repetition_penalty_info']),
+                            gr.update(value=f"### {legends['gr_markdown_tab_sparktts_params_title']}\n{legends['gr_markdown_tab_sparktts_params_desc']}"),
+                            gr.update(label=legends['gr_sparktts_temperature'], info=legends['gr_sparktts_temperature_info']),
+                            gr.update(label=legends['gr_sparktts_top_k'], info=legends['gr_sparktts_top_k_info']),
+                            gr.update(label=legends['gr_sparktts_top_p'], info=legends['gr_sparktts_top_p_info']),
+                            gr.update(value=f"### {legends['gr_markdown_tab_chattts_params_title']}\n{legends['gr_markdown_tab_chattts_params_desc']}"),
+                            gr.update(label=legends['gr_chattts_temperature'], info=legends['gr_chattts_temperature_info']),
+                            gr.update(label=legends['gr_chattts_top_k'], info=legends['gr_chattts_top_k_info']),
+                            gr.update(label=legends['gr_chattts_top_p'], info=legends['gr_chattts_top_p_info']),
+                            gr.update(label=legends['gr_chattts_repetition_penalty'], info=legends['gr_chattts_repetition_penalty_info']),
+                            gr.update(label=legends['gr_chattts_speed'], info=legends['gr_chattts_speed_info']),
+                            gr.update(value=f"### {legends['gr_markdown_tab_csm_params_title']}\n{legends['gr_markdown_tab_csm_params_desc']}"),
+                            gr.update(label=legends['gr_csm_temperature'], info=legends['gr_csm_temperature_info']),
+                            gr.update(label=legends['gr_csm_top_k'], info=legends['gr_csm_top_k_info']),
                             gr.update(label=legends['gr_abs_url']),
                             gr.update(label=legends['gr_abs_api_token']),
                             gr.update(label=legends['gr_abs_audiobook']),
@@ -871,6 +1224,12 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_main = True
                             visible_xtts = False
                             visible_bark = False
+                            visible_zonos = False
+                            visible_gptsovits = False
+                            visible_orpheus = False
+                            visible_sparktts = False
+                            visible_chattts = False
+                            visible_csm = False
                             visible_abs = visible_gr_tab_abs_params
                             visible_ebook_src = False
                             visible_ebook_textarea = False
@@ -881,6 +1240,18 @@ def build_interface(args:dict)->gr.Blocks:
                                 visible_xtts = visible_gr_tab_xtts_params
                             elif session['tts_engine'] == TTS_ENGINES['BARK']:
                                 visible_bark = visible_gr_tab_bark_params
+                            elif session['tts_engine'] == TTS_ENGINES['ZONOS']:
+                                visible_zonos = visible_gr_tab_zonos_params
+                            elif session['tts_engine'] == TTS_ENGINES['GPTSOVITS']:
+                                visible_gptsovits = visible_gr_tab_gptsovits_params
+                            elif session['tts_engine'] == TTS_ENGINES['ORPHEUS']:
+                                visible_orpheus = visible_gr_tab_orpheus_params
+                            elif session['tts_engine'] == TTS_ENGINES['SPARKTTS']:
+                                visible_sparktts = visible_gr_tab_sparktts_params
+                            elif session['tts_engine'] == TTS_ENGINES['CHATTTS']:
+                                visible_chattts = visible_gr_tab_chattts_params
+                            elif session['tts_engine'] == TTS_ENGINES['CSM']:
+                                visible_csm = visible_gr_tab_csm_params
                             if session['ebook_mode'] == ebook_modes['DIRECTORY']:
                                 visible_ebook_src = True
                                 ebook_data = session['ebook_list']
@@ -893,14 +1264,14 @@ def build_interface(args:dict)->gr.Blocks:
                             enabled_convert_btn = True if session['ebook_mode'] == ebook_modes['TEXT'] or ebook_data is not None else False
                             return (
                                 gr.update(value='', visible=False), gr.update(visible=visible_main),
-                                gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(visible=visible_abs),
+                                gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(visible=visible_zonos), gr.update(visible=visible_gptsovits), gr.update(visible=visible_orpheus), gr.update(visible=visible_sparktts), gr.update(visible=visible_chattts), gr.update(visible=visible_csm), gr.update(visible=visible_abs),
                                 gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_ebook_src, value=ebook_data), gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
                                 gr.update(value=session['device']), gr.update(value=session['audiobook']), _update_gr_audiobook_list(session_id),
                                 _update_gr_voice_list(session_id), gr.update(''), gr.update(value='')
                             )
                         elif session['status'] in [status_tags['CONVERTING']]:
                             return (
-                                gr.update(), gr.update(), gr.update(), gr.update(),
+                                gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(),
                                 gr.update(), gr.update(), gr.update(visible=True, value=session['ebook_list']), gr.update(),
                                 gr.update(), gr.update(), gr.update(),
                                 gr.update(), gr.update(), gr.update(value='')
@@ -908,7 +1279,7 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_refresh_interface(): {e}'
                     exception_alert(session_id, error)
-                outputs = tuple([gr.update() for _ in range(14)])
+                outputs = tuple([gr.update() for _ in range(20)])
                 return outputs
 
             def _change_gr_audiobook_list(session_id:str, selected:str|None)->tuple:
@@ -1225,10 +1596,11 @@ def build_interface(args:dict)->gr.Blocks:
                     if selected is not None:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
-                            selected_name = os.path.basename(selected)
-                            session['status'] = status_tags['DELETION']
-                            msg = legends['msg_confirm_delete'].format(name=selected_name)
-                            return gr.update(value=_show_gr_modal(session['status'], msg), visible=True), gr.update(value='confirm_custom_model_del')
+                            if _is_custom_model(session['custom_model_dir'], selected):
+                                selected_name = os.path.basename(selected)
+                                session['status'] = status_tags['DELETION']
+                                msg = legends['msg_confirm_delete'].format(name=selected_name)
+                                return gr.update(value=_show_gr_modal(session['status'], msg), visible=True), gr.update(value='confirm_custom_model_del')
                 except Exception as e:
                     error = legends['error_custom_model_delete_failed'].format(name=selected_name)
                     exception_alert(session_id, error)
@@ -1984,11 +2356,11 @@ def build_interface(args:dict)->gr.Blocks:
                                         session['blocks_current'] = blocks_current
                                         save_db_blocks(session_id)
                                     session['voice'] = fallback
-                                    voice_options[:] = [(i, v) for i, v in voice_options if v != deleted_voice]
+                                    voice_options = [(i, v) for i, v in voice_options if v != deleted_voice]
                                     msg = legends['msg_voice_deleted'].format(name=re.sub(r".wav$", "", selected_name))
                                     show_alert(session_id, {'type': 'info', 'msg': msg})
                                     return gr.update(value='', visible=False), gr.update(), gr.update(), _update_gr_voice_list(session_id)
-                                elif method == 'confirm_custom_model_del':
+                                elif method == 'confirm_custom_model_del' and _is_custom_model(session['custom_model_dir'], custom_model):
                                     selected_name = os.path.basename(custom_model)
                                     shutil.rmtree(custom_model, ignore_errors=True)                           
                                     msg = legends['msg_custom_model_deleted'].format(name=selected_name)
@@ -2074,29 +2446,35 @@ def build_interface(args:dict)->gr.Blocks:
                                     display_name = f'Speaker {voices_map.get(file_stem, file_stem)}'
                                     wav_path = str(f.with_suffix('.wav'))
                                     piper_options.append((display_name, wav_path))
-                        voice_options = builtin_options + eng_options + bark_options + piper_options
+                        options = builtin_options + eng_options + bark_options + piper_options
                         session['voice_dir'] = os.path.join(voices_dir, '__sessions', f'voice-{session_id}', language)
                         os.makedirs(session['voice_dir'], exist_ok=True)
                         if session['voice_dir'] is not None:
                             session_voice_dir = Path(session['voice_dir'])
-                            voice_options += [
+                            options += [
                                 (os.path.splitext(f.name)[0], str(f))
                                 for f in session_voice_dir.rglob(file_pattern)
                                 if f.is_file()
                             ]
                         if session.get('custom_model_dir'):
-                            voice_options.extend(
+                            options.extend(
                                 (f.stem, str(f))
                                 for f in Path(session['custom_model_dir']).rglob('*.wav')
                                 if f.is_file()
                             )
                         if session['tts_engine'] in tts_engines_with_inner_speaker:
-                            voice_options = [(legends['gr_voice_list_default'], None)] + sorted(voice_options, key=lambda x: x[0].lower())
+                            options = [(legends['gr_voice_list_default'], None)] + sorted(options, key=lambda x: x[0].lower())
                         else:
-                            voice_options = sorted(voice_options, key=lambda x: x[0].lower())
+                            options = sorted(options, key=lambda x: x[0].lower())
+                            # no built-in voice and nothing for this language (voices/<lang>, eng fallback, session,
+                            # custom model): offer the engine's default voice so a cloning engine always has one
+                            if not options:
+                                default_voice = default_engine_settings[session['tts_engine']].get('voice')
+                                if default_voice and os.path.isfile(default_voice):
+                                    options = [(os.path.splitext(os.path.basename(default_voice))[0], default_voice)]
                         if session['voice'] is not None and isinstance(session.get('voice'), str):
                             if session['voice_dir'] not in session['voice']:
-                                if not any(v[1] == session['voice'] for v in voice_options):
+                                if not any(v[1] == session['voice'] for v in options):
                                     voice_path = Path(session['voice'])
                                     parts = list(voice_path.parts)
                                     if "voices" in parts:
@@ -2104,24 +2482,27 @@ def build_interface(args:dict)->gr.Blocks:
                                         if idx + 1 < len(parts):
                                             parts[idx + 1] = language
                                             new_voice_path = str(Path(*parts))
-                                            if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
+                                            if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in options):
                                                 session['voice'] = new_voice_path
                                             else:
                                                 parts[idx + 1] = 'eng'
                                                 new_voice_path = str(Path(*parts))
-                                                if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
+                                                if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in options):
                                                     session['voice'] = new_voice_path
                                                 else:
-                                                    session['voice'] = voice_options[0][1]
+                                                    if options and len(options) > 0:
+                                                        session['voice'] = options[0][1]
+                                                    else:
+                                                        session['voice'] = default_engine_settings[session['tts_engine']]['voice']
                         else:
-                            if voice_options and voice_options[0][1] is not None:
+                            if options and options[0][1] is not None:
                                 new_voice_path = models[session['fine_tuned']]['voice']
-                                if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in voice_options):
+                                if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in options):
                                     session['voice'] = new_voice_path
                                 else:
-                                    session['voice'] = voice_options[0][1]
+                                    session['voice'] = options[0][1]
                         if session['status'] in [status_tags['READY'], status_tags['END']]:
-                            voice_values = {v[1] for v in voice_options}
+                            voice_values = {v[1] for v in options}
                             blocks_current = session.get('blocks_current') or {}
                             blocks_changed = False
                             for block in blocks_current.get('blocks') or []:
@@ -2151,7 +2532,8 @@ def build_interface(args:dict)->gr.Blocks:
                         selected_voice = session['voice']
                         if session.get('ebook_mode') == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
                             selected_voice = (session.get('voice_map') or {}).get(session['ebook_selected'], session['voice'])
-                        return gr.update(choices=voice_options, value=selected_voice, label=legends['gr_voice_list'])
+                        voice_options = options
+                        return gr.update(choices=options, value=selected_voice, label=legends['gr_voice_list'])
                 except Exception as e:
                     error = f'_update_gr_voice_list(): {e}!'
                     exception_alert(session_id, error)
@@ -2203,47 +2585,42 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _update_gr_custom_model_list(session_id:str)->dict:
                 try:
-                    nonlocal custom_model_options
-                    session = context.get_session(session_id)
-                    if session and session.get('id', False):
-                        custom_model_tts_dir = _check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
-                        custom_model_options = [('None', None)] + [
-                            (
-                                str(dir),
-                                os.path.join(custom_model_tts_dir, dir)
-                            )
-                            for dir in os.listdir(custom_model_tts_dir)
-                            if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
-                        ]
-                        session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-                        model_paths = {v[1] for v in custom_model_options}
-                        return gr.update(choices=custom_model_options, value=session['custom_model'])
-                except Exception as e:
-                    error = f'_update_gr_custom_model_list(): {e}!'
-                    exception_alert(session_id, error)
-                return gr.update()
-
-            def _update_gr_fine_tuned_list(session_id:str)->dict:
-                try:
-                    nonlocal fine_tuned_options
                     nonlocal models
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         models = load_engine_presets(session['tts_engine'])
-                        fine_tuned_options = [
-                            name
+                        # a preset may list its languages (audiocpp: one family per preset), checked on the TTS language
+                        language = session['translate'] if session.get('translate_enabled') and session.get('translate') else session['language']
+                        # fine tuned presets first (value: preset key), then the session uploads (value: model dir)
+                        custom_model_options = [
+                            (name, name)
                             for name, details in models.items()
-                            if details.get("lang") in ("multi", session['language'])
+                            if details.get("lang") in ("multi", session['language']) or language in (details.get("languages") or {})
                         ]
-                        if session['fine_tuned'] in fine_tuned_options:
-                            fine_tuned = session['fine_tuned']
+                        if session['tts_engine'] in tts_engines_with_custom_model:
+                            custom_model_tts_dir = _check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
+                            custom_model_options += [
+                                (
+                                    str(dir),
+                                    os.path.join(custom_model_tts_dir, dir)
+                                )
+                                for dir in sorted(os.listdir(custom_model_tts_dir), key=str.lower)
+                                if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
+                            ]
+                        model_values = [option[1] for option in custom_model_options]
+                        if session['custom_model'] in model_values:
+                            # an uploaded model runs on the internal preset params
+                            session['fine_tuned'] = default_fine_tuned
+                            selected = session['custom_model']
                         else:
-                            fine_tuned = default_fine_tuned
-                        session['fine_tuned'] = fine_tuned
-                        return gr.update(choices=fine_tuned_options, value=session['fine_tuned'], label=legends['gr_fine_tuned_list'])
+                            session['custom_model'] = None
+                            if session['fine_tuned'] not in model_values:
+                                session['fine_tuned'] = default_fine_tuned
+                            selected = session['fine_tuned']
+                        return gr.update(choices=custom_model_options, value=selected)
                 except Exception as e:
-                    error = f'_update_gr_fine_tuned_list(): {e}!'
-                    exception_alert(session_id, error)              
+                    error = f'_update_gr_custom_model_list(): {e}!'
+                    exception_alert(session_id, error)
                 return gr.update()
 
             def _change_gr_device(session_id:str, selected:str)->None:
@@ -2256,36 +2633,34 @@ def build_interface(args:dict)->gr.Blocks:
             def _change_gr_language(session_id:str, selected:str)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return tuple(gr.update() for _ in range(4))
+                    return tuple(gr.update() for _ in range(3))
                 if session.get('language') != selected:
                     session['language'] = selected
                     return (
                         _update_gr_translate_list(session_id),
                         _update_gr_tts_engine_list(session_id),
-                        _update_gr_custom_model_list(session_id),
-                        _update_gr_fine_tuned_list(session_id)
+                        _update_gr_custom_model_list(session_id)
                     )
-                return tuple(gr.update() for _ in range(4))
+                return tuple(gr.update() for _ in range(3))
 
             def _click_gr_translate_enabled(session_id:str, checked:bool)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return tuple(gr.update() for _ in range(5))
+                    return tuple(gr.update() for _ in range(4))
                 if session['translate_enabled'] != checked:
                     session['translate_enabled'] = checked
                     return (
                         _update_gr_translate_list(session_id),
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id),
-                        _update_gr_fine_tuned_list(session_id),
                         _update_gr_voice_list(session_id)
                     )
-                return tuple(gr.update() for _ in range(5))
+                return tuple(gr.update() for _ in range(4))
 
             def _change_gr_translate(session_id:str, translate:str)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return tuple(gr.update() for _ in range(3))
+                    return tuple(gr.update() for _ in range(2))
                 if translate != session['translate']:
                     session['translate'] = translate
                     try:
@@ -2294,10 +2669,9 @@ def build_interface(args:dict)->gr.Blocks:
                         session['translate_iso1'] = None
                     return (
                         _update_gr_tts_engine_list(session_id),
-                        _update_gr_custom_model_list(session_id),
-                        _update_gr_fine_tuned_list(session_id)
+                        _update_gr_custom_model_list(session_id)
                     )
-                return tuple(gr.update() for _ in range(3))
+                return tuple(gr.update() for _ in range(2))
 
             def _check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
                 dir_path = None
@@ -2307,25 +2681,35 @@ def build_interface(args:dict)->gr.Blocks:
                         os.makedirs(dir_path, exist_ok=True)
                 return dir_path
 
+            def _is_custom_model(custom_model_dir:str|None, model:str|None)->bool:
+                # gr_custom_model_list values are a preset key (fine tuned) or an uploaded model dir
+                if custom_model_dir is None or model is None or not os.path.isabs(model):
+                    return False
+                custom_model_dir = os.path.abspath(custom_model_dir)
+                return os.path.commonpath([os.path.abspath(model), custom_model_dir]) == custom_model_dir
+
             def _change_gr_custom_model_file(session_id:str, custom_file:str|None, tts_engine:str)->tuple:
                 try:
                     nonlocal models
                     if custom_file is not None:
                         state = {}
-                        if len(custom_model_options) > max_custom_model:
-                            error = legends['error_max_custom_models'].format(max=max_custom_model)
-                            state['type'] = 'warning'
-                            state['msg'] = error
-                        else:
-                            session = context.get_session(session_id)
-                            if session and session.get('id', False):
+                        session = context.get_session(session_id)
+                        if session and session.get('id', False):
+                            custom_model_tts_dir = _check_custom_model_tts(session['custom_model_dir'], tts_engine)
+                            custom_model_count = sum(1 for dir in os.listdir(custom_model_tts_dir) if os.path.isdir(os.path.join(custom_model_tts_dir, dir)))
+                            if custom_model_count >= max_custom_model:
+                                error = legends['error_max_custom_models'].format(max=max_custom_model)
+                                state['type'] = 'warning'
+                                state['msg'] = error
+                            else:
                                 models = load_engine_presets(session['tts_engine'])
                                 session['tts_engine'] = tts_engine
-                                if analyze_uploaded_file(custom_file, models['internal']['files']):
+                                if analyze_uploaded_file(custom_file, models['internal']['files'], default_engine_settings[tts_engine].get('files_sharded')):
                                     session['custom_model'] = custom_file
                                     model = extract_custom_model(session_id)
                                     if model is not None:
                                         session['custom_model'] = model
+                                        session['fine_tuned'] = default_fine_tuned
                                         if session['tts_engine'] not in tts_engines_with_inner_speaker:
                                             session['voice'] = os.path.join(model, f'{os.path.basename(os.path.normpath(model))}.wav')
                                         msg = legends['msg_custom_model_added'].format(name=os.path.basename(model))
@@ -2349,18 +2733,28 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _change_gr_custom_model_list(session_id:str, selected:str|None)->tuple:
                 try:
+                    nonlocal models
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        session['custom_model'] = selected
-                        if selected is not None and session['tts_engine'] not in tts_engines_with_inner_speaker:
-                            session['voice'] = os.path.join(selected, f'{os.path.basename(selected)}.wav')
-                        visible_fine_tuned = True if session['custom_model'] is None else False
+                        if selected:
+                            if _is_custom_model(session['custom_model_dir'], selected):
+                                if session.get('custom_model') != selected:
+                                    session['custom_model'] = selected
+                                    session['fine_tuned'] = default_fine_tuned
+                                    if session['tts_engine'] not in tts_engines_with_inner_speaker:
+                                        session['voice'] = os.path.join(selected, f'{os.path.basename(selected)}.wav')
+                            elif session.get('custom_model') is not None or session.get('fine_tuned') != selected:
+                                session['custom_model'] = None
+                                session['fine_tuned'] = selected
+                                if selected != 'internal':
+                                    models = load_engine_presets(session['tts_engine'])
+                                    session['voice'] = models[session['fine_tuned']]['voice']
                         visible_del_btn = True if session['custom_model'] is not None else False
-                        return gr.update(visible=visible_fine_tuned), _update_gr_voice_list(session_id), gr.update(visible=visible_del_btn)
+                        return _update_gr_voice_list(session_id), gr.update(visible=visible_del_btn)
                 except Exception as e:
                     error = f'_change_gr_custom_model_list(): {e}'
                     exception_alert(session_id, error)
-                return tuple(gr.update() for _ in range(3))
+                return tuple(gr.update() for _ in range(2))
 
             def _change_gr_tts_engine_list(session_id:str, engine:str)->tuple:
                 try:
@@ -2374,45 +2768,36 @@ def build_interface(args:dict)->gr.Blocks:
                             session['fine_tuned'] = default_fine_tuned
                             visible_xtts = visible_gr_tab_xtts_params if session['tts_engine'] == TTS_ENGINES['XTTS'] else False
                             visible_bark = visible_gr_tab_bark_params if session['tts_engine'] == TTS_ENGINES['BARK'] else False
+                            visible_zonos = visible_gr_tab_zonos_params if session['tts_engine'] == TTS_ENGINES['ZONOS'] else False
+                            visible_gptsovits = visible_gr_tab_gptsovits_params if session['tts_engine'] == TTS_ENGINES['GPTSOVITS'] else False
+                            visible_orpheus = visible_gr_tab_orpheus_params if session['tts_engine'] == TTS_ENGINES['ORPHEUS'] else False
+                            visible_sparktts = visible_gr_tab_sparktts_params if session['tts_engine'] == TTS_ENGINES['SPARKTTS'] else False
+                            visible_chattts = visible_gr_tab_chattts_params if session['tts_engine'] == TTS_ENGINES['CHATTTS'] else False
+                            visible_csm = visible_gr_tab_csm_params if session['tts_engine'] == TTS_ENGINES['CSM'] else False
                             supports_custom = session['tts_engine'] in tts_engines_with_custom_model
-                            visible_custom_model = supports_custom and session['fine_tuned'] == 'internal'
+                            visible_custom_model = visible_gr_group_custom_model if supports_custom else False
                             if supports_custom:
                                 file_label = legends['gr_custom_model_file_engine'].format(engine=session['tts_engine'].upper(), files=', '.join(models[default_fine_tuned]['files']))
-                                custom_model_list_update = _update_gr_custom_model_list(session_id)
                             else:
                                 file_label = legends['gr_custom_model_file_unavailable'].format(engine=session['tts_engine'])
-                                custom_model_list_update = gr.update()
                             return (
                                 gr.update(value=_show_rating(session['tts_engine'])),
                                 gr.update(visible=visible_xtts),
                                 gr.update(visible=visible_bark),
+                                gr.update(visible=visible_zonos),
+                                gr.update(visible=visible_gptsovits),
+                                gr.update(visible=visible_orpheus),
+                                gr.update(visible=visible_sparktts),
+                                gr.update(visible=visible_chattts),
+                                gr.update(visible=visible_csm),
                                 gr.update(visible=visible_custom_model),
-                                _update_gr_fine_tuned_list(session_id),
                                 gr.update(label=file_label),
-                                custom_model_list_update
+                                _update_gr_custom_model_list(session_id)
                             )
                 except Exception as e:
                     error = f'_change_gr_tts_engine_list(): {e}'
                     exception_alert(session_id, error)
-                return tuple(gr.update() for _ in range(7))
-
-            def _change_gr_fine_tuned_list(session_id:str, selected:str)->dict:
-                try:
-                    if selected:
-                        session = context.get_session(session_id)
-                        if session and session.get('id', False):
-                            if session.get('fine_tuned') != selected:
-                                session['fine_tuned'] = selected
-                                if selected == 'internal':
-                                    visible_custom_model = visible_gr_group_custom_model if session['fine_tuned'] == 'internal' and session['tts_engine'] in tts_engines_with_custom_model else False
-                                else:
-                                    visible_custom_model = False
-                                    session['voice'] = models[session['fine_tuned']]['voice']
-                                return gr.update(visible=visible_custom_model)
-                except Exception as e:
-                    error = f'_change_gr_fine_tuned_list(): {e}'
-                    exception_alert(session_id, error)
-                return gr.update()
+                return tuple(gr.update() for _ in range(12))
 
             def _change_gr_output_format_list(session_id:str, val:str)->None:
                 session = context.get_session(session_id)
@@ -2528,10 +2913,34 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_change_param(): {e}'
                     exception_alert(session_id, error)
+
+            def _change_gr_zonos_emotion_enabled(session_id:str, val:bool)->tuple:
+                # the emotion sliders only show while emotion is on; when they appear they take
+                # their values from the session, so they never display stale defaults after a reload
+                try:
+                    _change_param('zonos_emotion_enabled', session_id, bool(val))
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        return (gr.update(visible=bool(val)), gr.update(value=float(session.get('zonos_emotion_happy', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy']))), gr.update(value=float(session.get('zonos_emotion_sad', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad']))), gr.update(value=float(session.get('zonos_emotion_angry', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry']))), gr.update(value=float(session.get('zonos_emotion_surprised', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised']))), gr.update(value=float(session.get('zonos_emotion_valence', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence']))), gr.update(value=float(session.get('zonos_emotion_arousal', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal']))), gr.update(value=float(session.get('zonos_emotion_strength', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']))), gr.update(value=float(session.get('zonos_emotion_cfg_scale', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']))))
+                except Exception as e:
+                    error = f'_change_gr_zonos_emotion_enabled(): {e}'
+                    exception_alert(session_id, error)
+                return tuple(gr.update() for _ in range(9))
+
+            def _select_gr_tab_zonos_params(session_id:str)->tuple:
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        enabled = bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled']))
+                        return (gr.update(value=enabled), gr.update(visible=enabled), gr.update(value=float(session.get('zonos_emotion_happy', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy']))), gr.update(value=float(session.get('zonos_emotion_sad', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad']))), gr.update(value=float(session.get('zonos_emotion_angry', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry']))), gr.update(value=float(session.get('zonos_emotion_surprised', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised']))), gr.update(value=float(session.get('zonos_emotion_valence', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence']))), gr.update(value=float(session.get('zonos_emotion_arousal', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal']))), gr.update(value=float(session.get('zonos_emotion_strength', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']))), gr.update(value=float(session.get('zonos_emotion_cfg_scale', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']))))
+                except Exception as e:
+                    error = f'_select_gr_tab_zonos_params(): {e}'
+                    exception_alert(session_id, error)
+                return tuple(gr.update() for _ in range(10))
                 return
 
             def _start_conversion(
-                    session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, interlude_enabled:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, output_channel:str, xtts_temperature:float, 
+                    session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, interlude_enabled:bool, tts_engine:str, language:str, voice:str, custom_model:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str,
                     translate_enabled:bool, translate_target:str|None
@@ -2542,6 +2951,8 @@ def build_interface(args:dict)->gr.Blocks:
                     reset_ebook_session(session_id, force=True, filter_keys=False)
                     if session and session.get('id', False):
                         if not session['cancellation_requested']:
+                            is_custom_model = _is_custom_model(session['custom_model_dir'], custom_model)
+                            fine_tuned = custom_model if custom_model and not is_custom_model else default_fine_tuned
                             args = {
                                 "id": session_id,
                                 "is_gui_process": session['is_gui_process'],
@@ -2557,7 +2968,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 "ebook_textarea": ebook_textarea if ebook_mode == ebook_modes['TEXT'] else session['ebook_textarea'],
                                 "voice": voice,
                                 "language": language,
-                                "custom_model": custom_model,
+                                "custom_model": custom_model if is_custom_model else None,
                                 "fine_tuned": fine_tuned,
                                 "output_format": output_format,
                                 "output_channel": output_channel,
@@ -2571,6 +2982,34 @@ def build_interface(args:dict)->gr.Blocks:
                                 "xtts_enable_text_splitting":bool(xtts_enable_text_splitting),
                                 "bark_text_temp": float(bark_text_temp),
                                 "bark_waveform_temp": float(bark_waveform_temp),
+                                "zonos_emotion_enabled": bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled'])),
+                                "zonos_emotion_happy": float(session.get('zonos_emotion_happy', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy'])),
+                                "zonos_emotion_sad": float(session.get('zonos_emotion_sad', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad'])),
+                                "zonos_emotion_angry": float(session.get('zonos_emotion_angry', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry'])),
+                                "zonos_emotion_surprised": float(session.get('zonos_emotion_surprised', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised'])),
+                                "zonos_emotion_valence": float(session.get('zonos_emotion_valence', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence'])),
+                                "zonos_emotion_arousal": float(session.get('zonos_emotion_arousal', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal'])),
+                                "zonos_emotion_strength": float(session.get('zonos_emotion_strength', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'])),
+                                "zonos_emotion_cfg_scale": float(session.get('zonos_emotion_cfg_scale', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'])),
+                                "zonos_speaking_rate": float(session.get('zonos_speaking_rate', default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'])),
+                                "gptsovits_speed": float(session['gptsovits_speed']),
+                                "gptsovits_top_k": int(session['gptsovits_top_k']),
+                                "gptsovits_top_p": float(session['gptsovits_top_p']),
+                                "gptsovits_temperature": float(session['gptsovits_temperature']),
+                                "gptsovits_repetition_penalty": float(session['gptsovits_repetition_penalty']),
+                                "orpheus_temperature": float(session['orpheus_temperature']),
+                                "orpheus_top_p": float(session['orpheus_top_p']),
+                                "orpheus_repetition_penalty": float(session['orpheus_repetition_penalty']),
+                                "sparktts_temperature": float(session['sparktts_temperature']),
+                                "sparktts_top_k": int(session['sparktts_top_k']),
+                                "sparktts_top_p": float(session['sparktts_top_p']),
+                                "chattts_temperature": float(session['chattts_temperature']),
+                                "chattts_top_k": int(session['chattts_top_k']),
+                                "chattts_top_p": float(session['chattts_top_p']),
+                                "chattts_repetition_penalty": float(session['chattts_repetition_penalty']),
+                                "chattts_speed": int(session['chattts_speed']),
+                                "csm_temperature": float(session['csm_temperature']),
+                                "csm_top_k": int(session['csm_top_k']),
                                 "output_split":bool(output_split),
                                 "output_split_hours": output_split_hours,
                                 "translate_enabled": bool(translate_enabled),
@@ -3024,13 +3463,17 @@ def build_interface(args:dict)->gr.Blocks:
                         if isinstance(custom_model_dir, str) and not os.path.exists(custom_model_dir):
                             session['custom_model'] = None
                     if isinstance(session.get('tts_engine'), str):
-                        models = load_engine_presets(session['tts_engine'])
-                        if models:
-                            if session['fine_tuned'] not in models.keys():
+                        try:
+                            models = load_engine_presets(session['tts_engine'])
+                            if models:
+                                if session['fine_tuned'] not in models.keys():
+                                    session['fine_tuned'] = default_fine_tuned
+                            else:
+                                session['tts_engine'] = default_tts_engine
                                 session['fine_tuned'] = default_fine_tuned
-                        else:
+                        except Exception as e:
                             session['tts_engine'] = default_tts_engine
-                            session['fine_tuned'] = default_fine_tuned
+                            pass
                     if session.get('translate_enabled'):
                         translate_target = session.get('translate')
                         if not translate_target or translate_target not in language_mapping:
@@ -3200,14 +3643,14 @@ def build_interface(args:dict)->gr.Blocks:
 
             inputs_start_conversion = [
                 gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_interlude_enabled, gr_tts_engine_list, gr_language, gr_voice_list,
-                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate
             ]
             outputs_disable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_language, gr_voice_file, gr_voice_list,
-                gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                gr_device, gr_tts_engine_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate,
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn, gr_custom_model_del_btn, gr_session_switch_btn,
@@ -3217,13 +3660,12 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_enable_components = [
                 gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_language, gr_voice_file, gr_voice_list,
-                gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file,
+                gr_device, gr_tts_engine_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate,
                 gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn,
                 gr_abs_upload_btn,
                 gr_audiobook_edit_btn, gr_audiobook_export_btn,
-                # kept last: _enable_components() addresses the items above by position
                 gr_interlude_enabled
             ]
             outputs_edit_blocks = [
@@ -3234,22 +3676,30 @@ def build_interface(args:dict)->gr.Blocks:
                 *blocks_components_flat, gr_blocks_header, gr_blocks_expands
             ]
             outputs_restore_interface = [
-                gr_tab_xtts_params, gr_tab_bark_params, gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_device, gr_language,
+                gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_device, gr_language,
                 gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating,
-                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_output_channel_list,
+                gr_custom_model_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_row_voice_player, gr_custom_model_file, gr_custom_model_del_btn,
-                gr_abs_url, gr_abs_api_token, gr_abs_library, gr_abs_upload_btn, gr_abs_audiobook
+                gr_abs_url, gr_abs_api_token, gr_abs_library, gr_abs_upload_btn, gr_abs_audiobook,
+                gr_zonos_emotion_enabled, gr_group_zonos_emotion_sliders
             ]
             outputs_ui_language = [
-                gr_tab_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_abs_params, gr_import_markdown, gr_ebook_textarea,
+                gr_tab_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_tab_abs_params, gr_import_markdown, gr_ebook_textarea,
                 gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_language_markdown, gr_translate_enabled, gr_voice_markdown,
-                gr_voice_file, gr_voice_list, gr_device_markdown, gr_tts_rating, gr_models_markdown, gr_fine_tuned_list,
+                gr_voice_file, gr_voice_list, gr_device_markdown, gr_tts_rating, gr_models_markdown,
                 gr_custom_model_file, gr_output_markdown, gr_output_format_list, gr_output_channel_list, gr_output_split,
                 gr_output_split_hours_markdown, gr_session_markdown, gr_progress_markdown, gr_audiobook_markdown,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k,
                 gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_markdown_tab_bark_params, gr_bark_text_temp,
-                gr_bark_waveform_temp, gr_abs_url, gr_abs_api_token, gr_abs_audiobook, gr_abs_status, gr_ui_language,
+                gr_bark_waveform_temp, gr_markdown_tab_zonos_params, gr_zonos_speaking_rate, gr_zonos_emotion_enabled,
+                gr_zonos_emotion_happy, gr_zonos_emotion_sad, gr_zonos_emotion_angry, gr_zonos_emotion_surprised, gr_zonos_emotion_valence, gr_zonos_emotion_arousal, gr_zonos_emotion_strength, gr_zonos_emotion_cfg_scale,
+                gr_markdown_tab_gptsovits_params, gr_gptsovits_speed, gr_gptsovits_top_k, gr_gptsovits_top_p, gr_gptsovits_temperature, gr_gptsovits_repetition_penalty,
+                gr_markdown_tab_orpheus_params, gr_orpheus_temperature, gr_orpheus_top_p, gr_orpheus_repetition_penalty,
+                gr_markdown_tab_sparktts_params, gr_sparktts_temperature, gr_sparktts_top_k, gr_sparktts_top_p,
+                gr_markdown_tab_chattts_params, gr_chattts_temperature, gr_chattts_top_k, gr_chattts_top_p, gr_chattts_repetition_penalty, gr_chattts_speed,
+                gr_markdown_tab_csm_params, gr_csm_temperature, gr_csm_top_k,
+                gr_abs_url, gr_abs_api_token, gr_abs_audiobook, gr_abs_status, gr_ui_language,
                 gr_tooltips, gr_tooltips_data
             ]
             tooltips_buttons = [
@@ -3327,7 +3777,7 @@ def build_interface(args:dict)->gr.Blocks:
                 window.addEventListener('resize',hide);
             }'''
             outputs_refresh_interface = [
-                gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_abs_params, gr_convert_btn,
+                gr_modal, gr_group_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_tab_abs_params, gr_convert_btn,
                 gr_ebook_src, gr_ebook_textarea, gr_device, gr_audiobook_player, gr_audiobook_list,
                 gr_voice_list, gr_voice_highlight_css, gr_progress
             ]
@@ -3339,22 +3789,29 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_audiobook_edit_lock = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_language, gr_translate_enabled, gr_translate,
-                gr_voice_file, gr_voice_play, gr_voice_list, gr_voice_del_btn, gr_device, gr_tts_engine_list, gr_fine_tuned_list,
+                gr_voice_file, gr_voice_play, gr_voice_list, gr_voice_del_btn, gr_device, gr_tts_engine_list,
                 gr_custom_model_file, gr_custom_model_list, gr_custom_model_del_btn,
                 gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_session_switch_btn, gr_audiobook_download_btn,
                 gr_abs_url, gr_abs_api_token, gr_abs_library, gr_abs_search_btn, gr_abs_upload_btn,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                gr_bark_text_temp, gr_bark_waveform_temp
+                gr_bark_text_temp, gr_bark_waveform_temp,
+                gr_zonos_speaking_rate, gr_zonos_emotion_enabled,
+                gr_zonos_emotion_happy, gr_zonos_emotion_sad, gr_zonos_emotion_angry, gr_zonos_emotion_surprised, gr_zonos_emotion_valence, gr_zonos_emotion_arousal, gr_zonos_emotion_strength, gr_zonos_emotion_cfg_scale,
+                gr_gptsovits_speed, gr_gptsovits_top_k, gr_gptsovits_top_p, gr_gptsovits_temperature, gr_gptsovits_repetition_penalty,
+                gr_orpheus_temperature, gr_orpheus_top_p, gr_orpheus_repetition_penalty,
+                gr_sparktts_temperature, gr_sparktts_top_k, gr_sparktts_top_p,
+                gr_chattts_temperature, gr_chattts_top_k, gr_chattts_top_p, gr_chattts_repetition_penalty, gr_chattts_speed,
+                gr_csm_temperature, gr_csm_top_k
             ]
             outputs_on_voice_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
-                gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_session_switch_btn,
+                gr_custom_model_file, gr_custom_model_list, gr_session_switch_btn,
                 gr_convert_btn, gr_voice_play, gr_voice_del_btn
             ]
             outputs_on_custom_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
-                gr_fine_tuned_list, gr_voice_file, gr_session_switch_btn,
+                gr_custom_model_list, gr_voice_file, gr_session_switch_btn,
                 gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_del_btn
             ]
             
@@ -3448,7 +3905,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_language.change(
                 fn=_change_gr_language,
                 inputs=[gr_session, gr_language],
-                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
@@ -3459,18 +3916,18 @@ def build_interface(args:dict)->gr.Blocks:
             gr_translate_enabled.change(
                 fn=_click_gr_translate_enabled,
                 inputs=[gr_session, gr_translate_enabled],
-                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_voice_list],
+                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list, gr_voice_list],
                 show_progress_on=[gr_progress]
             )
             gr_translate.change(
                 fn=_change_gr_translate,
                 inputs=[gr_session, gr_translate],
-                outputs=[gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list],
+                outputs=[gr_tts_engine_list, gr_custom_model_list],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=_change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list],
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_group_custom_model, gr_custom_model_file, gr_custom_model_list],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
@@ -3481,18 +3938,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_tts_engine_list.change(
                 fn=_change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list],
-                show_progress_on=[gr_progress]
-            ).then(
-                fn=_update_gr_voice_list,
-                inputs=[gr_session],
-                outputs=[gr_voice_list],
-                show_progress_on=[gr_progress]
-            )
-            gr_fine_tuned_list.change(
-                fn=_change_gr_fine_tuned_list,
-                inputs=[gr_session, gr_fine_tuned_list],
-                outputs=[gr_group_custom_model],
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_group_custom_model, gr_custom_model_file, gr_custom_model_list],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
@@ -3517,14 +3963,14 @@ def build_interface(args:dict)->gr.Blocks:
                 show_progress_on=[gr_custom_model_list]
             ).then(
                 fn=_enable_on_custom_upload,
-                inputs=[gr_custom_model_list, gr_ebook_src, gr_ebook_textarea],
+                inputs=[gr_session, gr_custom_model_list, gr_ebook_src, gr_ebook_textarea],
                 outputs=outputs_on_custom_upload,
                 show_progress_on=[gr_custom_model_list]
             )
             gr_custom_model_list.change(
                 fn=_change_gr_custom_model_list,
                 inputs=[gr_session, gr_custom_model_list],
-                outputs=[gr_fine_tuned_list, gr_voice_list, gr_custom_model_del_btn],
+                outputs=[gr_voice_list, gr_custom_model_del_btn],
                 show_progress_on=[gr_progress]
             )
             gr_custom_model_del_btn.click(
@@ -3869,6 +4315,282 @@ def build_interface(args:dict)->gr.Blocks:
             gr_bark_waveform_temp.change(
                 fn=lambda session_id, val: _change_param('bark_waveform_temp', session_id, float(val)),
                 inputs=[gr_session, gr_bark_waveform_temp],
+                outputs=None
+            )
+
+            ########### ZONOS Params
+
+            gr_tab_zonos_params.select(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='''
+                    ()=>{
+                        if (!window._zonos_sliders_initialized) {
+                            const checkZonosExist = setInterval(() => {
+                                const slider = document.querySelector("#gr_zonos_speaking_rate input[type=range]");
+                                if(slider){
+                                    clearInterval(checkZonosExist);
+                                    window._zonos_sliders_initialized = true;
+                                    init_zonos_sliders();
+                                }
+                            }, 500);
+                        }
+                    }
+                '''
+            )
+            gr_zonos_speaking_rate.change(
+                fn=lambda session_id, val: _change_param('zonos_speaking_rate', session_id, float(val)),
+                inputs=[gr_session, gr_zonos_speaking_rate],
+                outputs=None
+            )
+            ########### GPT-SoVITS Params
+
+            gr_tab_gptsovits_params.select(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='''
+                    ()=>{
+                        if (!window._gptsovits_sliders_initialized) {
+                            const checkGptSovitsExist = setInterval(() => {
+                                const slider = document.querySelector("#gr_gptsovits_speed input[type=range]");
+                                if(slider){
+                                    clearInterval(checkGptSovitsExist);
+                                    window._gptsovits_sliders_initialized = true;
+                                    init_gptsovits_sliders();
+                                }
+                            }, 500);
+                        }
+                    }
+                '''
+            )
+            gr_gptsovits_speed.change(
+                fn=lambda session_id, val: _change_param('gptsovits_speed', session_id, float(val)),
+                inputs=[gr_session, gr_gptsovits_speed],
+                outputs=None
+            )
+            gr_gptsovits_top_k.change(
+                fn=lambda session_id, val: _change_param('gptsovits_top_k', session_id, int(val)),
+                inputs=[gr_session, gr_gptsovits_top_k],
+                outputs=None
+            )
+            gr_gptsovits_top_p.change(
+                fn=lambda session_id, val: _change_param('gptsovits_top_p', session_id, float(val)),
+                inputs=[gr_session, gr_gptsovits_top_p],
+                outputs=None
+            )
+            gr_gptsovits_temperature.change(
+                fn=lambda session_id, val: _change_param('gptsovits_temperature', session_id, float(val)),
+                inputs=[gr_session, gr_gptsovits_temperature],
+                outputs=None
+            )
+            gr_gptsovits_repetition_penalty.change(
+                fn=lambda session_id, val: _change_param('gptsovits_repetition_penalty', session_id, float(val)),
+                inputs=[gr_session, gr_gptsovits_repetition_penalty],
+                outputs=None
+            )
+            ########### Orpheus Params
+
+            gr_tab_orpheus_params.select(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='''
+                    ()=>{
+                        if (!window._orpheus_sliders_initialized) {
+                            const checkOrpheusExist = setInterval(() => {
+                                const slider = document.querySelector("#gr_orpheus_temperature input[type=range]");
+                                if(slider){
+                                    clearInterval(checkOrpheusExist);
+                                    window._orpheus_sliders_initialized = true;
+                                    init_orpheus_sliders();
+                                }
+                            }, 500);
+                        }
+                    }
+                '''
+            )
+            gr_orpheus_temperature.change(
+                fn=lambda session_id, val: _change_param('orpheus_temperature', session_id, float(val)),
+                inputs=[gr_session, gr_orpheus_temperature],
+                outputs=None
+            )
+            gr_orpheus_top_p.change(
+                fn=lambda session_id, val: _change_param('orpheus_top_p', session_id, float(val)),
+                inputs=[gr_session, gr_orpheus_top_p],
+                outputs=None
+            )
+            gr_orpheus_repetition_penalty.change(
+                fn=lambda session_id, val: _change_param('orpheus_repetition_penalty', session_id, float(val)),
+                inputs=[gr_session, gr_orpheus_repetition_penalty],
+                outputs=None
+            )
+            ########### Spark-TTS Params
+
+            gr_tab_sparktts_params.select(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='''
+                    ()=>{
+                        if (!window._sparktts_sliders_initialized) {
+                            const checkSparkttsExist = setInterval(() => {
+                                const slider = document.querySelector("#gr_sparktts_temperature input[type=range]");
+                                if(slider){
+                                    clearInterval(checkSparkttsExist);
+                                    window._sparktts_sliders_initialized = true;
+                                    init_sparktts_sliders();
+                                }
+                            }, 500);
+                        }
+                    }
+                '''
+            )
+            gr_sparktts_temperature.change(
+                fn=lambda session_id, val: _change_param('sparktts_temperature', session_id, float(val)),
+                inputs=[gr_session, gr_sparktts_temperature],
+                outputs=None
+            )
+            gr_sparktts_top_k.change(
+                fn=lambda session_id, val: _change_param('sparktts_top_k', session_id, int(val)),
+                inputs=[gr_session, gr_sparktts_top_k],
+                outputs=None
+            )
+            gr_sparktts_top_p.change(
+                fn=lambda session_id, val: _change_param('sparktts_top_p', session_id, float(val)),
+                inputs=[gr_session, gr_sparktts_top_p],
+                outputs=None
+            )
+            ########### ChatTTS Params
+
+            gr_tab_chattts_params.select(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='''
+                    ()=>{
+                        if (!window._chattts_sliders_initialized) {
+                            const checkChatttsExist = setInterval(() => {
+                                const slider = document.querySelector("#gr_chattts_temperature input[type=range]");
+                                if(slider){
+                                    clearInterval(checkChatttsExist);
+                                    window._chattts_sliders_initialized = true;
+                                    init_chattts_sliders();
+                                }
+                            }, 500);
+                        }
+                    }
+                '''
+            )
+            gr_chattts_temperature.change(
+                fn=lambda session_id, val: _change_param('chattts_temperature', session_id, float(val)),
+                inputs=[gr_session, gr_chattts_temperature],
+                outputs=None
+            )
+            gr_chattts_top_k.change(
+                fn=lambda session_id, val: _change_param('chattts_top_k', session_id, int(val)),
+                inputs=[gr_session, gr_chattts_top_k],
+                outputs=None
+            )
+            gr_chattts_top_p.change(
+                fn=lambda session_id, val: _change_param('chattts_top_p', session_id, float(val)),
+                inputs=[gr_session, gr_chattts_top_p],
+                outputs=None
+            )
+            gr_chattts_repetition_penalty.change(
+                fn=lambda session_id, val: _change_param('chattts_repetition_penalty', session_id, float(val)),
+                inputs=[gr_session, gr_chattts_repetition_penalty],
+                outputs=None
+            )
+            gr_chattts_speed.change(
+                fn=lambda session_id, val: _change_param('chattts_speed', session_id, int(val)),
+                inputs=[gr_session, gr_chattts_speed],
+                outputs=None
+            )
+            ########### CSM Params
+
+            gr_tab_csm_params.select(
+                fn=None,
+                inputs=None,
+                outputs=None,
+                js='''
+                    ()=>{
+                        if (!window._csm_sliders_initialized) {
+                            const checkCsmExist = setInterval(() => {
+                                const slider = document.querySelector("#gr_csm_temperature input[type=range]");
+                                if(slider){
+                                    clearInterval(checkCsmExist);
+                                    window._csm_sliders_initialized = true;
+                                    init_csm_sliders();
+                                }
+                            }, 500);
+                        }
+                    }
+                '''
+            )
+            gr_csm_temperature.change(
+                fn=lambda session_id, val: _change_param('csm_temperature', session_id, float(val)),
+                inputs=[gr_session, gr_csm_temperature],
+                outputs=None
+            )
+            gr_csm_top_k.change(
+                fn=lambda session_id, val: _change_param('csm_top_k', session_id, int(val)),
+                inputs=[gr_session, gr_csm_top_k],
+                outputs=None
+            )
+            # .input (user clicks only): a restore or the tab mounting must never write the session
+            gr_zonos_emotion_enabled.input(
+                fn=_change_gr_zonos_emotion_enabled,
+                inputs=[gr_session, gr_zonos_emotion_enabled],
+                outputs=[gr_group_zonos_emotion_sliders, gr_zonos_emotion_happy, gr_zonos_emotion_sad, gr_zonos_emotion_angry, gr_zonos_emotion_surprised, gr_zonos_emotion_valence, gr_zonos_emotion_arousal, gr_zonos_emotion_strength, gr_zonos_emotion_cfg_scale]
+            )
+            # tabs render their children only when first opened (gr.Tab render_children=False), so
+            # updates sent before that can be lost: re-apply checkbox, group and values from the
+            # session every time the tab opens
+            gr_tab_zonos_params.select(
+                fn=_select_gr_tab_zonos_params,
+                inputs=[gr_session],
+                outputs=[gr_zonos_emotion_enabled, gr_group_zonos_emotion_sliders, gr_zonos_emotion_happy, gr_zonos_emotion_sad, gr_zonos_emotion_angry, gr_zonos_emotion_surprised, gr_zonos_emotion_valence, gr_zonos_emotion_arousal, gr_zonos_emotion_strength, gr_zonos_emotion_cfg_scale]
+            )
+            gr_zonos_emotion_happy.change(
+                fn=lambda session_id, val: _change_param('zonos_emotion_happy', session_id, float(val)),
+                inputs=[gr_session, gr_zonos_emotion_happy],
+                outputs=None
+            )
+            gr_zonos_emotion_sad.change(
+                fn=lambda session_id, val: _change_param('zonos_emotion_sad', session_id, float(val)),
+                inputs=[gr_session, gr_zonos_emotion_sad],
+                outputs=None
+            )
+            gr_zonos_emotion_angry.change(
+                fn=lambda session_id, val: _change_param('zonos_emotion_angry', session_id, float(val)),
+                inputs=[gr_session, gr_zonos_emotion_angry],
+                outputs=None
+            )
+            gr_zonos_emotion_surprised.change(
+                fn=lambda session_id, val: _change_param('zonos_emotion_surprised', session_id, float(val)),
+                inputs=[gr_session, gr_zonos_emotion_surprised],
+                outputs=None
+            )
+            gr_zonos_emotion_valence.change(
+                fn=lambda session_id, val: _change_param('zonos_emotion_valence', session_id, float(val)),
+                inputs=[gr_session, gr_zonos_emotion_valence],
+                outputs=None
+            )
+            gr_zonos_emotion_arousal.change(
+                fn=lambda session_id, val: _change_param('zonos_emotion_arousal', session_id, float(val)),
+                inputs=[gr_session, gr_zonos_emotion_arousal],
+                outputs=None
+            )
+            gr_zonos_emotion_strength.change(
+                fn=lambda session_id, val: _change_param('zonos_emotion_strength', session_id, float(val)),
+                inputs=[gr_session, gr_zonos_emotion_strength],
+                outputs=None
+            )
+            gr_zonos_emotion_cfg_scale.change(
+                fn=lambda session_id, val: _change_param('zonos_emotion_cfg_scale', session_id, float(val)),
+                inputs=[gr_session, gr_zonos_emotion_cfg_scale],
                 outputs=None
             )
 

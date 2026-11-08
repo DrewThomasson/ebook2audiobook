@@ -5,8 +5,8 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, csv, difflib, fnmatch, sqlite3, hashlib, io, json, math, os, gc
-import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64
+import argparse, asyncio, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
+import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
 import traceback, socket, unicodedata, urllib.request, uuid, zipfile, multiprocessing
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
@@ -37,6 +37,7 @@ from queue import Queue, Empty
 from types import MappingProxyType
 from langdetect import detect
 from unidecode import unidecode
+from urllib.parse import unquote
 from phonemizer import phonemize
 from pypinyin import pinyin, Style
 
@@ -93,6 +94,37 @@ file_prefixes = {
     "saved": "__saved_",
     'current': "__current_"
 }
+
+footnote_markup = {
+    # in-text markers: epub3, dpub-aria, generic, calibre docx, pandoc/python-markdown, sphinx, indesign, libreoffice, ms word, google docs, mediawiki
+    "REF": ', '.join([
+        '[epub\\:type~="noteref"]', '[role~="doc-noteref"]',
+        'a.footnote', 'a.endnote', 'a.noteref', 'a.footnote-ref',
+        'a.footnote-reference',
+        'a._idFootnoteLink', 'a._idEndnoteLink',
+        'a.sdfootnoteanc', 'a.sdendnoteanc',
+        'a[style*="mso-footnote-id"]', 'a[style*="mso-endnote-id"]',
+        'a[id^="ftnt_ref"]',
+        'sup.reference'
+    ]),
+    # note bodies: epub3 (+ deprecated rearnote), dpub-aria, generic, pandoc/python-markdown/sphinx/calibre docx, indesign, libreoffice, ms word, mediawiki
+    "BODY": ', '.join([
+        '[epub\\:type~="footnote"]', '[epub\\:type~="footnotes"]', '[epub\\:type~="endnote"]', '[epub\\:type~="endnotes"]',
+        '[epub\\:type~="rearnote"]', '[epub\\:type~="rearnotes"]', '[epub\\:type~="backlink"]',
+        '[role~="doc-footnote"]', '[role~="doc-endnote"]', '[role~="doc-endnotes"]', '[role~="doc-backlink"]',
+        '.footnote', '.footnotes', '.endnote', '.endnotes',
+        '.footnote-list', '.footnote-back', '.footnote-backref', '.notes-header',
+        '._idFootnotes', '._idFootnote', '._idEndnotes', '._idEndnote',
+        'div[id^="sdfootnote"]', 'div[id^="sdendnote"]',
+        'div[style*="mso-element:footnote"]', 'div[style*="mso-element:endnote"]',
+        'ol.references', '.reflist', '.mw-references-wrap'
+    ]),
+    # containers a note reached only through its noteref href can live in
+    "BLOCK": ['p', 'li', 'dd', 'dt', 'dl', 'aside', 'div', 'blockquote']
+}
+
+footnote_marker_re = re.compile(r'^[\[\(]?(?:\d{1,4}|[a-z]{1,2}|[ivxlc]{1,6}|[*†‡§¶#]{1,3})[\]\)]?\.?$', re.IGNORECASE)
+footnote_href_re = re.compile(r'#[^#]*(?:note|fn|ftn|edn)', re.IGNORECASE)
 
 ########### Classes
 
@@ -170,6 +202,7 @@ class SessionContext:
             "status": None,
             "ticker": 0,
             "cancellation_requested": False,
+            "tts_init_error": None,
             "ebook_mode": ebook_modes['SINGLE'],
             "blocks_preview": False,
             "interlude_enabled": False,
@@ -205,20 +238,54 @@ class SessionContext:
             "abs_library": default_abs_library,
             ####### Xtts settings
             "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['temperature'],
-            #"xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['codec_temperature'],
+            "xtts_codec_temperature": default_engine_settings[TTS_ENGINES['XTTS']]['codec_temperature'],
             "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty'],
             "xtts_num_beams": default_engine_settings[TTS_ENGINES['XTTS']]['num_beams'],
             "xtts_repetition_penalty": default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty'],
-            #"xtts_cvvp_weight": default_engine_settings[TTS_ENGINES['XTTS']]['cvvp_weight'],
+            "xtts_cvvp_weight": default_engine_settings[TTS_ENGINES['XTTS']]['cvvp_weight'],
             "xtts_top_k": default_engine_settings[TTS_ENGINES['XTTS']]['top_k'],
             "xtts_top_p": default_engine_settings[TTS_ENGINES['XTTS']]['top_p'],
             "xtts_speed": default_engine_settings[TTS_ENGINES['XTTS']]['speed'],
-            #"xtts_gpt_cond_len": default_engine_settings[TTS_ENGINES['XTTS']]['gpt_cond_len'],
-            #"xtts_gpt_batch_size": default_engine_settings[TTS_ENGINES['XTTS']]['gpt_batch_size'],
+            "xtts_gpt_cond_len": default_engine_settings[TTS_ENGINES['XTTS']]['gpt_cond_len'],
+            "xtts_gpt_batch_size": default_engine_settings[TTS_ENGINES['XTTS']]['gpt_batch_size'],
             "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTS']]['enable_text_splitting'],
             ####### Bark settings
             "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
+            ####### Zonos settings (ZONOS2)
+            "zonos_emotion_enabled": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled'],
+            "zonos_emotion_happy": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy'],
+            "zonos_emotion_sad": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad'],
+            "zonos_emotion_angry": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry'],
+            "zonos_emotion_surprised": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised'],
+            "zonos_emotion_valence": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence'],
+            "zonos_emotion_arousal": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal'],
+            "zonos_emotion_strength": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'],
+            "zonos_emotion_cfg_scale": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'],
+            "zonos_speaking_rate": default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'],
+            ####### GPT-SoVITS settings
+            "gptsovits_speed": default_engine_settings[TTS_ENGINES['GPTSOVITS']]['speed'],
+            "gptsovits_top_k": default_engine_settings[TTS_ENGINES['GPTSOVITS']]['top_k'],
+            "gptsovits_top_p": default_engine_settings[TTS_ENGINES['GPTSOVITS']]['top_p'],
+            "gptsovits_temperature": default_engine_settings[TTS_ENGINES['GPTSOVITS']]['temperature'],
+            "gptsovits_repetition_penalty": default_engine_settings[TTS_ENGINES['GPTSOVITS']]['repetition_penalty'],
+            ####### Orpheus settings
+            "orpheus_temperature": default_engine_settings[TTS_ENGINES['ORPHEUS']]['temperature'],
+            "orpheus_top_p": default_engine_settings[TTS_ENGINES['ORPHEUS']]['top_p'],
+            "orpheus_repetition_penalty": default_engine_settings[TTS_ENGINES['ORPHEUS']]['repetition_penalty'],
+            ####### Spark-TTS settings
+            "sparktts_temperature": default_engine_settings[TTS_ENGINES['SPARKTTS']]['temperature'],
+            "sparktts_top_k": default_engine_settings[TTS_ENGINES['SPARKTTS']]['top_k'],
+            "sparktts_top_p": default_engine_settings[TTS_ENGINES['SPARKTTS']]['top_p'],
+            ####### ChatTTS settings
+            "chattts_temperature": default_engine_settings[TTS_ENGINES['CHATTTS']]['temperature'],
+            "chattts_top_k": default_engine_settings[TTS_ENGINES['CHATTTS']]['top_k'],
+            "chattts_top_p": default_engine_settings[TTS_ENGINES['CHATTTS']]['top_p'],
+            "chattts_repetition_penalty": default_engine_settings[TTS_ENGINES['CHATTTS']]['repetition_penalty'],
+            "chattts_speed": default_engine_settings[TTS_ENGINES['CHATTTS']]['speed'],
+            ####### CSM settings
+            "csm_temperature": default_engine_settings[TTS_ENGINES['CSM']]['temperature'],
+            "csm_top_k": default_engine_settings[TTS_ENGINES['CSM']]['top_k'],
             ####### Audiobook editor
             "audiobook": None,
             "audiobooks_dir": None,
@@ -374,7 +441,7 @@ def check_programs(prog_name:str, command:str, options:str)->bool:
         DependencyError(e)
     return False
 
-def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
+def analyze_uploaded_file(zip_path:str, required_files:list[str], files_sharded:str|None=None)->bool:
     try:
         if not os.path.exists(zip_path):
             error = legends['error_file_does_not_exist'].format(name=os.path.basename(zip_path))
@@ -393,6 +460,14 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
                     empty_files.add(base_name)
         required_files = [file for file in required_files]
         missing_files = [f for f in required_files if f not in files_in_zip]
+        if files_sharded in missing_files and f'{files_sharded}.index.json' in files_in_zip:
+            # engines loading through from_pretrained (default_engine_settings 'files_sharded') take the sharded
+            # form of that file: its index and every shard the index names, none of them empty
+            with zipfile.ZipFile(zip_path, 'r') as zf:
+                index_name = next(n for n in zf.namelist() if os.path.basename(n) == f'{files_sharded}.index.json')
+                shards = set(json.loads(zf.read(index_name)).get('weight_map', {}).values())
+            if shards and all(files_in_zip.get(os.path.basename(shard)) for shard in shards):
+                missing_files.remove(files_sharded)
         required_empty_files = [f for f in required_files if f in empty_files]
         if missing_files:
             msg = legends['msg_missing_required_files'].format(files=missing_files)
@@ -416,6 +491,7 @@ def extract_custom_model(session_id)->str|None:
     if session and session.get('id', False):
         file_src = session['custom_model']
         required_files = default_engine_settings[session['tts_engine']]['files']
+        files_sharded = default_engine_settings[session['tts_engine']].get('files_sharded')
         model_path = None
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
         model_name = get_sanitized(model_name)
@@ -423,6 +499,11 @@ def extract_custom_model(session_id)->str|None:
             with zipfile.ZipFile(file_src, 'r') as zip_ref:
                 files = zip_ref.namelist()
                 files_length = len(files)
+                if files_sharded:
+                    # the sharded form of a required file (analyze_uploaded_file accepted it): its index and shards too
+                    index_name = next((n for n in files if os.path.basename(n) == f'{files_sharded}.index.json'), None)
+                    if index_name is not None:
+                        required_files = list(required_files) + [os.path.basename(index_name)] + [os.path.basename(shard) for shard in set(json.loads(zip_ref.read(index_name)).get('weight_map', {}).values())]
                 tts_dir = session['tts_engine']
                 model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
                 os.makedirs(model_path, exist_ok=True)
@@ -449,7 +530,8 @@ def extract_custom_model(session_id)->str|None:
                     session['voice'] = final_voice_file
                     if os.path.exists(file_src):
                         os.remove(file_src)
-                    if os.path.exists(voice_ref):
+                    # a model named "ref" has ref.wav as its final voice: never delete it as the source
+                    if os.path.exists(voice_ref) and os.path.abspath(voice_ref) != os.path.abspath(final_voice_file):
                         os.remove(voice_ref)
                     return model_path
                 else:
@@ -531,6 +613,7 @@ def compare_dict_keys(d1, d2):
 def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
     try:
         import pytesseract
+        from html import escape as html_escape
         debug = True
         try:
             data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
@@ -606,10 +689,10 @@ def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
             elif (i == 0 or (i > 0 and merged_lines[i-1] == '')) and len(p.split()) <= 10:
                 is_heading = True
             if is_heading:
-                xhtml_parts.append(f'<h2>{p}</h2>')
+                xhtml_parts.append(f'<h2>{html_escape(p)}</h2>')
                 debug_dump.append(f'[H2] {p}')
             else:
-                xhtml_parts.append(f'<p>{p}</p>')
+                xhtml_parts.append(f'<p>{html_escape(p)}</p>')
                 debug_dump.append(f'[P ] {p}')
         if debug:
             print('=== OCR DEBUG OUTPUT ===')
@@ -1323,6 +1406,103 @@ def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
         DependencyError(e)
         return False
 
+def get_note_marker(ref:Tag)->str:
+    return ref.get_text(strip=True).strip('[]().:, ')
+
+def find_noterefs(soup:BeautifulSoup)->list[Tag]:
+    # explicit markup first, then heuristic links: marker-like text + (superscript, [bracketed] or note-like fragment)
+    explicit = soup.select(footnote_markup['REF'])
+    explicit_ids = {id(node) for node in explicit}
+    in_notes = {id(node) for node in soup.select(footnote_markup['BODY']) if node.name not in ('a', 'sup', 'span')}
+    refs = []
+    seen = set()
+    for node in explicit + soup.select('a[href*="#"]'):
+        if id(node) in seen or any(id(p) in seen or id(p) in in_notes for p in node.parents):
+            continue
+        if id(node) not in explicit_ids:
+            text = node.get_text(strip=True)
+            if not footnote_marker_re.match(text):
+                continue
+            if not (node.find_parent('sup') or node.find('sup') or text.startswith('[') or footnote_href_re.search(node['href'])):
+                continue
+        seen.add(id(node))
+        refs.append(node)
+    return refs
+
+def get_note_targets(all_docs:list[Any])->dict[str, dict[str, str]]:
+    # {doc_name: {fragment: marker}} for every noteref, endnotes usually live in another doc than their markers
+    note_targets = {}
+    for doc in all_docs:
+        try:
+            doc_name = posixpath.normpath(doc.get_name())
+            soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
+            for ref in find_noterefs(soup):
+                link = ref if ref.name == 'a' and ref.get('href') else ref.find('a', href=True)
+                if not link:
+                    continue
+                path, _, frag = link['href'].partition('#')
+                if not frag or ':' in path:
+                    continue
+                target_doc = posixpath.normpath(posixpath.join(posixpath.dirname(doc_name), unquote(path))) if path else doc_name
+                note_targets.setdefault(target_doc, {}).setdefault(unquote(frag), get_note_marker(ref))
+        except Exception as e:
+            print(f'get_note_targets() skipped {doc.get_name()}: {e}')
+    return note_targets
+
+def get_note_block(anchor:Tag, marker:str)->Tag|None:
+    # a note opens with its anchor and its marker ("1", "[1]", "1."), anything else is running text and is kept
+    block = anchor if anchor.name in footnote_markup['BLOCK'] else anchor.find_parent(footnote_markup['BLOCK'])
+    if block is None or not marker or block.find(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+        return None
+    prefix = ''
+    if block is not anchor:
+        for node in block.descendants:
+            if node is anchor:
+                break
+            if isinstance(node, NavigableString):
+                prefix += node
+    if prefix.strip().strip('[]().:, ') not in ('', marker):
+        return None
+    if not re.match(rf'^[\[\(]?\s*{re.escape(marker)}(?!\w)', block.get_text(' ', strip=True)):
+        return None
+    return block
+
+def remove_footnotes(soup:BeautifulSoup, note_targets:dict|None=None)->int:
+    # returns the number of note bodies removed (markers not counted)
+    removed = 0
+    # 1) note bodies declared by markup
+    for node in soup.select(footnote_markup['BODY']):
+        if node.decomposed or node.name in ('html', 'body'):
+            continue
+        if node.name not in ('a', 'sup', 'span'):
+            removed += 1
+        node.decompose()
+    # 2) notes only reachable through a noteref href (kindle/docx sources converted by calibre often carry no semantics)
+    if note_targets:
+        anchors = {}
+        for tag in soup.find_all(True):
+            for key in (tag.get('id'), tag.get('name')):
+                if key:
+                    anchors.setdefault(key, tag)
+        for frag, marker in note_targets.items():
+            anchor = anchors.get(frag)
+            if anchor is None or anchor.decomposed:
+                continue
+            block = get_note_block(anchor, marker)
+            if block is not None:
+                block.decompose()
+                removed += 1
+    # 3) in-text markers, with their <sup> wrapper when it holds nothing else
+    for ref in find_noterefs(soup):
+        if ref.decomposed:
+            continue
+        parent = ref.parent
+        if parent is not None and parent.name == 'sup' and parent.get_text(strip=True) == ref.get_text(strip=True):
+            parent.decompose()
+        else:
+            ref.decompose()
+    return removed
+
 def get_blocks(session_id:str, epubBook:EpubBook)->list:
     try:
         msg = legends['msg_vocab_warning']
@@ -1353,6 +1533,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                 print(error)
                 return []
             title = get_ebook_title(epubBook, all_docs)
+            note_targets = get_note_targets(all_docs)
             blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
@@ -1399,7 +1580,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                     zip_names = set(zf.namelist())
                     zip_basenames = {os.path.basename(n): n for n in zip_names}
                     for doc_idx, doc in enumerate(all_docs):
-                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames)
+                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames, note_targets.get(posixpath.normpath(doc.get_name())))
                         if text is None:
                             error = legends['error_doc_extract'].format(doc=doc_idx + 1)
                             show_alert(session_id, {"type": "warning", "msg": error})
@@ -1431,7 +1612,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None, note_targets:dict|None=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -1544,15 +1725,30 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 msg = legends['msg_no_body_part_skip']
                 print(msg)
                 return ''
+            # whole doc declared as notes (body only, a trailing notes <section> must not skip its chapter)
+            body_type = f"{body.get('epub:type', '')} {body.get('role', '')}".lower()
+            if any(part in body_type for part in ('footnote', 'endnote', 'rearnote')):
+                msg = legends['msg_no_body_part_skip']
+                print(msg)
+                return ''
             # remove scripts/styles
             for tag in soup(['script', 'style']):
                 tag.decompose()
+            # remove footnotes/endnotes: markers, declared note bodies and notes reached through a noteref href
+            had_text = bool(body.get_text(strip=True))
+            notes_removed = remove_footnotes(soup, note_targets)
+            if had_text:
+                has_prose = any(s.strip() for s in body.find_all(string=True) if not s.find_parent(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']))
+                # notes-only doc: nothing left, or only its headings ("Notes", "Chapter 1"...)
+                if not body.get_text(strip=True) or (notes_removed > 1 and not has_prose):
+                    msg = legends['msg_no_body_part_skip']
+                    print(msg)
+                    return ''
             if not body.get_text(strip=True):
                 images = body.find_all('img') + body.find_all('image')
                 if images and zf:
                     msg = legends['msg_doc_images_ocr'].format(idx=idx, count=len(images))
                     show_alert(session_id, {"type": "info", "msg": msg})
-                    ocr_parts = []
                     doc_dir = os.path.dirname(doc.get_name())
                     for img_tag in images:
                         img_ref = (
@@ -1563,6 +1759,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                         )
                         if not img_ref:
                             continue
+                        img_ref = unquote(img_ref)
                         img_zip_path = os.path.normpath(os.path.join(doc_dir, img_ref)).replace('\\', '/')
                         if img_zip_path not in zip_names:
                             img_zip_path = zip_basenames.get(os.path.basename(img_ref))
@@ -1575,7 +1772,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             img = img.convert('RGB')
                             xhtml_content, error = ocr2xhtml(img, lang)
                             if xhtml_content:
-                                ocr_parts.append(xhtml_content)
+                                # OCR text takes the image's place so _tuple_row() reads it in page order
+                                img_tag.replace_with(BeautifulSoup(f'<div>{xhtml_content}</div>', 'html.parser').div)
                             else:
                                 show_alert(session_id, {"type": "warning", "msg": error})
                         except Exception as ocr_err:
@@ -1885,11 +2083,12 @@ def get_sentences(session_id:str, text:str)->list|None:
                     if cut[i] in soft_set:
                         best_idx = i + 1
                         break
-            # 3) no punctuation at all -> fall back to last space
+            # 3) no punctuation at all -> fall back to last whitespace (space, NBSP, NNBSP, tab, newline...)
             if best_idx == -1:
-                idx = cut.rfind(' ')
-                if idx > 0:
-                    best_idx = idx
+                for i in range(len(cut) - 1, 0, -1):
+                    if cut[i].isspace():
+                        best_idx = i
+                        break
             # 4) last resort -> hard cut at max_chars
             if best_idx <= 0:
                 best_idx = max_chars
@@ -2794,20 +2993,30 @@ def generate_interludes(session_id:str)->None:
     try:
         session = context.get_session(session_id)
         if not (session and session.get('id', False)):
-            return        # Music Interlude unchecked / no --enable_interlude: no thing to generate
+            return
+        # Music Interlude unchecked / no --enable_interlude: no thing to generate
         if not session.get('interlude_enabled', False):
-            return        interludes_dir = session.get('interludes_dir')
+            return
+        interludes_dir = session.get('interludes_dir')
         if not interludes_dir:
-            return        from lib.classes.interlude_generator import InterludeGenerator        os.makedirs(interludes_dir, exist_ok=True)        blocks = session['blocks_current']['blocks']        # same chapter selection and global positions as combine_audio_chapters(), so the interlude file names always match
+            return
+        from lib.classes.interlude_generator import InterludeGenerator
+        os.makedirs(interludes_dir, exist_ok=True)
+        blocks = session['blocks_current']['blocks']
+        # same chapter selection and global positions as combine_audio_chapters(), so the interlude file names always match
         positions = [x for x, b in enumerate(blocks) if b['keep'] and b['text'].strip()]
         if not positions:
-            return        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)        # terminal bars always (Loading weights: terminal in headless mode only), progress_bar too in GUI mode
+            return
+        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+        # terminal bars always (Loading weights: terminal in headless mode only), progress_bar too in GUI mode
         generator = InterludeGenerator(
             session['device'],
             2 if session['output_channel'] == 'stereo' else 1,
             progress_bar if session['is_gui_process'] else None
-        )        msg = f'Generating {len(positions) + 1} interludes via MusicGen...'
-        show_alert(session_id, {'type': 'info', 'msg': msg})        # book genre: detected once from the metadata and the opening pages, then kept in book_genre.json so every
+        )
+        msg = f'Generating {len(positions) + 1} interludes via MusicGen...'
+        show_alert(session_id, {'type': 'info', 'msg': msg})
+        # book genre: detected once from the metadata and the opening pages, then kept in book_genre.json so every
         # run of this book uses the same one. Set "genre" there to one of the "available" values to force another
         genre_file = os.path.join(interludes_dir, 'book_genre.json')
         try:
@@ -2816,22 +3025,29 @@ def generate_interludes(session_id:str)->None:
                 if stored_genre in generator.genre_styles or stored_genre == 'neutral':
                     generator.genre = stored_genre
         except (OSError, ValueError):
-            pass        genre_saved = generator.genre is not None        # genre excerpts: the metadata (title, subject, description) counts double; then the middle three fifths of the book,
+            pass
+        genre_saved = generator.genre is not None
+        # genre excerpts: the metadata (title, subject, description) counts double; then the middle three fifths of the book,
         # since its first and last fifth hold the title page, copyright, contents, dedication, acknowledgements or appendices.
         # That middle is read as one continuous text so short chapters count too (poetry, picture books, books split into
         # many small parts): 8 windows of about 1200 characters, evenly spread and cut on whole words; a short book is
-        # simply covered by consecutive windows        # language guard: the classifier only understands the languages it was pretrained on. The chapter text is in the
+        # simply covered by consecutive windows
+        # language guard: the classifier only understands the languages it was pretrained on. The chapter text is in the
         # translation's language when translation is on, the metadata always stays in the book's own language
         text_language = session['translate'] if session.get('translate_enabled') and session.get('translate') else session['language']
         text_iso1 = session.get('translate_iso1') if session.get('translate_enabled') and session.get('translate') else session.get('language_iso1')
         text_supported = text_iso1 in generator.classifier_languages
-        meta_supported = session.get('language_iso1') in generator.classifier_languages        if not text_supported:
+        meta_supported = session.get('language_iso1') in generator.classifier_languages
+        if not text_supported:
             msg = legends['msg_interludes_unknown_lang'].format(lang=text_language, suffix='' if generator.genre or meta_supported else legends['msg_interludes_neutral_genre'])
-            print(msg)        metadata = session.get('metadata') or {}
+            print(msg)
+        metadata = session.get('metadata') or {}
         meta_text = ' '.join(re.sub(r'<[^>]+>', ' ', '. '.join(str(metadata.get(k)) for k in ('title', 'subject', 'description') if metadata.get(k))).split())
-        book_text = [(meta_text, 2.0)] if meta_text and meta_supported else []        middle = positions[len(positions) // 5:len(positions) - len(positions) // 5] or positions
+        book_text = [(meta_text, 2.0)] if meta_text and meta_supported else []
+        middle = positions[len(positions) // 5:len(positions) - len(positions) // 5] or positions
         stream = ' '.join(' '.join(blocks[x]['text'].split()) for x in middle)
-        span = 1200        for i in range(8 if text_supported else 0):
+        span = 1200
+        for i in range(8 if text_supported else 0):
             start = i * span if len(stream) <= span * 8 else max(0, int(len(stream) * (i + 0.5) / 8) - span // 2)
             if start >= len(stream):
                 break
@@ -2841,57 +3057,76 @@ def generate_interludes(session_id:str)->None:
             if start + span < len(stream):
                 excerpt = excerpt.rsplit(' ', 1)[0]
             if excerpt.strip():
-                book_text.append((excerpt, 1.0))        total_interludes = len(positions) + 1        # Intro interlude: always before the first voice
+                book_text.append((excerpt, 1.0))
+        total_interludes = len(positions) + 1
+        # Intro interlude: always before the first voice
         first_x = positions[0]
         intro_fname = f'intro-{first_x}.{default_audio_proc_format}'
-        intro_fpath = os.path.join(interludes_dir, intro_fname)        if not os.path.exists(intro_fpath):
+        intro_fpath = os.path.join(interludes_dir, intro_fname)
+        if not os.path.exists(intro_fpath):
             if session['cancellation_requested']:
-                return            text_next = blocks[first_x]['text'][:500]
-            prompt = generator.generate_prompt(text_next, book_text, text_supported)            if not genre_saved and generator.genre:
+                return
+            text_next = blocks[first_x]['text'][:500]
+            prompt = generator.generate_prompt(text_next, book_text, text_supported)
+            if not genre_saved and generator.genre:
                 with open(genre_file, 'w', encoding='utf-8') as f:
                     json.dump({
                         'genre': generator.genre,
                         'scores': generator.genre_scores,
                         'available': list(generator.genre_styles.keys()) + ['neutral']
                     }, f, ensure_ascii=False, indent=1)
-                genre_saved = True            duration = random.randint(*interlude_duration_range)            generator.generate_interlude(
+                genre_saved = True
+            duration = random.randint(*interlude_duration_range)
+            generator.generate_interlude(
                 prompt,
                 intro_fpath,
                 duration=duration,
                 samplerate=default_audio_proc_samplerate,
                 desc=f'Interlude 1/{total_interludes}',
                 is_cancelled=lambda: session['cancellation_requested']
-            )        for n, x in enumerate(positions):
+            )
+        for n, x in enumerate(positions):
             if session['cancellation_requested']:
-                return            fname = f'{x}-{x + 1}.{default_audio_proc_format}'
-            fpath = os.path.join(interludes_dir, fname)            if not os.path.exists(fpath):
-                text_prev = blocks[x]['text'][-500:]                # the last chapter always gets one too: it closes the audiobook
-                text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text, text_supported)                if not genre_saved and generator.genre:
+                return
+            fname = f'{x}-{x + 1}.{default_audio_proc_format}'
+            fpath = os.path.join(interludes_dir, fname)
+            if not os.path.exists(fpath):
+                text_prev = blocks[x]['text'][-500:]
+                # the last chapter always gets one too: it closes the audiobook
+                text_next = blocks[positions[n + 1]]['text'][:500] if n + 1 < len(positions) else ''
+                prompt = generator.generate_prompt(f'{text_prev} {text_next}'.strip(), book_text, text_supported)
+                if not genre_saved and generator.genre:
                     with open(genre_file, 'w', encoding='utf-8') as f:
                         json.dump({
                             'genre': generator.genre,
                             'scores': generator.genre_scores,
                             'available': list(generator.genre_styles.keys()) + ['neutral']
                         }, f, ensure_ascii=False, indent=1)
-                    genre_saved = True                duration = random.randint(*interlude_duration_range)                generator.generate_interlude(
+                    genre_saved = True
+                duration = random.randint(*interlude_duration_range)
+                generator.generate_interlude(
                     prompt,
                     fpath,
                     duration=duration,
                     samplerate=default_audio_proc_samplerate,
                     desc=f'Interlude {n + 2}/{total_interludes}',
                     is_cancelled=lambda: session['cancellation_requested']
-                )    except Exception as e:
+                )
+    except Exception as e:
         error = f'generate_interludes() error: {e}'
-        exception_alert(session_id, error)    finally:
+        exception_alert(session_id, error)
+    finally:
         if generator is not None:
             # MusicGen and the classifier live in e2a's process: release them before the final merge
             generator = None
-            gc.collect()            if sys.platform == 'linux':
+            gc.collect()
+            if sys.platform == 'linux':
                 try:
                     import ctypes
                     ctypes.CDLL('libc.so.6').malloc_trim(0)
                 except Exception:
-                    pass            try:
+                    pass
+            try:
                 import torch
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -2936,7 +3171,32 @@ def convert_chapters2audio(session_id:str)->bool:
             msg = legends['msg_preparing_conversion']
             progress_bar(0.0, desc=msg)
         print(f'*********** Session: {session_id} **************\n{session_info}')
-        tts_manager = TTSManager(session)
+        try:
+            tts_manager = TTSManager(session)
+        except Exception as e:
+            # engine could not start (unsupported hardware, venv install, missing files...):
+            # traceback to the console only, the reason goes up to finalize_audiobook() and
+            # ends as one alert instead of an exception_alert() at every level
+            traceback.print_exc()
+            session['tts_init_error'] = re.sub(r'^(?:\w+\(\) error: )+', '', str(e))
+            # disk full while loading the model: an OSError ENOSPC anywhere in the chain (Windows ERROR_DISK_FULL and
+            # ERROR_HANDLE_DISK_FULL map to it too), its text when it comes back from a worker process, or for a worker
+            # that only reports its exit code, the models drive left nearly full by the failed download
+            disk_full = False
+            err, seen = e, set()
+            while err is not None and id(err) not in seen and not disk_full:
+                seen.add(id(err))
+                disk_full = (isinstance(err, OSError) and err.errno == errno.ENOSPC) or bool(re.search(r'no space left on device|not enough space on the disk|\[errno 28\]|\[winerror 112\]|\benospc\b', str(err), re.IGNORECASE))
+                err = err.__cause__ or err.__context__
+            err = None
+            if not disk_full:
+                try:
+                    disk_full = shutil.disk_usage(models_dir).free < 512 * 1024 ** 2
+                except OSError:
+                    pass
+            if disk_full:
+                session['tts_init_error'] = legends['error_disk_full_models'].format(dir=models_dir)
+            return False
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
         block_resume = blocks_current['block_resume']
@@ -3490,7 +3750,8 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             merged_audio = Path(session['process_dir']) / f"{get_sanitized(session['metadata']['title'])}{part_suffix}.{default_audio_proc_format}"
             # two tracks mixed into one file in the output's channel layout: voice = chapters + silent gaps, music = faded interludes at their offsets.
             # each interlude fades in 5-10 s before the chapter's last sentence ends and fades out 4-6 s into the next chapter;
-            # the part's last chapter gets the same fade in, then the interlude plays out and fades out at the very end
+            # the part's last chapter gets the same fade in, then the interlude plays out and fades out at the very end.
+            # the voice ducks the music through a sidechain compressor in the final merge
             mix_dir = os.path.join(concat_dir, f'interludes_mix{part_suffix}')
             shutil.rmtree(mix_dir, ignore_errors=True)
             os.makedirs(mix_dir, exist_ok=True)
@@ -3563,18 +3824,26 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                             ],
                             check=True
                         )
-                        fm.write(f"file '{intro_music_path.as_posix()}'\n")                        music_pos = intro_samples                        # Optional subtitle cue for the intro.
+                        fm.write(f"file '{intro_music_path.as_posix()}'\n")
+                        music_pos = intro_samples
+                        # Optional subtitle cue for the intro.
                         if voice_rate > 0 and (intro_delay_samples / voice_rate) >= 0.5:
-                            intro_cue_text = 'Intro'                            try:
+                            intro_cue_text = 'Intro'
+                            try:
                                 with open(Path(intro_path).with_suffix('.json'), 'r', encoding='utf-8') as f_intro:
-                                    intro_cue_data = json.load(f_intro)                                    intro_cue_text = str(intro_cue_data.get('prompt') or intro_cue_text)                                    if intro_cue_data.get('label'):
+                                    intro_cue_data = json.load(f_intro)
+                                    intro_cue_text = str(intro_cue_data.get('prompt') or intro_cue_text)
+                                    if intro_cue_data.get('label'):
                                         details = ' — '.join(
                                             str(intro_cue_data[k])
                                             for k in ('emotion', 'percussion', 'instruments')
                                             if intro_cue_data.get(k)
-                                        ) or re.sub(r',\s*instrumental\s*$', '', intro_cue_text)                                        intro_cue_text = f"{intro_cue_data['label']} — {details}" if details else str(intro_cue_data['label'])                                    intro_cue_text = ' '.join(intro_cue_text.split())
+                                        ) or re.sub(r',\s*instrumental\s*$', '', intro_cue_text)
+                                        intro_cue_text = f"{intro_cue_data['label']} — {details}" if details else str(intro_cue_data['label'])
+                                    intro_cue_text = ' '.join(intro_cue_text.split())
                             except (OSError, ValueError):
-                                pass                            part_cues.append((0.0, intro_delay_samples / voice_rate, first_global_idx, f'♪ {intro_cue_text}'))
+                                pass
+                            part_cues.append((0.0, intro_delay_samples / voice_rate, first_global_idx, f'♪ {intro_cue_text}'))
                 for n, idx in enumerate(indices):
                     if session['cancellation_requested']:
                         return None
@@ -3685,26 +3954,47 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                 else 'pan=stereo|c0=c0|c1=c0'
                 if out_layout == 'stereo'
                 else 'pan=mono|c0=0.5*c0+0.5*c1'
-            )            target_samples = max(voice_pos, music_pos)            voice_filters = []            # Delay the voice track by the intro length so the first voice enters when the intro starts fading out.
+            )
+            target_samples = max(voice_pos, music_pos)
+            voice_filters = []
+            # Delay the voice track by the intro length so the first voice enters when the intro starts fading out.
             if intro_delay_samples > 0 and voice_rate > 0:
-                intro_delay_ms = int(round(intro_delay_samples * 1000 / voice_rate))                if voice_layout == 'mono':
+                intro_delay_ms = int(round(intro_delay_samples * 1000 / voice_rate))
+                if voice_layout == 'mono':
                     delay_expr = str(intro_delay_ms)
                 else:
-                    delay_expr = f'{intro_delay_ms}|{intro_delay_ms}'                voice_filters.append(f'adelay={delay_expr}')            voice_filters.append(voice_to_out)            if music_pos > 0 and target_samples > 0:
-                voice_filters.append(f'apad=whole_len={target_samples}')            voice_chain = '[0:a]' + ','.join(voice_filters)            music_chain = f'[1:a]aformat=sample_rates={voice_rate}:channel_layouts={out_layout}'            if music_pos > 0 and target_samples > 0:
-                music_chain += f',apad=whole_len={target_samples}'            cmd = [ffmpeg, '-hide_banner', '-nostats', '-safe', '0', '-f', 'concat', '-i', voice_list]            if music_pos > 0:
+                    delay_expr = f'{intro_delay_ms}|{intro_delay_ms}'
+                voice_filters.append(f'adelay={delay_expr}')
+            voice_filters.append(voice_to_out)
+            if music_pos > 0 and target_samples > 0:
+                voice_filters.append(f'apad=whole_len={target_samples}')
+            voice_chain = '[0:a]' + ','.join(voice_filters)
+            music_chain = f'[1:a]aformat=sample_rates={voice_rate}:channel_layouts={out_layout}'
+            if music_pos > 0 and target_samples > 0:
+                music_chain += f',apad=whole_len={target_samples}'
+            cmd = [ffmpeg, '-hide_banner', '-nostats', '-safe', '0', '-f', 'concat', '-i', voice_list]
+            if music_pos > 0:
+                # voice ducking: a sidechain compressor driven by the voice lowers the music while the voice is heard and lets it fade
+                # back in fast once the voice stops. mix caps the ducking at interlude_duck_db: out = music * (gain * mix + 1 - mix)
+                duck_mix = 1 - 10 ** (interlude_duck_db / 20)
                 cmd += [
                     '-safe', '0', '-f', 'concat', '-i', music_list,
                     '-filter_complex',
-                    f'{voice_chain}[v];{music_chain}[m];[v][m]amix=inputs=2:duration=longest:normalize=0[out]'
+                    f'{voice_chain},asplit=2[v][sc];{music_chain}[m];'
+                    f'[m][sc]sidechaincompress=threshold={interlude_duck_threshold}:ratio={interlude_duck_ratio}:attack={interlude_duck_attack}:release={interlude_duck_release}:mix={duck_mix:.4f}[md];'
+                    f'[v][md]amix=inputs=2:duration=longest:normalize=0[out]'
                 ]
             else:
                 cmd += [
                     '-filter_complex',
                     f'{voice_chain}[out]'
-                ]            # default_audio_proc_format is a container name: only 'flac' is also an encoder name, 'wav'/'ogg' need theirs
-            out_codec = {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(default_audio_proc_format, default_audio_proc_format)            cmd += ['-map', '[out]', '-c:a', out_codec]            if out_codec == 'flac':
-                cmd += ['-sample_fmt', 's16']            cmd += [
+                ]
+            # default_audio_proc_format is a container name: only 'flac' is also an encoder name, 'wav'/'ogg' need theirs
+            out_codec = {'wav': 'pcm_s16le', 'ogg': 'libvorbis'}.get(default_audio_proc_format, default_audio_proc_format)
+            cmd += ['-map', '[out]', '-c:a', out_codec]
+            if out_codec == 'flac':
+                cmd += ['-sample_fmt', 's16']
+            cmd += [
                 '-map_metadata', '-1',
                 '-threads', '0',
                 '-progress', 'pipe:2',
@@ -4135,16 +4425,38 @@ def convert_ebook(args:dict)->tuple:
             session['custom_model'] =  args['custom_model']
             session['fine_tuned'] = str(args['fine_tuned'])
             session['voice'] = args.get('voice', None)
-            session['xtts_temperature'] =  float(args['xtts_temperature'])
-            session['xtts_length_penalty'] = float(args['xtts_length_penalty'])
-            session['xtts_num_beams'] = int(args['xtts_num_beams'])
-            session['xtts_repetition_penalty'] = float(args['xtts_repetition_penalty'])
-            session['xtts_top_k'] =  int(args['xtts_top_k'])
-            session['xtts_top_p'] = float(args['xtts_top_p'])
-            session['xtts_speed'] = float(args['xtts_speed'])
-            session['xtts_enable_text_splitting'] = bool(args['xtts_enable_text_splitting'])
+            session['xtts_temperature'] = float(args['xtts_temperature']) if args.get('xtts_temperature') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['temperature']
+            session['xtts_codec_temperature'] = float(args['xtts_codec_temperature']) if args.get('xtts_codec_temperature') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['codec_temperature']
+            session['xtts_length_penalty'] = float(args['xtts_length_penalty']) if args.get('xtts_length_penalty') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['length_penalty']
+            session['xtts_num_beams'] = int(args['xtts_num_beams']) if args.get('xtts_num_beams') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['num_beams']
+            session['xtts_repetition_penalty'] = float(args['xtts_repetition_penalty']) if args.get('xtts_repetition_penalty') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['repetition_penalty']
+            session['xtts_cvvp_weight'] = float(args['xtts_cvvp_weight']) if args.get('xtts_cvvp_weight') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['cvvp_weight']
+            session['xtts_top_k'] = int(args['xtts_top_k']) if args.get('xtts_top_k') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['top_k']
+            session['xtts_top_p'] = float(args['xtts_top_p']) if args.get('xtts_top_p') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['top_p']
+            session['xtts_speed'] = float(args['xtts_speed']) if args.get('xtts_speed') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['speed']
+            session['xtts_gpt_cond_len'] = int(args['xtts_gpt_cond_len']) if args.get('xtts_gpt_cond_len') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['gpt_cond_len']
+            session['xtts_gpt_batch_size'] = int(args['xtts_gpt_batch_size']) if args.get('xtts_gpt_batch_size') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['gpt_batch_size']
+            session['xtts_enable_text_splitting'] = args['xtts_enable_text_splitting'] if args.get('xtts_enable_text_splitting') not in (None, '') else default_engine_settings[TTS_ENGINES['XTTS']]['enable_text_splitting']
             session['bark_text_temp'] =  float(args['bark_text_temp'])
             session['bark_waveform_temp'] =  float(args['bark_waveform_temp'])
+            for zonos_key, zonos_cast in (('zonos_emotion_enabled', bool), ('zonos_emotion_happy', float), ('zonos_emotion_sad', float), ('zonos_emotion_angry', float), ('zonos_emotion_surprised', float), ('zonos_emotion_valence', float), ('zonos_emotion_arousal', float), ('zonos_emotion_strength', float), ('zonos_emotion_cfg_scale', float), ('zonos_speaking_rate', float)):
+                if args.get(zonos_key) is not None:
+                    session[zonos_key] = zonos_cast(args[zonos_key])
+            for gptsovits_key, gptsovits_cast in (('gptsovits_speed', float), ('gptsovits_top_k', int), ('gptsovits_top_p', float), ('gptsovits_temperature', float), ('gptsovits_repetition_penalty', float)):
+                if args.get(gptsovits_key) is not None:
+                    session[gptsovits_key] = gptsovits_cast(args[gptsovits_key])
+            for orpheus_key, orpheus_cast in (('orpheus_temperature', float), ('orpheus_top_p', float), ('orpheus_repetition_penalty', float)):
+                if args.get(orpheus_key) is not None:
+                    session[orpheus_key] = orpheus_cast(args[orpheus_key])
+            for sparktts_key, sparktts_cast in (('sparktts_temperature', float), ('sparktts_top_k', int), ('sparktts_top_p', float)):
+                if args.get(sparktts_key) is not None:
+                    session[sparktts_key] = sparktts_cast(args[sparktts_key])
+            for chattts_key, chattts_cast in (('chattts_temperature', float), ('chattts_top_k', int), ('chattts_top_p', float), ('chattts_repetition_penalty', float), ('chattts_speed', int)):
+                if args.get(chattts_key) is not None:
+                    session[chattts_key] = chattts_cast(args[chattts_key])
+            for csm_key, csm_cast in (('csm_temperature', float), ('csm_top_k', int)):
+                if args.get(csm_key) is not None:
+                    session[csm_key] = csm_cast(args[csm_key])
             session['output_format'] = str(args['output_format'])
             session['output_channel'] = str(args['output_channel'])
             session['output_split'] = bool(args['output_split'])
@@ -4204,7 +4516,7 @@ def convert_ebook(args:dict)->tuple:
                         custom_src_name = custom_src_path.stem
                         if not os.path.exists(os.path.join(session['custom_model_dir'], custom_src_name)):
                             try:
-                                if analyze_uploaded_file(session['custom_model'], default_engine_settings[session['tts_engine']]['files']):
+                                if analyze_uploaded_file(session['custom_model'], default_engine_settings[session['tts_engine']]['files'], default_engine_settings[session['tts_engine']].get('files_sharded')):
                                     model = extract_custom_model(session_id)
                                     if model is not None:
                                         session['custom_model'] = model
@@ -4234,8 +4546,9 @@ def convert_ebook(args:dict)->tuple:
                     msg_extra = ''                      
                     if session['device'] == devices['CUDA']['proc']:
                         if not devices['CUDA']['found']:
-                            session['device'] = devices['CPU']['proc']
-                            msg += legends['msg_device_not_supported'].format(device='CUDA', wiki=default_gpu_wiki)
+                            # CUDA, then Vulkan (checked below), then CPU
+                            session['device'] = devices['VULKAN']['proc']
+                            msg += legends['msg_device_not_supported_try_vulkan'].format(device='CUDA', wiki=default_gpu_wiki)
                     elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
                         if not devices['JETSON']['found']:
                             session['device'] = devices['CPU']['proc']
@@ -4268,6 +4581,27 @@ def convert_ebook(args:dict)->tuple:
                         if xpu_error is not None:
                             session['device'] = devices['CPU']['proc']
                             msg += legends['msg_device_error_switch_cpu'].format(error=xpu_error, wiki=default_gpu_wiki)
+                    if session['device'] == devices['VULKAN']['proc']:
+                        # a separate if, not elif: a CUDA session that found no CUDA arrives here too.
+                        # torch has no Vulkan device: like Zonos' hybrid model, an engine that cannot run on it is
+                        # switched (to CPU) with an alert. Engines that can (native GPU builds) still need the
+                        # system Vulkan loader, e2a installs no system library. macOS has none: its packages run
+                        # Metal (arm64) or bring MoltenVK (x86_64), so no loader check there
+                        vulkan_engines = [k for k, v in default_engine_settings.items() if v.get('vulkan')]
+                        if session['tts_engine'] not in vulkan_engines:
+                            session['device'] = devices['CPU']['proc']
+                            msg += legends['msg_vulkan_engine_cpu'].format(engine=session['tts_engine'], engines=', '.join(vulkan_engines))
+                        elif sys.platform == systems['MACOS']:
+                            devices['VULKAN']['found'] = True
+                        else:
+                            import ctypes
+                            try:
+                                ctypes.CDLL('vulkan-1.dll' if sys.platform == systems['WINDOWS'] else 'libvulkan.so.1')
+                                devices['VULKAN']['found'] = True
+                            except OSError:
+                                devices['VULKAN']['found'] = False
+                                session['device'] = devices['CPU']['proc']
+                                msg += legends['msg_device_not_supported_vulkan'].format(wiki=default_gpu_wiki)
                     if session['device'] == devices['CPU']['proc']:
                         os.environ['OMP_NUM_THREADS'] = '4'
                     vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
@@ -4280,7 +4614,7 @@ def convert_ebook(args:dict)->tuple:
                     else:
                         msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
                         if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
-                            msg_extra += f"<br/>Free Memory {session['free_vram_gb']} is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
+                            msg_extra += f"<br/>Free Memory {session['free_vram_gb']}GB is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
                         if session['free_vram_gb'] > 4.0:
                             if session['tts_engine'] == TTS_ENGINES['BARK']:
                                 os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'  
@@ -4295,7 +4629,21 @@ def convert_ebook(args:dict)->tuple:
                     if msg == '':
                         msg_extra = f"Using {session['device'].upper()}" + msg_extra
                     device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
-                    if float(total_vram_gb) >= float(device_vram_required):
+                    # venv engines (gptsovits, ...) mirror python_env's torch into their own venv: stop
+                    # here with an alert when it is too old or comes from a custom wheel URL
+                    # (e.g. Windows ROCm, or a torch below the engine's torch_min), not later in TTSManager()
+                    torch_error = None
+                    torch_min = default_engine_settings[session['tts_engine']].get('torch_min')
+                    if torch_min:
+                        import torch
+                        torch_base, _, torch_tag = torch.__version__.partition('+')
+                        torch_version = tuple(int(x) for x in re.findall(r'\d+', torch_base)[:3])
+                        torch_index_ok = torch_tag in ('', 'cpu', 'xpu') or bool(re.fullmatch(r'cu\d+', torch_tag)) or (bool(re.fullmatch(r'rocm[\d.]+', torch_tag)) and sys.platform == systems['LINUX']) or bool(re.fullmatch(r'jetson\d+', torch_tag))
+                        if torch_version < tuple(int(x) for x in torch_min.split('.')) or not torch_index_ok:
+                            torch_error = legends['error_venv_torch_unsupported'].format(engine=session['tts_engine'], min=torch_min, version=torch.__version__)
+                    if torch_error is not None:
+                        error = torch_error
+                    elif float(total_vram_gb) >= float(device_vram_required):
                         if msg:
                             show_alert(session_id, {"type": "warning", "msg": msg + msg_extra})
                         else:
@@ -4534,6 +4882,9 @@ def finalize_audiobook(session_id:str)->tuple:
             if session and session.get('id', False):
                 if session['cancellation_requested']:
                     error = legends['msg_conversion_cancelled']
+                elif session.get('tts_init_error'):
+                    error = session['tts_init_error']
+                    session['tts_init_error'] = None
             return _fail(error)
         generate_interludes(session_id)
         show_alert(session_id, {'type': 'info', 'msg': legends['msg_combining_all']})
@@ -4697,11 +5048,20 @@ def unload_tts_manager(tts_manager:Any)->None:
                     engine_ref = weakref.ref(engine)
                 except Exception:
                     pass
+                # worker engines (zonos, gptsovits, ...): the model lives in a persistent worker
+                # process, so dropping the reference frees nothing — stop the worker.
+                worker = getattr(engine, 'engine', None)
+                if isinstance(worker, SubprocessPipe):
+                    worker.stop()
+                worker = None
             tts_manager.engine = None
             engine = None
             for key in keys:
                 if key:
-                    loaded_tts.pop(key, None)
+                    cached = loaded_tts.pop(key, None)
+                    if isinstance(cached, SubprocessPipe):
+                        cached.stop()
+                    cached = None
         gc.collect()
         try:
             import torch
@@ -4752,7 +5112,11 @@ def cleanup_models_cache()->None:
         }
         for key in list(loaded_tts.keys()):
             if key not in active_models:
-                del loaded_tts[key]
+                cached = loaded_tts.pop(key, None)
+                if isinstance(cached, SubprocessPipe):
+                    # persistent worker: its model and VRAM belong to the child process
+                    cached.stop()
+                cached = None
         gc.collect()
         if sys.platform == 'linux':
             # return freed pages to the OS: on jetson unified memory glibc's

@@ -1,5 +1,5 @@
-gradio==6.29.1
-coqui-tts[languages]==0.27.5
+gradio==6.30.0
+coqui-tts[languages]==0.28.0
 piper-tts==1.4.2
 argostranslate
 stanza
@@ -22,8 +22,8 @@ fastapi
 hf_xet
 beautifulsoup4
 nagisa
-pymupdf
 pymupdf-layout
+pymupdf
 hangul-romanize
 iso639-lang
 soynlp
@@ -51,3 +51,4 @@ torchvggish
 pyannote-audio
 demucs-simple
 huggingface-hub
+ptts==0.4.1

@@ -7,3 +7,15 @@ from .glowtts import GlowTTS
 from .tacotron import Tacotron2
 from .piper import Piper
 from .yourtts import YourTTS
+from .zonos import Zonos
+from .gptsovits import GptSovits
+from .omnivoice import OmniVoice
+from .f5tts import F5TTS
+from .orpheus import Orpheus
+from .openvoice import OpenVoice
+from .phonon import Phonon
+from .audiocpp import AudioCpp
+from .sparktts import SparkTTS
+from .chattts import ChatTTS
+from .melotts import MeloTTS
+from .csm import CSM

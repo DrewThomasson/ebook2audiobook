@@ -10,7 +10,7 @@ ARG PYTHON_VERSION=3.12
 # predates zesInit.
 FROM python:${PYTHON_VERSION}-slim-trixie
 
-ARG APP_VERSION=26.10.1
+ARG APP_VERSION=26.11.1
 ARG DEVICE_TAG=cpu
 ARG DOCKER_DEVICE_STR='{ "name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "default Hugging Face CPU device" }'
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
@@ -33,7 +33,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     GRADIO_SERVER_NAME=0.0.0.0 \
     GRADIO_SERVER_PORT=7860 \
     PATH="/root/.local/bin:/root/.cargo/bin:${PATH}" \
-    IN_DOCKER=1
+    IN_DOCKER=1 \
+	UV_PYTHON_INSTALL_DIR="/app/lib/classes/tts_engines/venvs/.python" \
+	UV_LINK_MODE="copy"
 
 # uv is required because device_installer.py now calls `uv pip ...`.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv

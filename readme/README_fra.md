@@ -1,22 +1,22 @@
 # 📚 ebook2audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
-Convertisseur CPU/GPU d'e-book en livre audio avec chapitres et métadonnées<br/>
-utilisant des moteurs TTS avancés et bien plus encore.<br/>
-Prend en charge le clonage de voix et 1158 langues !
+Convertisseur CPU/GPU de E-Book en livre audio avec chapitres et métadonnées<br/>
+en utilisant des moteurs TTS avancés et bien plus encore.<br/>
+Prend en charge le clonage vocal et 1696 langues !
 > Important
-**Cet outil est destiné à être utilisé uniquement avec des e-books sans DRM, acquis légalement.** <br>
-Les auteurs ne sont pas responsables d'une quelconque utilisation abusive de ce logiciel ni des conséquences juridiques qui en découleraient. <br>
-Utilisez cet outil de manière responsable et dans le respect de toutes les lois applicables.
+**Cet outil est destiné à être utilisé uniquement avec des livres électroniques non MDR acquis légalement.** <br>
+Les auteurs ne sont pas responsables de toute utilisation abusive de ce logiciel ou des conséquences juridiques qui en découlent. <br>
+Utilisez cet outil de manière responsable et conformément à toutes les lois applicables.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
-### Merci de soutenir les développeurs d'ebook2audiobook !
+### Merci de soutenir les développeurs d'ebook2audiobook !
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
-### Exécution locale
+### Exécuter localement
 
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
+Instructions [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)
 
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
 
@@ -27,15 +27,15 @@ Utilisez cet outil de manière responsable et dans le respect de toutes les lois
 <img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
-### Exécution à distance
+### exécuter à distance
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
-#### Interface graphique (GUI)
+#### Interface GUI
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
-  <summary>Cliquez pour voir les images de l'interface web</summary>
+  <summary>Cliquez pour voir les images de l'interface graphique Web</summary>
   <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
   <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
@@ -43,211 +43,215 @@ Utilisez cet outil de manière responsable et dans le respect de toutes les lois
 
 ## Démos
 
-**Démo de la nouvelle voix par défaut**  
+**Nouvelle démo vocale par défaut **
 
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
 <details>
   <summary>Plus de démos</summary>
 
-**Voix ASMR** 
+**ASMR Voice**
 
 https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
-**Voix jour de pluie**  
+**Rainy Day Voice**
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
-**Voix Scarlett**
+**Scarlett Voice**
 
 https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
-**Voix David Attenborough** 
+**David Attenborough Voice**
 
 https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
-**Exemple**
+roue des futurs
 
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 </details>
 
-## README.md
+## Lisezmoi.md
 
 ## Table des matières
 - [ebook2audiobook](#-ebook2audiobook)
-- [Fonctionnalités](#features)
-- [Interface graphique](#gui-interface)
-- [Démos](#demos)
-- [Langues prises en charge](#supported-languages)
-- [Configuration minimale requise](#hardware-requirements)
-- [Utilisation](#instructions)
-  - [Exécution locale](#instructions)
-    - [Lancement de l'interface web Gradio](#instructions)
-    - [Utilisation de base en mode headless](#basic-usage)
-    - [Utilisation d'un modèle XTTS personnalisé en mode headless](#example-of-custom-model-zip-upload)
-    - [Sortie de la commande d'aide](#help-command-output)
-  - [Exécution à distance](#run-remotely)
+- [Features](#features)
+- [GUI Interface](#gui-interface)
+- [Demos](#demos)
+- [Supported Languages](#supported-languages)
+- [Minimum Requirements](#hardware-requirements)
+- [Usage](#instructions)
+  - [Run Locally](#instructions)
+    - [Launching Gradio Web Interface](#instructions)
+    - [Basic Headless Usage](#basic-usage)
+    - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
+    - [Help command output](#help-command-output)
+  - [Run Remotely](#run-remotely)
   - [Docker](#docker)
-    - [Étapes d'exécution](#docker)
+    - [Steps to Run](#docker)
+- [Tools](#tools)
+  - [Preload models for offline installs](#preload-models)
+  - [Translate ebooks out of e2a](#translate-ebooks)
   
 - [Cloned Voices](#cloned-voices)
-- [Modèles TTS affinés](#fine-tuned-tts-models)
-  - [Collection de modèles TTS affinés](#fine-tuned-tts-collection)
-  - [Train TTS Modèle](#fine-tune-your-own-tts-model)
-- [Formats d'e-book pris en charge](#supported-ebook-formats)
-- [Formats de sortie](#output-and-process-formats)
-- [Revenir à une version antérieure](#reverting-to-older-versions)
-- [Problèmes courants](#common-issues)
-- [Remerciements particuliers](#special-thanks)
-- [Table des matières](#table-of-contents)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
+  - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
+  - [Train TTS Model](#fine-tune-your-own-tts-model)
+- [Supported eBook Formats](#supported-ebook-formats)
+- [Output Formats](#output-and-process-formats)
+- [Revert to older Version](#reverting-to-older-versions)
+- [Common Issues](#common-issues)
+- [Special Thanks](#special-thanks)
+- [Table of Contents](#table-of-contents)
 
 
-## Fonctionnalités
-- 🔧 **Moteurs TTS pris en charge** : `XTTSv2`, `Bark`, `Fairseq`, `VITS`, `Tacotron2`, `Tortoise`, `GlowTTS`, `YourTTS`
-- 📚 **Convertir plusieurs formats de fichier** : `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
-- 💻 **Zone de texte** pour convertir directement un texte court en audio
-- 🔍 **Reconnaissance OCR** pour les fichiers dont les pages de texte sont des images
-- 🔊 **Synthèse vocale de haute qualité**, du quasi temps réel à une voix quasi naturelle
-- 🗣️ **Clonage de voix optionnel** à l'aide de votre propre fichier vocal
-- 🌐 **Prend en charge 1158 langues** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
-- 💻 **Adapté aux ressources limitées** — fonctionne avec **2 Go de RAM / 1 Go de VRAM (minimum)**
-- 🎵 **Formats de sortie du livre audio** : mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
-- 🧠 **Balises SML prises en charge** — contrôle fin des coupures, pauses, changements de voix et plus encore ([see below](#sml-tags-available))
-- 🧩 **Modèle personnalisé optionnel** utilisant votre propre modèle entraîné (XTTSv2, VITS, FAIRSEQ, PIPER, others on request)
-- 🎛️ **Modèles préréglés affinés** entraînés par l'équipe E2A<br/>
-     <i>(Contactez-nous si vous avez besoin de modèles affinés supplémentaires, ou si vous souhaitez partager les vôtres dans la liste officielle des préréglages)</i>
+## Caractéristiques
+- 🔧 ** Moteurs TTS pris en charge** : `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 📚 **Convertir plusieurs formats de fichiers ** : `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
+- 💻 **TextArea** pour convertir directement un texte court en audio
+- 🔍 ** Numérisation OCR ** pour les fichiers avec des pages de texte en tant qu'images
+- 🔊 **Du texte à la parole de haute qualité ** de la voix en temps quasi réel à la voix en temps quasi réel
+- 🗣️ ** Clonage vocal facultatif ** à l'aide de votre propre fichier vocal
+- 🌐 **Prend en charge 1696 langues** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 💻 ** Adapté aux faibles ressources ** — fonctionne sur **2 Go de RAM / 1 Go de VRAM (minimum)**
+- 🎵 ** Formats de sortie de livres audio ** : mono ou stéréo `aac`⟧, `flac`, `mp3`, ⟦3, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm` `m4b`
+- 🧠 ** Tags SML pris en charge** — contrôle fin des pauses, des pauses, de la commutation vocale et plus encore ([see below](#sml-tags-available))
+- 🧩 ** Modèle personnalisé en option ** en utilisant votre propre modèle formé (XTTSv2, VITS, FAIRSEQ, PIPER, autres sur demande)
+- 🎛️ ** Modèles prédéfinis affinés** formés par l'équipe E2A<br/>
+     <i>(Contactez-nous si vous avez besoin de modèles affinés supplémentaires ou si vous souhaitez partager le vôtre avec la liste officielle des préréglages)</i>
 
 
-##  Configuration matérielle requise
-- 2 Go de RAM min., 8 Go recommandés.
-- 1 Go de VRAM min., 4 Go recommandés.
-- Virtualisation activée si l'exécution se fait sous Windows (Docker uniquement).
-- CPU, XPU (intel, AMD, ARM)*.
+##  Exigences Matérielles
+- 2 Go de RAM minimum, 8 Go recommandés.
+- 1 Go de VRAM minimum, 4 Go recommandés.
+- Virtualisation activée si elle est exécutée sur Windows (Docker uniquement).
+- CPU, XPU (Intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
-- MPS (CPU Apple Silicon)
+- MPS (Apple Silicon CPU)
 
-*<i> Les moteurs TTS modernes sont très lents sur CPU, utilisez donc des TTS de moindre qualité comme YourTTS, Tacotron2, etc.</i>
+*<i> Les moteurs TTS modernes sont très lents sur le processeur, alors utilisez des TTS de qualité inférieure comme YourTTS, Tacotron2, etc.</i>
 
 ## Langues prises en charge
-| **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
+| **Arabe (ar)**    | **Chinois (zh)**    | **Anglais (en)**   | **Espagnol (es)**   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| **French (fr)**    | **German (de)**     | **Italian (it)**   | **Portuguese (pt)** |
-| **Polish (pl)**    | **Turkish (tr)**    | **Russian (ru)**   | **Dutch (nl)**     |
-| **Czech (cs)**     | **Japanese (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
-| **Hungarian (hu)** | **Korean (ko)**     | **Vietnamese (vi)**| **Swedish (sv)**   |
-| **Persian (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesian (id)**|
-| **Slovak (sk)**    | **Croatian (hr)**   | **Tamil (ta)**     | **Danish (da)**    |
-- [**+1130 langues et dialectes ici**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+| **Français (fr)**    | **Allemand (de)**     | **Italien (it)**   | **Portugais (pt)** |
+| **Polonais (pl)**    | **Turc (tr)**    | **Russe (ru)**   | **Néerlandais (nl)**     |
+| **Tchèque (cs)**     | **Japonais (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
+| **Hongrois (hu)** | **Coréen (ko)**     | **Vietnamien (vi)**| **Suédois (sv)**   |
+| **Persan (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonésien (id)**|
+| **Slovaque (sk)**    | **Croate (h)**   | **Tamoul (ta)**     | **Danois (da)**    |
+- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
-## Formats d'e-book pris en charge
+## Formats de livres électroniques pris en charge
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
-- **Meilleurs résultats** : `.epub` ou `.mobi` pour la détection automatique des chapitres
+- **Meilleurs résultats** : `.epub` ou `.mobi` pour la détection automatique de chapitre
 
-## Formats de sortie et de traitement
+## Formats de sortie et de processus
 - `.m4b`, `.m4a`, `.mp4`, `.webm`, `.mov`, `.mp3`, `.flac`, `.wav`, `.ogg`, `.aac`
-- Le format de traitement peut être modifié dans lib/conf.py
+- Le format du processus peut être modifié dans lib/conf.py
 
 ## Balises SML disponibles
-- `[break]` — silence (plage aléatoire **0.3–0.6 sec.**)
-- `[pause]` — silence (plage aléatoire **1.0–1.6 sec.**)
+- `[break]` — silence (plage aléatoire **0,3-0,6 sec.**)
+- `[pause]` — silence (plage aléatoire **1,0-1,6 sec.**)
 - `[pause:N]` — pause fixe (**N sec.**)
-- `[voice:/path/to/voice/file]...[/voice]` — changer de voix par rapport à la voix par défaut ou sélectionnée depuis l'interface graphique/CLI
+- `[voice:/path/to/voice/file]...[/voice]` — changer la voix de la voix par défaut ou sélectionnée à partir de l'interface graphique/CLI
+- `[emotion:sadness]...[/emotion]` — Zonos uniquement : émotion pour un passage (bonheur, tristesse, dégoût, peur, surprise, colère, autre, neutre) ou un mélange comme `[emotion:sadness=0.7,neutral=0.3]` ; d'autres moteurs l'ignorent
 
-**Consultez notre autre dépôt dédié à l'ajout automatique de SML dans votre e-book -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
+**Consultez notre autre dépôt dédié à l'ajout automatique de SML dans votre ebook -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
-**Avant de publier un problème d'installation ou un bug, recherchez attentivement dans l'onglet des problèmes ouverts et fermés<br>
-pour être sûr que votre problème n'existe pas déjà.**
+> Important
+**Avant de publier une recherche de problème d'installation ou de bogue avec soin dans l'ONGLET des problèmes ouverts et fermés<br>
+pour vous assurer que votre problème n'existe pas déjà.**
 
->[!NOTE]
-**Le format EPUB ne possède aucune structure standard définissant ce qu'est un chapitre, un paragraphe, une préface, etc.<br>
+REMARQUE
+**Le format ePub n'a pas de structure standard telle qu'un chapitre, un paragraphe, une préface, etc.<br>
 Vous devez donc d'abord supprimer manuellement tout texte que vous ne souhaitez pas convertir en audio.**
 
 
-### Instructions 
-1. **Clone repo**
+### Instructions
+1. **Cloner repo**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
 	```
 
-2. **Installer / Exécuter ebook2audiobook** :
+2. **Installer / Exécuter ebook2audiobook** :
 
-   - **Linux/MacOS**  
+   - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>Remarque pour les utilisateurs de MacOS : homebrew est installé pour installer les programmes manquants.</i>
      
-   - **Lanceur Mac**  
-     Double-cliquez sur `Mac Ebook2Audiobook Launcher.command`
+   - ** Lanceur Mac **
+     Double clic `Mac Ebook2Audiobook Launcher.command`
 
 
-   - **Windows**  
+   - Fenêtres
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     ou
+     Double clic `ebook2audiobook.cmd`
 
-     <i>Note pour les utilisateurs Windows : scoop est installé afin d'installer les programmes manquants sans privilèges administrateur.</i>
+     <i>Remarque pour les utilisateurs de Windows : scoop est installé pour installer les programmes manquants sans privilèges d'administrateur.</i>
    
-1. **Ouvrir l'application web** : Cliquez sur l'URL fournie dans le terminal pour accéder à l'application web et convertir les e-books. `http://localhost:7860/`
-2. **Pour un lien public** :
+1. **Ouvrez l'application Web ** : cliquez sur l'URL fournie dans le terminal pour accéder à l'application Web et convertir les livres électroniques. `http://localhost:7860/`
+2. **Pour le lien public ** :
    `./ebook2audiobook.command --share` (Linux/MacOS)
-   `ebook2audiobook.cmd --share` (Windows)
-   `python app.py --share` (all OS)
+   Windows. `ebook2audiobook.cmd --share`
+   Tous les OS `python app.py --share`
 
-> [!IMPORTANT]
-**Si le script est arrêté puis relancé, vous devez actualiser votre interface graphique Gradio<br>
-pour permettre à la page web de se reconnecter au nouveau socket de connexion.**
+> Important
+**Si le script est arrêté et exécuté à nouveau, vous devez actualiser votre interface graphique gradio<br>
+pour permettre à la page Web de se reconnecter à la nouvelle prise de connexion.**
 
-### Basic  Usage
-   - **Linux/MacOS**:
+### Utilisation de base
+   - **Linux/MacOS** :
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
-   - **Windows**
+   - Fenêtres
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
-  - **[--ebook]** : Chemin vers votre fichier e-book
-  - **[--voice]** : Chemin du fichier de clonage de voix (optionnel)
-  - **[--language]** : Code de langue au format ISO-639-3 (ex. : ita pour l'italien, eng pour l'anglais, deu pour l'allemand...).<br>
-    La langue par défaut est eng et --language est optionnel pour la langue par défaut définie dans ./lib/lang.py.<br>
+  - **[--ebook]** : Chemin d'accès à votre fichier eBook
+  - **[--voice]** : Chemin du fichier de clonage vocal (facultatif)
+  - **[--language]** : Code de langue en ISO-639-3 (i.e. : ita pour l'italien, eng pour l'anglais, deu pour l'allemand...).<br>
+    La langue par défaut est eng et --language est facultatif pour la langue par défaut définie dans ./lib/lang.py.<br>
     Les codes ISO-639-1 à 2 lettres sont également pris en charge.
 
 
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+###  Exemple de téléchargement zip de modèle personnalisé
+  (doit être un fichier .zip contenant les fichiers modèles obligatoires. Exemple pour XTTSv2 : config.json, model.pth, vocab.json et ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-   - **Windows**
+   - Fenêtres
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>Remarque : l'ref.wav de votre modèle personnalisé est toujours la voix sélectionnée pour la conversion</i>
      
-- **<custom_model_path>** : Chemin vers le fichier `model_name.zip`,
-      qui doit contenir (selon le moteur TTS) tous les fichiers obligatoires<br>
+- **<custom_model_path>** : Chemin vers `model_name.zip` fichier,
+      qui doit contenir (selon le moteur tts) tous les fichiers obligatoires<br>
       (voir ./lib/models.py).
 
-### For Detailed Guide with list of all Parameters to use
+### Pour un guide détaillé avec la liste de tous les paramètres à utiliser
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
      ```
-   - **Windows**
+   - Fenêtres
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **Ou pour tous les systèmes d'exploitation**
     ```python
      app.py --help
     ```
@@ -365,19 +369,20 @@ SML tags available:
 	[pause] — silence (random range **1.0–1.6 sec.**)
 	[pause:N] — fixed pause (**N sec.**)
 	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
 
 ```
 
-NOTE : en mode gradio/gui, pour annuler une conversion en cours, cliquez simplement sur le [X] du composant d'envoi d'e-book.
-ASTUCE : s'il faut un peu plus de pause, ajoutez '[pause:3]' pour 3 sec., etc.
+REMARQUE : en mode gradio/gui, pour annuler une conversion en cours, cliquez simplement sur le [X] du composant de téléchargement de livre électronique.
+ASTUCE : s'il a besoin de plus de pause, ajoutez «[pause:3] » pendant 3 secondes, etc.
 
 ### Docker
-1. **Clone the Repository**:
+1. **Cloner le référentiel** :
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. **Construire le conteneur**
 ```bash
     Windows:
         Docker:
@@ -394,43 +399,189 @@ ASTUCE : s'il faut un peu plus de pause, ajoutez '[pause:3]' pour 3 sec., etc.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Run the Container:**
+4. **Exécuter le conteneur :**
 ```bash
 Docker run image:
     Gradio/GUI:
         CPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
         CUDA:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
         ROCM:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
         XPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
         JETSON:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" --runtime nvidia  --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[51/60/61 etc...]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc...]
     Headless mode:
         CPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         CUDA:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         ROCM:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         XPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         JETSON:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 ebook2audiobook:jetson[51/60/61 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 Docker Compose (i.e. cuda 12.8:
         Run Gradio GUI:
-               DEVICE_TAG=cu128 docker compose --profile gpu up --no-log-prefix
+               DEVICE_TAG=cu128 docker compose --profile cuda up --no-log-prefix
         Run Headless mode:
-               DEVICE_TAG=cu128 docker compose --profile gpu run --rm ebook2audiobook --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+               DEVICE_TAG=cu128 docker compose --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 Podman Compose (i.e. cuda 12.8:
         Run Gradio GUI:
-               DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu up
+               DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda up
         Run Headless mode:
-               DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile gpu run --rm ebook2audiobook-gpu --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
+               DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
+- REMARQUE : le MPS n'est pas exposé dans le Docker, le CPU doit donc être utilisé
+- REMARQUE : le volume nommé `e2a_venvs` conserve les moteurs TTS installés dans leur propre venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, etc.)
+  à travers les passages de conteneurs, de sorte qu'ils ne sont pas réinstallés à chaque fois. Pour les réinitialiser : `docker volume rm e2a_venvs`
+
+## Outils
+Outils autonomes, exécutés avec le propre Python d'e2a (`python_env`, créé par le premier lancement d'e2a).
+
+<a id="preload-models"></a>
+### Précharger les modèles pour les installations hors ligne : `tools/preload_models.py`
+Télécharge tous les modèles utilisés par e2a (moteurs TTS et leurs affinements, conversion vocale, strophe, pyannote, demucs,
+music interludes, argos-translate packages, tesseract data, jieba, and the voices) dans un dossier agencé
+exactement comme , c'est-à-dire une clé USB. Sur la machine hors ligne, copiez ce dossier dans le dossier ⟦1 d'e2a⟧ `./models` `./models`
+et le⟧ dossier ⟦0 écrit à côté dans e2a's `./voices`. `voices`
+Chaque travail terminé est enregistré en `<models_dir>/.e2a_downloads.json` : une réexécution ignore ce qui est fait et démarre
+à nouveau ce qui a été coupé (ctrl-c, plantage, touche débranchée) après avoir supprimé ses fichiers partiels.
+   - **Linux/MacOS**
+     ```bash
+     ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
+     ```
+   - Fenêtres
+     ```bash
+     python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
+     ```
+   - `--dry_run` répertorie les travaux et leur état (terminé, interrompu, à faire) sans rien télécharger.
+
+```bash
+usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
+                         [--audiocpp_packages AUDIOCPP_PACKAGES] [--refresh] [--dry_run]
+                         models_dir
+
+Download every model e2a uses into one folder laid out exactly like ./models (i.e. a USB key for offline
+installs).
+
+positional arguments:
+  models_dir            Target folder, i.e. /media/user/KEY/models or E:\models
+
+options:
+  -h, --help            show this help message and exit
+  --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
+                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
+                        ta,jieba,voices
+  --skip SKIP           Comma list of categories to leave out
+  --languages LANGUAGES
+                        Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
+                        tunes for these only, multilingual models only for engines speaking one of them
+  --audiocpp_packages AUDIOCPP_PACKAGES
+                        audiocpp_server category: auto (the packages this machine runs, GPU and CPU), all
+                        (every platform, for a key used elsewhere), or a comma list of audiocpp_packages
+                        keys from lib/conf_models.py
+  --refresh             Run every job again, even those already marked done (files already there are still
+                        not downloaded twice)
+  --dry_run             List every download job with its state (done, interrupted, todo) and exit
+```
+
+<a id="translate-ebooks"></a>
+### Traduire les ebooks sur e2a : `translate_ebook.sh`/`translate_ebook.cmd`
+Traduit des fichiers ePub/AZW3, un dossier entier (`-r` pour ses sous-dossiers) ou une liste de chemins (`@list.txt`)
+en ebooks traduits, hors ligne, avec le plugin calibre Argos Translate expédié en
+`tools/argostranslate-calibre-plugin.zip`. Indépendamment de la conversion du livre audio : il n'écrit que des ebooks.
+Il a besoin de calibre (déjà requis par e2a) et fonctionne sur les packages `python_env` et argos-translate d'e2a :
+une paire de langues que e2a utilise déjà n'est pas téléchargée à nouveau, une paire manquante est téléchargée à la première utilisation.
+Le plugin est installé lors de la première utilisation dans le profil de calibre d'e2a (`./run`), votre calibre est laissé intact.
+`--to fra,ara,spa` traduit en plusieurs langues à la fois, un ebook par langue et `--to all` dans chaque
+langue que la source atteint (`--from`, sinon la langue propre à chaque livre ; celles installées uniquement avec `--no_download`).
+`--list --from eng` répertorie les langues traduites en anglais (installées, téléchargeables ou via l'anglais pour
+Ajouter une autre source
+Les `ebook-convert` lectures d'autres formats calibre (PDF, DOCX, mobi, TXT, ...) sont converties en ePub une fois, avant la
+première langue, et traduit en ePub : `--from` est nécessaire lorsqu'ils ne portent aucune langue, comme PDF et TXT le font souvent.
+Sans `-o` ou `--output_dir`, chaque traduction est enregistrée à côté de son livre sous la forme `<name>.<lang>.<ext>`,
+et un livre dont la traduction existe déjà est sauté (`--overwrite` pour le traduire à nouveau).
+Les lanceurs du dossier e2a exécutent `tools/translate_ebook.py` avec `python_env`, rien à activer,
+à partir de n'importe quel dossier (les chemins relatifs sont pris à partir de l'endroit où il est démarré) :
+   - **Linux/MacOS**
+     ```bash
+     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ```
+   - Fenêtres
+     ```bash
+     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     ```
+   - Ou directement avec Python ⟦⟧0: `./python_env/bin/python tools/translate_ebook.py ...` `python_env`
+     (Windows : `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Commencé avec tout autre Python,
+     le script redémarre de lui-même avec⟧ des ⟦0. `python_env`
+   - **Docker** : faites-le fonctionner à l'intérieur du conteneur e2a, par exemple `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     avec des chemins vus du conteneur.
+   - **Vitesse** : argostranslate fonctionne sur ses propres valeurs par défaut (CTranslate2 choisit les threads et le type de calcul le plus rapide,
+     int8 sur CPU), pas sur le thread 1 d'e2a dans float32. Définissez `ARGOS_INTRA_THREADS` ou `ARGOS_COMPUTE_TYPE` pour les remplacer.
+
+```bash
+usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
+                          [--overwrite] [-m {replace,bilingual}] [--device {cpu,cuda,auto}]
+                          [--batch_size BATCH_SIZE] [--no_cache] [--no_download] [--allow_changes] [--list]
+                          [books ...]
+
+Translate ebooks offline, out of e2a, with the Argos Translate calibre plugin
+(tools/argostranslate-calibre-plugin.zip). EPUB/AZW3 are translated as they are, the other formats
+calibre's ebook-convert reads (PDF, DOCX, MOBI, ...) are converted to EPUB once, before the first
+language, and their translations saved as EPUB. It runs on e2a's python_env and argos-translate packages
+(models/argos-translate): a language pair e2a already uses is not downloaded again, a missing one is
+downloaded on first use (direct or through English). The plugin is installed into e2a's own calibre
+profile (run/) on first use, your calibre setup is left untouched.
+Translated paths are printed on stdout, progress and logs on stderr.
+
+positional arguments:
+  books                 Ebook files (EPUB, AZW3, or PDF, DOCX, MOBI... converted to EPUB first) or folders
+                        to translate; @list.txt reads paths from a file, one per line
+
+options:
+  -h, --help            show this help message and exit
+  -t, --to LANG[,LANG...]
+                        Target language(s), ISO-639-1 or ISO-639-3 codes, comma separated for several (fr,
+                        fra or fra,ara,spa): one translated ebook per language. all: every language the
+                        source reaches (see --list --from), installed ones only with --no_download
+  -f, --from LANG       Source language, ISO-639-1 or ISO-639-3 code (default: read from each book)
+  -r, --recursive       Also look for books in the subfolders of the given folders
+  -o, --output OUTPUT   Output file, single input only, same extension as the input, .epub for a converted
+                        one (default: <name>.<lang>.<ext> next to the input)
+  --output_dir OUTPUT_DIR
+                        Write the translations into this folder (subfolders are mirrored with -r) instead of
+                        next to each book
+  --overwrite           Translate again even if the output file already exists (skipped otherwise)
+  -m, --mode {replace,bilingual}
+                        replace: the translation replaces the text. bilingual: each paragraph is followed by
+                        its translation, saved as <name>.<lang>.bilingual.<ext> (default: replace)
+  --device {cpu,cuda,auto}
+                        Device argostranslate runs on (default: cpu)
+  --batch_size BATCH_SIZE
+                        Segments sent to the translation worker per request (default: 16)
+  --no_cache            Neither read nor write the translation cache (run/argos_translate/cache.sqlite), the
+                        one that makes a second run of the same book near instant
+  --no_download         Never download a missing argos-translate package, fail instead
+  --allow_changes       Only when argostranslate is missing from python_env: install it even if packages
+                        already there would change version
+  --list                List the installed and the downloadable language pairs, then exit. With --from
+                        and/or --to: only their pairs, plus the targets a source reaches through English
+
+examples:
+  translate_ebook.py book.epub --to fr
+  translate_ebook.py book.epub --to fra,ara,spa
+  translate_ebook.py book.azw3 --from en --to deu -o /path/to/book_deu.azw3
+  translate_ebook.py /path/to/books -r --to es,it --output_dir /path/to/books_translated
+  translate_ebook.py book.epub --from eng --to all
+  translate_ebook.py @books.txt --to ita --mode bilingual
+  translate_ebook.py --list
+  translate_ebook.py --list --from eng
+```
 
 ## Voix clonées
 Vous pouvez télécharger n'importe quel audio vocal dans n'importe lequel des formats audio pris en charge, la durée idéale est d'environ 1 à 5 min.
@@ -439,109 +590,125 @@ Peu importe si l'enregistrement a un fond bruyant ou de la musique qui y joue �
 La liste des voix clonées intégrée est principalement en anglais. Si vous avez besoin de voix dans d'autres langues pour être officiellement
 ajouté à la liste, veuillez nous contacter et nous les ajouterons après vérification.
 
-## Modèles TTS affinés (fine-tuned)
+## Modèles TTS affinés
 #### Affinez votre propre modèle TTS
 
 [Universal_TTS_Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
-#### Débruiter les données d'entraînement
+#### Données d'entraînement au débruitage
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
 
 
-### Collection de modèles TTS affinés
+### Collection TTS affinée
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 
-Pour un modèle personnalisé XTTSv2, un extrait audio de référence de la voix est obligatoire :
+Pour un modèle personnalisé XTTSv2, un clip audio de référence de la référence vocale est obligatoire :
 
-## Votre propre personnalisation d'Ebook2Audiobook
-Vous êtes libre de modifier libs/conf.py pour ajouter ou supprimer les réglages souhaités. Si vous prévoyez de le faire, faites simplement
-une copie du conf.py d'origine afin qu'à chaque mise à jour d'ebook2audiobook vous puissiez sauvegarder votre conf.py modifié et remettre
-l'original. Vous devez prévoir le même processus pour models.py. Si vous souhaitez faire de votre propre modèle personnalisé
-un modèle affiné officiel d'ebook2audiobook, contactez-nous et nous l'ajouterons à la liste des préréglages.
+## Votre propre personnalisation Ebook2Audiobook
+Vous êtes libre de modifier libs/conf.py pour ajouter ou supprimer les paramètres que vous souhaitez. Si vous prévoyez de le faire, faites simplement
+une copie du fichier conf.py original, donc à chaque mise à jour de ebook2audiobook, vous sauvegarderez votre fichier conf.py modifié et mettrez
+revenir à l'original. Vous devez planifier le même processus pour models.py. Si vous souhaitez créer votre propre modèle personnalisé
+en tant que modèle officiel ebook2audiobook affiné, veuillez nous contacter et nous l'ajouterons à la liste des préréglages.
 
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Revenir à des versions plus anciennes
+Les versions peuvent être trouvées -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
 
-## Problèmes courants :
-- Mon GPU NVIDIA/ROCm/XPU/MPS n'est pas détecté ?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
--  Le CPU est lent (meilleur sur un CPU SMP de serveur) tandis que le GPU permet une conversion quasi en temps réel.
+## Questions courantes :
+- Mon GPU NVIDIA/ROCm/XPU/MPS n'est pas détecté ? ? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+-  Le processeur est lent (mieux sur le processeur smp du serveur) tandis que le GPU peut avoir une conversion presque en temps réel.
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
-   (Il n'a cependant pas de clonage de voix zero-shot, et les voix sont de qualité Siri, mais c'est bien plus rapide sur CPU).
-- « J'ai des problèmes de dépendances » - Utilisez simplement Docker, il est entièrement autonome et dispose d'un mode headless,
-   ajoutez le paramètre `--help` à la fin de la commande docker run pour plus d'informations.
-- « J'ai un problème d'audio tronqué ! » - VEUILLEZ OUVRIR UN ISSUE À CE SUJET,
-   nous ne parlons pas toutes les langues et avons besoin des conseils des utilisateurs pour affiner la logique de découpage des phrases.😊
+   (Il n'y a pas de clonage de voix à zéro, et il s'agit de voix de qualité Siri, mais c'est beaucoup plus rapide sur le processeur).
+- "J'ai des problèmes de dépendance" - Il suffit d'utiliser le docker, entièrement autonome et doté d'un mode sans tête,
+   ajoutez le⟧ paramètre ⟦0 à la fin de la commande docker run pour plus d'informations. `--help`
+- « Je reçois un problème audio tronqué ! « - S'IL VOUS PLAÎT FAIRE UN PROBLÈME À CE SUJET,
+   nous ne parlons pas toutes les langues et avons besoin des conseils des utilisateurs pour affiner la logique de fractionnement des phrases.😊
 
-## ***** FEUILLE DE ROUTE *****
+## Feuille de route
 - Toutes les fonctionnalités ouvertes aux contributions publiques ⭐
 - Toute aide de personnes parlant l'une des langues prises en charge pour nous aider à améliorer les modèles ⭐
-- [x] Prévisualiser les blocs/chapitres avant de démarrer la conversion
-- [x] Édition par phrase convertie pour une modification chirurgicale du texte
+- [x] Prévisualisez les blocs/chapitres avant de commencer la conversion
+- [x] Modifier par phrase convertie pour le changement de texte chirurgical
 - [x] Générer des intros de musique, des intermèdes et des fins ; éditer les intermèdes et les fins
-- [x] Intégration des balises SML pour la voix, la pause, la coupure et d'autres changements 
-- [x] Infos des paramètres -h -help dans différentes langues
-- [x] Reconnaissance OCR pour PDF / JPG / BMP / PNG / TIFF
-- [x] Dossier de notebooks [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
-- [x] Faire en sorte que le découpage du texte chinois ne coupe pas les mots et améliorer le timing des pauses [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
+- [x] Intégration de balises SML pour la voix, la pause, la pause et d'autres modifications
+- [x] -h -help informations sur les paramètres dans différentes langues
+- [x] Numérisation OCR pour PDF / JPG / BMP / PNG / TIFF
+- [x] Dossier des blocs-notes [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/5#issuecomment-2408773254)
+- [x] Faire en sorte que le fractionnement du texte chinois ne divise pas les mots et améliore la synchronisation des pauses [Talked about here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/18#issuecomment-2401154894)
 - [x] Dockerfile
 - [x] Docker Compose
 - [x] Podman compose
-- [x] Notebook Kaggle
-- [x] Notebook Google Colab
+- [x] Carnet Kaggle
+- [x] Bloc-notes Google Colab
 - [x] Intégration Audiobookshelf
-- [x] Option de traduction de l'e-book
+- [x] Option Traduction de livre électronique
 - [x] Choix du format de sortie
-- [x] Conversion en multitraitement
-- [x] Conversion par lot d'un dossier d'e-books
-- [x] Détection du périphérique GPU
+- [x] Conversion multiprocesseur
+- [x] Conversion par lots du dossier ebook
+- [x] Détection des dispositifs
 - [x] Dénoisez tout son de référence d'arrière-plan pour le téléchargement de clonage vocal
 - [x] Téléchargement personnalisé du modèle affiné
-- [ ] [Créer une application iOS](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Créer une application Android](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
 
 #### Demandes utilisateur
-- [ ] Ajouter un modèle de langue portugais européen pour xttsv2, fairseq, vits, piper au minimum (aide bienvenue)
-- [ ] Ajouter un modèle de langue sindhi pour xttsv2, fairseq, vits, piper au minimum (aide bienvenue)
+- [ ] Ajouter un modèle de langue portugaise européenne pour xttsv2, fairseq, vits, piper au moins (aide bienvenue)
+- [ ] Ajouter un modèle en langue sindhi pour xttsv2, fairseq, vits, piper au moins (aide bienvenue)
 
 #### Moteurs TTS
-- [x] XTTSv2
-- [x] Écorce
-- [x] Fairseq
-- [x] VITS
-- [x] Tacotron2
-- [x] YourTTS
-- [x] Tortue terrestre
-- [x] GlowTTS
-- [x] Piper
-- [ ] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)
-- [ ] OpenVoice (https://github.com/myshell-ai/OpenVoice)
-- [ ] fish-speech (https://github.com/fishaudio/fish-speech)
-- [ ] ChatTTS (https://github.com/2noise/ChatTTS)
-- [ ] CosyVoice (https://github.com/FunAudioLLM/CosyVoice)
-- [ ] F5-TTS (https://github.com/swivid/f5-tts)
-- [ ] chatterbox (https://github.com/resemble-ai/chatterbox)
-- [ ] Supertonic (https://github.com/supertone-inc/supertonic)
-- [ ] Spark-TTS (https://github.com/sparkaudio/spark-tts)
-- [ ] index-tts (https://github.com/index-tts/index-tts)
-- [ ] MeloTTS (https://github.com/myshell-ai/MeloTTS)
-- [ ] Kokoro-TTS (https://github.com/hexgrad/kokoro)
-- [ ] OmniVoice (https://github.com/k2-fsa/OmniVoice)
-- [ ] Zonos (https://github.com/Zyphra/Zonos)
-- [ ] Style-TTS2 (https://github.com/yl4579/StyleTTS2)
-- [ ] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
-- [ ] NewTTS (https://github.com/neuphonic/neutts?tab=readme-ov-file)
-- [ ] VIbeVoice (https://github.com/vibevoice-community/VibeVoice)
-- [ ] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)
+- [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
+- [x] Audio FireRed/ FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
+- [x] Voix de poisson/Audio de poisson (https://github.com/fishaudio/fish-speech)[cite: 1]
+- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
+- [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
+- [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
+- [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
+- [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
+- [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
+- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
+- [x] Indice-tts / Indice TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
+- [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
+- [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
+- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] Points TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
+- [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
+- [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
+- [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
+- [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
+- [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
+- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
+- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
+- [x] Supertonique (https://github.com/supertone-inc/supertonic)[cite: 1]
+- [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
+- [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
+- [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
+- [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
+- [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
+- [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
+- [x] Tortue (https://github.com/neonbjb/tortoise-tts)[cite: 1]
+- [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
+- [x] Écorce (https://github.com/suno-ai/bark)[cite: 1]
+- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
+- [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
+- [x] ChatTTS (https://github.com/2noise/ChatTTS)
+- [x] Spark-TTS (https://github.com/sparkaudio/spark-tts)
+- [x] MeloTTS (https://github.com/myshell-ai/MeloTTS)
+- [x] Gestion de la réussite des clients 0 https://github.com/SesameAILabs/csm)
 
-#### Traduction du Readme
+#### Readme Translation
 - [x] Arabe (ara)
 - [x] Chinois (zho)
-- [x] English (eng)
+- [x] FRANCAIS (FR)
 - [x] Espagnol (spa)
 - [x] Français (FRA)
 - [x] Allemand (deu)
@@ -566,27 +733,27 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Slovaque (slovaque)
 - [x] Croate (hrv)
 
-#### 🐍 Compatibilité des systèmes d'exploitation
-- [x] 🍎 Mac Intel x86
+#### OS compatibles
 - [x] 🪟 Windows x86
+- [x] Fenêtres 🪟 DE BRAS
+- [x] 🍎 Mac Intel x86
+- [x] 🍎 Apple Silicon Mac
 - [x] 🐧 Linux x86
-- [x] 🖥️🍏 Apple Silicon Mac
-- [x] 🪟💪 ARM Windows
-- [x] 🐧💪 ARM Linux
+- [x] 🐧 ARM LINUX
 
 **********
 
-## Bonus ultime pour l'entraînement de modèles et plus encore (tous les modèles Coqui-tts pris en charge et piper-tts en une seule commande facile) 
+## Extra Overkill pour les modèles d'entraînement et autres (Tous les modèles Coqui-tts et piper-tts pris en charge en une seule commande facile)
 - Pour plus d'informations à ce sujet @ DrewThomasson, il travaille actuellement sur le développement de ce, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
+- [x] Créez un gui d'entraînement facile à utiliser pour tous les modèles de coqui-tts dans le [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Terminé à [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
-## Informations de normalisation du code Python pour les contributeurs
-- pas de ligne vide entre le code, sauf entre les fonctions et les classes.
-- guillemet simple utilisé pour toutes les clés sauf pour dict() et json. dict['key'] toujours appelé avec un guillemet simple
-- indentation de 4 espaces, pas de tabulation du tout
-- typage strict pour toutes les fonctions ainsi que la déclaration de leurs arguments et valeurs de retour
-- pas d'espace entre l'argument et son typage, pas d'espace entre la fonction, le « -> » et la valeur de retour
+## Informations sur la normalisation du code Python pour les contributeurs
+- pas de ligne blanche entre le code, sauf entre les fonctions et les classes.
+- guillemet simple utilisé pour toutes les clés sauf pour dict() et json. dict['key'] toujours appelé avec guillemet simple
+- 4 espaces indentation, pas de tabulation du tout
+- dactylographie stricte pour toutes les fonctions et ses arguments déclaration et valeurs de retour
+- pas d'espace entre l'argument et sa saisie, pas d'espace entre la fonction, le "->" et la valeur de retour
 
 Exemple :
 
@@ -626,17 +793,23 @@ if config['default_role'] in roles:
     print(config['default_role'])
 ```
 
-## Don de matériel pour les tests bêta recherché
-Nous acceptons tout type de matériel pour tester notre développement, comme :
-- Nvidia supporting cuda >= 11.8
-- XPU intel cards
-- ROCm AMD cards supporting ROCm >=5.7
+## Don de matériel pour les tests bêta recherchés
+Nous acceptons tout type de matériel pour tester notre développement comme :
+- Nvidia soutenant cuda >= 11,8
+- Cartes intel XPU
+- Cartes ROCm AMD prenant en charge ROCm >=5,7
 
-@DrewThomasson si vous voulez aider de quelque manière que ce soit ! 😃
+@ DrewThomasson si vous voulez vraiment aider ! 😃
 <!--
-## Avez-vous besoin de louer un GPU pour booster notre service ?
+## Avez-vous besoin de louer un GPU pour améliorer le service de notre part ?
 - Un sondage est ouvert ici https://github.com/DrewThomasson/ebook2audiobook/discussions/889
 -->
+
+## Crédits
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) - Une boîte à outils d'apprentissage en profondeur pour la synthèse vocale, testée au combat dans la recherche et la production.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Moteur de synthèse vocale neuronal rapide et local.
+- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- code d'inférence ggml pour Zonos2.
+- [Audio.cpp](https://github.com/0xShug0/audio.cpp) - Un moteur d'inférence C++ pur tout-en-un pour les modèles audio, alimenté par ggml.
 
 ## Remerciements particuliers
 Pour tous les contributeurs financiers et de code, chaque contribution et suggestion contribue à améliorer la qualité d'E2A.

@@ -1,14 +1,17 @@
-import os, sys, threading, gc, ctypes, tempfile, regex as re
+import os, sys, threading, gc, ctypes, tempfile, trainer.io, regex as re
 
 from typing import Any, TYPE_CHECKING
 from pathlib import Path
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.bug_reporter import bug_reporter
 from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
+from lib.classes.subprocess_pipe import SubprocessPipe
+from lib.classes.tts_engines.common.voice_conversion import VoiceConversion
 from lib import *
 from lib.lang import legends
 
 _lock = threading.Lock()
+trainer.io._WEIGHTS_ONLY = False
 
 if TYPE_CHECKING:
     import torch
@@ -477,9 +480,9 @@ class TTSUtils:
                             from TTS.tts.configs.xtts_config import XttsConfig
                             from TTS.tts.models.xtts import Xtts
                             config = XttsConfig()
-                            config.models_dir = os.path.join('models','tts')
+                            config.models_dir = tts_dir
                             config.load_json(config_path)
-                            engine = Xtts.init_from_config(config)
+                            engine = Xtts(config)
                             engine.load_checkpoint(
                                 config,
                                 checkpoint_path = checkpoint_path,
@@ -571,9 +574,24 @@ class TTSUtils:
             if progress_bar is not None:
                 progress_bar(0.0, desc=msg)
             self.cleanup_memory()
-            engine_zs = loaded_tts.get(self.tts_zs_key, False)
-            if not engine_zs:
-                engine_zs = self._load_api(self.tts_zs_key, default_vc_model, device)
+            # under the load lock: two threads of one engine reaching their first voice file at once start one worker
+            with _lock:
+                engine_zs = loaded_tts.get(self.tts_zs_key, False)
+                # the model this language gets: one that speaks the text (task "tts") only in its engine's languages, its
+                # fallback for the others (VoiceConversion falls back the same way)
+                vc_cfg = TTS_VOICE_CONVERSION[self.tts_zs_key]
+                vc_model = self.tts_zs_key if vc_cfg['task'] == 'vc' or getattr(self, 'language', None) in default_engine_settings[vc_cfg['engine']]['languages'] else vc_cfg['fallback']
+                # a VC worker that died (server crash, killed), or one running another model for this key (the cached one
+                # fell back for another language): started again below
+                if isinstance(engine_zs, SubprocessPipe) and (engine_zs.process is None or engine_zs.process.poll() is not None or getattr(engine_zs, 'vc_model', vc_model) != vc_model):
+                    loaded_tts.pop(self.tts_zs_key, None)
+                    engine_zs.stop()
+                    engine_zs = False
+                if not engine_zs:
+                    # default_vc_model on audio.cpp's server (common/voice_conversion.py). Always cached, whatever the
+                    # free VRAM: unload_tts_manager() / cleanup_models_cache() stop it through loaded_tts
+                    engine_zs = VoiceConversion(self.session)
+                    loaded_tts[self.tts_zs_key] = engine_zs
             if engine_zs:
                 self.session['model_zs_cache'] = self.tts_zs_key
                 msg = legends['msg_zeroshot_loaded'].format(model=self.tts_zs_key)
@@ -605,8 +623,11 @@ class TTSUtils:
         import torch
         device_type = torch.device(device).type
         dtypes:list = []
-        if self.amp_dtype != torch.float32:
-            dtypes.append(self.amp_dtype)
+        # venv engines (their model runs in a worker, never through _apply_gpu_policy) have no amp_dtype: the
+        # builtin voice conversion then runs xtts in fp32
+        amp_dtype = getattr(self, 'amp_dtype', torch.float32)
+        if amp_dtype != torch.float32:
+            dtypes.append(amp_dtype)
         dtypes.append(torch.float32)
         for dtype in dtypes:
             try:
@@ -670,7 +691,11 @@ class TTSUtils:
                         self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                         models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
                         if self.session['free_vram_gb'] <= models_loaded_size_gb:
-                            del loaded_tts[self.tts_key]
+                            cached = loaded_tts.pop(self.tts_key, None)
+                            if isinstance(cached, SubprocessPipe):
+                                # persistent worker: stop it, the reload below starts a new one
+                                cached.stop()
+                            cached = None
                         hf_repo = default_engine_settings[xtts]['repo']
                         hf_sub = ''
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][0]}", cache_dir=self.cache_dir)
@@ -918,6 +943,39 @@ class TTSUtils:
                 error = f'_convert_sml() error: voice {inline_voice} does not exist!'
                 return False, error
             self.params['inline_voice'] = self.params['current_voice'] = inline_voice
+            return True, None
+        elif tag == 'emotion':
+            if close:
+                self.params['inline_emotion'] = None
+                return True, None
+            # ZONOS2 sliders: [emotion:sad] (full) or a mix [emotion:sad=0.7,angry=0.2], scaled by
+            # 1/max(1, sum of |weights|) so a mix never adds up above full; Zonos v0.1 names work through
+            # aliases / map (fear, disgust on the valence/arousal axes, neutral/other = plain voice)
+            names = TTS_SML['emotion']['values']
+            aliases = TTS_SML['emotion']['aliases']
+            mapping = TTS_SML['emotion'].get('map', {})
+            weights = {}
+            for item in [p for p in re.split(r'[,\s]+', (value or '').strip().lower()) if p]:
+                key, _, weight = item.partition('=')
+                key = aliases.get(key.strip(), key.strip())
+                try:
+                    if key not in names and key not in mapping:
+                        raise ValueError(key)
+                    weights[key] = float(weight) if weight else 1.0
+                except ValueError:
+                    weights = None
+                    break
+            if not weights:
+                # cosmetic tag: a typo must not abort a whole book, keep the current emotion
+                print(legends['msg_sml_emotion_ignored'].format(value=value, values=', '.join(names + list(aliases) + list(mapping))))
+                return True, None
+            scale = 1.0 / max(1.0, sum(abs(w) for w in weights.values()))
+            emotion = {}
+            for key, w in weights.items():
+                for name, v in (mapping[key] if key in mapping else {key: 1.0}).items():
+                    emotion[name] = emotion.get(name, 0.0) + v * w * scale
+            # an empty dict ([emotion:neutral]) is the plain voice for the passage, not "no tag"
+            self.params['inline_emotion'] = {k: round(max(-1.0, min(1.0, v)), 4) for k, v in emotion.items() if abs(v) > 1e-4}
             return True, None
         elif tag == 'ipa':
             if close:

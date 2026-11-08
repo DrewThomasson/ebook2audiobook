@@ -22,6 +22,8 @@ export BASHRCSOURCED="1"
 export SCRIPT_DIR="$(cd "$(dirname "$script_path")" >/dev/null 2>&1 && pwd -P)"
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
+export UV_CACHE_DIR="$SCRIPT_DIR/.uv_cache"
+export UV_LINK_MODE="copy"
 export TTS_CACHE="$SCRIPT_DIR/models"
 export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
 export TMPDIR="$SCRIPT_DIR/run"
@@ -40,6 +42,34 @@ export SUDO="sudo"
 export SETVARS_CALL=""
 export ETVARS_ARGS=""
 export SETVARS_COMPLETED=""
+export TTS_CACHE="$SCRIPT_DIR/models"
+export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
+export TMPDIR="$SCRIPT_DIR/run"
+if [[ "${OSTYPE-}" == darwin* ]]; then
+    if [[ "$ARCH" == "arm64" ]]; then
+        BREW_PREFIX="/opt/homebrew"
+    else
+        BREW_PREFIX="/usr/local"
+    fi
+    if [[ -f "$BREW_PREFIX/lib/libespeak-ng.dylib" ]]; then
+		export PHONEMIZER_ESPEAK_PATH="/usr/local/bin/espeak-ng"
+        export PHONEMIZER_ESPEAK_LIBRARY="$BREW_PREFIX/lib/libespeak-ng.dylib"
+        export ESPEAK_DATA_PATH="$BREW_PREFIX/share/espeak-ng-data"
+    fi
+elif [[ "${OSTYPE-}" == linux* ]]; then
+    ESPEAK_LIB=""
+    for lib in /usr/lib/x86_64-linux-gnu/libespeak-ng.so.1 \
+               /usr/lib64/libespeak-ng.so.1 \
+               /usr/lib/libespeak-ng.so.1 \
+               /usr/lib/libespeak-ng.so; do
+        if [[ -f "$lib" ]]; then ESPEAK_LIB="$lib"; break; fi
+    done
+    if [[ -n "$ESPEAK_LIB" ]]; then
+		export PHONEMIZER_ESPEAK_PATH="/usr/bin/espeak-ng"
+        export PHONEMIZER_ESPEAK_LIBRARY="$ESPEAK_LIB"
+        export ESPEAK_DATA_PATH="/usr/share/espeak-ng-data"
+    fi
+fi
 NATIVE="native"
 BUILD_DOCKER="build_docker"
 FULL_DOCKER="full_docker"
@@ -281,31 +311,13 @@ check_python() {
 	fi
 	######## native + build_docker host: python comes from uv (installed in uv's own dir), the OS python is never used
 	if [[ "$SCRIPT_MODE" == "$NATIVE" || ( "$SCRIPT_MODE" == "$BUILD_DOCKER" && -z "$DOCKER_DEVICE_STR" ) ]]; then
-		compare_versions() {
-			local ver1=$1; local ver2=$2
-			IFS='.' read -r v1_major v1_minor <<<"$ver1"
-			IFS='.' read -r v2_major v2_minor <<<"$ver2"
-			((v1_major < v2_major)) && return 1
-			((v1_major > v2_major)) && return 2
-			((v1_minor < v2_minor)) && return 1
-			((v1_minor > v2_minor)) && return 2
-			return 0
-		}
 		if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 			model="other"
-			if [[ "${OSTYPE-}" == darwin* && "$ARCH" == "amd64" ]]; then	
-				PYTHON_VERSION="3.11"
-			else
-				if [[ -r /proc/device-tree/model ]]; then
-					model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
-					if [[ "$model" == *jetson* ]]; then PYTHON_VERSION="$MIN_PYTHON_VERSION"; fi
-				else
-					compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
-					case $? in 1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;; esac
-					compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
-					case $? in 2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;; esac
-				fi
+			if [[ -r /proc/device-tree/model ]]; then
+				model="$(tr -d '\0' </proc/device-tree/model 2>/dev/null | tr 'A-Z' 'a-z' || true)"
 			fi
+			# python per device, as DeviceInstaller.check_pyvenv: jetson MIN (cp310 wheels only), every other device MAX
+			if [[ "$model" == *jetson* ]]; then PYTHON_VERSION="$MIN_PYTHON_VERSION"; else PYTHON_VERSION="$MAX_PYTHON_VERSION"; fi
 		fi
 		if ! uv python find --system --python-preference only-managed "$PYTHON_VERSION" &>/dev/null; then
 			echo -e "\e[33mInstalling python $PYTHON_VERSION via uv…\e[0m"
@@ -351,8 +363,8 @@ check_required_programs() {
 				if command -v apt-get >/dev/null 2>&1 || command -v zypper >/dev/null 2>&1; then pkg="libxcb-cursor0"
 				elif command -v apk >/dev/null 2>&1; then pkg="xcb-util-cursor"
 				else pkg="$program"; fi
-				check_xcb=$(ldconfig -p 2>/dev/null | grep libxcb-cursor)
-				if [[ "$check_xcb" == "" ]]; then programs_missing+=("$pkg"); fi
+				check_xcb=$(PATH="$PATH:/sbin:/usr/sbin" ldconfig -p 2>/dev/null | grep libxcb-cursor)
+				if [[ "$check_xcb" == "" ]]; then echo -e "\e[33m$pkg is not installed.\e[0m"; programs_missing+=("$pkg"); fi
 			fi
 		fi
 		if [[ "$bin" != "" ]]; then
@@ -437,7 +449,7 @@ EOF
 			else echo -e "\e[31m=============== $program failed.\e[0m"; fi
 		elif [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
-			if command -v $program >/dev/null 2>&1; then
+			if command -v tesseract >/dev/null 2>&1; then
 				echo -e "\e[32m=============== $program OK! ===============\e[0m"
 				ISO3_LANG="$(get_iso3_lang "${OS_LANG:-en}")"
 				echo "Detected system language: $OS_LANG → installing Tesseract OCR language: $ISO3_LANG"
@@ -455,6 +467,11 @@ EOF
 					else echo "Tesseract OCR language '$ISO3_LANG' not installed properly."; fi
 				fi
 			else echo -e "\e[31m=============== $program failed.\e[0m"; fi
+		elif [[ "$program" == "libxcb-cursor0" || "$program" == "xcb-util-cursor" ]]; then
+			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
+			check_xcb=$(PATH="$PATH:/sbin:/usr/sbin" ldconfig -p 2>/dev/null | grep libxcb-cursor)
+			if [[ "$check_xcb" != "" ]]; then echo -e "\e[32m=============== $program OK! ===============\e[0m"
+			else echo -e "\e[31m=============== $program failed.\e[0m"; fi
 		elif [[ "$program" == "nodejs" ]]; then
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 			if command -v node >/dev/null 2>&1; then echo -e "\e[32m=============== $program OK! ===============\e[0m"
@@ -466,7 +483,7 @@ EOF
 		fi
 	done
 	if check_required_programs "${HOST_PROGRAMS[@]}"; then return 0
-	else echo "Some programs didn't install successfuly, please report the log to the support"; fi
+	else echo "Some programs didn't install successfuly, please report the log to the support"; return 1; fi
 }
 
 check_uv() {
@@ -474,6 +491,12 @@ check_uv() {
 		if [[ -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
 			if [[ ! -f "$SCRIPT_DIR/$PYTHON_ENV/pyvenv.cfg" ]]; then
 				echo -e "\e[33m$PYTHON_ENV is not a virtualenv — removing…\e[0m"
+				rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
+			elif [[ "$(sed -n -E 's/^(version_info|version)[[:space:]]*=[[:space:]]*([0-9]+\.[0-9]+).*/\2/p' "$SCRIPT_DIR/$PYTHON_ENV/pyvenv.cfg" | head -n 1)" != "$PYTHON_VERSION" ]]; then
+				# another python than PYTHON_VERSION (e.g. 3.11 from an older install): --allow-existing below would swap the
+				# interpreter but keep the packages in the old lib/pythonX.Y and the .provisioned marker, leaving an empty venv
+				# that is never reprovisioned. Recreate it: provisioning then installs the wheels matching PYTHON_VERSION
+				echo -e "\e[33m$PYTHON_ENV is not python $PYTHON_VERSION — removing and recreating…\e[0m"
 				rm -rf "$SCRIPT_DIR/$PYTHON_ENV"
 			elif ! uv venv "$SCRIPT_DIR/$PYTHON_ENV" --python "$PY_CMD" --allow-existing >/dev/null 2>&1; then
 				echo -e "\e[33m$PYTHON_ENV is inconsistent — removing and recreating…\e[0m"
@@ -601,7 +624,7 @@ build_docker_image() {
 	export CALIBRE_INSTALLER_URL
 	export ISO3_LANG
 	case "$DEVICE_TAG" in
-		cpu) cmd_options="";; cu*) cmd_options="--gpus all";; rocm*) cmd_options="--device=/dev/kfd --device=/dev/dri";; jetson*) cmd_options="--runtime nvidia --gpus all";; xpu) cmd_options="--device=/dev/dri";;
+		cpu) cmd_options="";; cu*) cmd_options="--gpus all";; rocm*) cmd_options="--device=/dev/kfd --device=/dev/dri";; jetson*) cmd_options="--runtime nvidia --gpus all";; xpu|vulkan) cmd_options="--device=/dev/dri";;
 	esac
 	local hsa_override=""
 	if [[ "$DEVICE_TAG" == rocm* ]]; then
@@ -613,7 +636,7 @@ build_docker_image() {
 	fi
 	DOCKER_IMG_NAME="${DOCKER_IMG_NAME}:${DEVICE_TAG}"
 	case "$DEVICE_TAG" in
-		cpu|mps) COMPOSE_PROFILES=cpu;; cu*) COMPOSE_PROFILES=cuda;; rocm*) COMPOSE_PROFILES=rocm;; jetson*) COMPOSE_PROFILES=jetson;; xpu) COMPOSE_PROFILES=xpu;; *) COMPOSE_PROFILES=cpu;;
+		cpu|mps) COMPOSE_PROFILES=cpu;; cu*) COMPOSE_PROFILES=cuda;; rocm*) COMPOSE_PROFILES=rocm;; jetson*) COMPOSE_PROFILES=jetson;; xpu) COMPOSE_PROFILES=xpu;; vulkan) COMPOSE_PROFILES=vulkan;; *) COMPOSE_PROFILES=cpu;;
 	esac
 	export COMPOSE_PROFILES
 	get_dri_gids
@@ -640,8 +663,8 @@ build_docker_image() {
 		docker build --no-cache --progress plain --build-arg PYTHON_VERSION="$py_vers" --build-arg APP_VERSION="$APP_VERSION" --build-arg DEVICE_TAG="$DEVICE_TAG" --build-arg DOCKER_DEVICE_STR="$ARG" --build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" --build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" --build-arg ISO3_LANG="$ISO3_LANG" -t "$DOCKER_IMG_NAME" . || return 1
 		docker image prune --force
 		echo "Docker image ready! to run your docker: "
-		echo "	GUI mode: docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME"
-		echo "	Headless mode: docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
+		echo "	GUI mode: docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"e2a_venvs:/app/lib/classes/tts_engines/venvs\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME"
+		echo "	Headless mode: docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"e2a_venvs:/app/lib/classes/tts_engines/venvs\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	fi
 }
 

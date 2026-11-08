@@ -5,6 +5,11 @@
 interlude_duration_range = (20, 30) # seconds, MusicGen generates 30 s at most
 interlude_fade_in_range = (5.0, 10.0) # seconds of fade in before the chapter's last sentence ends
 interlude_fade_out_range = (4.0, 6.0) # seconds of fade out after the next chapter starts
+interlude_duck_db = -6.0 # music level under the voice (dB): the compressor's mix caps the ducking there, whatever the voice level
+interlude_duck_threshold = 0.003 # voice level (linear, about -50 dBFS) above which the voice ducks the music
+interlude_duck_ratio = 20 # high ratio: any voice above the threshold ducks the music down to about interlude_duck_db
+interlude_duck_attack = 20 # ms for the music to duck once the voice starts
+interlude_duck_release = 600 # ms, how fast the music fades back in once the voice stops: lower is faster but lets it rise in long pauses
 interlude_classifier_repo = 'MoritzLaurer/mDeBERTa-v3-base-mnli-xnli' # multilingual zero-shot (NLI) classifier
 interlude_genre_min_score = 0.10 # averaged score the winning genre needs (26 genres: 0.04 is a random guess), else 'neutral' instruments
 

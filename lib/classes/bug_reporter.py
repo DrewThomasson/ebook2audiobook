@@ -8,7 +8,7 @@ class BugReporter:
     packages = [
         'torch', 'torchaudio', 'torchcodec', 'torchcodec-xpu', 'transformers', 'coqui-tts', 'gradio', 'numpy',
         'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-openvino', 'onnxruntime-directml', 'stanza', 'pyannote-audio',
-        'piper-tts', 'argostranslate'
+        'piper-tts', 'ptts', 'argostranslate'
     ]
     session_keys = ['script_mode', 'is_gui_process', 'ebook_mode', 'device', 'tts_engine', 'fine_tuned', 'language', 'translate', 'output_format', 'output_channel', 'free_vram_gb']
     redact_keys = ['ebook', 'ebook_src', 'filename_noext', 'final_name', 'audiobook', 'output_dir', 'custom_model', 'voice', 'abs_url', 'abs_api_token']

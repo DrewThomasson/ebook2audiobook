@@ -54,7 +54,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine = self.load_engine()
-            self.engine_zs = self._load_engine_zs(self.device)
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
@@ -93,6 +92,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
+            import soundfile as sf
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
@@ -112,9 +112,8 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                     if self.speaker not in default_engine_settings[self.tts_engine]['voices'] or custom_model_name is not None:
                         use_zs = True
                 if use_zs and not self.engine_zs:
-                    error = legends['error_engine_not_loaded'].format(engine=self.tts_zs_key)
-                    return False, error
-                # always ready: an inline [voice:…] tag can switch to zero-shot in the middle of the sentence
+                    # loaded on the first voice file only (a native server): the engine's own voices never need it
+                    self.engine_zs = self._load_engine_zs(self.device)
                 proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                 os.makedirs(proc_dir, exist_ok=True)
                 for part in sentence_parts:
@@ -141,63 +140,82 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
                         try:
                             if use_zs:
+                                if not self.engine_zs:
+                                    # an inline [voice:…] tag switched to zero-shot in the middle of the sentence
+                                    self.engine_zs = self._load_engine_zs(self.device)
                                 tmp_in_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                                 tmp_out_wav = os.path.join(proc_dir, f'{uuid.uuid4()}.wav')
                                 result = False
-                                with torch.inference_mode():
-                                    with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
-                                        self.engine.tts_to_file(
-                                            text=part,
-                                            file_path=tmp_in_wav
-                                        )
-                                if self.params['current_voice'] in self.params['semitones'].keys():
-                                    semitones = self.params['semitones'][self.params['current_voice']]
-                                else:
-                                    current_voice_gender = detect_gender(self.params['current_voice'])
-                                    voice_builtin_gender = detect_gender(tmp_in_wav)
-                                    if voice_builtin_gender != current_voice_gender:
-                                        semitones = -4 if current_voice_gender == 'male' else 4
-                                        msg = legends['msg_voice_gender_adapt'].format(cloned=current_voice_gender, builtin=voice_builtin_gender)
-                                        print(msg)
-                                    else:
-                                        semitones = 0
-                                    self.params['semitones'][self.params['current_voice']] = semitones
-                                if semitones > 0:
-                                    try:
-                                        cmd = [
-                                            shutil.which('sox'), tmp_in_wav,
-                                            '-r', str(self.params['samplerate']), tmp_out_wav,
-                                            'pitch', str(semitones * 100)
-                                        ]
-                                        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                    except subprocess.CalledProcessError as e:
-                                        error = legends['error_subprocess'].format(e=e.stderr)
-                                        DependencyError(error)
-                                        return False, error
-                                    except FileNotFoundError as e:
-                                        error = legends['error_file_not_found_detail'].format(e=e)
-                                        DependencyError(error)
-                                        return False, error
-                                else:
-                                    tmp_out_wav = tmp_in_wav
-                                samplerate = TTS_VOICE_CONVERSION[self.tts_zs_key]['samplerate']
-                                source_wav = self._resample_wav(tmp_out_wav, samplerate)
-                                target_wav = self._resample_wav(self.params['current_voice'], samplerate)
-                                speaker_argument = {}
-                                if (self.engine_zs.speakers is not None and self.speaker not in self.engine_zs.speakers) or self.engine_zs.speakers is None:
-                                    speaker_argument['target_wav'] = target_wav
-                                audio_part = self.engine_zs.voice_conversion(
-                                    source_wav=source_wav,
-                                    speaker=self.speaker,
-                                    **speaker_argument
-                                )
+                                # a voice conversion that speaks the text itself (task "tts", qwen3_tts) does not need the built-in voice
+                                if not self.engine_zs.resynthesis:
+                                    with torch.inference_mode():
+                                        with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
+                                            self.engine.tts_to_file(
+                                                text=part,
+                                                file_path=tmp_in_wav
+                                            )
+                                # gender pitch pre-shift (sox), off: the voice conversion takes the pitch from the target voice
+                                #if self.params['current_voice'] in self.params['semitones'].keys():
+                                #    semitones = self.params['semitones'][self.params['current_voice']]
+                                #else:
+                                #    current_voice_gender = detect_gender(self.params['current_voice'])
+                                #    voice_builtin_gender = detect_gender(tmp_in_wav)
+                                #    if voice_builtin_gender != current_voice_gender:
+                                #        semitones = -4 if current_voice_gender == 'male' else 4
+                                #        msg = legends['msg_voice_gender_adapt'].format(cloned=current_voice_gender, builtin=voice_builtin_gender)
+                                #        print(msg)
+                                #    else:
+                                #        semitones = 0
+                                #    self.params['semitones'][self.params['current_voice']] = semitones
+                                #if semitones > 0:
+                                #    try:
+                                #        cmd = [
+                                #            shutil.which('sox'), tmp_in_wav,
+                                #            '-r', str(self.params['samplerate']), tmp_out_wav,
+                                #            'pitch', str(semitones * 100)
+                                #        ]
+                                #        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                #    except subprocess.CalledProcessError as e:
+                                #        error = legends['error_subprocess'].format(e=e.stderr)
+                                #        DependencyError(error)
+                                #        return False, error
+                                #    except FileNotFoundError as e:
+                                #        error = legends['error_file_not_found_detail'].format(e=e)
+                                #        DependencyError(error)
+                                #        return False, error
+                                #else:
+                                #    tmp_out_wav = tmp_in_wav
+                                tmp_out_wav = tmp_in_wav
+                                # voice conversion worker (VoiceConversion, default_vc_model): only paths and the text cross the pipe, the
+                                # worker cuts and keeps one reference clip per voice file and the server resamples both sides itself
+                                vc_wav = f'{os.path.splitext(tmp_in_wav)[0]}.vc.wav'
+                                reply = self.engine_zs.send({
+                                    'op': 'vc',
+                                    'source': os.path.abspath(tmp_out_wav),
+                                    'voice': os.path.abspath(self.params['current_voice']),
+                                    'file': os.path.abspath(vc_wav),
+                                    'text': part,
+                                    'language': self.language
+                                })
                                 if os.path.exists(tmp_in_wav):
                                     os.remove(tmp_in_wav)
                                 if os.path.exists(tmp_out_wav):
                                     os.remove(tmp_out_wav)
-                                if os.path.exists(source_wav):
-                                    os.remove(source_wav)
-                                audio_part = self._resample_audiodata(audio_part, samplerate, self.params['samplerate'])
+                                if not reply.get('ok'):
+                                    # no retry: core.py unloads the engine, which stops the VC worker. A GPU server that died counts
+                                    # against its package (dropped on the second death, CPU last)
+                                    if reply.get('server_exited') and self.engine_zs.backend != 'cpu':
+                                        self.engine_zs.gpu_crashes[self.engine_zs.package_name] = self.engine_zs.gpu_crashes.get(self.engine_zs.package_name, 0) + 1
+                                    if os.path.exists(vc_wav):
+                                        os.remove(vc_wav)
+                                    error = f"convert() error: {reply.get('error')} segment: {part}"
+                                    print(error)
+                                    return False, error
+                                audio_part, samplerate = sf.read(vc_wav, dtype='float32')
+                                os.remove(vc_wav)
+                                if audio_part.ndim > 1:
+                                    audio_part = audio_part.mean(axis=1)
+                                audio_part = self._resample_audiodata(audio_part, int(samplerate), self.params['samplerate'])
                             else:
                                 with torch.inference_mode():
                                     with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):

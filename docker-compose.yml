@@ -15,10 +15,11 @@
 #
 #   docker compose                       --profile cpu    up
 #   DEVICE_TAG=cu130    docker compose   --profile cuda   up
-#   DEVICE_TAG=jetson51 docker compose   --profile jetson up
+#   DEVICE_TAG=jetson5 docker compose   --profile jetson up
 #   DEVICE_TAG=rocm     docker compose   --profile rocm   up
 #   (add HSA_OVERRIDE_GFX_VERSION=x.y.z in front when the launcher printed one)
 #   DEVICE_TAG=xpu      docker compose   --profile xpu    up
+#   DEVICE_TAG=vulkan   docker compose   --profile vulkan up
 #
 # Requires Compose V2 (the `docker compose` plugin), NOT the legacy
 # `docker-compose` v1 — only V2 honors deploy.resources.devices outside Swarm
@@ -44,7 +45,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.10.1}
+        APP_VERSION: ${APP_VERSION:-26.11.1}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
         # A null value means "resolve from the environment at build time, and
         # if unset leave the Dockerfile default alone". These are exactly the
@@ -70,6 +71,7 @@ services:
       - ./models:/app/models:rw
       - ./voices:/app/voices:rw
       - ./tmp:/app/tmp:rw
+      - e2a_venvs:/app/lib/classes/tts_engines/venvs:rw
     restart: unless-stopped
     profiles: [_base]
 
@@ -135,3 +137,17 @@ services:
       - /dev/dri
     group_add:
       - "${RENDER_GID:-44}"
+
+  # --- Vulkan: AMD / Intel / NVIDIA (nouveau) through Mesa ------------------
+  ebook2audiobook-vulkan:
+    extends:
+      service: ebook2audiobook-base
+    profiles: [vulkan]
+    devices:
+      - /dev/dri
+    group_add:
+      - "${RENDER_GID:-44}"
+
+volumes:
+  e2a_venvs:
+    name: e2a_venvs
