@@ -14,16 +14,12 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ### Thanks to support ebook2audiobook developers!
 <p>
-  <form action="https://ko-fi.com/athomasson2" method="get" target="_blank" style="display:inline;">
-    <button type="submit" style="background:none; border:none; padding:0; cursor:pointer;">
-      <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
-    </button>
-  </form>
-  <form action="https://secure.job-currency.com/_spec/short_r.php/0BJCp4" method="get" target="_blank" style="display:inline; margin-left: 8px;">
-    <button type="submit" style="background:none; border:none; padding:0; cursor:pointer;">
-      <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
-    </button>
-  </form>
+  <a href="https://ko-fi.com/athomasson2">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
+  </a>
 </p>
 
 ### Run locally
