@@ -183,7 +183,7 @@ Du bör därför först manuellt ta bort all text som du inte vill omvandla till
 
 <a id="instructions"></a>
 ### Instruktioner
-1. **Klona repo**
+1. **Klona repot**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ Du bör därför först manuellt ta bort all text som du inte vill omvandla till
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Anmärkning för MacOS-användare: homebrew är installerat för att installera saknade program.</i>
+     <i>Obs för MacOS-användare: homebrew installeras för att installera saknade program.</i>
      
    - **Mac-startprogram**  
      Dubbelklicka på `Mac Ebook2Audiobook Launcher.command`
@@ -206,7 +206,7 @@ Du bör därför först manuellt ta bort all text som du inte vill omvandla till
      ebook2audiobook.cmd
      ```
      eller
-     Dubbelklick `ebook2audiobook.cmd`
+     Dubbelklicka på `ebook2audiobook.cmd`
 
      <i>Notera för Windows-användare: scoop installeras för att installera saknade program utan administratörsbehörighet.</i>
    
@@ -239,7 +239,7 @@ så att webbsidan kan återansluta till den nya anslutningssocketen.**
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Exempel på anpassad modell zip-uppladdning
+###  Exempel på uppladdning av en anpassad modell som zip
   (måste vara en .zip-fil som innehåller de obligatoriska modellfilerna. Exempel för XTTSv2: config.json, model.pth, vocab.json och ref.wav)
    - **Linux/MacOS**
      ```bash
@@ -249,13 +249,13 @@ så att webbsidan kan återansluta till den nya anslutningssocketen.**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Obs: ref.wav för din anpassade modell är alltid den röst som valts för omvandlingen</i>
+     <i>Obs: ref.wav i din anpassade modell är alltid den röst som väljs för konverteringen</i>
      
 - **<custom_model_path>**: Sökväg till filen `model_name.zip`,
       som måste innehålla (beroende på TTS-motorn) alla obligatoriska filer<br>
       (se ./lib/models.py).
 
-### För detaljerad guide med lista över alla parametrar som ska användas
+### Detaljerad guide med en lista över alla tillgängliga parametrar
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -391,7 +391,7 @@ TIPS: om det behövs lite mer paus, lägg till '[pause:3]' för 3 sek. osv.
 
 <a id="docker"></a>
 ### Docker
-1. **Klona arkivet**:
+1. **Klona repot**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
@@ -413,7 +413,7 @@ TIPS: om det behövs lite mer paus, lägg till '[pause:3]' för 3 sek. osv.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Kör behållaren:**
+4. **Kör containern:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- OBS: MPS är inte exponerad i dockaren så CPU måste användas
-- OBS! Den namngivna volymen `e2a_venvs` håller TTS-motorerna installerade i sin egen venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
-  över containerkörningar, så att de inte installeras om varje gång. För att återställa dem: `docker volume rm e2a_venvs`
+- OBS: MPS exponeras inte i Docker, så CPU måste användas
+- OBS: den namngivna volymen `e2a_venvs` behåller TTS-motorerna installerade i sina egna venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM osv.)
+  mellan containerkörningar, så att de inte installeras om varje gång. För att återställa dem: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Verktyg
-Fristående verktyg, kör med e2as egen Python (`python_env`, skapad av den första lanseringen av e2a).
+Fristående verktyg som körs med e2a:s egen Python (`python_env`, skapad vid första starten av e2a).
 
 <a id="preload-models"></a>
-### Förladdningsmodeller för offlineinstallationer: `tools/preload_models.py`
-Hämtar alla modeller som e2a använder (TTS-motorer och deras finjusteringar, röstkonvertering, stanza, pyannote, demucs,
-musikmellanspel, argos-translate-paket, tesseract-data, jieba och rösterna) i en mapp som läggs ut
-precis som `./models`, dvs en USB-nyckel. På offline-maskinen, kopiera den mappen till e2as `./models`
-(dok. `voices` mapp skriven bredvid den i e2as `./voices`.
-Varje färdigt jobb registreras i `<models_dir>/.e2a_downloads.json`: en omkörning hoppar över vad som är gjort och startar
-igen vad som klipptes (ctrl-c, krasch, urkopplad nyckel) efter att ha tagit bort sina partiella filer.
+### Förladda modeller för offlineinstallationer: `tools/preload_models.py`
+Laddar ner alla modeller som e2a använder (TTS-motorer och deras finjusteringar, röstkonvertering, stanza, pyannote, demucs,
+musikaliska mellanspel, argos-translate-paket, tesseract-data, jieba och rösterna) till en enda mapp som är uppbyggd
+exakt som `./models`, t.ex. ett USB-minne. På den frånkopplade datorn kopierar du mappen till e2a:s `./models`
+och mappen `voices` som skrivits bredvid den till e2a:s `./voices`.
+Varje avslutat jobb registreras i `<models_dir>/.e2a_downloads.json`: en ny körning hoppar över det som är klart och startar
+om det som avbröts (ctrl-c, krasch, urkopplat minne) efter att ha tagit bort dess ofullständiga filer.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ igen vad som klipptes (ctrl-c, krasch, urkopplad nyckel) efter att ha tagit bort
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` listar jobben och deras tillstånd (gjort, avbrutet, att göra) utan att ladda ner något.
+   - `--dry_run` listar jobben och deras status (klart, avbrutet, väntande) utan att ladda ner något.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Översätt e-böcker från e2a: `translate_ebook.sh`/`translate_ebook.cmd`
+### Översätt e-böcker utanför e2a: `translate_ebook.sh` / `translate_ebook.cmd`
 Översätter EPUB/AZW3-filer, en hel mapp (`-r` för dess undermappar) eller en lista med sökvägar (`@list.txt`)
-till översatta e-böcker, offline, med tillägget Argos Translate calibre som skickades in
-`tools/argostranslate-calibre-plugin.zip`. Oberoende av ljudbokskonverteringen: den skriver bara e-böcker.
-Den behöver kaliber (redan krävs av e2a) och körs på e2as `python_env` och argos-translate-paket:
-ett språkpar som e2a redan använder laddas inte ner igen, en saknad laddas ner vid första användningen.
-Insticksprogrammet installeras vid första användningen i e2as egen kaliberprofil (`./run`), din kaliber lämnas orörd.
-`--to fra,ara,spa` översätter till flera språk samtidigt, en e-bok per språk och `--to all` till varje
-språk som källan når (`--from`, annars varje boks eget språk; installerade endast sådana med `--no_download`).
-`--list --from eng` listar de språk som engelska översätter till (installerade, nedladdningsbara eller via engelska för
-annan källa).
-Andra format calibres `ebook-convert` läsningar (PDF, DOCX, Mobi, txt, ...) konverteras till EPUB en gång, innan
-första språk, och översatt som EPUB: `--from` behövs när de inte bär något språk, som PDF och txt ofta gör.
-Utan `-o` eller `--output_dir`, sparas varje översättning bredvid sin bok som `<name>.<lang>.<ext>`,
+till översatta e-böcker, offline, med calibre-pluginet Argos Translate som levereras i
+`tools/argostranslate-calibre-plugin.zip`. Oberoende av ljudbokskonverteringen: det skriver bara e-böcker.
+Det kräver calibre (som e2a redan behöver) och körs på e2a:s `python_env` och argos-translate-paket:
+ett språkpar som e2a redan använder laddas inte ner igen, ett saknat laddas ner vid första användningen.
+Pluginet installeras vid första användningen i e2a:s egen calibre-profil (`./run`), din calibre lämnas orörd.
+`--to fra,ara,spa` översätter till flera språk på en gång, en e-bok per språk, och `--to all` till alla
+språk som källan når (`--from`, annars varje boks eget språk; med `--no_download` endast installerade språkpar).
+`--list --from eng` listar de språk som engelska översätts till (installerade, nedladdningsbara eller via engelska för
+ett annat källspråk).
+Andra format som calibres `ebook-convert` läser (PDF, DOCX, MOBI, TXT, ...) konverteras en gång till EPUB, före det
+första språket, och översätts som EPUB: `--from` behövs när de inte anger något språk, vilket PDF och TXT ofta inte gör.
+Utan `-o` eller `--output_dir` sparas varje översättning bredvid sin bok som `<name>.<lang>.<ext>`,
 och en bok vars översättning redan finns hoppas över (`--overwrite` för att översätta den igen).
-Bärraketerna i e2as mapp kör `tools/translate_ebook.py` med `python_env`, inget att aktivera,
-från valfri mapp (relativa sökvägar tas från där den startas):
+Startskripten i e2a:s mapp kör `tools/translate_ebook.py` med `python_env`, inget behöver aktiveras,
+från valfri mapp (relativa sökvägar utgår från där det startas):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ från valfri mapp (relativa sökvägar tas från där den startas):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Eller direkt med `python_env`s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Började med någon annan Python,
-     skriptet startar sig självt igen med `python_env`: or.
-   - **Docker**: kör den inuti e2a-behållaren, t.ex. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     med stigar sedda från containern.
-   - **Hastighet**: argostranslate körs på sina egna standardinställningar (CTranslate2 väljer trådarna och den snabbaste beräkningstypen,
-     int8 på CPU), inte på e2as 1 tråd i float32. Ställ in `ARGOS_INTRA_THREADS` eller `ARGOS_COMPUTE_TYPE` för att åsidosätta dem.
+   - Eller direkt med Python från `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Startas det med någon annan Python,
+     startar skriptet om sig självt med den från `python_env`.
+   - **Docker**: kör det i e2a-containern, t.ex. `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     med sökvägar som containern ser dem.
+   - **Hastighet**: argostranslate körs med sina egna standardinställningar (CTranslate2 väljer trådar och den snabbaste beräkningstypen,
+     int8 på CPU), inte med e2a:s enda tråd i float32. Ange `ARGOS_INTRA_THREADS` eller `ARGOS_COMPUTE_TYPE` för att åsidosätta dem.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ tillbaka originalet. Du måste planera samma process för models.py. Om du vill 
 till en officiell finjusterad ebook2audiobook-modell, kontakta oss så lägger vi till den i förinställningslistan.
 
 <a id="reverting-to-older-versions"></a>
-## Återgår till äldre versioner
-Releaser kan hittas -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Återgå till äldre versioner
+Utgåvor finns -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```

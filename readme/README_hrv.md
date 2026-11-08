@@ -183,7 +183,7 @@ Stoga biste prvo trebali ručno ukloniti sav tekst koji ne želite pretvoriti u 
 
 <a id="instructions"></a>
 ### Upute
-1. **Kloniraj repo**
+1. **Klonirajte repozitorij**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ Stoga biste prvo trebali ručno ukloniti sav tekst koji ne želite pretvoriti u 
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Napomena za korisnike MacOS-a: Homebrew je instaliran za instaliranje programa koji nedostaju.</i>
+     <i>Napomena za korisnike MacOS-a: homebrew se instalira radi instalacije programa koji nedostaju.</i>
      
    - **Pokretač za Mac**  
      Dvaput kliknite na `Mac Ebook2Audiobook Launcher.command`
@@ -206,7 +206,7 @@ Stoga biste prvo trebali ručno ukloniti sav tekst koji ne želite pretvoriti u 
      ebook2audiobook.cmd
      ```
      ili
-     Dvostruki klik `ebook2audiobook.cmd`
+     Dvaput kliknite `ebook2audiobook.cmd`
 
      <i>Napomena za korisnike Windowsa: scoop se instalira radi instalacije programa koji nedostaju bez administratorskih ovlasti.</i>
    
@@ -221,7 +221,7 @@ Stoga biste prvo trebali ručno ukloniti sav tekst koji ne želite pretvoriti u 
 kako bi se web stranica ponovno povezala s novim utičnicom veze.**
 
 <a id="basic-usage"></a>
-### OSNOVNA UPORABA
+### Osnovna upotreba
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ kako bi se web stranica ponovno povezala s novim utičnicom veze.**
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Primjer prilagođenog poštanskog prijenosa modela
-  (mora biti .zip datoteka koja sadrži obvezne datoteke modela. Primjer za XTTSv2: config.json, model.pth, vocab.json i ref.wav)
+###  Primjer prijenosa prilagođenog modela u zipu
+  (mora biti .zip datoteka koja sadrži obavezne datoteke modela. Primjer za XTTSv2: config.json, model.pth, vocab.json i ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -255,7 +255,7 @@ kako bi se web stranica ponovno povezala s novim utičnicom veze.**
       koja mora sadržavati (ovisno o TTS pogonu) sve obavezne datoteke<br>
       (vidi ./lib/models.py).
 
-### Za Detaljni vodič s popisom svih parametara koje treba koristiti
+### Detaljan vodič s popisom svih dostupnih parametara
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ kako bi se web stranica ponovno povezala s novim utičnicom veze.**
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Ili za sve OS**
+   - **Ili za sve OS-ove**
     ```python
      app.py --help
     ```
@@ -391,12 +391,12 @@ SAVJET: ako je potrebna malo dulja pauza, dodajte '[pause:3]' za 3 sek. itd.
 
 <a id="docker"></a>
 ### Docker
-1. **Kloniranje Repozitorija**:
+1. **Klonirajte repozitorij**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Napravite spremnik**
+2. **Izgradite kontejner**
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ SAVJET: ako je potrebna malo dulja pauza, dodajte '[pause:3]' za 3 sek. itd.
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Pokrenite spremnik:**
+4. **Pokrenite kontejner:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NAPOMENA: MPS nije izložen u dockeru pa se mora koristiti CPU
-- NAPOMENA: imenovani volumen `e2a_venvs` zadržava TTS motore instalirane u vlastitom venvu (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM itd.)
-  preko kontejnera, tako da se ne instaliraju svaki put. Da biste ih resetirali: `docker volume rm e2a_venvs`
+- NAPOMENA: MPS nije dostupan u Dockeru pa se mora koristiti CPU
+- NAPOMENA: imenovani volumen `e2a_venvs` čuva TTS pogone instalirane u vlastitim venv okruženjima (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM itd.)
+  između pokretanja kontejnera, pa se ne instaliraju iznova svaki put. Za njihovo resetiranje: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Alati
-Samostalni alati, pokrenuti s e2a vlastitim Pythonom (`python_env`, stvoreni prvim pokretanjem e2a).
+Samostalni alati koji se pokreću vlastitim Pythonom e2a (`python_env`, stvoren pri prvom pokretanju e2a).
 
 <a id="preload-models"></a>
-### Predučitavanje modela za izvanmrežne instalacije: `tools/preload_models.py`
-Preuzima svaki model koji koristi e2a (TTS motori i njihove fine melodije, konverzija glasa, strofa, pyannote, demucs,
-glazbeni interludiji, argos-translate paketi, tesseract podaci, jieba i glasovi) u jednu mapu postavljenu
-točno kao `./models`, tj. USB ključ. Na izvanmrežnom računalu kopirajte tu mapu u e2a's `./models`
-i `voices` mapa zapisana uz nju u e2a `./voices`.
-Svaki završeni posao bilježi se u `<models_dir>/.e2a_downloads.json`: ponavljanje preskače ono što je učinjeno i započinje
-ponovno ono što je izrezano (ctrl-c, crash, isključen ključ) nakon uklanjanja njegovih djelomičnih datoteka.
+### Prethodno preuzimanje modela za izvanmrežne instalacije: `tools/preload_models.py`
+Preuzima svaki model koji e2a koristi (TTS pogone i njihove fino podešene verzije, pretvorbu glasa, stanza, pyannote, demucs,
+glazbene međuigre, argos-translate pakete, tesseract podatke, jieba i glasove) u jednu mapu organiziranu
+točno kao `./models`, npr. na USB stick. Na izvanmrežnom računalu kopirajte tu mapu u `./models` od e2a,
+a mapu `voices` zapisanu pokraj nje u `./voices` od e2a.
+Svaki dovršeni posao bilježi se u `<models_dir>/.e2a_downloads.json`: ponovno pokretanje preskače dovršeno i iznova pokreće
+prekinuto (ctrl-c, rušenje, isključen stick) nakon uklanjanja njegovih djelomičnih datoteka.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ ponovno ono što je izrezano (ctrl-c, crash, isključen ključ) nakon uklanjanja
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` navodi poslove i njihovo stanje (učinjeno, prekinuto, zadano) bez preuzimanja bilo čega.
+   - `--dry_run` ispisuje poslove i njihovo stanje (dovršeno, prekinuto, na čekanju) bez preuzimanja ičega.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Prevedi e-knjige iz e2a: `translate_ebook.sh`/`translate_ebook.cmd`
-Prevodi EPUB/AZW3 datoteke, cijelu mapu (`-r` za podmape) ili popis putanja (`@list.txt`)
-u prevedene e-knjige, izvanmrežno, s dodatkom Argos Translate kalibra isporučenim
-`tools/argostranslate-calibre-plugin.zip`. Neovisno o konverziji audio knjige: piše samo e-knjige.
-Potreban je kalibar (već zahtijeva e2a) i pokreće se na e2a `python_env` i argos-translate pakete:
-jezični par e2a koji se već koristi ne preuzima se ponovno, a onaj koji nedostaje preuzima se prilikom prve uporabe.
-Dodatak je instaliran pri prvoj uporabi u vlastiti profil e2a kalibra (`./run`), vaš kalibar ostaje netaknut.
-`--to fra,ara,spa` se prevodi na više jezika odjednom, jedna e-knjiga po jeziku i `--to all` na svaki
-jezik koji izvor dosegne (`--from`, inače jezik svake knjige; instalirani samo s `--no_download`).
-`--list --from eng` navodi jezike na koje se engleski prevodi (instaliran, može se preuzeti ili putem engleskog za
-drugi izvor).
-Drugi formati kalibra `ebook-convert` očitanja (PDF, DOCX, mobi, txt, ...) pretvaraju se u EPUB jednom, prije
-prvi jezik, a prevedeno kao EPUB: `--from` je potrebno kada ne nose jezik, kao što to često čine PDF i txt.
-Bez `-o` ili `--output_dir`, svaki prijevod se sprema pored svoje knjige kao `<name>.<lang>.<ext>`,
-i preskoči se knjiga čiji prijevod već postoji (`--overwrite` za ponovni prijevod).
-Pokretači u mapi e2a rade `tools/translate_ebook.py` s `python_env`, nemaju što aktivirati,
-iz bilo koje mape (relativni putovi uzimaju se s mjesta na kojem se započinje):
+### Prevođenje e-knjiga izvan e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+Prevodi EPUB/AZW3 datoteke, cijelu mapu (`-r` za njezine podmape) ili popis putanja (`@list.txt`)
+u prevedene e-knjige, izvanmrežno, pomoću calibre dodatka Argos Translate isporučenog u
+`tools/argostranslate-calibre-plugin.zip`. Neovisno o pretvorbi u audioknjigu: zapisuje samo e-knjige.
+Zahtijeva calibre (koji e2a već traži) i radi na `python_env` i argos-translate paketima iz e2a:
+jezični par koji e2a već koristi ne preuzima se ponovno, onaj koji nedostaje preuzima se pri prvoj upotrebi.
+Dodatak se pri prvoj upotrebi instalira u vlastiti calibre profil e2a (`./run`), vaš calibre ostaje netaknut.
+`--to fra,ara,spa` prevodi na više jezika odjednom, jedna e-knjiga po jeziku, a `--to all` na svaki
+jezik dostupan iz izvora (`--from`, inače vlastiti jezik svake knjige; uz `--no_download` samo instalirani jezični parovi).
+`--list --from eng` ispisuje jezike na koje se prevodi s engleskog (instalirane, dostupne za preuzimanje ili preko engleskog za
+drugi izvorni jezik).
+Ostali formati koje čita calibreov `ebook-convert` (PDF, DOCX, MOBI, TXT, ...) jednom se pretvaraju u EPUB, prije
+prvog jezika, i prevode kao EPUB: `--from` je potreban kada ne navode jezik, što je kod PDF-a i TXT-a često.
+Bez `-o` ili `--output_dir` svaki se prijevod sprema pokraj svoje knjige kao `<name>.<lang>.<ext>`,
+a knjiga čiji prijevod već postoji preskače se (`--overwrite` za ponovno prevođenje).
+Pokretači u mapi e2a pokreću `tools/translate_ebook.py` s `python_env`, ništa ne treba aktivirati,
+iz bilo koje mape (relativne putanje uzimaju se od mjesta pokretanja):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ iz bilo koje mape (relativni putovi uzimaju se s mjesta na kojem se započinje):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Ili izravno s `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Započet s bilo kojim drugim Pythonom,
-     skripta se ponovno pokreće s `python_env`S
-   - **Docker**: pokrenite ga unutar spremnika e2a, npr. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     s putanjama koje se vide iz spremnika.
-   - **Brzina**: argostranslat radi na vlastitim zadanim postavkama (CTranslate2 odabire niti i najbrži tip izračuna,
-     int8 na CPU-u), a ne na 1 navoju e2a u floatu32. Postavite `ARGOS_INTRA_THREADS` ili `ARGOS_COMPUTE_TYPE` kako biste ih premostili.
+   - Ili izravno s Pythonom iz `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Ako se pokrene bilo kojim drugim Pythonom,
+     skripta se sama ponovno pokreće s onim iz `python_env`.
+   - **Docker**: pokrenite ga unutar e2a kontejnera, npr. `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     s putanjama kako ih vidi kontejner.
+   - **Brzina**: argostranslate radi na vlastitim zadanim postavkama (CTranslate2 bira niti i najbrži tip izračuna,
+     int8 na CPU-u), a ne na jednoj niti e2a u float32. Postavite `ARGOS_INTRA_THREADS` ili `ARGOS_COMPUTE_TYPE` da ih nadjačate.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]

@@ -183,7 +183,7 @@ Bu yüzden önce sese dönüştürmek istemediğiniz her metni manuel olarak kal
 
 <a id="instructions"></a>
 ### Talimatlar
-1. ** Repo klonlama **
+1. **Depoyu klonlayın**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ Bu yüzden önce sese dönüştürmek istemediğiniz her metni manuel olarak kal
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>MacOS kullanıcıları için not: eksik programları yüklemek için homebrew yüklenmiştir.</i>
+     <i>MacOS kullanıcıları için not: eksik programları kurmak için homebrew kurulur.</i>
      
    - **Mac Başlatıcı**  
      `Mac Ebook2Audiobook Launcher.command` dosyasına çift tıklayın
@@ -206,7 +206,7 @@ Bu yüzden önce sese dönüştürmek istemediğiniz her metni manuel olarak kal
      ebook2audiobook.cmd
      ```
      veya
-     Çift tıklama `ebook2audiobook.cmd`
+     `ebook2audiobook.cmd` dosyasına çift tıklayın
 
      <i>Windows kullanıcıları için not: yönetici ayrıcalıkları olmadan eksik programları kurmak için scoop kurulur.</i>
    
@@ -221,7 +221,7 @@ Bu yüzden önce sese dönüştürmek istemediğiniz her metni manuel olarak kal
 web sayfasının yeni bağlantı soketine yeniden bağlanmasına izin vermek için.**
 
 <a id="basic-usage"></a>
-### Basit Kullanım
+### Temel Kullanım
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,7 +239,7 @@ web sayfasının yeni bağlantı soketine yeniden bağlanmasına izin vermek iç
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Özel Model Posta Kodu Yükleme Örneği
+###  Özel Model Zip Yükleme Örneği
   (zorunlu model dosyalarını içeren bir .zip dosyası olmalıdır. XTTSv2 için örnek: config.json, model.pth, vocab.json ve ref.wav)
    - **Linux/MacOS**
      ```bash
@@ -249,13 +249,13 @@ web sayfasının yeni bağlantı soketine yeniden bağlanmasına izin vermek iç
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Not: Özel modelinizin ref.wav değeri her zaman dönüşüm için seçilen sestir</i>
+     <i>Not: özel modelinizin ref.wav dosyası, dönüştürme için her zaman seçilen sestir</i>
      
 - **<custom_model_path>**: `model_name.zip` dosyasının yolu,
       bu dosya (TTS motoruna göre) tüm zorunlu dosyaları içermelidir<br>
       (bkz. ./lib/models.py).
 
-### Kullanılacak tüm Parametrelerin listesini içeren Ayrıntılı Kılavuz için
+### Kullanılabilecek Tüm Parametrelerin Listesiyle Ayrıntılı Kılavuz
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ web sayfasının yeni bağlantı soketine yeniden bağlanmasına izin vermek iç
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Veya tüm işletim sistemleri için **
+   - **Veya tüm işletim sistemleri için**
     ```python
      app.py --help
     ```
@@ -391,12 +391,12 @@ NOT: gradio/gui modunda, çalışan bir dönüştürmeyi iptal etmek için e-kit
 
 <a id="docker"></a>
 ### Docker
-1. ** DepoyuKlonlayın**:
+1. **Depoyu klonlayın**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. ** Konteyneri inşa edin **
+2. **Konteyneri derleyin**
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ NOT: gradio/gui modunda, çalışan bir dönüştürmeyi iptal etmek için e-kit
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. ** Konteyneri Çalıştırın :**
+4. **Konteyneri çalıştırın:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOT: MPS dockerda açıkta değildir, bu nedenle CPU kullanılmalıdır
-- NOT: adı geçen cilt `e2a_venvs` tTS motorlarını kendi araçlarında kurulu tutar (GPT - SoVITS, Zonos, OmniVoice, F5 - TTS, Orpheus, Spark - TTS, ChatTTS, OpenVoice, MeloTTS, CSM vb.)
-  konteynır geçişleri arasında, böylece her seferinde yeniden kurulmazlar. Sıfırlamak için: `docker volume rm e2a_venvs`
+- NOT: MPS Docker içinde kullanıma açık değildir, bu yüzden CPU kullanılmalıdır
+- NOT: `e2a_venvs` adlı birim, kendi venv'lerine kurulu TTS motorlarını (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM vb.)
+  konteyner çalıştırmaları arasında korur, böylece her seferinde yeniden kurulmazlar. Sıfırlamak için: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Araçlar
-Bağımsız araçlar, e2a'nın kendi Python'u (`python_env`, e2a'nın ilk lansmanıyla oluşturuldu) ile çalışır.
+e2a'nın kendi Python'u (`python_env`, e2a'nın ilk açılışında oluşturulur) ile çalışan bağımsız araçlar.
 
 <a id="preload-models"></a>
-### Çevrimdışı yüklemeler için önyükleme modelleri: `tools/preload_models.py`
-E2a'nın kullandığı her modeli indirir (TTS motorları ve ince ayarları, ses dönüştürme, dörtlük, pyannote, demucs,
-müzik aralıkları, argos - çeviri paketleri, tesseract verileri, jieba ve sesler) tek bir klasöre yerleştirilir
-aynen `./models`yani bir USB anahtarı. Çevrimdışı makinede, bu klasörü e2a'ya kopyalayın `./models`
-ve `voices` e2a'nın içine yanına yazılan klasör `./voices`.
-Biten her iş şuraya kaydedilir: `<models_dir>/.e2a_downloads.json`: bir yeniden çalıştırma, yapılanları atlar ve başlar
-kısmi dosyaları kaldırıldıktan sonra tekrar neyin kesildiği (ctrl - c, kilitlenme, fişten çekilmiş anahtar).
+### Çevrimdışı kurulumlar için modelleri önceden indirme: `tools/preload_models.py`
+e2a'nın kullandığı tüm modelleri (TTS motorları ve ince ayarlı sürümleri, ses dönüştürme, stanza, pyannote, demucs,
+müzik araları, argos-translate paketleri, tesseract verileri, jieba ve sesler) tek bir klasöre indirir; bu klasör
+tam olarak `./models` gibi düzenlenir, örneğin bir USB bellek. Çevrimdışı makinede bu klasörü e2a'nın `./models` klasörüne,
+yanına yazılan `voices` klasörünü de e2a'nın `./voices` klasörüne kopyalayın.
+Tamamlanan her iş `<models_dir>/.e2a_downloads.json` dosyasına kaydedilir: yeniden çalıştırma tamamlananları atlar ve
+yarıda kesilenleri (ctrl-c, çökme, çıkarılan bellek) kısmi dosyalarını sildikten sonra yeniden başlatır.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ kısmi dosyaları kaldırıldıktan sonra tekrar neyin kesildiği (ctrl - c, kil
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` hiçbir şey indirmeden işleri ve durumlarını (tamamlandı, kesintiye uğradı, yapılacaklar) listeler.
+   - `--dry_run` hiçbir şey indirmeden işleri ve durumlarını (tamamlandı, kesildi, bekliyor) listeler.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### E - kitapları e2a'dan çevirin: `translate_ebook.sh`/`translate_ebook.cmd`
-Epub/AZW3 dosyalarını, bütün bir klasörü çevirir (`-r` alt klasörleri için) veya bir yol listesi (`@list.txt`)
-argos Translate calibre eklentisi ile çevrimdışı olarak çevrilmiş e - kitaplara
-`tools/argostranslate-calibre-plugin.zip`. Sesli kitap dönüşümünden bağımsız olarak: sadece e - kitap yazar.
-Kalibreye ihtiyaç duyar (e2a tarafından zaten gereklidir) ve e2a'nın `python_env` ve argos - translate paketlerinde çalışır:
-e2a'nın zaten kullandığı bir dil çifti tekrar indirilmemektedir, eksik olan ilk kullanımda indirilmektedir.
-Eklenti ilk kullanımda e2a'nın kendi calibre profiline (`./run`) yüklenir, calibre'nize dokunulmaz.
-`--to fra,ara,spa` aynı anda birkaç dile çeviri yapar, dil başına bir e - kitap ve `--to all` into every
-kaynağın ulaştığı dil (`--from`, aksi takdirde her kitabın kendi dili; sadece `--no_download`).
-`--list --from eng` ingilizcenin çevirdiği dilleri listeler (yüklü, indirilebilir veya İngilizce aracılığıyla
-Başka Bir Kaynak Ekle
-Calibre'nin `ebook-convert` okumaları (PDF, DOCX, MOBI, txt, ...) diğer formatlar,
-ve Epub olarak çevrilmiştir: PDF ve txt'nin sıklıkla yaptığı gibi, dil taşımadıklarında `--from` gereklidir.
-&#10; `-o` veya `--output_dir`, her çeviri kitabının yanında şu şekilde kaydedilir: `<name>.<lang>.<ext>`,
-ve çevirisi zaten var olan bir kitap atlanır .(`--overwrite` tekrar çevirmek için).
-E2a'nın klasöründeki başlatıcılar çalışıyor `tools/translate_ebook.py` ile `python_env`Etkinleştirilecek bir şey yok
-herhangi bir klasörden (göreceli yollar başladığı yerden alınır):
+### e2a dışında e-kitap çevirme: `translate_ebook.sh` / `translate_ebook.cmd`
+EPUB/AZW3 dosyalarını, bütün bir klasörü (alt klasörleri için `-r`) veya bir yol listesini (`@list.txt`)
+çevrimdışı olarak çevrilmiş e-kitaplara dönüştürür; bunun için şu dosyayla gelen Argos Translate calibre eklentisini kullanır:
+`tools/argostranslate-calibre-plugin.zip`. Sesli kitap dönüştürmeden bağımsızdır: yalnızca e-kitap yazar.
+calibre gerektirir (e2a için zaten gerekli) ve e2a'nın `python_env` ortamı ile argos-translate paketleri üzerinde çalışır:
+e2a'nın zaten kullandığı bir dil çifti yeniden indirilmez, eksik olan ilk kullanımda indirilir.
+Eklenti ilk kullanımda e2a'nın kendi calibre profiline (`./run`) kurulur, sizin calibre kurulumunuza dokunulmaz.
+`--to fra,ara,spa` aynı anda birkaç dile çevirir, her dil için bir e-kitap; `--to all` ise kaynak dilin
+ulaştığı her dile çevirir (`--from`, yoksa her kitabın kendi dili; `--no_download` ile yalnızca kurulu dil çiftleri).
+`--list --from eng` İngilizcenin çevrilebildiği dilleri listeler (kurulu, indirilebilir veya başka bir kaynak dil için
+İngilizce üzerinden).
+calibre'nin `ebook-convert` aracının okuduğu diğer biçimler (PDF, DOCX, MOBI, TXT, ...) ilk dilden önce bir kez
+EPUB'a dönüştürülür ve EPUB olarak çevrilir: dil bilgisi taşımadıklarında (PDF ve TXT'de sık görülür) `--from` gerekir.
+`-o` veya `--output_dir` olmadan her çeviri kitabının yanına `<name>.<lang>.<ext>` olarak kaydedilir
+ve çevirisi zaten bulunan kitap atlanır (yeniden çevirmek için `--overwrite`).
+e2a klasöründeki başlatıcılar `tools/translate_ebook.py` dosyasını `python_env` ile çalıştırır, etkinleştirilecek bir şey yoktur,
+herhangi bir klasörden çalışır (göreli yollar başlatıldığı yere göre alınır):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ herhangi bir klasörden (göreceli yollar başladığı yerden alınır):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Veya doğrudan `python_env` 'ların Python'u ile: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Başka bir Python ile başladı,
-     komut dosyası `python_env` 'larla tekrar başlar.
-   - **Docker**:e2a kabının içinde çalıştırın, örn. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     konteynırdan görülen yollarla.
-   - **Hız**:argostranslate kendi varsayılanları üzerinde çalışır (CTranslate2 iş parçacıklarını ve en hızlı hesaplama türünü seçer,
-     cPU'da int8), e2a'nın float32 'deki 1 iş parçacığında değil. Set `ARGOS_INTRA_THREADS` veya `ARGOS_COMPUTE_TYPE` onları geçersiz kılmak için.
+   - Veya doğrudan `python_env` içindeki Python ile: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Başka bir Python ile başlatılırsa
+     betik kendini `python_env` içindeki Python ile yeniden başlatır.
+   - **Docker**: e2a konteyneri içinde çalıştırın, örneğin `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     yolları konteynerin gördüğü şekilde vererek.
+   - **Hız**: argostranslate kendi varsayılanlarıyla çalışır (CTranslate2 iş parçacıklarını ve en hızlı hesaplama türünü seçer,
+     CPU'da int8), e2a'nın float32'deki tek iş parçacığıyla değil. Bunları geçersiz kılmak için `ARGOS_INTRA_THREADS` veya `ARGOS_COMPUTE_TYPE` ayarlayın.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ orijinalini geri koyabilirsiniz. Aynı süreci models.py için de planlamalısı
 resmi bir ince ayarlı ebook2audiobook modeli yapmak isterseniz, lütfen bizimle iletişime geçin, onu ön ayar listesine ekleyelim.
 
 <a id="reverting-to-older-versions"></a>
-## Eski Sürümlere Geri Dönülüyor
-Sürümler bulunabilir -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Eski Sürümlere Dönme
+Sürümler burada bulunabilir -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
