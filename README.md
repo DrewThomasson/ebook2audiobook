@@ -18,7 +18,7 @@ Use this tool responsibly and in accordance with all applicable laws.
     <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
   </a>
   <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4" target="_blank">
-    <img src="https://img.shields.io/badge/JOB-D4AF37?style=for-the-badge&logo=bitcoin&logoColor=black" alt="JOB">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
   </a>
 </p>
 
