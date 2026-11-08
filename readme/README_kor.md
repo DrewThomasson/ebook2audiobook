@@ -182,8 +182,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 <a id="instructions"></a>
-### Instructions 
-1. **Clone repo**
+### 복약 안내
+1. * * Repo 복제 * *
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>MacOS 사용자를 위한 참고 사항: homebrew가 설치되어 누락된 프로그램을 설치합니다.</i>
      
    - **Mac 런처**  
      `Mac Ebook2Audiobook Launcher.command`를 더블 클릭하세요
@@ -205,8 +205,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     또는
+     더블 클릭 `ebook2audiobook.cmd`
 
      <i>Windows 사용자 참고: 관리자 권한 없이 누락된 프로그램을 설치하기 위해 scoop이 설치됩니다.</i>
    
@@ -221,7 +221,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 웹 페이지가 새로운 연결 소켓에 다시 연결될 수 있도록 하기 위해서입니다.**
 
 <a id="basic-usage"></a>
-### Basic  Usage
+### 기본 사용
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+###  사용자 정의 모델 Zip 업로드의 예
+  (필수 모델 파일이 포함된 .zip 파일이어야 합니다. XTTSv2의 예: config.json, model.pth, vocab.json 및 ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i> 참고: 사용자 정의 모델의 ref.wav는 항상 변환을 위해 선택된 음성입니다</i>
      
 - **<custom_model_path>**: `model_name.zip` 파일의 경로,
       이 파일은 (tts 엔진에 따라) 모든 필수 파일을 포함해야 합니다<br>
       (./lib/models.py 참조).
 
-### For Detailed Guide with list of all Parameters to use
+### 사용할 모든 매개 변수 목록이 있는 자세한 안내서
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - * * 또는 모든 OS용 * *
     ```python
      app.py --help
     ```
@@ -391,12 +391,12 @@ SML tags available:
 
 <a id="docker"></a>
 ### Docker
-1. **Clone the Repository**:
+1. * * 저장소 복제 * *:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. * * 컨테이너 제작 * *
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ SML tags available:
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Run the Container:**
+4. * * 컨테이너 실행: * *
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
-- NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
-  across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
+- 참고: MPS는 도커에 노출되지 않으므로 CPU를 사용해야 합니다.
+- 참고: 명명된 볼륨 `e2a_venvs` 자체 VENV (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM 등) 에 TTS 엔진을 설치합니다.
+  컨테이너에서 실행되므로 매번 다시 설치되지 않습니다. 재설정 방법: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## 공구
 E2a 자체 Python (`python_env`, e2a의 첫 출시로 생성) 으로 실행되는 독립 실행형 도구입니다.
 
 <a id="preload-models"></a>
-### Preload models for offline installs: `tools/preload_models.py`
-Downloads every model e2a uses (TTS engines and their fine-tunes, voice conversion, stanza, pyannote, demucs,
-music interludes, argos-translate packages, tesseract data, jieba, and the voices) into one folder laid out
-exactly like `./models`, i.e. a USB key. On the offline machine, copy that folder into e2a's `./models`
-and the `voices` folder written beside it into e2a's `./voices`.
-Every finished job is recorded in `<models_dir>/.e2a_downloads.json`: a rerun skips what is done and starts
-again what was cut (ctrl-c, crash, unplugged key) after removing its partial files.
+### 오프라인 설치를 위한 사전 로드 모델: `tools/preload_models.py`
+E2a가 사용하는 모든 모델 다운로드 (TTS 엔진 및 미세 조정, 음성 변환, stanza, pyannote, demucs,
+music interludes, argos-translate packages, tesseract data, jieba, and the voices) 를 하나의 폴더에 배치
+정확히 같음 `./models`예: USB 키. 오프라인 컴퓨터에서 해당 폴더를 e2a의 `./models`
+그리고 `voices` e2a 's에 그 옆에 쓰여진 폴더 `./voices`.
+완료된 모든 작업은 에 기록됩니다. `<models_dir>/.e2a_downloads.json`: 재실행이 완료된 것을 건너뛰고 시작됨
+부분 파일을 제거한 후 잘린 부분 (ctrl-c, crash, unplugged key).
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ again what was cut (ctrl-c, crash, unplugged key) after removing its partial fil
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` lists the jobs and their state (done, interrupted, todo) without downloading anything.
+   - `--dry_run` 아무 것도 다운로드하지 않고 작업과 상태 (완료, 중단, 할 일) 를 나열합니다.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Translate ebooks out of e2a: `translate_ebook.sh` / `translate_ebook.cmd`
-Translates EPUB/AZW3 files, a whole folder (`-r` for its subfolders) or a list of paths (`@list.txt`)
-into translated ebooks, offline, with the Argos Translate calibre plugin shipped in
-`tools/argostranslate-calibre-plugin.zip`. Independent of the audiobook conversion: it only writes ebooks.
-It needs calibre (already required by e2a) and runs on e2a's `python_env` and argos-translate packages:
-a language pair e2a already uses is not downloaded again, a missing one is downloaded on first use.
-The plugin is installed on first use into e2a's own calibre profile (`./run`), your calibre is left untouched.
-`--to fra,ara,spa` translates into several languages at once, one ebook per language, and `--to all` into every
-language the source reaches (`--from`, else each book's own language; installed ones only with `--no_download`).
-`--list --from eng` lists the languages English translates into (installed, downloadable, or through English for
-another source).
-Other formats calibre's `ebook-convert` reads (PDF, DOCX, MOBI, TXT, ...) are converted to EPUB once, before the
-first language, and translated as EPUB: `--from` is needed when they carry no language, as PDF and TXT often do.
-Without `-o` or `--output_dir`, each translation is saved beside its book as `<name>.<lang>.<ext>`,
-and a book whose translation already exists is skipped (`--overwrite` to translate it again).
-The launchers in e2a's folder run `tools/translate_ebook.py` with `python_env`, nothing to activate,
-from any folder (relative paths are taken from where it is started):
+### E2a에서 전자책 번역: `translate_ebook.sh` / `translate_ebook.cmd`
+EPUB/AZW3 파일, 전체 폴더 (`-r` 하위 폴더용) 또는 경로 목록 (`@list.txt`)
+argos Translate 칼리버 플러그인이 배송된 상태에서 오프라인으로 번역된 전자책으로
+`tools/argostranslate-calibre-plugin.zip`. 오디오북 변환과는 독립적으로: 전자책만 씁니다.
+구경 (e2a에서 이미 요구됨) 이 필요하며 e2a의 `python_env` 및 argos-translate 패키지에서 실행됩니다.
+e2a가 이미 사용하는 언어 쌍은 다시 다운로드되지 않으며, 누락된 언어 쌍은 처음 사용할 때 다운로드됩니다.
+플러그인은 e2a의 자체 구경 프로필 (`./run`) 에 처음 사용할 때 설치되며, 구경은 그대로 유지됩니다.
+`--to fra,ara,spa` 한 번에 여러 언어로 번역, 언어 당 하나의 전자 책, 그리고 `--to all` 모든
+소스가 도달하는 언어 (`--from`, 그렇지 않으면 각 책의 고유 언어; 설치 된 것만 `--no_download`).
+`--list --from eng` 영어로 번역된 언어를 나열합니다 (설치됨, 다운로드 가능 또는 영어를 통해
+다른 출처).
+다른 형식의 구경 `ebook-convert` 읽기 (PDF, DOCX, MOBI, TXT,...) 는
+모국어이며 EPUB로 번역됨: `--from` pDF와 TXT가 종종 그렇듯이 언어를 사용하지 않을 때 필요합니다.
+(관측 `-o` 또는 `--output_dir`각 번역은 책 옆에 다음과 같이 저장됩니다. `<name>.<lang>.<ext>`,
+그리고 번역이 이미 존재하는 책은 건너뜁니다 (`--overwrite` 다시 번역하기 위해).
+E2a의 폴더에 있는 런처가 실행됩니다 `tools/translate_ebook.py` 와 `python_env`, 활성화할 항목이 없습니다.
+모든 폴더에서 (상대 경로는 시작 위치에서 가져옴):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ from any folder (relative paths are taken from where it is started):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Or directly with `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Started with any other Python,
-     the script starts itself again with `python_env`'s.
-   - **Docker**: run it inside the e2a container, e.g. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     with paths seen from the container.
-   - **Speed**: argostranslate runs on its own defaults (CTranslate2 picks the threads and the fastest compute type,
-     int8 on CPU), not on e2a's 1 thread in float32. Set `ARGOS_INTRA_THREADS` or `ARGOS_COMPUTE_TYPE` to override them.
+   - 또는 직접 `python_env`의 Python: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). 다른 Python으로 시작하여
+     스크립트는 다음으로 다시 시작됩니다. `python_env`S
+   - * * Docker * *: e2a 컨테이너 내부에서 실행합니다. 예: `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     컨테이너에서 볼 수 있는 경로가 있습니다.
+   - * * 속도 * *: argostranslate는 자체 기본값으로 실행됩니다 (CTranslate2는 스레드와 가장 빠른 컴퓨팅 유형을 선택합니다.
+     cPU의 int8), float32의 e2a의 1 스레드가 아닙니다. 설정 `ARGOS_INTRA_THREADS` 또는 `ARGOS_COMPUTE_TYPE` 오버라이드할 수 있습니다.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ examples:
 공식 미세 조정된 ebook2audiobook 모델로 만들고 싶다면, 저희에게 연락해 주시면 프리셋 목록에 추가하겠습니다.
 
 <a id="reverting-to-older-versions"></a>
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## 이전 버전으로 되돌리기
+릴리스를 찾을 수 있습니다 - > [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```

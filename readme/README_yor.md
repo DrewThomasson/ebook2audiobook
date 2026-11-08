@@ -182,7 +182,7 @@ Nítorí náà o gbọ́dọ̀ kọ́kọ́ yọ ọ̀rọ̀ èyíkéyìí tí o
 
 
 <a id="instructions"></a>
-### Instructions 
+### Àwọn Ìlànà
 1. **Clone repo**
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
@@ -195,7 +195,7 @@ Nítorí náà o gbọ́dọ̀ kọ́kọ́ yọ ọ̀rọ̀ èyíkéyìí tí o
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>Àkíyèsí fún àwọn olùṣàmúlò MacOS: a ti fi sori ẹrọ homebrew láti fi àwọn ètò tí ó sọnù lélẹ̀.</i>
      
    - **Olùṣíṣẹ́ Mac**  
      Tẹ̀ ní ẹ̀ẹ̀mejì `Mac Ebook2Audiobook Launcher.command`
@@ -205,8 +205,8 @@ Nítorí náà o gbọ́dọ̀ kọ́kọ́ yọ ọ̀rọ̀ èyíkéyìí tí o
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     “” tàbí “”
+     Tẹ̀ lé e lẹ́ẹ̀mejì `ebook2audiobook.cmd`
 
      <i>Àkíyèsí fún àwọn olùmúlò Windows: a fi scoop sori ẹrọ láti fi àwọn ètò tó nù sori ẹrọ láìsí àwọn ẹ̀tọ́ alábòójútó.</i>
    
@@ -221,7 +221,7 @@ Nítorí náà o gbọ́dọ̀ kọ́kọ́ yọ ọ̀rọ̀ èyíkéyìí tí o
 láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket ìsopọ̀ tuntun.**
 
 <a id="basic-usage"></a>
-### Basic  Usage
+### Lilo Ipilẹ
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket �
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+###  Apẹẹrẹ ti Aṣa Awoṣe Zip Upload
+  (ó gbọdọ̀ jẹ́ fáìlì .zip tí ó ní àwọn fáìlì àwòṣe tí ó pọn dandan. Àpẹẹrẹ fún XTTSv2: config.json, model.pth, vocab.json àti ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket �
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>Akiyesi: ref.wav ti awoṣe aṣa rẹ nigbagbogbo ni ohùn ti a yan fun iyipada</i>
      
 - **<custom_model_path>**: Ọ̀nà sí fáìlì `model_name.zip`,
       èyí tó gbọ́dọ̀ ní (gẹ́gẹ́ bí ẹ̀rọ tts) gbogbo àwọn fáìlì pàtàkì<br>
       (wo ./lib/models.py).
 
-### For Detailed Guide with list of all Parameters to use
+### Fún ìtọ́sọ́nà tó kún rẹ́rẹ́ pẹ̀lú àtòjọ gbogbo àwọn ìlànà láti lò.
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket �
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **Tabi fun gbogbo OS**
     ```python
      app.py --help
     ```
@@ -396,7 +396,7 @@ SML tags available:
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. **Kọ eiyan naa **
 ```bash
     Windows:
         Docker:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
-- NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
-  across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
+- Akiyesi: MPS ko farahan ni docker nitorina CPU gbọdọ ṣee lo.
+- Akiyesi: iwọn didun ti a darukọ `e2a_venvs` tọju awọn ẹrọ TTS ti a fi sori ẹrọ ni venv ti ara wọn (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM ati bẹbẹ lọ)
+  wọ́n máa ń lọ káàkiri àwọn ohun èlò ìkòkò, kí wọ́n má baà tún wọn ṣe ní gbogbo ìgbà. Láti tún wọn ṣe: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Àwọn irin iṣẹ́
 Àwọn irinṣẹ́ tí ó dúró ṣánṣán, sáré pẹ̀lú Python ti e2a fúnra rẹ̀ (`python_env`, tí a ṣẹ̀dá nípa ìfilọ̀ àkọ́kọ́ ti e2a).
 
 <a id="preload-models"></a>
-### Preload models for offline installs: `tools/preload_models.py`
-Downloads every model e2a uses (TTS engines and their fine-tunes, voice conversion, stanza, pyannote, demucs,
-music interludes, argos-translate packages, tesseract data, jieba, and the voices) into one folder laid out
-exactly like `./models`, i.e. a USB key. On the offline machine, copy that folder into e2a's `./models`
-and the `voices` folder written beside it into e2a's `./voices`.
-Every finished job is recorded in `<models_dir>/.e2a_downloads.json`: a rerun skips what is done and starts
-again what was cut (ctrl-c, crash, unplugged key) after removing its partial files.
+### Awọn awoṣe preload fun awọn fifi sori ẹrọ ti ko ni ori ayelujara: `tools/preload_models.py`
+Ṣe igbasilẹ gbogbo awoṣe e2a (awọn ẹrọ TTS ati awọn ọtun wọn ti o dara, iyipada ohùn, stanza, pyannote, demucs,
+orin interludes, argos-translate packages, tesseract data, jieba, àti ohùn) sí àkájọ ìwé kan tí a gbé kalẹ̀
+gangan bi `./models`, ìyẹn kọ́kọ́rọ́ USB. Lori ẹrọ aisinipo, daakọ folda yẹn sinu e2a's `./models`
+ati awọn `voices` àdàkọ tí a kọ lẹ́gbẹ̀ẹ́ rẹ̀ sí e2a's `./voices`.
+Gbogbo iṣẹ́ tí a bá parí ni a máa ń kọ sílẹ̀ ní `<models_dir>/.e2a_downloads.json`: àtúnṣe máa ń já ohun tí a bá ṣe, ó sì máa ń bẹ̀rẹ̀.
+lẹ́ẹ̀kan síi ohun tí a gé (ctrl-c, jàǹbá, bọ́tìnì tí a kò so pọ̀) lẹ́yìn tí ó ti yọ àwọn fáìlì apá rẹ̀ kúrò.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ again what was cut (ctrl-c, crash, unplugged key) after removing its partial fil
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` lists the jobs and their state (done, interrupted, todo) without downloading anything.
+   - `--dry_run` àtòjọ àwọn iṣẹ́ àti ipò wọn (tí a ṣe, tí a dáwọ́ dúró, tí a dáwọ́ dúró) láì gba ohunkóhun sílẹ̀.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Translate ebooks out of e2a: `translate_ebook.sh` / `translate_ebook.cmd`
-Translates EPUB/AZW3 files, a whole folder (`-r` for its subfolders) or a list of paths (`@list.txt`)
-into translated ebooks, offline, with the Argos Translate calibre plugin shipped in
-`tools/argostranslate-calibre-plugin.zip`. Independent of the audiobook conversion: it only writes ebooks.
-It needs calibre (already required by e2a) and runs on e2a's `python_env` and argos-translate packages:
-a language pair e2a already uses is not downloaded again, a missing one is downloaded on first use.
-The plugin is installed on first use into e2a's own calibre profile (`./run`), your calibre is left untouched.
-`--to fra,ara,spa` translates into several languages at once, one ebook per language, and `--to all` into every
-language the source reaches (`--from`, else each book's own language; installed ones only with `--no_download`).
-`--list --from eng` lists the languages English translates into (installed, downloadable, or through English for
-another source).
-Other formats calibre's `ebook-convert` reads (PDF, DOCX, MOBI, TXT, ...) are converted to EPUB once, before the
-first language, and translated as EPUB: `--from` is needed when they carry no language, as PDF and TXT often do.
-Without `-o` or `--output_dir`, each translation is saved beside its book as `<name>.<lang>.<ext>`,
-and a book whose translation already exists is skipped (`--overwrite` to translate it again).
-The launchers in e2a's folder run `tools/translate_ebook.py` with `python_env`, nothing to activate,
-from any folder (relative paths are taken from where it is started):
+### Tú àwọn ìwé-ìwé jáde láti e2a: `translate_ebook.sh`/`translate_ebook.cmd`
+Túmọ̀ àwọn fáìlì EPUB/AZW3, gbogbo fáìlì (`-r` fún àwọn fáìlì ìsàlẹ̀ rẹ̀) tàbí àtòjọ àwọn ọ̀nà (`@list.txt`)
+sinu awọn iwe itumọ, ni aisinipo, pẹlu ohun itanna Argos Translate calibre ti a firanṣẹ ni
+`tools/argostranslate-calibre-plugin.zip`. Ó dá lórí yípadà ìwé àfọwọ́kọ: ó kàn ń kọ ìwé-ẹ̀rọ-ẹ̀rọ-ẹ̀rọ-ẹ̀rọ-ẹ̀rọ-ẹ̀rọ-ẹ̀
+Ó nílò calibre (tí e2a ti béèrè tẹ́lẹ̀) ó sì ń ṣiṣẹ́ lórí e2a's `python_env` àti argos-translate packages:
+èdè e2a tí wọ́n ti ń lò tẹ́lẹ̀ kò tún ṣe ìléwọ́ lẹ́ẹ̀kan sí i, èyí tí ó sọnù ni wọ́n máa ń ṣe ìléwọ́ lórí ìlò àkọ́kọ́.
+A fi ohun-èlò-èlò-èlò-èlò-èlò-èlò-èlò-èlò-èlò-èlò-èlò-èlò-èlò-èlò-`./run`), a fi calibre rẹ sílẹ̀ láì fọwọ́ kan.
+`--to fra,ara,spa` túmọ̀ sí onírúurú èdè lẹ́ẹ̀kan, ìwé-ìwé kan ní èdè kọ̀ọ̀kan, àti `--to all` sí èdè kọ̀ọ̀kan.
+èdè tí orísun náà dé (`--from`, àyàfi èdè tí ìwé kọ̀ọ̀kan ń sọ; àwọn tí a fi sílè nìkan ni a fi sílè pẹ̀lú `--no_download`).
+`--list --from eng` ṣe atokọ awọn ede Gẹẹsi ti o tumọ si (fi sori ẹrọ, ṣe igbasilẹ, tabi nipasẹ Gẹẹsi fun
+orísun mìíràn).
+Àwọn fọ́mù mìíràn ní ìkàwé `ebook-convert` (PDF, DOCX, MOBI, TXT, ...) ni a yí padà sí EPUB lẹ́ẹ̀kan, kí ó tó
+èdè àkọ́kọ́, tí a sì túmọ̀ sí EPUB: `--from` ó ṣe pàtàkì nígbà tí wọn kò bá ní èdè kankan, gẹ́gẹ́ bí PDF àti TXT ṣe sábà máa ń ṣe.
+Láìsí `-o` tàbí `--output_dir`, ìtúmọ̀ kọ̀ọ̀kan ni a fi pamọ́ lẹ́gbẹ̀ẹ́ ìwé rẹ̀ gẹ́gẹ́ bí `<name>.<lang>.<ext>`,
+àti pé ìwé kan tí ìtumọ̀ rẹ̀ ti wà tẹ́lẹ̀ ti kùnà (`--overwrite` láti túmọ̀ rẹ̀ lẹ́ẹ̀kan síi).
+Àwọn alátakò tí ó wà nínú fódà e2a ń ṣiṣẹ́ `tools/translate_ebook.py` pẹ̀lú `python_env`, kò sí ohun tí ó lè ṣiṣẹ́,
+láti inú fódà èyíkéyìí (àwọn ọ̀nà ìbátan ni a gbà láti ibi tí ó ti bẹ̀rẹ̀):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ from any folder (relative paths are taken from where it is started):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Or directly with `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Started with any other Python,
-     the script starts itself again with `python_env`'s.
+   - Tàbí ní tààrà pẹ̀lú `python_env`Python: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Bẹ̀rẹ̀ pẹ̀lú Python yòówù,
+     ìwé àfọwọ́kọ náà tún bẹ̀rẹ̀ pẹ̀lú `python_env`'s.
    - **Docker**: run it inside the e2a container, e.g. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     with paths seen from the container.
-   - **Speed**: argostranslate runs on its own defaults (CTranslate2 picks the threads and the fastest compute type,
-     int8 on CPU), not on e2a's 1 thread in float32. Set `ARGOS_INTRA_THREADS` or `ARGOS_COMPUTE_TYPE` to override them.
+     pẹ̀lú àwọn ọ̀nà tí a rí láti inú ohun èlò náà.
+   - **Speed**: argostranslate máa ń ṣiṣẹ́ lórí àbùkù ara rẹ̀ (CTranslate2 máa ń yan àwọn òpó àti irú ìṣirò tó yá jù lọ,
+     int8 lórí CPU), kì í ṣe lórí okùn e2a 1 ní float32. Ṣètò `ARGOS_INTRA_THREADS` tàbí `ARGOS_COMPUTE_TYPE` láti borí wọn.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ O ní òmìnira láti ṣàtúnṣe libs/conf.py láti ṣàfikún tàbí yọ �
 di àwòṣe ebook2audiobook oníṣẹ́-aṣẹ tí a ti ṣàtúnṣe, jọ̀wọ́ kàn sí wa a ó sì fi kún àkójọ preset.
 
 <a id="reverting-to-older-versions"></a>
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Pada si awọn ẹya atijọ
+A lè rí àwọn ìtúsílẹ̀ -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```

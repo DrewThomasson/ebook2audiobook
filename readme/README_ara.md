@@ -113,7 +113,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 <a id="features"></a>
 ## السمات
 - 🔧 ** محركات TTS المدعومة**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
-- 📚 **تحويل تنسيقات الملفات المتعددة **: `.epub`، ⟦1، `.azw3`، `.fb2`، `.lrf`، `.rb`، `.snb`، `.tcr`، `.pdf`، `.txt`، `.rtf`، `.doc`، `.docx`، `.html`⟧، `.odt`، `.azw`، `.tiff`، `.tif`، `.png`، `.jpg`، `.jpeg`، `.bmp`، `.zip` `.mobi`
+- 📚 **تحويل تنسيقات ملفات متعددة **: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** لتحويل نص قصير في الصوت مباشرة
 - 🔍 ** مسح التعرف الضوئي على الحروف ** للملفات التي تحتوي على صفحات نصية كصور
 - 🔊 ** تحويل النص إلى كلام عالي الجودة ** من الصوت القريب من الصوت الحقيقي إلى الصوت القريب من الصوت الحقيقي
@@ -136,7 +136,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - CUDA، ROCm، JETSON
 - MPS (وحدة المعالجة المركزية Apple Silicon)
 
-*⟦0 محركات TTS⟧ الحديثة بطيئة جدًا في وحدة المعالجة المركزية، لذلك استخدم TTS أقل جودة مثل YourTTS و Tacotron2 وما إلى ذلك.</i> <i>
+*<i> محركات TTS الحديثة بطيئة جدًا في وحدة المعالجة المركزية، لذلك استخدم TTS أقل جودة مثل YourTTS و Tacotron2 وما إلى ذلك.</i>
 
 <a id="supported-languages"></a>
 ## اللغات المدعومة
@@ -156,7 +156,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
-- **أفضل النتائج**: `.epub` أو ⟦1 للكشف التلقائي⟧ عن الفصل `.mobi`
+- **أفضل النتائج**: `.epub` أو `.mobi` للكشف التلقائي عن الفصل
 
 <a id="output-and-process-formats"></a>
 ## تنسيقات المخرجات والعمليات
@@ -251,7 +251,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```
      <i>ملاحظة: ref.wav لطرازك المخصص هو دائمًا الصوت المحدد للتحويل</i>
      
-- **<custom_model_path>**: المسار إلى⟧ ملف ⟦واحد، `model_name.zip`
+- **<custom_model_path>المسار إلى `model_name.zip` ملف
       والتي يجب أن تحتوي (وفقًا لمحرك TTS) على جميع الملفات الإلزامية<br>
       (انظر ./lib/models.py).
 
@@ -450,7 +450,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - ملاحظة: لا يتم الكشف عن MPS في جهاز الإرساء لذلك يجب استخدام وحدة المعالجة المركزية
-- ملاحظة:⟧ تحتفظ وحدة التخزين ⟦0 المسماة بمحركات TTS المثبتة في venv الخاصة بها (GPT - SoVITS و Zonos و OmniVoice و F5 - TTS و Orpheus و Spark - TTS و ChatTTS و OpenVoice و MeloTTS و CSM وما إلى ذلك) `e2a_venvs`
+- ملاحظة: وحدة التخزين المسماة `e2a_venvs` يحافظ على تثبيت محركات TTS في venv الخاصة بهم (GPT - SoVITS، Zonos، OmniVoice، F5 - TTS، Orpheus، Spark - TTS، ChatTTS، OpenVoice، MeloTTS، CSM، إلخ.)
   عبر عمليات تشغيل الحاويات، بحيث لا يتم إعادة تثبيتها في كل مرة. لإعادة تعيينها: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -462,7 +462,7 @@ Podman Compose (i.e. cuda 12.8:
 يقوم بتنزيل كل طراز يستخدمه e2a (محركات TTS وضبطها الدقيق، تحويل الصوت، مقطع، pyannote، demucs،
 فواصل الموسيقى، حزم ترجمة argos، بيانات tesseract، jieba، والأصوات) في مجلد واحد تم وضعه
 تمامًا مثل `./models`، أي مفتاح USB. على الجهاز غير المتصل، انسخ هذا المجلد إلى e2a's `./models`
-⟧ والمجلد ⟦0 المكتوب بجانبه في e2a's `./voices`. `voices`
+و `voices` مجلد مكتوب بجانبه في e2a `./voices`.
 يتم تسجيل كل مهمة منتهية في `<models_dir>/.e2a_downloads.json`: تتخطى إعادة التشغيل ما تم إنجازه وتبدأ
 مرة أخرى ما تم قصه (مفتاح ctrl - c، تعطل، مفصول) بعد إزالة ملفاته الجزئية.
    - **Linux/MacOS**
@@ -507,7 +507,7 @@ options:
 
 <a id="translate-ebooks"></a>
 ### ترجمة الكتب الإلكترونية من e2a: `translate_ebook.sh`/`translate_ebook.cmd`
-يترجم ملفات EPUB/AZW3 أو مجلد كامل (⟦⟧0 لمجلداته الفرعية) أو قائمة المسارات (`@list.txt`) `-r`
+يترجم ملفات EPUB/AZW3، مجلد كامل (`-r` لمجلداتها الفرعية) أو قائمة المسارات (`@list.txt`)
 في الكتب الإلكترونية المترجمة، دون اتصال بالإنترنت، مع شحن المكون الإضافي Argos Translate calibre
 `tools/argostranslate-calibre-plugin.zip`. مستقل عن تحويل الكتاب الصوتي: فهو يكتب الكتب الإلكترونية فقط.
 يحتاج إلى عيار (مطلوب بالفعل من قبل e2a) ويعمل على حزم e2a `python_env` و ARGOS - TRANSLATE:
@@ -517,7 +517,7 @@ options:
 اللغة التي يصل إليها المصدر (`--from`، أو لغة كل كتاب ؛ مثبتة فقط مع `--no_download`).
 `--list --from eng` يسرد اللغات التي تترجمها اللغة الإنجليزية إلى (مثبتة أو قابلة للتنزيل أو من خلال اللغة الإنجليزية
 - مصدر آخر ؟
-يتم تحويل التنسيقات الأخرى التي⟧ يقرأها العيار ⟦0 (PDF، DOCX، MOBI، TXT، ...) إلى EPUB مرة واحدة، قبل `ebook-convert`
+تنسيقات أخرى عيار `ebook-convert` يتم تحويل القراءات (PDF، DOCX، MOBI، TXT، ...) إلى EPUB مرة واحدة، قبل
 اللغة الأولى، وتترجم إلى EPUB: `--from` مطلوبة عندما لا تحمل أي لغة، كما يفعل PDF و TXT في كثير من الأحيان.
 بدون `-o` أو `--output_dir`، يتم حفظ كل ترجمة بجانب كتابها كـ `<name>.<lang>.<ext>`،
 ويتم تخطي الكتاب الذي توجد ترجمته بالفعل (`--overwrite` لترجمته مرة أخرى).
@@ -531,9 +531,9 @@ options:
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - أو مباشرة مع بايثون ⟦⟧0: `./python_env/bin/python tools/translate_ebook.py ...` `python_env`
+   - أو مباشرة مع `python_env`بايثون Python: `./python_env/bin/python tools/translate_ebook.py ...`
      (ويندوز: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). بدأت مع أي بايثون أخرى،
-     يبدأ النص نفسه مرة أخرى ⟦⟧بصفر. `python_env`
+     يبدأ النص نفسه مرة أخرى `python_env`السبت
    - **عامل الإرساء**: قم بتشغيله داخل حاوية e2a، على سبيل المثال `docker exec -it <container> python3 tools/translate_ebook.py ...`
      مع المسارات المرئية من الحاوية.
    - **السرعة**: تعمل ARGOSTRANSLATE على افتراضياتها الخاصة (تختار CTranslate2 الخيوط وأسرع نوع حساب،
@@ -645,7 +645,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (لا يحتوي على استنساخ صوتي بدون لقطة على الرغم من ذلك، وهو صوت سيري عالي الجودة، لكنه أسرع بكثير على وحدة المعالجة المركزية).
 - "أواجه مشكلات في التبعية" - ما عليك سوى استخدام عامل الرصيف، وهو مكتفي ذاتيًا تمامًا وله وضع مقطوع الرأس،
-   أضف ⟧ معلمة ⟦0 في نهاية أمر تشغيل عامل الإرساء لمزيد من المعلومات. `--help`
+   إضافة add `--help` المعلمة في نهاية أمر تشغيل عامل الإرساء لمزيد من المعلومات.
 - "أواجه مشكلة صوتية مبتورة! "- يرجى إصدار عدد من هذا،
    نحن لا نتحدث كل لغة ونحتاج إلى نصيحة من المستخدمين لضبط منطق تقسيم الجملة.😊
 

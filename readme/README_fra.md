@@ -120,7 +120,7 @@ roue des futurs
 - 🗣️ ** Clonage vocal facultatif ** à l'aide de votre propre fichier vocal
 - 🌐 **Prend en charge 1696 langues** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 ** Adapté aux faibles ressources ** — fonctionne sur **2 Go de RAM / 1 Go de VRAM (minimum)**
-- 🎵 ** Formats de sortie de livres audio ** : mono ou stéréo `aac`⟧, `flac`, `mp3`, ⟦3, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm` `m4b`
+- 🎵 ** Formats de sortie des livres audio ** : mono ou stéréo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 ** Tags SML pris en charge** — contrôle fin des pauses, des pauses, de la commutation vocale et plus encore ([see below](#sml-tags-available))
 - 🧩 ** Modèle personnalisé en option ** en utilisant votre propre modèle formé (XTTSv2, VITS, FAIRSEQ, PIPER, autres sur demande)
 - 🎛️ ** Modèles prédéfinis affinés** formés par l'équipe E2A<br/>
@@ -461,8 +461,8 @@ Outils autonomes, exécutés avec le propre Python d'e2a (`python_env`, créé p
 ### Précharger les modèles pour les installations hors ligne : `tools/preload_models.py`
 Télécharge tous les modèles utilisés par e2a (moteurs TTS et leurs affinements, conversion vocale, strophe, pyannote, demucs,
 music interludes, argos-translate packages, tesseract data, jieba, and the voices) dans un dossier agencé
-exactement comme , c'est-à-dire une clé USB. Sur la machine hors ligne, copiez ce dossier dans le dossier ⟦1 d'e2a⟧ `./models` `./models`
-et le⟧ dossier ⟦0 écrit à côté dans e2a's `./voices`. `voices`
+EXACTEMENT COMME `./models`, c'est-à-dire une clé USB. Sur la machine hors ligne, copiez ce dossier dans le dossier d'e2a `./models`
+et les `voices` dossier écrit à côté dans e2a's `./voices`.
 Chaque travail terminé est enregistré en `<models_dir>/.e2a_downloads.json` : une réexécution ignore ce qui est fait et démarre
 à nouveau ce qui a été coupé (ctrl-c, plantage, touche débranchée) après avoir supprimé ses fichiers partiels.
    - **Linux/MacOS**
@@ -531,9 +531,9 @@ Les lanceurs du dossier e2a exécutent `tools/translate_ebook.py` avec `python_e
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Ou directement avec Python ⟦⟧0: `./python_env/bin/python tools/translate_ebook.py ...` `python_env`
+   - Ou directement avec `python_env`Python de : `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows : `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Commencé avec tout autre Python,
-     le script redémarre de lui-même avec⟧ des ⟦0. `python_env`
+     le script recommence avec `python_env`C
    - **Docker** : faites-le fonctionner à l'intérieur du conteneur e2a, par exemple `docker exec -it <container> python3 tools/translate_ebook.py ...`
      avec des chemins vus du conteneur.
    - **Vitesse** : argostranslate fonctionne sur ses propres valeurs par défaut (CTranslate2 choisit les threads et le type de calcul le plus rapide,
@@ -645,7 +645,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Il n'y a pas de clonage de voix à zéro, et il s'agit de voix de qualité Siri, mais c'est beaucoup plus rapide sur le processeur).
 - "J'ai des problèmes de dépendance" - Il suffit d'utiliser le docker, entièrement autonome et doté d'un mode sans tête,
-   ajoutez le⟧ paramètre ⟦0 à la fin de la commande docker run pour plus d'informations. `--help`
+   ajouter `--help` paramètre à la fin de la commande docker run pour plus d'informations.
 - « Je reçois un problème audio tronqué ! « - S'IL VOUS PLAÎT FAIRE UN PROBLÈME À CE SUJET,
    nous ne parlons pas toutes les langues et avons besoin des conseils des utilisateurs pour affiner la logique de fractionnement des phrases.😊
 

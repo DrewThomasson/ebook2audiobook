@@ -120,7 +120,7 @@ Ejemplo
 - 🗣️ ** Clonación de voz opcional ** con tu propio archivo de voz
 - 🌐 **Admite 1696 idiomas** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 ** Apto para personas con pocos recursos **: funciona con **2 GB de RAM / 1 GB de VRAM (mínimo)**
-- 🎵 ** Formatos de salida de audiolibros **: mono o estéreo `aac`⟧, ⟦1, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm` `flac`
+- 🎵 ** Formatos de salida de audiolibros **: mono o estéreo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 ** Etiquetas SML compatibles**: control detallado de descansos, pausas, conmutación de voz y más ([see below](#sml-tags-available))
 - 🧩 ** Modelo personalizado opcional ** utilizando su propio modelo capacitado (XTTSv2, VITS, FAIRSEQ, PIPER, otros a pedido)
 - 🎛️ ** Modelos preestablecidos ajustados ** entrenados por el equipo E2A<br/>
@@ -462,7 +462,7 @@ Herramientas independientes, ejecutadas con el propio Python de e2a (`python_env
 Descarga todos los modelos que utiliza e2a (motores TTS y sus afinaciones, conversión de voz, estrofa, pyannote, demucs,
 interludios de música, paquetes de argos-translate, datos de tesseract, jieba y las voces) en una carpeta distribuida
 exactamente como `./models`, es decir, una llave USB. En la máquina sin conexión, copie esa carpeta en e2a's `./models`
-y la⟧ carpeta ⟦0 escrita junto a ella en el ⟦1 de e2a⟧. `voices` `./voices`
+y el `voices` carpeta escrita al lado en e2a's `./voices`.
 Cada trabajo terminado se registra en `<models_dir>/.e2a_downloads.json`: una repetición omite lo que se hace y comienza
 de nuevo lo que se cortó (ctrl-c, crash, clave desenchufada) después de eliminar sus archivos parciales.
    - **Linux/MacOS**
@@ -517,8 +517,8 @@ El plugin se instala en el primer uso en el propio perfil de calibre de e2a (`./
 idioma que alcanza la fuente (`--from`, de lo contrario, el idioma propio de cada libro; los instalados solo con `--no_download`).
 `--list --from eng` enumera los idiomas a los que se traduce el inglés (instalado, descargable o a través del inglés para
 ANOTHER SOURCE.
-Las ⟧ lecturas ⟦0 de otros formatos de calibre (PDF, DOCX, MOBI, TXT, ...) se convierten a EPUB una vez, antes de que `ebook-convert`
-primer idioma, y traducido como EPUB: ⟦⟧ 0 cuando no tienen idioma, como suelen hacer PDF y TXT. `--from`
+Otros formatos calibre's `ebook-convert` las lecturas (PDF, DOCX, MOBI, TXT, ...) se convierten a EPUB una vez, antes de que
+primera lengua, y traducido como EPUB: `--from` es necesario cuando no tienen lenguaje, como a menudo lo hacen PDF y TXT.
 Sin `-o` o `--output_dir`, cada traducción se guarda junto a su libro como `<name>.<lang>.<ext>`,
 y se omite un libro cuya traducción ya existe (`--overwrite` para volver a traducirlo).
 Los lanzadores en la carpeta de e2a corren `tools/translate_ebook.py` con `python_env`, nada que activar,
@@ -531,9 +531,9 @@ desde cualquier carpeta (las rutas relativas se toman desde donde se inicia):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - O directamente con Python⟧ de ⟦0: `./python_env/bin/python tools/translate_ebook.py ...` `python_env`
+   - O directamente con `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Comenzó con cualquier otro Python,
-     el script se inicia de nuevo⟧ con ⟦0. `python_env`
+     el script se inicia de nuevo con `python_env`S
    - **Docker**: ejecútelo dentro del contenedor e2a, por ejemplo, `docker exec -it <container> python3 tools/translate_ebook.py ...`
      con caminos vistos desde el contenedor.
    - **Velocidad**: argostranslate se ejecuta en sus propios valores predeterminados (CTranslate2 selecciona los hilos y el tipo de cálculo más rápido,
@@ -645,7 +645,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Sin embargo, no tiene clonación de voz de disparo cero, y tiene voces de calidad Siri, pero es mucho más rápido en la CPU).
 - "Tengo problemas de dependencia" - Solo usa el docker, es totalmente autónomo y tiene un modo sin cabeza,
-   añada el⟧ parámetro ⟦0 al final del comando Docker Run para obtener más información. `--help`
+   añadir `--help` parámetro al final del comando Docker Run para obtener más información.
 - "¡Tengo un problema de audio truncado!" - POR FAVOR, HAGA UN PROBLEMA con ESTO,
    no hablamos todos los idiomas y necesitamos consejos de los usuarios para afinar la lógica de división de oraciones.😊
 

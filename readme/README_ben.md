@@ -182,8 +182,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 <a id="instructions"></a>
-### Instructions 
-1. **Clone repo**
+### নির্দেশাবলী 
+1. ** রেপো ক্লোন করুন **
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>MacOS ব্যবহারকারীদের জন্য দ্রষ্টব্য: অনুপস্থিত প্রোগ্রামগুলি ইনস্টল করার জন্য হোমব্রিউ ইনস্টল করা হয়েছে ।</i>
      
    - **Mac লঞ্চার**  
      `Mac Ebook2Audiobook Launcher.command`-এ ডাবল ক্লিক করুন
@@ -205,8 +205,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     অথবা
+     দুবার ক্লিক করুন `ebook2audiobook.cmd`
 
      <i>Windows ব্যবহারকারীদের জন্য নোট: প্রশাসক অনুমতি ছাড়াই অনুপস্থিত প্রোগ্রাম ইনস্টল করতে scoop ইনস্টল করা হয়।</i>
    
@@ -221,7 +221,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 যাতে ওয়েব পৃষ্ঠাটি নতুন কানেকশন সকেটে পুনরায় সংযুক্ত হতে পারে।**
 
 <a id="basic-usage"></a>
-### Basic  Usage
+### মৌলিক  ব্যবহার
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+###  কাস্টম মডেল জিপ আপলোডের উদাহরণ
+  (বাধ্যতামূলক মডেল ফাইল ধারণকারী একটি .zip ফাইল হতে হবে । XTTSv2 এর উদাহরণ: config.json, model.pth, vocab.json এবং ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>দ্রষ্টব্য: আপনার কাস্টম মডেলের ref.wav সবসময় রূপান্তর জন্য নির্বাচিত ভয়েস</i>
      
 - **<custom_model_path>**: `model_name.zip` ফাইলের পথ,
       যাতে (tts ইঞ্জিন অনুযায়ী) সমস্ত বাধ্যতামূলক ফাইল থাকতে হবে<br>
       (দেখুন ./lib/models.py)।
 
-### For Detailed Guide with list of all Parameters to use
+### ব্যবহার করার জন্য সমস্ত প্যারামিটারগুলির তালিকা সহ বিস্তারিত গাইডের জন্য
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **অথবা সমস্ত ওএসের জন্য **
     ```python
      app.py --help
     ```
@@ -391,12 +391,12 @@ SML tags available:
 
 <a id="docker"></a>
 ### Docker
-1. **Clone the Repository**:
+1. ** রিপোজিটরি ক্লোন করুন **:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. ** কন্টেইনার তৈরি করুন **
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ SML tags available:
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Run the Container:**
+4. ** কনটেইনারটি চালান:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
-- NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
-  across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
+- দ্রষ্টব্য: এমপিদের ডকারে প্রকাশ করা হয় না তাই সিপিইউ অবশ্যই ব্যবহার করতে হবে
+- দ্রষ্টব্য: নামযুক্ত ভলিউম `e2a_venvs` tTS ইঞ্জিনগুলি তাদের নিজস্ব Venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM ইত্যাদি) এ ইনস্টল করে রাখে
+  কন্টেইনার রান জুড়ে, তাই তারা প্রতিবার পুনরায় ইনস্টল করা হয় না । তাদের রিসেট করতে: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## টুলস
 স্বতন্ত্র সরঞ্জাম, e2a এর নিজস্ব পাইথন দিয়ে চালান (`python_env`, e2a এর প্রথম লঞ্চ দ্বারা তৈরি) ।
 
 <a id="preload-models"></a>
-### Preload models for offline installs: `tools/preload_models.py`
-Downloads every model e2a uses (TTS engines and their fine-tunes, voice conversion, stanza, pyannote, demucs,
-music interludes, argos-translate packages, tesseract data, jieba, and the voices) into one folder laid out
-exactly like `./models`, i.e. a USB key. On the offline machine, copy that folder into e2a's `./models`
-and the `voices` folder written beside it into e2a's `./voices`.
-Every finished job is recorded in `<models_dir>/.e2a_downloads.json`: a rerun skips what is done and starts
-again what was cut (ctrl-c, crash, unplugged key) after removing its partial files.
+### অফলাইন ইনস্টলগুলির জন্য প্রি-লোড মডেল: `tools/preload_models.py`
+প্রতিটি মডেল e2a ব্যবহার করে ডাউনলোড করে (TTS ইঞ্জিন এবং তাদের সূক্ষ্ম সুর, ভয়েস রূপান্তর, স্টানজা, পাইয়ানোট, ডেমুকস,
+মিউজিক ইন্টারলুডস, আরগোস-ট্রান্সলেট প্যাকেজ, টেসার্যাক্ট ডেটা, জিবা এবং ভয়েসেস) এক ফোল্ডারে রাখা হয়েছে
+ঠিক যেমন `./models`, অর্থাৎ একটি USB কী । অফলাইন মেশিনে, সেই ফোল্ডারটি e2a এর মধ্যে কপি করুন `./models`
+এবং `voices` এর পাশে লেখা ফোল্ডারটি e2a `./voices`.
+প্রতিটি সমাপ্ত কাজ রেকর্ড করা হয় `<models_dir>/.e2a_downloads.json`: একটি পুনরায় চালানো যা করা হয় তা এড়িয়ে যায় এবং শুরু হয়
+এর আংশিক ফাইলগুলি অপসারণের পরে আবার কী কাটা হয়েছিল (ctrl-c, ক্র্যাশ, আনপ্লাগড কী) ।
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ again what was cut (ctrl-c, crash, unplugged key) after removing its partial fil
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` lists the jobs and their state (done, interrupted, todo) without downloading anything.
+   - `--dry_run` কিছু ডাউনলোড না করে চাকরি এবং তাদের অবস্থা (সম্পন্ন, বিঘ্নিত, টডো) তালিকাভুক্ত করে ।
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Translate ebooks out of e2a: `translate_ebook.sh` / `translate_ebook.cmd`
-Translates EPUB/AZW3 files, a whole folder (`-r` for its subfolders) or a list of paths (`@list.txt`)
-into translated ebooks, offline, with the Argos Translate calibre plugin shipped in
-`tools/argostranslate-calibre-plugin.zip`. Independent of the audiobook conversion: it only writes ebooks.
-It needs calibre (already required by e2a) and runs on e2a's `python_env` and argos-translate packages:
-a language pair e2a already uses is not downloaded again, a missing one is downloaded on first use.
-The plugin is installed on first use into e2a's own calibre profile (`./run`), your calibre is left untouched.
-`--to fra,ara,spa` translates into several languages at once, one ebook per language, and `--to all` into every
-language the source reaches (`--from`, else each book's own language; installed ones only with `--no_download`).
-`--list --from eng` lists the languages English translates into (installed, downloadable, or through English for
-another source).
-Other formats calibre's `ebook-convert` reads (PDF, DOCX, MOBI, TXT, ...) are converted to EPUB once, before the
-first language, and translated as EPUB: `--from` is needed when they carry no language, as PDF and TXT often do.
-Without `-o` or `--output_dir`, each translation is saved beside its book as `<name>.<lang>.<ext>`,
-and a book whose translation already exists is skipped (`--overwrite` to translate it again).
-The launchers in e2a's folder run `tools/translate_ebook.py` with `python_env`, nothing to activate,
-from any folder (relative paths are taken from where it is started):
+### E2a থেকে ইবুক অনুবাদ করুন: `translate_ebook.sh`/`translate_ebook.cmd`
+EPUB/AZW3 ফাইল অনুবাদ করে, একটি সম্পূর্ণ ফোল্ডার (`-r` এর সাবফোল্ডারের জন্য) বা পথের একটি তালিকা (`@list.txt`)
+অনুবাদিত ইবুকগুলিতে, অফলাইনে, আরগোস অনুবাদ ক্যালিবার প্লাগইনটি প্রেরণ করা হয়েছে
+`tools/argostranslate-calibre-plugin.zip`. অডিওবুক রূপান্তর থেকে স্বাধীন: এটি শুধুমাত্র ইবুক লেখে ।
+এটি ক্যালিবার প্রয়োজন (ইতিমধ্যে e2a দ্বারা প্রয়োজনীয়) এবং e2a এর `python_env` এবং argos-translate প্যাকেজগুলিতে চলে:
+একটি ভাষা জোড় e2a ইতিমধ্যে ব্যবহার করা হয় না আবার ডাউনলোড করা হয়, একটি অনুপস্থিত এক প্রথম ব্যবহার ডাউনলোড করা হয় ।
+প্লাগইনটি e2a এর নিজস্ব ক্যালিবার প্রোফাইলে (`./run`) প্রথম ব্যবহারে ইনস্টল করা হয়েছে, আপনার ক্যালিবারটি স্পর্শ করা হয়নি ।
+`--to fra,ara,spa` একবারে বেশ কয়েকটি ভাষায় অনুবাদ করে, প্রতি ভাষায় একটি ইবুক, এবং `--to all` প্রতিটি
+উৎস যে ভাষায় পৌঁছায় (`--from`, অন্যথায় প্রতিটি বইয়ের নিজস্ব ভাষা; শুধুমাত্র সঙ্গে ইনস্টল করা `--no_download`).
+`--list --from eng` ভাষাগুলি ইংরেজি অনুবাদ করে (ইনস্টল করা, ডাউনলোডযোগ্য, বা এর জন্য ইংরেজির মাধ্যমে
+অন্য একটি উৎস) ।
+অন্যান্য ফরম্যাটের ক্যালিবারের `ebook-convert` পঠন (পিডিএফ, ডকএক্স, এমওবিআই, টিএক্সটি, ...) একবার ইপিইউবিতে রূপান্তরিত হয়, আগে
+প্রথম ভাষা, এবং ইপিইউবি হিসাবে অনুবাদ করা হয়েছে: `--from` যখন তারা কোনও ভাষা বহন করে না তখন প্রয়োজন হয়, যেমন পিডিএফ এবং টিএক্সটি প্রায়শই করে ।
+ছাড়া `-o` অথবা `--output_dir`, প্রতিটি অনুবাদ তার বইয়ের পাশাপাশি সংরক্ষণ করা হয় `<name>.<lang>.<ext>`,
+এবং একটি বই যার অনুবাদ ইতিমধ্যে বিদ্যমান (`--overwrite` এটি আবার অনুবাদ করতে) ।
+E2a 'র ফোল্ডারে লঞ্চার চালানো `tools/translate_ebook.py` সঙ্গে `python_env`, সক্রিয় করার মতো কিছু নেই,
+যে কোনও ফোল্ডার থেকে (আপেক্ষিক পথগুলি যেখান থেকে শুরু হয় সেখান থেকে নেওয়া হয়):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ from any folder (relative paths are taken from where it is started):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Or directly with `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Started with any other Python,
-     the script starts itself again with `python_env`'s.
-   - **Docker**: run it inside the e2a container, e.g. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     with paths seen from the container.
-   - **Speed**: argostranslate runs on its own defaults (CTranslate2 picks the threads and the fastest compute type,
-     int8 on CPU), not on e2a's 1 thread in float32. Set `ARGOS_INTRA_THREADS` or `ARGOS_COMPUTE_TYPE` to override them.
+   - অথবা সরাসরি `python_env` এর পাইথন: `./python_env/bin/python tools/translate_ebook.py ...`
+     (উইন্ডোজ: `python_env\Scripts\python.exe tools\translate_ebook.py ...`) । অন্য কোন পাইথন দিয়ে শুরু,
+     স্ক্রিপ্টটি আবার শুরু হয় `python_env`S
+   - **ডকার**: এটি e2a কন্টেইনারের ভিতরে চালান, যেমন `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     কন্টেইনার থেকে দেখা পাথ সহ ।
+   - **Speed**: argostranslate নিজস্ব ডিফল্টে চলে (CTranslate2 থ্রেড এবং দ্রুততম গণনার ধরন বেছে নেয়,
+     সিপিইউতে int8), ফ্লোট 32 এ e2a এর 1 থ্রেডে নয় । সেট করুন `ARGOS_INTRA_THREADS` অথবা `ARGOS_COMPUTE_TYPE` তাদের ওভাররাইড করতে ।
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ examples:
 একটি অফিসিয়াল ফাইন-টিউন করা ebook2audiobook মডেল বানাতে চান, তাহলে অনুগ্রহ করে আমাদের সাথে যোগাযোগ করুন এবং আমরা এটি প্রিসেট তালিকায় যোগ করব।
 
 <a id="reverting-to-older-versions"></a>
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## পুরোনো সংস্করণে ফিরে যাওয়া
+রিলিজ পাওয়া যাবে -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
