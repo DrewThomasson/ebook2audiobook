@@ -34,6 +34,8 @@ PROTECT = re.compile(
     r'|\[pause:\d+\]'
     r'|&\w+;)'
 )
+MARKER = re.compile(r'⟦\s*(\d+)\s*⟧')
+STRAY = re.compile(r'[⟦⟧]')
 LINE_PREFIX = re.compile(r'^(\s*(?:[-*+]\s+|\d+\.\s+|#{1,6}\s+|>\s+)?(?:\[[ x]\]\s+)?)')
 FENCE = re.compile(r'```[\s\S]*?```')
 
@@ -43,7 +45,7 @@ def load_cache()->dict:
     return {}
 
 def save_cache(cache:dict)->None:
-    CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding='utf-8')
+    CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False, indent=1), encoding='utf-8', newline='\n')
 
 def split_blocks(text:str)->list:
     lines:list = text.split('\n')
@@ -94,26 +96,15 @@ def protect(text:str)->tuple:
     return PROTECT.sub(repl, text), tokens
 
 def restore(text:str, tokens:list)->Optional[str]:
-    for i, tok in enumerate(tokens):
-        ph:str = f'\u27e6{i}\u27e7'
-        if ph not in text:
-            return None
-        text = text.replace(ph, tok)
-    return text
+    # every placeholder back exactly once (MT may pad it with spaces), else None: no marker MT broke or glued to a word
+    # is ever left in the text. Callable replacement: a token is literal text, its backslashes (windows paths) are no regex escapes
+    if sorted(int(i) for i in MARKER.findall(text)) != list(range(len(tokens))) or STRAY.search(MARKER.sub('', text)):
+        return None
+    return MARKER.sub(lambda m: tokens[int(m.group(1))], text)
 
-def force_restore(text:str, tokens:list)->str:
-    for i, tok in enumerate(tokens):
-        pattern = re.compile(r'\u27e6\s*' + str(i) + r'\s*\u27e7')
-        if pattern.search(text):
-            # callable replacement: a token is literal text, its backslashes (windows paths) are no regex escapes
-            text = pattern.sub(lambda m, tok=tok: tok, text)
-        elif tok not in text:
-            text = text.rstrip() + ' ' + tok
-    return text
-
-def realign_tokens(tr_line:str, eng_tokens:list)->tuple:
+def realign_tokens(tr_line:str, eng_tokens:list)->Optional[str]:
     # tokens MT kept stay where they are, the ones it altered are swapped in place for the missing English ones
-    # (in English order), extra ones are dropped; only tokens MT lost entirely have no position left and are appended
+    # (in English order), extra ones are dropped. None when MT lost tokens entirely: no position left to put them back
     pool:list = list(eng_tokens)
     kept:list = []
     for tok in PROTECT.findall(tr_line):
@@ -135,12 +126,11 @@ def realign_tokens(tr_line:str, eng_tokens:list)->tuple:
             return ''
         return tok
     fixed:str = PROTECT.sub(repl, tr_line)
-    lost:list = list(spare)
+    if list(spare):
+        return None
     if removed:
         fixed = re.sub(r'(?<=\S) {2,}', ' ', fixed).rstrip()
-    if lost:
-        fixed = fixed.rstrip() + ' ' + ' '.join(lost)
-    return fixed, bool(lost)
+    return fixed
 
 def mymemory(text:str, lang:str)->str:
     params = {
@@ -175,19 +165,33 @@ def chunk_text(text:str)->list:
         chunks.append(current)
     return chunks
 
+def translate_segments(text:str, lang:str)->str:
+    # tokens never reach MT: only the prose between them is translated, each token stays verbatim in its own place
+    out:list = []
+    pos:int = 0
+    for m in [*PROTECT.finditer(text), None]:
+        segment:str = text[pos:m.start() if m else len(text)]
+        s = re.match(r'^(\s*)(.*?)(\s*)$', segment, re.S)
+        if re.search(r'[A-Za-z]', s.group(2)):
+            segment = s.group(1) + ' '.join(mymemory(chunk, lang) for chunk in chunk_text(s.group(2))).strip() + s.group(3)
+            time.sleep(THROTTLE)
+        out.append(segment)
+        if m:
+            out.append(m.group(0))
+            pos = m.end()
+    return ''.join(out).replace('\n', ' ')
+
 def translate_text(text:str, lang:str, cache:dict)->str:
     key:str = f'{lang}|{text}'
-    if key in cache:
+    if key in cache and not STRAY.search(cache[key]):
         return cache[key]
     protected, tokens = protect(text)
     if not re.search(r'[A-Za-z]', protected):
         return text
     translated:str = ' '.join(mymemory(chunk, lang) for chunk in chunk_text(protected))
     restored:Optional[str] = restore(translated, tokens)
-    if restored is not None:
-        result = restored
-    else:
-        result = force_restore(translated, tokens)
+    # markers lost or broken: segment mode, never tokens pushed to the end of the line
+    result:str = restored if restored is not None else translate_segments(text, lang)
     result = result.replace('\n', ' ')
     cache[key] = result
     time.sleep(THROTTLE)
@@ -251,7 +255,7 @@ def harvest_block(eng_block:list, tr_block:list, lang:str, cache:dict)->None:
         if not tr_line.startswith(prefix):
             continue
         tr_body:str = tr_line[len(prefix):]
-        if not (eng_body.strip() and tr_body.strip() and eng_body != tr_body):
+        if not (eng_body.strip() and tr_body.strip() and eng_body != tr_body) or STRAY.search(tr_body):
             continue
         if sorted(PROTECT.findall(eng_body)) != sorted(PROTECT.findall(tr_body)):
             continue
@@ -282,27 +286,33 @@ def audit_and_repair(out_blocks:list, new_blocks:list, lang:str, cache:dict)->tu
                 notes.append(f'block {idx+1}: {changed} line(s) beside code translated')
             tr_block = translated
         fixed_block:list = []
-        forced:int = 0
+        realigned:int = 0
+        retranslated:int = 0
         for tr_line, eng_line, frozen in zip(tr_block, eng_block, mask):
             _, eng_tokens = protect(eng_line)
-            if frozen or sorted(PROTECT.findall(tr_line)) == sorted(eng_tokens):
+            stray:bool = bool(STRAY.search(tr_line))
+            if frozen or (not stray and sorted(PROTECT.findall(tr_line)) == sorted(eng_tokens)):
                 fixed_block.append(tr_line)
                 continue
-            forced += 1
             m = LINE_PREFIX.match(eng_line)
             prefix:str = m.group(1) if m else ''
             eng_body:str = eng_line[len(prefix):]
-            fixed_line, appended = realign_tokens(tr_line, eng_tokens)
+            fixed_line:Optional[str] = None if stray else realign_tokens(tr_line, eng_tokens)
+            if fixed_line is None:
+                # a token lost or an MT marker left in the text: retranslated now around its tokens,
+                # once written the line has all its tokens and no later run would pick it up again
+                fixed_line = prefix + translate_segments(eng_body, lang)
+                retranslated += 1
+            else:
+                realigned += 1
             fixed_block.append(fixed_line)
             tr_body:str = fixed_line[len(prefix):] if fixed_line.startswith(prefix) else fixed_line
-            key:str = f'{lang}|{eng_body}'
-            if appended:
-                # out-of-place tokens: keep it out of the cache so the next run retranslates the line
-                cache.pop(key, None)
-            elif eng_body.strip():
-                cache[key] = tr_body
-        if forced:
-            notes.append(f'block {idx+1}: inline code/links/tags differ on {forced} line(s), forcing English tokens locally')
+            if eng_body.strip():
+                cache[f'{lang}|{eng_body}'] = tr_body
+        if realigned:
+            notes.append(f'block {idx+1}: inline code/links/tags altered by MT on {realigned} line(s), English tokens put back in place')
+        if retranslated:
+            notes.append(f'block {idx+1}: {retranslated} line(s) lost tokens or kept MT markers, retranslated around their tokens')
         repaired.append(fixed_block)
     return repaired, notes
 
@@ -322,7 +332,7 @@ def rebuild(new_blocks:list, lang:str, cache:dict)->list:
 def main()->int:
     new_src:str = README.read_text(encoding='utf-8')
     if not BASELINE.exists():
-        BASELINE.write_text(new_src, encoding='utf-8')
+        BASELINE.write_text(new_src, encoding='utf-8', newline='\n')
         print('baseline seeded from current README.md, translations assumed in sync')
         return 0
     old_src:str = BASELINE.read_text(encoding='utf-8')
@@ -371,10 +381,10 @@ def main()->int:
             if problems:
                 raise RuntimeError(f'[{iso3}] still inconsistent after rebuild: {"; ".join(problems)}')
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(out_text, encoding='utf-8')
+        target.write_text(out_text, encoding='utf-8', newline='\n')
         save_cache(cache)
         print(f'[{iso3}] updated')
-    BASELINE.write_text(new_src, encoding='utf-8')
+    BASELINE.write_text(new_src, encoding='utf-8', newline='\n')
     print('baseline updated')
     return 0
 

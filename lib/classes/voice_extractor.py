@@ -1,4 +1,4 @@
-import os, subprocess, shutil, gradio as gr
+import os, subprocess, shutil, tempfile, gradio as gr
 
 from typing import Any
 from pydub import AudioSegment, silence
@@ -24,19 +24,23 @@ class VoiceExtractor:
         resolved_device = devices.get(resolved_device_name, devices['CPU'])
         self.device = resolved_device['proc'] if resolved_device.get('found') else devices['CPU']['proc']
         self.output_dir = self.session['voice_dir']
-        self.demucs_dir = os.path.join(self.output_dir,'htdemucs', voice_name)
-        self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
         self.final_voice_file = final_voice_file if final_voice_file is not None else os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
-        # work files sit next to the final file: no stray voice left in voice_dir, and os.replace() never crosses mounts.
-        # the final file is only written by the last os.replace(): never the ffmpeg output of its own input, never a half-processed voice
-        self.work_voice_file = os.path.join(os.path.dirname(self.final_voice_file), f'{self.voice_name}_work.wav')
-        self.proc_voice_file = os.path.join(os.path.dirname(self.final_voice_file), f'{self.voice_name}_proc.wav')
         self.silence_threshold = -60
         self.is_gui_process = session['is_gui_process']
         if self.is_gui_process:
             self.progress_bar=gr.Progress(track_tqdm=False)
         models = load_engine_presets(session['tts_engine'])
         self.samplerate = models[session['fine_tuned']]['samplerate']
+        # one private scratch dir per run beside the final file: work files never share a name with an existing voice
+        # or a concurrent run, and os.replace() into the final file never crosses mounts. The final file is only written
+        # by that last os.replace(): never the ffmpeg output of its own input, never a half-processed voice
+        final_dir = os.path.dirname(self.final_voice_file)
+        os.makedirs(final_dir, exist_ok=True)
+        self.work_dir = tempfile.mkdtemp(prefix=f'.{self.voice_name}_', dir=final_dir)
+        self.demucs_dir = os.path.join(self.work_dir, 'htdemucs')
+        self.voice_track = os.path.join(self.demucs_dir, 'vocals.wav')
+        self.work_voice_file = os.path.join(self.work_dir, 'work.wav')
+        self.proc_voice_file = os.path.join(self.work_dir, 'proc.wav')
         os.makedirs(self.demucs_dir, exist_ok=True)
 
     def _validate_format(self)->tuple[bool,str]:
@@ -369,11 +373,5 @@ class VoiceExtractor:
         except Exception as e:
             result = False
             msg = f'extract_voice() error: {e}'
-        shutil.rmtree(self.demucs_dir, ignore_errors = True)
-        for work_file in (self.work_voice_file, self.proc_voice_file):
-            try:
-                if os.path.exists(work_file):
-                    os.remove(work_file)
-            except OSError as e:
-                print(f'extract_voice() could not remove {work_file}: {e}')
+        shutil.rmtree(self.work_dir, ignore_errors = True)
         return result, msg
