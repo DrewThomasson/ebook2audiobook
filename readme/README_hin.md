@@ -12,15 +12,19 @@
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
-### ebook2audiobook के डेवलपर्स का समर्थन करने के लिए धन्यवाद!
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+### Ebook2audiobook डेवलपर्स का समर्थन करने के लिए धन्यवाद!
+<p>
+  <a href="https://ko-fi.com/athomasson2">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
+  </a>
+</p>
 
-### स्थानीय रूप से चलाएं
-
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
-
+### स्थानीय रूप से चलाएँ
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge) ](#instructions)
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
-
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">

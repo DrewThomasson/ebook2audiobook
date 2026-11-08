@@ -13,14 +13,18 @@ CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
 ### 感谢支持ebook2audiobook开发者！
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+<p>
+  <a href="https://ko-fi.com/athomasson2">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
+  </a>
+</p>
 
 ### 本地运行
-
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
-
+说明 [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
-
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
