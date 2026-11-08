@@ -182,8 +182,8 @@ Ezért először manuálisan el kell távolítanod minden olyan szöveget, amely
 
 
 <a id="instructions"></a>
-### Instructions 
-1. **Clone repo**
+### Utasítások
+1. ** Repo klónozása **
 	```bash
 	git clone https://github.com/DrewThomasson/ebook2audiobook.git
 	cd ebook2audiobook
@@ -195,7 +195,7 @@ Ezért először manuálisan el kell távolítanod minden olyan szöveget, amely
      ```bash
      ./ebook2audiobook.command
      ```
-     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     <i>Megjegyzés a MacOS-felhasználók számára: a homebrew telepítve van a hiányzó programok telepítéséhez.</i>
      
    - **Mac indító**  
      Kattints duplán a `Mac Ebook2Audiobook Launcher.command` fájlra
@@ -205,8 +205,8 @@ Ezért először manuálisan el kell távolítanod minden olyan szöveget, amely
      ```bash
      ebook2audiobook.cmd
      ```
-     or
-     Double click `ebook2audiobook.cmd`
+     vagy
+     Dupla kattintás `ebook2audiobook.cmd`
 
      <i>Megjegyzés Windows-felhasználóknak: a scoop telepítésre kerül a hiányzó programok rendszergazdai jogosultságok nélküli telepítéséhez.</i>
    
@@ -221,7 +221,7 @@ Ezért először manuálisan el kell távolítanod minden olyan szöveget, amely
 hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
 
 <a id="basic-usage"></a>
-### Basic  Usage
+### Az alapvető tudnivalók
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
@@ -239,8 +239,8 @@ hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
 
 
 <a id="example-of-custom-model-zip-upload"></a>
-###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
+###  Példa az egyéni modell Zip feltöltésére
+  (.zip fájlnak kell lennie, amely tartalmazza a kötelező modellfájlokat. Példa XTTSv2-re: config.json, model.pth, vocab.json és ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
@@ -249,13 +249,13 @@ hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> --language <language> --custom_model <custom_model_path>
      ```
-     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     <i>Megjegyzés: az egyéni modell ref.wav-ja mindig a konverzióhoz kiválasztott hang</i>
      
 - **<custom_model_path>**: A `model_name.zip` fájl elérési útja,
       amelynek (a TTS-motortól függően) tartalmaznia kell az összes kötelező fájlt<br>
       (lásd ./lib/models.py).
 
-### For Detailed Guide with list of all Parameters to use
+### Részletes útmutató az összes használandó paraméter listájával
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.command --help
@@ -264,7 +264,7 @@ hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
      ```bash
      ebook2audiobook.cmd --help
      ```
-   - **Or for all OS**
+   - **Vagy az összes operációs rendszerhez**
     ```python
      app.py --help
     ```
@@ -391,12 +391,12 @@ TIPP: ha kicsit több szünet szükséges, adj hozzá '[pause:3]'-at 3 mp-hez st
 
 <a id="docker"></a>
 ### Docker
-1. **Clone the Repository**:
+1. ** Az adattár klónozása **:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
 ```
-2. **Build the container**
+2. **Építsd meg a konténert**
 ```bash
     Windows:
         Docker:
@@ -413,7 +413,7 @@ TIPP: ha kicsit több szünet szükséges, adj hozzá '[pause:3]'-at 3 mp-hez st
         Podman Compose:
             ./ebook2audiobook.command --script_mode build_docker --docker_mode podman
 ```
-4. **Run the Container:**
+4. **A konténer futtatása:**
 ```bash
 Docker run image:
     Gradio/GUI:
@@ -449,22 +449,22 @@ Podman Compose (i.e. cuda 12.8:
         Run Headless mode:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
-- NOTE: MPS is not exposed in docker so CPU must be used
-- NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
-  across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
+- MEGJEGYZÉS: AZ MPS nincs kitéve a dokkolóban, ezért CPU-t kell használni
+- MEGJEGYZÉS: a megnevezett kötet `e2a_venvs` megtartja a saját venv-be telepített TTS motorokat (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM stb.)
+  a tartályfutások között, így nem kerülnek minden alkalommal újratelepítésre. Visszaállításukhoz: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
 ## Eszközök
 Önálló eszközök, amelyek az e2a saját Pythonjával futnak (`python_env`, amelyet az e2a első indítása hozott létre).
 
 <a id="preload-models"></a>
-### Preload models for offline installs: `tools/preload_models.py`
-Downloads every model e2a uses (TTS engines and their fine-tunes, voice conversion, stanza, pyannote, demucs,
-music interludes, argos-translate packages, tesseract data, jieba, and the voices) into one folder laid out
-exactly like `./models`, i.e. a USB key. On the offline machine, copy that folder into e2a's `./models`
-and the `voices` folder written beside it into e2a's `./voices`.
-Every finished job is recorded in `<models_dir>/.e2a_downloads.json`: a rerun skips what is done and starts
-again what was cut (ctrl-c, crash, unplugged key) after removing its partial files.
+### Előre betöltött modellek offline telepítésekhez: `tools/preload_models.py`
+Letölti az e2a összes modelljét (TTS motorok és finomhangolásaik, hangkonverzió, stanza, pyannote, demucs,
+zene interludes, argos-translate csomagok, tesseract adatok, jieba, és a hangok) egyetlen mappába elrendezve
+szakasztott úgy, mint a `./models`, azaz egy USB-kulcsot. Az offline gépen másolja ezt a mappát az e2a `./models`
+másrészről pedig a `voices` mellé írt mappa az e2a `./voices`.
+Minden befejezett feladat rögzítésre kerül `<models_dir>/.e2a_downloads.json`: ismétlés kihagyja a végrehajtandó műveletet, és elindul
+ismét azt, amit kivágtak (ctrl-c, összeomlás, kihúzott gomb) a részleges fájlok eltávolítása után.
    - **Linux/MacOS**
      ```bash
      ./python_env/bin/python tools/preload_models.py /media/user/KEY/models --languages eng,fra
@@ -473,7 +473,7 @@ again what was cut (ctrl-c, crash, unplugged key) after removing its partial fil
      ```bash
      python_env\Scripts\python.exe tools\preload_models.py E:\models --languages eng,fra
      ```
-   - `--dry_run` lists the jobs and their state (done, interrupted, todo) without downloading anything.
+   - `--dry_run` listázza a feladatokat és azok állapotát (done, interrupted, todo) anélkül, hogy bármit letöltene.
 
 ```bash
 usage: preload_models.py [-h] [--only ONLY] [--skip SKIP] [--languages LANGUAGES]
@@ -506,23 +506,23 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Translate ebooks out of e2a: `translate_ebook.sh` / `translate_ebook.cmd`
-Translates EPUB/AZW3 files, a whole folder (`-r` for its subfolders) or a list of paths (`@list.txt`)
-into translated ebooks, offline, with the Argos Translate calibre plugin shipped in
-`tools/argostranslate-calibre-plugin.zip`. Independent of the audiobook conversion: it only writes ebooks.
-It needs calibre (already required by e2a) and runs on e2a's `python_env` and argos-translate packages:
-a language pair e2a already uses is not downloaded again, a missing one is downloaded on first use.
-The plugin is installed on first use into e2a's own calibre profile (`./run`), your calibre is left untouched.
-`--to fra,ara,spa` translates into several languages at once, one ebook per language, and `--to all` into every
-language the source reaches (`--from`, else each book's own language; installed ones only with `--no_download`).
-`--list --from eng` lists the languages English translates into (installed, downloadable, or through English for
-another source).
-Other formats calibre's `ebook-convert` reads (PDF, DOCX, MOBI, TXT, ...) are converted to EPUB once, before the
-first language, and translated as EPUB: `--from` is needed when they carry no language, as PDF and TXT often do.
-Without `-o` or `--output_dir`, each translation is saved beside its book as `<name>.<lang>.<ext>`,
-and a book whose translation already exists is skipped (`--overwrite` to translate it again).
-The launchers in e2a's folder run `tools/translate_ebook.py` with `python_env`, nothing to activate,
-from any folder (relative paths are taken from where it is started):
+### E-könyvek fordítása az e2a-ból: `translate_ebook.sh`/`translate_ebook.cmd`
+Az ePub/AZW3 fájlok fordítása, egy teljes mappa (`-r` az almappáihoz), vagy az elérési utak listáját (`@list.txt`)
+lefordított e-könyvekbe, offline, az Argos Translate Caliber pluginnal
+`tools/argostranslate-calibre-plugin.zip`. A hangoskönyv konverziójától függetlenül: csak e-könyveket ír.
+Kaliberre van szüksége (az e2a már előírja), és az e2a `python_env` és argos-translate csomagjain fut:
+a már használt e2a nyelvpárt nem töltik le újra, a hiányzóat az első használatkor töltik le.
+A bővítmény első használatkor települ az e2a saját kaliberprofiljába (`./run`), a kaliber érintetlen marad.
+`--to fra,ara,spa` egyszerre több nyelvre fordít, nyelvenként egy e-könyvet, és `--to all` minden
+nyelv, amelyet a forrás elér (`--from`, az egyes könyvek saját nyelvén; a telepített könyvek csak `--no_download`).
+`--list --from eng` felsorolja azokat a nyelveket, amelyekre az angol fordít (telepítve, letölthető vagy angol nyelven keresztül
+más forrásból).
+Az egyéb formátumok kaliberének `ebook-convert` olvasata (PDF, DOCX, Mobi, TXT, ...) egyszer konvertálódik ePub formátumba, mielőtt
+anyanyelv, ePub fordításban: `--from` akkor van szükség, ha nincs nyelvük, ahogy a PDF és a TXT gyakran teszi.
+Nélkül `-o` vagy `--output_dir`, minden fordítás a könyve mellett kerül mentésre `<name>.<lang>.<ext>`,
+és egy könyvet, amelynek a fordítása már létezik, kihagyunk (`--overwrite`, hogy újra lefordítsuk).
+Az e2a mappájában lévő indítók futnak `tools/translate_ebook.py` második osztály, felső szintbe sorolt `python_env`, nincs mit aktiválni,
+bármely mappából (a relatív elérési utak a kiindulási helyről származnak):
    - **Linux/MacOS**
      ```bash
      ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
@@ -531,13 +531,13 @@ from any folder (relative paths are taken from where it is started):
      ```bash
      translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
-   - Or directly with `python_env`'s Python: `./python_env/bin/python tools/translate_ebook.py ...`
-     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Started with any other Python,
-     the script starts itself again with `python_env`'s.
-   - **Docker**: run it inside the e2a container, e.g. `docker exec -it <container> python3 tools/translate_ebook.py ...`
-     with paths seen from the container.
-   - **Speed**: argostranslate runs on its own defaults (CTranslate2 picks the threads and the fastest compute type,
-     int8 on CPU), not on e2a's 1 thread in float32. Set `ARGOS_INTRA_THREADS` or `ARGOS_COMPUTE_TYPE` to override them.
+   - Vagy közvetlenül a `python_env` Pythonjával: `./python_env/bin/python tools/translate_ebook.py ...`
+     (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Bármely más Pythonnal kezdődött,
+     a szkript ezzel kezdi újra: `python_env`mp
+   - **Docker**: futtassa az e2a konténerben, pl. `docker exec -it <container> python3 tools/translate_ebook.py ...`
+     a konténerből látható útvonalakkal.
+   - **Sebesség**: az argostranslate saját alapértelmezései szerint működik (a CTranslate2 kiválasztja a szálakat és a leggyorsabb számítási típust,
+     int8 a CPU-n), nem az e2a 1 szálán a float32-ben. Állítsa be `ARGOS_INTRA_THREADS` vagy `ARGOS_COMPUTE_TYPE` felülbírálni őket.
 
 ```bash
 usage: translate_ebook.py [-h] [-t LANG[,LANG...]] [-f LANG] [-r] [-o OUTPUT] [--output_dir OUTPUT_DIR]
@@ -632,8 +632,8 @@ az eredetit. Ugyanezt a folyamatot kell megtervezned a models.py esetében is. H
 hivatalos finomhangolt ebook2audiobook modellé tenni, lépj kapcsolatba velünk, és hozzáadjuk az előbeállítások listájához.
 
 <a id="reverting-to-older-versions"></a>
-## Reverting to older Versions
-Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+## Visszatérés a régebbi verziókhoz
+A kiadások megtalálhatók -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
 ```bash
 git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
 ```
