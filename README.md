@@ -14,7 +14,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ### Thanks to support ebook2audiobook developers!
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
-[![Job-Currency](https://img.shields.io/badge/Job--Currency-607D8B?style=for-the-badge&logo= Litecoin&logoColor=white)](https://secure.job-currency.com/_spec/short_r.php/0BJCp4)
+[![Job-Currency](https://img.shields.io/badge/Job--Currency-607D8B?style=for-the-badge&logo=Litecoin&logoColor=white)](https://secure.job-currency.com/_spec/short_r.php/0BJCp4)
 
 ### Run locally
 [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
