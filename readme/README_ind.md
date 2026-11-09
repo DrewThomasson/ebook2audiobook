@@ -517,7 +517,7 @@ Format lain yang dibaca `ebook-convert` milik calibre (PDF, DOCX, MOBI, TXT, ...
 bahasa pertama, lalu diterjemahkan sebagai EPUB: `--from` diperlukan jika file tidak menyertakan bahasa, seperti yang sering terjadi pada PDF dan TXT.
 Tanpa `-o` atau `--output_dir`, setiap terjemahan disimpan di sebelah bukunya sebagai `<name>.<lang>.<ext>`,
 dan buku yang terjemahannya sudah ada akan dilewati (`--overwrite` untuk menerjemahkannya lagi).
-Peluncur dalam `tools/` menjalankan `tools/translate_ebook.py` dengan `python_env`, tidak ada yang diaktifkan,
+Peluncur di folder `tools/` menjalankan `tools/translate_ebook.py` dengan `python_env`, tidak ada yang perlu diaktifkan,
 dari folder mana pun (path relatif dihitung dari lokasi peluncuran):
    - **Linux/MacOS**
      ```bash

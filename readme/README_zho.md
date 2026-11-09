@@ -517,7 +517,7 @@ calibre 的 `ebook-convert` 可读取的其他格式（PDF、DOCX、MOBI、TXT �
 先转换为 EPUB（仅一次），再按 EPUB 翻译：当文件未标明语言时（PDF 和 TXT 常常如此）需要 `--from`。
 未指定 `-o` 或 `--output_dir` 时，每个译本都会以 `<name>.<lang>.<ext>` 保存在原书旁边，
 已有译本的书会被跳过（使用 `--overwrite` 重新翻译）。
-中的发射器 `tools/` 得分 `tools/translate_ebook.py` 使用 `python_env`，无需激活，
+`tools/` 文件夹中的启动脚本会用 `python_env` 运行 `tools/translate_ebook.py`，无需激活任何环境，
 可在任意文件夹中运行（相对路径以启动位置为准）：
    - **Linux/MacOS**
      ```bash

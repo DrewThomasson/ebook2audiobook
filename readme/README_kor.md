@@ -517,7 +517,7 @@ calibre의 `ebook-convert`가 읽을 수 있는 다른 형식(PDF, DOCX, MOBI, T
 한 번만 EPUB으로 변환된 뒤 EPUB으로 번역됩니다. 언어 정보가 없는 경우(PDF와 TXT에서 흔함) `--from`이 필요합니다.
 `-o` 또는 `--output_dir`이 없으면 각 번역본은 원본 책 옆에 `<name>.<lang>.<ext>`로 저장되고,
 번역본이 이미 있는 책은 건너뜁니다(다시 번역하려면 `--overwrite`).
-의 런처는 `tools/` 실행 `tools/translate_ebook.py` 와 `python_env`, 활성화할 항목이 없습니다.
+`tools/` 폴더의 실행기는 `python_env`로 `tools/translate_ebook.py`를 실행하므로 따로 활성화할 필요가 없으며,
 어느 폴더에서든 실행할 수 있습니다(상대 경로는 실행한 위치 기준):
    - **Linux/MacOS**
      ```bash
