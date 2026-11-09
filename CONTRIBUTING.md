@@ -221,6 +221,7 @@ error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list
 - Fixes to a translation by a native speaker are welcome directly in its `readme/README_<iso3>.md`.
   The sync only retranslates the README blocks whose English source changed, so a fix is kept until then.
 - If you add a heading, add its `<a id="..."></a>` anchor and its entry in the Table of Contents.
+- `CONTRIBUTING.md` is maintained in English only and is not part of the translation sync.
 
 <a id="adding-or-changing-a-tts-engine"></a>
 ## Adding or Changing a TTS Engine

@@ -110,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -765,50 +766,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
 
 
-## Python Code normalization information for contributors
-- no blank line between code, unless between functions and classes.
-- single quote used for all key unless for dict() and json. dict['key'] always called with single quote
-- 4 spaces indentation, not tab at all
-- strict typing for all functions and its arguments declaration and return values
-- no space between the argument and its typing, no space between the function, the "->" and the return value
-
-Example:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## Contributing
+Before opening an issue or a pull request, read [CONTRIBUTING.md](CONTRIBUTING.md): Python code normalization rules,
+branch and pull request workflow, GUI legends and README translations, adding a TTS engine, testing.
 
 ## Hardware donation for beta tests wanted
 We accept any kind of hardware to test our development like:
