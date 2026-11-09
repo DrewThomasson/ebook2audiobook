@@ -110,9 +110,10 @@ def protect(text:str)->tuple:
         return f'\u27e6{len(tokens)-1}\u27e7'
     return PROTECT.sub(repl, text), tokens
 
-def faithful(tr_text:str, tokens:list)->bool:
-    # all the English tokens, no more, no less, and no MT marker left
-    return not STRAY.search(tr_text) and sorted(PROTECT.findall(tr_text)) == sorted(tokens)
+def faithful(tr_text:str, tokens:list, ordered:bool=False)->bool:
+    # all the English tokens, no more, no less, and no MT marker left; ordered: also in English order
+    found:list = PROTECT.findall(tr_text)
+    return not STRAY.search(tr_text) and (found == list(tokens) if ordered else sorted(found) == sorted(tokens))
 
 def preedit(protected:str)->str:
     for pattern, repl in PREEDIT:
@@ -127,8 +128,10 @@ def restore(text:str, tokens:list)->Optional[str]:
     return MARKER.sub(lambda m: tokens[int(m.group(1))], text)
 
 def realign_tokens(tr_line:str, eng_tokens:list)->Optional[str]:
-    # tokens MT kept stay where they are, the ones it altered are swapped in place for the missing English ones
-    # (in English order), extra ones are dropped. None when MT lost tokens entirely: no position left to put them back
+    # tokens MT kept stay where they are, a single one it altered is swapped in place for the missing English one,
+    # extra ones are dropped. None when MT lost tokens entirely (no position left to put them back) or altered several
+    # while some are missing: which English token each one stands for is a guess, and MT may have moved them
+    # (SOV order), English order would swap script and env in "run `script` with `env`"
     pool:list = list(eng_tokens)
     kept:list = []
     for tok in PROTECT.findall(tr_line):
@@ -137,6 +140,8 @@ def realign_tokens(tr_line:str, eng_tokens:list)->Optional[str]:
             kept.append(True)
         else:
             kept.append(False)
+    if pool and kept.count(False) > 1:
+        return None
     spare = iter(pool)
     flags = iter(kept)
     removed:bool = False
@@ -208,11 +213,14 @@ def translate_text(text:str, lang:str, cache:dict)->str:
     # 1. tokens as markers: MT cannot alter them
     result:Optional[str] = restore(machine_translate(protected, lang), tokens)
     if result is None or not faithful(result, tokens):
-        # 2. markers broken: tokens left in the sentence, MT sees its real code/links and puts them where its grammar
-        # wants (SOV languages), the ones it altered are swapped back in place
+        # 2. markers broken: tokens left in the sentence, MT sees its real code/links, a single one it altered is swapped
+        # back in place. English token order only: a marker carries its token wherever MT moves it, a raw token does not
+        # prove its role, MT may swap script and env ("run `env` with `script`") and the token count alone would pass it
         result = realign_tokens(machine_translate(restore(protected, tokens), lang), tokens)
-    if result is None or not faithful(result, tokens):
-        # 3. MT lost tokens twice: English kept, reported for a translation by hand, not cached so the next run tries again
+        if result is not None and not faithful(result, tokens, ordered=True):
+            result = None
+    if result is None:
+        # 3. no faithful translation: English kept, reported for a translation by hand, not cached so the next run tries again
         pending:list = REVIEW.setdefault(lang, [])
         if text not in pending:
             pending.append(text)
