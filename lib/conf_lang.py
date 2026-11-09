@@ -20,6 +20,14 @@ default_language_code = 'eng' # ISO-639-3
 session_info = 'In headless mode, store it in case of interruption, crash,\nor reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option.\n************************************************************************'
 year_to_decades_languages = ['eng', 'deu', 'nld', 'nob', 'dan', 'swe']
 
+# languages writing decimals with a comma and grouping thousands with a dot or a space (i.e. 1.234,5 or 1 234,5)
+language_decimal_comma = [
+    'afr', 'arg', 'ast', 'aze', 'bak', 'bel', 'bos', 'bre', 'bul', 'cat', 'ces', 'chv', 'dan', 'deu', 'ell', 'epo',
+    'est', 'eus', 'fao', 'fin', 'fra', 'fry', 'glg', 'grc', 'hrv', 'hun', 'hye', 'ind', 'isl', 'ita', 'kat', 'kaz',
+    'kir', 'lav', 'lit', 'ltz', 'mkd', 'nld', 'nno', 'nob', 'nor', 'oci', 'pol', 'por', 'ron', 'rus', 'slk', 'spa',
+    'sqi', 'srd', 'srp', 'swe', 'tat', 'tgk', 'tuk', 'tur', 'ukr', 'uzb', 'vie'
+]
+
 punctuation_switch = {
     # Quotes causing hallucinations in some TTS engines
     '«': '"', '»': '"',  # French-style quotes

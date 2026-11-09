@@ -1690,7 +1690,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
         if is_num2words_compat:
             return num2words(n, lang=(lang_iso1 or 'en'))
         else:
-            return math2words(m, lang, lang_iso1, tts_engine, is_num2words_compat)
+            return math2words(s, lang, lang_iso1, tts_engine, is_num2words_compat)
 
     try:
         msg = legends['msg_parsing_doc'].format(idx=idx)
@@ -1912,7 +1912,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             )
                         else:
                             text = re_ordinal.sub(
-                                lambda m: math2words(int(m.group(1)), lang, lang_iso1, tts_engine, is_num2words_compat),
+                                lambda m: math2words(m.group(1), lang, lang_iso1, tts_engine, is_num2words_compat),
                                 text
                             )
                         text = re.sub(
@@ -2329,86 +2329,79 @@ def get_num2words_compat(lang_iso1:str)->bool:
         return False
 
 def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:bool, max_single_value:int=999_999_999_999_999_999)->str:
-    # match up to 18 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
-    # handle optional range with dash/en dash/em dash between numbers, and allow trailing punctuation
+    # separators follow the language locale: 1,234.5 (eng) or 1.234,5 / 1 234,5 (deu, fra, ell…)
+    # thousands groups are exactly 3 digits so lists like "1,2,3" are never merged into a single number,
+    # and chains like dates or versions (12.03.2024, 1.2.3) are read part by part
+    is_decimal_comma = lang in language_decimal_comma
+    dec_sep = ',' if is_decimal_comma else '.'
+    grp_seps = '. ' if is_decimal_comma else ','
+    # digits joined by "." or "," or by a space (or NBSP) only when a 3 digits group follows, i.e. 1 234
     number_re = re.compile(
         r'(?<!\w)'
-        r'(\d{1,18}(?:,\s*\d{1,18})*(?:\.\d{1,12})?)'      # first number
-        r'(?:\s*([-–—])\s*'                                # dash type
-        r'(\d{1,18}(?:,\s*\d{1,18})*(?:\.\d{1,12})?))?'    # optional second number
-        r'([^\w\s]*)',                                     # optional trailing punctuation
+        r'(\d+(?:(?:[.,]|[ \u00A0\u202F](?=\d{3}(?!\d)))\d+)*)',
         re.UNICODE
     )
+    grouped_re = re.compile(r'\d{1,3}(?:[' + re.escape(grp_seps) + r']\d{3})+(?:' + re.escape(dec_sep) + r'\d{1,12})?')
+    plain_re = re.compile(r'\d{1,18}(?:' + re.escape(dec_sep) + r'\d{1,12})?')
+    # comma locales still meet dot decimals (i.e. 3.14) when the dot is not a thousands group
+    alt_decimal_re = re.compile(r'\d{1,18}\.\d{1,12}') if is_decimal_comma else None
+    phoneme_map = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+    dec_word = phoneme_map.get(dec_sep) or phoneme_map.get('.') or phoneme_map.get(',') or dec_sep
 
-    def _normalize_commas(num_str:str)->str:
-        # ormalize number string to standard comma format: 1,234,567
-        tok = num_str.replace('\u00A0', '').replace(' ', '')
-        if '.' in tok:
-            integer_part, decimal_part = tok.split('.', 1)
-            integer_part = integer_part.replace(',', '')
-            integer_part = "{:,}".format(int(integer_part))
-            return f'{integer_part}.{decimal_part}'
-        else:
-            integer_part = tok.replace(',', '')
-            return "{:,}".format(int(integer_part))
-
-    def _clean_single_num(num_str:str)->str:
-        tok = unicodedata.normalize('NFKC', num_str)
-        if tok.lower() in ('inf', 'infinity', 'nan'):
-            return tok
-        clean = tok.replace(',', '').replace('\u00A0', '').replace(' ', '')
+    def _to_words(clean:str, fallback:str)->str:
+        # clean is a bare number using "." as decimal point, i.e. 1234.5
         try:
             num = float(clean) if '.' in clean else int(clean)
         except (ValueError, OverflowError):
-            return tok
+            return fallback
         if not math.isfinite(num) or abs(num) > max_single_value:
-            return tok
-
-        # Normalize commas before final output
-        tok = _normalize_commas(tok)
-
+            return fallback
         if is_num2words_compat:
             new_lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
             return num2words(num, lang=new_lang_iso1)
         else:
-            phoneme_map = language_math_phonemes.get(
-                lang,
-                language_math_phonemes.get(default_language_code, language_math_phonemes['eng'])
-            )
-            return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
+            return ' '.join(dec_word if ch == '.' else phoneme_map.get(ch, ch) for ch in clean)
+
+    def _clean_single_num(num_str:str)->str:
+        tok = unicodedata.normalize('NFKC', num_str)
+        if grouped_re.fullmatch(tok) or plain_re.fullmatch(tok):
+            integer_part, _, decimal_part = tok.partition(dec_sep)
+            integer_part = re.sub(r'\D', '', integer_part)
+            return _to_words(f'{integer_part}.{decimal_part}' if decimal_part else integer_part, num_str)
+        if alt_decimal_re is not None and alt_decimal_re.fullmatch(tok):
+            return _to_words(tok, num_str)
+        # not a number for this locale (date, version, list…): read each part on its own
+        return ''.join(
+            _to_words(part, part) if part.isdigit()
+            else ', ' if part == ','
+            else ' ' if part == '.'
+            else part
+            for part in re.split(r'(\d+)', tok)
+        )
 
     def clean_match(match:re.Match)->str:
-        first_num = _clean_single_num(match.group(1))
-        dash_char = match.group(2) or ''
-        second_num = _clean_single_num(match.group(3)) if match.group(3) else ''
-        trailing = match.group(4) or ''
-        if second_num:
-            return f'{first_num}{dash_char}{second_num}{trailing}'
-        else:
-            return f'{first_num}{trailing}'
+        return _clean_single_num(match.group(1))
 
     return number_re.sub(clean_match, text)
 
-def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str|bool:
+def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str:
     try:
         year = int(year_str)
-        first_two = year_str[:2]
-        last_two = year_str[2:]
-        lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
-        phoneme_map = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-        if not year_str.isdigit() or len(year_str) != 4 or int(last_two) < 10:
-            if is_num2words_compat:
-                return num2words(year, lang=lang_iso1)
-            else:
-                return ' '.join(phoneme_map.get(ch, ch) for ch in year_str)
         if is_num2words_compat:
-            return f'{num2words(int(first_two), lang=lang_iso1)} {num2words(int(last_two), lang=lang_iso1)}'
+            lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
+            try:
+                # locale year reading: nineteen eighty-four (eng), neunzehnhundertvierundachtzig (deu), nitten hundrede fireogfirs (dan)…
+                return num2words(year, to='year', lang=lang_iso1)
+            except Exception:
+                return num2words(year, lang=lang_iso1)
         else:
-            return ' '.join(phoneme_map.get(ch, ch) for ch in first_two) + ' ' + ' '.join(phoneme_map.get(ch, ch) for ch in last_two)
+            phoneme_map = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+            return ' '.join(phoneme_map.get(ch, ch) for ch in year_str)
     except Exception as e:
         error = f'year2words() error: {e}'
         print(error)
-        return False
+        # keep the original text, re.sub() callers cannot take a bool
+        return year_str
 
 def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
 
@@ -2419,7 +2412,7 @@ def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_
         if is_num2words_compat:
             word = num2words(n, lang=lang_iso1)
         else:
-            word = math2words(n, lang, lang_iso1, tts_engine, is_num2words_compat)
+            word = math2words(str(n), lang, lang_iso1, tts_engine, is_num2words_compat)
         if not isinstance(word, str):
             word = str(word)
         _n2w_cache[key] = word
