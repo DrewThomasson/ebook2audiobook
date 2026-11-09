@@ -12,15 +12,19 @@
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
-### ebook2audiobook 개발자를 지원해 주셔서 감사합니다!
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+### Ebook2audiobook 개발자를 지원해 주셔서 감사합니다!
+<p>
+  <a href="https://ko-fi.com/athomasson2">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
+  </a>
+</p>
 
-### 로컬에서 실행
-
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
-
+### 로컬로 실행
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)복약 안내
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
-
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
@@ -140,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## 지원 언어
-| **아랍어 (ar)** | **중국어 (zh)** | **영어 (en)** | **스페인어 (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **프랑스어 (fr)** | **독일어 (de)** | **이탈리아어 (it)** | **포르투갈어 (pt)** |
-| **폴란드어 (pl)** | **터키어 (tr)** | **러시아어 (ru)** | **네덜란드어 (nl)** |
-| **체코어 (cs)** | **일본어 (ja)** | **힌디어 (hi)** | **벵골어 (bn)** |
-| **헝가리어 (hu)** | **한국어 (ko)** | **베트남어 (vi)** | **스웨덴어 (sv)** |
-| **페르시아어 (fa)** | **요루바어 (yo)** | **스와힐리어 (sw)** | **인도네시아어 (id)** |
-| **슬로바키아어 (sk)** | **크로아티아어 (hr)** | **타밀어 (ta)** | **덴마크어 (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -673,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU 장치 감지
 - [x] 음성 복제 업로드를 위한 모든 배경 참조 오디오 잡음 제거
 - [x] 맞춤형 미세 조정 모델 업로드
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] IOS App
+- [ ] Andorid 앱
 
 #### 사용자 요청
 - [ ] 최소한 xttsv2, fairseq, vits, piper용 유럽 포르투갈어 언어 모델 추가(도움 환영)

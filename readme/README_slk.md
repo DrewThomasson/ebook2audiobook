@@ -12,15 +12,19 @@ Používajte tento nástroj zodpovedne a v súlade so všetkými platnými záko
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
-### Ďakujeme za podporu vývojárov ebook2audiobook!
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+### Vďaka podpore vývojárov ebook2audiobook!
+<p>
+  <a href="https://ko-fi.com/athomasson2">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
+  </a>
+</p>
 
-### Spustenie lokálne
-
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
-
+### Spustiť lokálne
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)pokyny).
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
-
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
@@ -140,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Podporované jazyky
-| **Arabčina (ar)**    | **Čínština (zh)**    | **Angličtina (en)**   | **Španielčina (y)**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Francúzština (fr)**    | **Nemčina (de)**     | **Taliančina (it)**   | **Portugalčina (pt)** |
-| **Poľština (pl)**    | **Turečtina (tr)**    | **Ruština (ru)**   | **Holandčina (nl)**     |
-| **Czech (cs)**     | **Japanese (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
-| **Maďarčina (hu)** | **Kórejčina (ko)**     | **Vietnamčina (vi)**| **Švédčina (sv)**   |
-| **Perzština (fa)**   | **Yoruba (yo)**     | **Svahilčina (sw)**   | **Indonézština (id)**|
-| **Slovenčina (sk)**    | **Chorvátčina (hr)**   | **Tamilčina (ta)**     | **Dánčina (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -673,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Detekcia zariadenia GPU
 - [x] Znížiť šum akéhokoľvek referenčného zvuku na pozadí pre nahrávanie hlasového klonovania
 - [x] Vlastné doladené nahrávanie modelu
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] Aplikácia iOS
+- [ ] Android
 
 #### Žiadosti používateľov
 - [ ] Pridať jazykový model európskej portugalčiny aspoň pre xttsv2, fairseq, vits, piper (pomoc vítaná)
