@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## समर्थित भाषाएं
-| **अरबी (ar)** | **चीनी (zh)** | **अंग्रेज़ी (en)** | **स्पेनिश (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **फ़्रेंच (fr)** | **जर्मन (de)** | **इतालवी (it)** | **पुर्तगाली (pt)** |
-| **पोलिश (pl)** | **तुर्की (tr)** | **रूसी (ru)** | **डच (nl)** |
-| **चेक (cs)** | **जापानी (ja)** | **हिंदी (hi)** | **बंगाली (bn)** |
-| **हंगेरियन (hu)** | **कोरियाई (ko)** | **वियतनामी (vi)** | **स्वीडिश (sv)** |
-| **फ़ारसी (fa)** | **योरुबा (yo)** | **स्वाहिली (sw)** | **इंडोनेशियाई (id)** |
-| **स्लोवाक (sk)** | **क्रोएशियाई (hr)** | **तमिल (ta)** | **डेनिश (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU डिवाइस पहचान
 - [x] वॉयस क्लोनिंग अपलोड के लिए किसी भी बैकग्राउंड रेफ़रेंस ऑडियो को डीनोइज़ करें
 - [x] कस्टम फ़ाइन - ट्यून मॉडल अपलोड
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] IOS ऐप
+- [ ] एंड्रॉयड ऐप
 
 #### यूज़र के अनुरोध
 - [ ] कम से कम xttsv2, fairseq, vits, piper के लिए यूरोपीय पुर्तगाली भाषा मॉडल जोड़ें (सहायता का स्वागत है)

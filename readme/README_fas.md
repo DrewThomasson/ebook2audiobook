@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## زبان‌های پشتیبانی‌شده
-| **عربی (ar)** | **چینی (zh)** | **انگلیسی (en)** | **اسپانیایی (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **فرانسوی (fr)** | **آلمانی (de)** | **ایتالیایی (it)** | **پرتغالی (pt)** |
-| **لهستانی (pl)** | **ترکی (tr)** | **روسی (ru)** | **هلندی (nl)** |
-| **چکی (cs)** | **ژاپنی (ja)** | **هندی (hi)** | **بنگالی (bn)** |
-| **مجاری (hu)** | **کره‌ای (ko)** | **ویتنامی (vi)** | **سوئدی (sv)** |
-| **فارسی (fa)** | **یوروبایی (yo)** | **سواحیلی (sw)** | **اندونزیایی (id)** |
-| **اسلواکی (sk)** | **کرواتی (hr)** | **تامیلی (ta)** | **دانمارکی (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] تشخیص دستگاه GPU
 - [x] حذف نویز هرگونه صدای مرجع پس‌زمینه برای آپلود شبیه‌سازی صدا
 - [x] آپلود مدل سفارشی و تنظیم‌شده
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] برنامه آی او اِس
+- [ ] ‫Android app+
 
 #### درخواست های کاربر
 - [ ] افزودن مدل زبانی پرتغالی اروپایی حداقل برای xttsv2، fairseq، vits، piper (از کمک استقبال می‌شود)

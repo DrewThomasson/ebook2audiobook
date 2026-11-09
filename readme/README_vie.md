@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Ngôn ngữ được hỗ trợ
-| **Tiếng Ả Rập (ar)** | **Tiếng Trung (zh)** | **Tiếng Anh (en)** | **Tiếng Tây Ban Nha (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Tiếng Pháp (fr)** | **Tiếng Đức (de)** | **Tiếng Ý (it)** | **Tiếng Bồ Đào Nha (pt)** |
-| **Tiếng Ba Lan (pl)** | **Tiếng Thổ Nhĩ Kỳ (tr)** | **Tiếng Nga (ru)** | **Tiếng Hà Lan (nl)** |
-| **Tiếng Séc (cs)** | **Tiếng Nhật (ja)** | **Tiếng Hindi (hi)** | **Tiếng Bengal (bn)** |
-| **Tiếng Hungary (hu)** | **Tiếng Hàn (ko)** | **Tiếng Việt (vi)** | **Tiếng Thụy Điển (sv)** |
-| **Tiếng Ba Tư (fa)** | **Tiếng Yoruba (yo)** | **Tiếng Swahili (sw)** | **Tiếng Indonesia (id)** |
-| **Tiếng Slovak (sk)** | **Tiếng Croatia (hr)** | **Tiếng Tamil (ta)** | **Tiếng Đan Mạch (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Phát hiện thiết bị GPU
 - [x] Làm nhiễu bất kỳ âm thanh tham chiếu nền nào để tải lên nhân bản giọng nói
 - [x] Tải lên mô hình tinh chỉnh tùy chỉnh
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] Ứng dụng IOS
+- [ ] Ứng dụng Android
 
 #### Yêu cầu người dùng
 - [ ] Thêm mô hình ngôn ngữ tiếng Bồ Đào Nha châu Âu cho ít nhất xttsv2, fairseq, vits, piper (hoan nghênh sự giúp đỡ)

@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Språk som stöds
-| **Arabiska (ar)**    | **Kinesiska (zh)**    | **Engelska (en)**   | **Spanska (n)**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Franska (fr)**    | **Tyska (de)**     | **Italienska (it)**   | **Portugisiska (pt)** |
-| **Polska (pl)**    | **Turkiska (tr)**    | **Ryska (ru)**   | **Nederländska (nl)**     |
-| **tjeckiska (cs)**     | **japanska (ja)**   | **hindi (hej)**     | **bengaliska (bn)**   |
-| **Ungerska (hu)** | **Koreanska (ko)**     | **Vietnamesiska (vi)**| **Svenska (sv)**   |
-| **Persiska (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesiska (id)**|
-| **Slovakiska (sk)**    | **Kroatiska (tim)**   | **Tamil (ta)**     | **Danska (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Detektering av GPU-enhet
 - [x] Denoise alla bakgrundsreferensljud för uppladdning av röstkloning
 - [x] Anpassad finjusterad modelluppladdning
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] iOS app
+- [ ] Android-app
 
 #### Användarförfrågningar
 - [ ] Lägg till en europeisk portugisisk språkmodell för åtminstone xttsv2, fairseq, vits, piper (hjälp välkomnas)

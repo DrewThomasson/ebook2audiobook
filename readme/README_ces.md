@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Podporované jazyky
-| **Arabština (ar)**    | **Čínština (zh)**    | **Angličtina (en)**   | **Španělština (y)**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Francouzština (fr)**    | **Němčina (de)**     | **Italština (it)**   | **Portugalština (pt)** |
-| **Polština (pl)**    | **Turečtina (tr)**    | **Ruština (ru)**   | **Holandština (nl)**     |
-| **Czech (cs)**     | **Japanese (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
-| **Maďarština (hu)** | **Korejština (ko)**     | **Vietnamština (vi)**| **Švédština (sv)**   |
-| **Perština (fa)**   | **Yoruba (yo)**     | **Svahilština (sw)**   | **Indonéština (id)**|
-| **Slovenština (sk)**    | **Chorvatština (hr)**   | **Tamilština (ta)**     | **Dánština (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Detekce zařízení GPU
 - [x] Odšumte jakýkoli referenční zvuk na pozadí pro nahrání hlasového klonování
 - [x] Vlastní doladěné nahrávání modelu
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] Aplikace IOS
+- [ ] Aplikace pro Android
 
 #### Žádosti uživatelů
 - [ ] Přidat jazykový model evropské portugalštiny alespoň pro xttsv2, fairseq, vits, piper (pomoc vítána)

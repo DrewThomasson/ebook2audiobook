@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Obsługiwane języki
-| **Arabski (ar)**    | **Chiński (zh)**    | **Angielski (en)**   | **Hiszpański (es)**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Francuski (fr)**    | **Niemiecki (de)**     | **Włoski (it)**   | **Portugalski (pt)** |
-| **Polski (pl)**    | **Turecki (tr)**    | **Rosyjski (ru)**   | **Holenderski (nl)**     |
-| **Czeski (cs)**     | **Japoński (ja)**   | **Hindi (hi)**     | **Bengalski (bn)**   |
-| **Węgierski (hu)** | **Koreański (ko)**     | **Wietnamski (vi)**| **Szwedzki (sv)**   |
-| **perski (fa)**   | **joruba (yo)**     | **suahili (sw)**   | **indonezyjski (id)**|
-| **Słowacki (sk)**    | **Chorwacki (hr)**   | **Tamilski (ta)**     | **Duński (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Wykrywanie urządzenia GPU
 - [x] Usuń szumy z dowolnego dźwięku referencyjnego w tle do przesyłania klonowania głosu
 - [x] Niestandardowe, dopracowane przesyłanie modelu
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] Aplikacja na iOS
+- [ ] Aplikacja Android
 
 #### Prośby użytkowników
 - [ ] Dodać model języka portugalskiego europejskiego przynajmniej dla xttsv2, fairseq, vits, piper (pomoc mile widziana)

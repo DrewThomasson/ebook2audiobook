@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## 支持的语言
-| **阿拉伯语 (ar)** | **中文 (zh)** | **英语 (en)** | **西班牙语 (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **法语 (fr)** | **德语 (de)** | **意大利语 (it)** | **葡萄牙语 (pt)** |
-| **波兰语 (pl)** | **土耳其语 (tr)** | **俄语 (ru)** | **荷兰语 (nl)** |
-| **捷克语 (cs)** | **日语 (ja)** | **印地语 (hi)** | **孟加拉语 (bn)** |
-| **匈牙利语 (hu)** | **韩语 (ko)** | **越南语 (vi)** | **瑞典语 (sv)** |
-| **波斯语 (fa)** | **约鲁巴语 (yo)** | **斯瓦希里语 (sw)** | **印度尼西亚语 (id)** |
-| **斯洛伐克语 (sk)** | **克罗地亚语 (hr)** | **泰米尔语 (ta)** | **丹麦语 (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 设备检测
 - [x] 对语音克隆上传的任何背景参考音频进行降噪
 - [x] 自定义微调模型上传
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] IOS App
+- [ ] 安卓App
 
 #### 用户请求
 - [ ] 至少为xttsv2、fairseq、vits、piper添加欧洲葡萄牙语语言模型（帮助欢迎）

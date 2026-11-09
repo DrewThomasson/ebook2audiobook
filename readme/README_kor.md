@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## 지원 언어
-| **아랍어 (ar)** | **중국어 (zh)** | **영어 (en)** | **스페인어 (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **프랑스어 (fr)** | **독일어 (de)** | **이탈리아어 (it)** | **포르투갈어 (pt)** |
-| **폴란드어 (pl)** | **터키어 (tr)** | **러시아어 (ru)** | **네덜란드어 (nl)** |
-| **체코어 (cs)** | **일본어 (ja)** | **힌디어 (hi)** | **벵골어 (bn)** |
-| **헝가리어 (hu)** | **한국어 (ko)** | **베트남어 (vi)** | **스웨덴어 (sv)** |
-| **페르시아어 (fa)** | **요루바어 (yo)** | **스와힐리어 (sw)** | **인도네시아어 (id)** |
-| **슬로바키아어 (sk)** | **크로아티아어 (hr)** | **타밀어 (ta)** | **덴마크어 (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU 장치 감지
 - [x] 음성 복제 업로드를 위한 모든 배경 참조 오디오 잡음 제거
 - [x] 맞춤형 미세 조정 모델 업로드
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] IOS App
+- [ ] Andorid 앱
 
 #### 사용자 요청
 - [ ] 최소한 xttsv2, fairseq, vits, piper용 유럽 포르투갈어 언어 모델 추가(도움 환영)

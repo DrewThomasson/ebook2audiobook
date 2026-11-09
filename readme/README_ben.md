@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## সমর্থিত ভাষা
-| **আরবি (ar)** | **চীনা (zh)** | **ইংরেজি (en)** | **স্প্যানিশ (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **ফরাসি (fr)** | **জার্মান (de)** | **ইতালীয় (it)** | **পর্তুগিজ (pt)** |
-| **পোলিশ (pl)** | **তুর্কি (tr)** | **রাশিয়ান (ru)** | **ডাচ (nl)** |
-| **চেক (cs)** | **জাপানি (ja)** | **হিন্দি (hi)** | **বাংলা (bn)** |
-| **হাঙ্গেরীয় (hu)** | **কোরিয়ান (ko)** | **ভিয়েতনামী (vi)** | **সুইডিশ (sv)** |
-| **ফারসি (fa)** | **ইয়োরুবা (yo)** | **সোয়াহিলি (sw)** | **ইন্দোনেশিয়ান (id)** |
-| **স্লোভাক (sk)** | **ক্রোয়েশিয়ান (hr)** | **তামিল (ta)** | **ডেনিশ (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU ডিভাইস শনাক্তকরণ
 - [x] ভয়েস ক্লোনিং আপলোডের জন্য কোনও ব্যাকগ্রাউন্ড রেফারেন্স অডিওকে অস্বীকার করুন
 - [x] কাস্টম সূক্ষ্ম সুরযুক্ত মডেল আপলোড
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] IOS অ্যাপ
+- [ ] এনড্রয়েড
 
 #### ব্যবহারকারীর অনুরোধ
 - [ ] অন্তত xttsv2, fairseq, vits, piper-এর জন্য ইউরোপীয় পর্তুগিজ ভাষা মডেল যোগ করা (সাহায্য স্বাগত)

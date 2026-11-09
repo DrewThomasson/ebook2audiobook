@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## 対応言語
-| **アラビア語(ar )**|**中国語(zh )**|**英語(en )**|**スペイン語(es )**|
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **フランス語(fr )** | **ドイツ語(de )** | **イタリア語(it )** | **ポルトガル語(pt )** |
-| **ポーランド語(pl )**|**トルコ語(tr )**|**ロシア語(ru )**|**オランダ語(nl )**|
-| **チェコ語(cs )**|**日本語(ja )**|**ヒンディー語(hi )**|**ベンガル語(bn )**|
-| **ハンガリー語(hu )**|**韓国語(ko )**|**ベトナム語(vi )**|**スウェーデン語(sv )**|
-| **ペルシャ語(fa )** | **ヨルバ語(yo )** | **スワヒリ語(sw )** | **インドネシア語(id )** |
-| **スロバキア語(sk )**|**クロアチア語(hr )**|**タミル語(ta )**|**デンマーク語(da )**|
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPUデバイス検出
 - [x] 音声クローンアップロードのバックグラウンドリファレンス音声をノイズ除去する
 - [x] カスタム微調整されたモデルのアップロード
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] iOSアプリ
+- [ ] Androidアプリ
 
 #### ユーザーリクエスト
 - [ ] 少なくともxttsv2、fairseq、vits、piper向けにヨーロッパポルトガル語の言語モデルを追加（支援歓迎）

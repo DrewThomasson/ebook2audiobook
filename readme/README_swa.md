@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Lugha Zinazoungwa Mkono
-| **Kiarabu (ar)**    | **Kichina (zh)**    | **Kiingereza (sw)**   | **Kihispania (es)**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Kifaransa (fr)**    | **Kijerumani (de)**     | **Kiitaliano (it)**   | **Kireno (pt)** |
-| **Kipolishi (pl)**    | **Kituruki (tr)**    | **Kirusi (ru)**   | **Kiholanzi (nl)**     |
-| **Cheki (cs)**     | **Kijapani (ja)**   | **Kihindi (hi)**     | **Kibengali (bn)**   |
-| **Hungarian (hu)** | **Kikorea (ko)**     | **Kivietinamu (vi)**| **Kiswidi (sv)**   |
-| **Kiajemi (fa)**   | **Yoruba (yo)**     | **Kiswahili (sw)**   | **Kiindonesia (id)**|
-| **Kislovakia (sk)**    | **Kikroeshia (hr)**   | **Kitamil (ta)**     | **Kidenmaki (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Utambuzi wa Kifaa cha GPU
 - [x] Zuia sauti yoyote ya kumbukumbu ya mandharinyuma kwa ajili ya upakiaji wa sauti
 - [x] Upakiaji wa modeli mahususi iliyotengenezwa vizuri
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] programu ya iOS
+- [ ] Programu ya Android
 
 #### Maombi ya Mtumiaji
 - [ ] Ongeza modeli ya lugha ya Kireno cha Ulaya kwa angalau xttsv2, fairseq, vits, piper (msaada unakaribishwa)

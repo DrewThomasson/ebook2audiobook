@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Idiomas suportados
-| **Árabe (ar)**    | **Chinês (zh)**    | **Inglês (en)**   | **Espanhol (es)**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Francês (fr)**    | **Alemão (de)**     | **Italiano (it)**   | **Português (pt)** |
-| **Polonês (pl)**    | **Turco (tr)**    | **Russo (ru)**   | **Holandês (nl)**     |
-| **Tcheco (cs)**     | **Japonês (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
-| **Húngaro (hu)** | **Coreano (ko)**     | **Vietnamita (vi)**| **Sueco (sv)**   |
-| **Persa (fa)**   | **Iorubá (yo)**     | **Suaíli (sw)**   | **Indonésio (id)**|
-| **Eslovaco (sk)**    | **Croata (hr)**   | **Tamil (ta)**     | **Dinamarquês (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Deteção do dispositivo GPU
 - [x] Denoise qualquer áudio de referência de fundo para upload de clonagem de voz
 - [x] Upload de modelo personalizado ajustado
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] iOS app
+- [ ] Aplicativo Android
 
 #### Solicitações de Usuários
 - [ ] Adicionar um modelo de idioma português europeu para xttsv2, fairseq, vits, piper pelo menos (ajuda bem-vinda)

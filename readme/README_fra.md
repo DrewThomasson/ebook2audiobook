@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Langues prises en charge
-| **Arabe (ar)**    | **Chinois (zh)**    | **Anglais (en)**   | **Espagnol (es)**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Français (fr)**    | **Allemand (de)**     | **Italien (it)**   | **Portugais (pt)** |
-| **Polonais (pl)**    | **Turc (tr)**    | **Russe (ru)**   | **Néerlandais (nl)**     |
-| **Tchèque (cs)**     | **Japonais (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
-| **Hongrois (hu)** | **Coréen (ko)**     | **Vietnamien (vi)**| **Suédois (sv)**   |
-| **Persan (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonésien (id)**|
-| **Slovaque (sk)**    | **Croate (h)**   | **Tamoul (ta)**     | **Danois (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Détection des dispositifs
 - [x] Dénoisez tout son de référence d'arrière-plan pour le téléchargement de clonage vocal
 - [x] Téléchargement personnalisé du modèle affiné
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] Application IOS
+- [ ] Application Android
 
 #### Demandes utilisateur
 - [ ] Ajouter un modèle de langue portugaise européenne pour xttsv2, fairseq, vits, piper au moins (aide bienvenue)

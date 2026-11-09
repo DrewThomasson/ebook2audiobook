@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Lingue supportate
-| **Arabo (ar)**    | **Cinese (zh)**    | **Inglese (en)**   | **Spagnolo (es)**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Francese (fr)**    | **Tedesco (de)**     | **Italiano (it)**   | **Portoghese (pt)** |
-| **Polacco (pl)**    | **Turco (tr)**    | **Russo (ru)**   | **Olandese (nl)**     |
-| **Ceco (cs)**     | **Giapponese (ja)**   | **Hindi (hi)**     | **Bengalese (bn)**   |
-| **Ungherese (hu)** | **Coreano (ko)**     | **Vietnamita (vi)**| **Svedese (sv)**   |
-| **Persiano (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesiano (id)**|
-| **Slovacco (sk)**    | **Croato (hr)**   | **Tamil (ta)**     | **Danese (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Rilevamento del dispositivo GPU
 - [x] Denoise any background reference audio for voice cloning upload
 - [x] Caricamento del modello personalizzato perfezionato
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] App IOS
+- [ ] App Android
 
 #### Richieste degli utenti
 - [ ] Aggiungere un modello linguistico portoghese europeo almeno per xttsv2, fairseq, vits, piper (aiuto benvenuto)

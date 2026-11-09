@@ -144,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Desteklenen Diller
-| **Arapça (ar )**    | **Çince (zh )**    | **İngilizce (en )**   | **İspanyolca (es )**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Fransızca (fr )**    | **Almanca (de )**     | **İtalyanca (it )**   | **Portekizce (pt )** |
-| **Lehçe (pl )**    | **Türkçe (tr )**    | **Rusça (ru )**   | **Hollandaca (nl )**     |
-| **Çekçe (cs )**| **Japonca (ja )**| **Hintçe (hi )**| **Bengalce (bn )**|
-| **Macarca (hu )**| **Korece (ko )**| **Vietnamca (vi )**| **İsveççe (sv )**|
-| **Farsça (fa )**| **Yoruba (yo )**| **Svahili (sw )**| **Endonezce (id )**|
-| **Slovakça (sk )**| **Hırvatça (hr )**| **Tamilce (ta )**| **Danca (da )**|
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](LANGUAGES_SUPPORTED.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -677,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU Aygıt algılama
 - [x] Ses klonlama yüklemesi için herhangi bir arka plan referans sesini gürültüden arındırın
 - [x] Özel ince ayarlı model yükleme
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] IOS Uygulaması
+- [ ] Android App 
 
 #### Kullanıcı İstekleri
 - [ ] En azından xttsv2, fairseq, vits, piper için Avrupa Portekizcesi dil modeli ekleme (yardım memnuniyetle karşılanır)
