@@ -9,14 +9,14 @@
 
 <a id="supported-versions"></a>
 ## Supported Versions
-Security fixes are made on the current version branch and shipped in the next release.
-Only the latest release receives them: upgrade before reporting.
+Only the latest release receives security fixes. They are made on the current version branch and shipped in the next release.
 
 | Version | Supported |
 |---|---|
-| 26.x (latest release) | :white_check_mark: |
-| < 26 | :x: |
+| Latest release | :white_check_mark: |
+| Any older release | :x: |
 
+Upgrade to the [latest release](https://github.com/DrewThomasson/ebook2audiobook/releases/latest) before reporting.
 Your version is in `VERSION.txt`.
 
 <a id="reporting-a-vulnerability"></a>
