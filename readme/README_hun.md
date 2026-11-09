@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## Hozzájárulás
-Egy probléma vagy lekérési kérés megnyitása előtt olvassa el a [CONTRIBUTING.md](CONTRIBUTING.md): Python-kód normalizálási szabályait,
+Egy probléma vagy lekérési kérés megnyitása előtt olvassa el a [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md): Python-kód normalizálási szabályait,
 branch and pull request workflow, GUI legendák és README fordítások, TTS motor hozzáadása, tesztelés.
 
 ## Hardveradományt keresünk béta tesztekhez

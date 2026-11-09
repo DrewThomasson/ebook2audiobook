@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## योगदान
-कोई समस्या या पुल अनुरोध खोलने से पहले, [CONTRIBUTING.md](CONTRIBUTING.md) पढ़ें: पायथन कोड सामान्यीकरण नियम,
+कोई समस्या या पुल अनुरोध खोलने से पहले, [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md) पढ़ें: पायथन कोड सामान्यीकरण नियम,
 शाखा और पुल अनुरोध वर्कफ़्लो, जीयूआई लीजेंड्स और रीडमी अनुवाद, एक टीटीएस इंजन जोड़ना, परीक्षण।
 
 ## बीटा परीक्षणों के लिए हार्डवेयर दान की तलाश है

@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## 贡献
-在打开问题或拉取请求之前，请阅读[CONTRIBUTING.md](CONTRIBUTING.md) ： Python代码规范化规则，
+在打开问题或拉取请求之前，请阅读[CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md) ： Python代码规范化规则，
 分支和拉取请求工作流程， GUI图例和自述文件翻译，添加TTS引擎，测试。
 
 ## 想要为Beta测试捐赠硬件

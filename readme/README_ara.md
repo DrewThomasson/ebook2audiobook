@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## المساهمة
-قبل فتح مشكلة أو طلب سحب، اقرأ [CONTRIBUTING.md](CONTRIBUTING.md): قواعد تطبيع كود بايثون،
+قبل فتح مشكلة أو طلب سحب، اقرأ [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md): قواعد تطبيع كود بايثون،
 سير عمل طلب الفرع والسحب، وأساطير واجهة المستخدم الرسومية وترجمات README، وإضافة محرك TTS، والاختبار.
 
 ## مطلوب التبرع بالأجهزة للاختبارات التجريبية

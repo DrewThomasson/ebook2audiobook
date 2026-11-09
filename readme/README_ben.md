@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## অবদান
-কোনও সমস্যা বা টানার অনুরোধ খোলার আগে, [CONTRIBUTING.md](CONTRIBUTING.md) পড়ুন: পাইথন কোড স্বাভাবিকীকরণের নিয়ম,
+কোনও সমস্যা বা টানার অনুরোধ খোলার আগে, [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md) পড়ুন: পাইথন কোড স্বাভাবিকীকরণের নিয়ম,
 শাখা এবং টান অনুরোধ কর্মপ্রবাহ, GUI কিংবদন্তী এবং README অনুবাদ, একটি TTS ইঞ্জিন, টেস্টিং যোগ করুন ।
 
 ## বিটা পরীক্ষার জন্য হার্ডওয়্যার দান খোঁজা হচ্ছে
