@@ -762,7 +762,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 <a id="contributing"></a>
-## Bijdragen van
+## Bijdragen
 Lees [CONTRIBUTING.md](CONTRIBUTING.md): Python-code-normalisatieregels voordat u een probleem of een pull-verzoek opent,
 vertakkings- en pull-aanvraagworkflow, GUI-legenda's en README-vertalingen, het toevoegen van een TTS-engine, testen.
 

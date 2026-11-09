@@ -762,7 +762,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 <a id="contributing"></a>
-## Katkıda bulunuyor
+## Katkıda Bulunma
 Bir sorunu veya çekme isteğini açmadan önce [CONTRIBUTING.md](CONTRIBUTING.md): Python kodu normalleştirme kurallarını okuyun,
 şube ve çekme talebi iş akışı, GUI göstergeleri ve README çevirileri, bir TTS motoru ekleme, test etme.
 

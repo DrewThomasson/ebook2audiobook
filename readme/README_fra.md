@@ -762,7 +762,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 <a id="contributing"></a>
-## Contribuant
+## Contribuer
 Avant d'ouvrir un ticket ou une demande d'extraction, lisez [CONTRIBUTING.md](CONTRIBUTING.md) : Règles de normalisation du code Python,
 flux de travail de demande de branchement et de tirage, légendes de l'interface graphique et traductions README, ajout d'un moteur TTS, test.
 

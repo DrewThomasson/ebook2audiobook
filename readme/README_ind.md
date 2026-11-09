@@ -762,7 +762,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 <a id="contributing"></a>
-## BERKONTRIBUSI
+## Kontribusi
 Sebelum membuka masalah atau pull request, baca [CONTRIBUTING.md](CONTRIBUTING.md): Aturan normalisasi kode Python,
 cabang dan tarik alur kerja permintaan, legenda GUI dan terjemahan Readme, menambahkan mesin tts, pengujian.
 

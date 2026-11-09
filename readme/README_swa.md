@@ -762,7 +762,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 <a id="contributing"></a>
-##                       kuchangia kutoka kunzi jingine. 
+## Kuchangia
 Kabla ya kufungua tatizo au ombi la kuvuta, soma [CONTRIBUTING.md](CONTRIBUTING.md): Kanuni za kusawazisha msimbo wa Python,
 tawi na vuta ombi la mtiririko wa kazi, hadithi za GUI na tafsiri za README, ukiongeza injini ya TTS, jaribio.
 

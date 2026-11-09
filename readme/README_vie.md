@@ -762,7 +762,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 <a id="contributing"></a>
-## Contributing 
+## Đóng góp
 Trước khi mở một vấn đề hoặc một yêu cầu kéo, hãy đọc [CONTRIBUTING.md](CONTRIBUTING.md): các quy tắc chuẩn hóa mã Python,
 quy trình làm việc yêu cầu rẽ nhánh và kéo, chú thích GUI và bản dịch README, thêm công cụ TTS, kiểm tra.
 

@@ -762,7 +762,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 **********
 
 <a id="contributing"></a>
-## Přispívá
+## Přispívání
 Před otevřením problému nebo požadavku na vytažení si přečtěte [CONTRIBUTING.md](CONTRIBUTING.md): Pravidla normalizace kódu Pythonu,
 branch and pull request workflow, GUI legendy a překlady README, přidání TTS enginu, testování.
 

@@ -209,14 +209,14 @@ error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list
 
 - Add or change keys **only in `lib/lang/legends_eng.py`**.
 - The [Sync legends translations](.github/workflows/Legends-i18n.yml) workflow translates the new or changed keys
-  into the other `legends_<iso3>.py` files automatically after the merge.
+  into the other `legends_<iso3>.py` files automatically when the change reaches `main`.
 - Keep `{placeholders}`, `--options`, file names and HTML tags intact: the translator protects them as is.
 - Native speakers are welcome to fix a translated legend directly in its `legends_<iso3>.py`.
 
 <a id="readme-and-translations"></a>
 ## README and Translations
 - Edit **only `README.md`** (English). The [Sync README translations](.github/workflows/Readme-i18n.yml) workflow
-  updates the 25 `readme/README_<iso3>.md` files after the merge.
+  updates the 25 `readme/README_<iso3>.md` files when the change reaches `main`.
 - Don't edit `tools/readme_i18n/baseline_README.md` or `tools/readme_i18n/cache.json` by hand: the sync
   manages them.
 - Fixes to a translation by a native speaker are welcome directly in its `readme/README_<iso3>.md`.
