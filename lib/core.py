@@ -2392,19 +2392,19 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
 def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str|bool:
     try:
         year = int(year_str)
-        first_two = int(year_str[:2])
-        last_two = int(year_str[2:])
-        lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
+        first_two = year_str[:2]
+        last_two = year_str[2:]
         lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
-        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
+        phoneme_map = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+        if not year_str.isdigit() or len(year_str) != 4 or int(last_two) < 10:
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
             else:
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
+                return ' '.join(phoneme_map.get(ch, ch) for ch in year_str)
         if is_num2words_compat:
-            return f'{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}' 
+            return f'{num2words(int(first_two), lang=lang_iso1)} {num2words(int(last_two), lang=lang_iso1)}'
         else:
-            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in first_two) + ' ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in last_two)
+            return ' '.join(phoneme_map.get(ch, ch) for ch in first_two) + ' ' + ' '.join(phoneme_map.get(ch, ch) for ch in last_two)
     except Exception as e:
         error = f'year2words() error: {e}'
         print(error)
@@ -2514,12 +2514,26 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-    replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
+    lang_script = language_mapping.get(lang, {}).get('script', '')
+    replacements = {
+        k: v for k, v in phonemes_list.items()
+        if not k.isdigit() and k not in [',', '.']
+        # letters of the language's own script (e.g. α, π, Ω for greek) are never math symbols
+        and not (k.isalpha() and unicodedata.name(k, '').split(' ', 1)[0].lower() == lang_script)
+    }
     normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
     # Replace unambiguous symbols everywhere
     if normal_replacements:
-        sym_pat = r'(' + '|'.join(re.escape(k) for k in sorted(normal_replacements, key=len, reverse=True)) + r')'
+        sign_keys = sorted((k for k in normal_replacements if not k.isalpha()), key=len, reverse=True)
+        letter_keys = sorted((k for k in normal_replacements if k.isalpha()), key=len, reverse=True)
+        sym_alts = []
+        if sign_keys:
+            sym_alts.append('|'.join(re.escape(k) for k in sign_keys))
+        if letter_keys:
+            # letter-like symbols (π, α, Ω, ℝ…) only when standalone, never inside a word
+            sym_alts.append(r'(?<![\p{L}\p{M}])(?:' + '|'.join(re.escape(k) for k in letter_keys) + r')(?![\p{L}\p{M}])')
+        sym_pat = r'(' + '|'.join(sym_alts) + r')'
         text = re.sub(sym_pat, lambda m: f' {normal_replacements[m.group(1)]} ', text)
     # Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
