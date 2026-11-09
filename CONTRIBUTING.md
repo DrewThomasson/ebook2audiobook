@@ -44,6 +44,9 @@ or our [Discord](https://discord.gg/63Tv3F65k6), not the issue tracker.
 
 <a id="reporting-issues"></a>
 ## Reporting Issues
+> [!IMPORTANT]
+**Security vulnerabilities must not be reported in a public issue: follow the [Security Policy](SECURITY.md).**
+
 1. **Search first.** Check the open **and closed** issues to be sure your issue does not exist already.
    Also check [Common Issues](README.md#common-issues) and the [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES).
 2. **Use the right template**: `CPU Bug report` or `GPU Bug report`, and fill every field
