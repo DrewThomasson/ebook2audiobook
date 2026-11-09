@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## Ṣíṣe ìfọwọ́sowọ́pọ̀
-Ṣaaju ki o to ṣii ọrọ kan tabi ibeere fa, ka [CONTRIBUTING.md](CONTRIBUTING.md): Awọn ofin iṣedede koodu Python,
+Ṣaaju ki o to ṣii ọrọ kan tabi ibeere fa, ka [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md): Awọn ofin iṣedede koodu Python,
 ẹ̀ka àti fa ìsọfúnni iṣẹ́, àwọn ìtàn GUI àti àwọn ìtumọ̀ README, fi ẹ̀rọ TTS kún un, ìdánwò.
 
 ## A ń wá ẹ̀bùn ohun-èlò fún àwọn ìdánwò beta

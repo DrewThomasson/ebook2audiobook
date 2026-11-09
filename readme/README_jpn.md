@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## 貢献
-イシューやプルリクエストを開く前に、[CONTRIBUTING.md](CONTRIBUTING.md): Pythonコード正規化ルールを読んでください。
+イシューやプルリクエストを開く前に、[CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md): Pythonコード正規化ルールを読んでください。
 ブランチおよびプルリクエストワークフロー、GUI凡例およびREADME翻訳、TTSエンジンの追加、テスト。
 
 ## ベータテスト用のハードウェア寄付を募集

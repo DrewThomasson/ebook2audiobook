@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## 기여
-문제 또는 끌어오기 요청을 열기 전에 [CONTRIBUTING.md](CONTRIBUTING.md): Python 코드 정규화 규칙을 읽고,
+문제 또는 끌어오기 요청을 열기 전에 [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md): Python 코드 정규화 규칙을 읽고,
 분기 및 풀 요청 워크플로, GUI 범례 및 README 번역, TTS 엔진 추가, 테스트.
 
 ## 베타 테스트를 위한 하드웨어 기부를 찾습니다

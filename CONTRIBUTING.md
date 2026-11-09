@@ -122,14 +122,12 @@ Never commit them, nor any generated audio.**
 
 <a id="branches-and-pull-requests"></a>
 ## Branches and Pull Requests
-- Development happens on the current version branch (`v26` for the 26.x releases), **not** on `main`.
-  Create your branch from it and open your pull request against it:
+- Create a dedicated branch in your fork for each change:
 	```bash
-	git fetch upstream
-	git checkout -b fix/short-description upstream/v26
+	git checkout -b fix/short-description
 	```
 - One topic per pull request. Small, focused PRs are reviewed and merged much faster than large ones.
-- Rebase on the version branch before opening the PR, and never commit merge conflict markers.
+- Keep your branch up to date with the target branch of your pull request, and never commit merge conflict markers.
 - In the PR description, explain **what** changed and **why**, link the related issue (`Fixes #123`),
   and list how you tested it (OS, device, engine, language, GUI and/or headless).
 - Keep the PR free of unrelated changes: no mass reformatting, no renaming, no drive-by refactors.
@@ -211,14 +209,14 @@ error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list
 
 - Add or change keys **only in `lib/lang/legends_eng.py`**.
 - The [Sync legends translations](.github/workflows/Legends-i18n.yml) workflow translates the new or changed keys
-  into the other `legends_<iso3>.py` files automatically after the merge.
+  into the other `legends_<iso3>.py` files automatically when the change reaches `main`.
 - Keep `{placeholders}`, `--options`, file names and HTML tags intact: the translator protects them as is.
 - Native speakers are welcome to fix a translated legend directly in its `legends_<iso3>.py`.
 
 <a id="readme-and-translations"></a>
 ## README and Translations
 - Edit **only `README.md`** (English). The [Sync README translations](.github/workflows/Readme-i18n.yml) workflow
-  updates the 25 `readme/README_<iso3>.md` files after the merge.
+  updates the 25 `readme/README_<iso3>.md` files when the change reaches `main`.
 - Don't edit `tools/readme_i18n/baseline_README.md` or `tools/readme_i18n/cache.json` by hand: the sync
   manages them.
 - Fixes to a translation by a native speaker are welcome directly in its `readme/README_<iso3>.md`.
