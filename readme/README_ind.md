@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Terjemahkan ebook di luar e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+### Terjemahkan ebook di luar e2a: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 Menerjemahkan file EPUB/AZW3, seluruh folder (`-r` untuk subfoldernya) atau daftar path (`@list.txt`)
 menjadi ebook terjemahan, secara offline, dengan plugin calibre Argos Translate yang disertakan di
 `tools/argostranslate-calibre-plugin.zip`. Terpisah dari konversi audiobook: alat ini hanya menulis ebook.
@@ -517,15 +517,15 @@ Format lain yang dibaca `ebook-convert` milik calibre (PDF, DOCX, MOBI, TXT, ...
 bahasa pertama, lalu diterjemahkan sebagai EPUB: `--from` diperlukan jika file tidak menyertakan bahasa, seperti yang sering terjadi pada PDF dan TXT.
 Tanpa `-o` atau `--output_dir`, setiap terjemahan disimpan di sebelah bukunya sebagai `<name>.<lang>.<ext>`,
 dan buku yang terjemahannya sudah ada akan dilewati (`--overwrite` untuk menerjemahkannya lagi).
-Peluncur di folder e2a menjalankan `tools/translate_ebook.py` dengan `python_env`, tidak ada yang perlu diaktifkan,
+Peluncur dalam `tools/` menjalankan `tools/translate_ebook.py` dengan `python_env`, tidak ada yang diaktifkan,
 dari folder mana pun (path relatif dihitung dari lokasi peluncuran):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - Atau langsung dengan Python dari `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Jika dijalankan dengan Python lain,

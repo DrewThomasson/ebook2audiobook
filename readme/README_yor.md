@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Túmọ̀ àwọn ebook ní ìta e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+### Túmọ̀ àwọn ebook ní ìta e2a: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 Ó ń túmọ̀ àwọn fáìlì EPUB/AZW3, odindi fódà kan (`-r` fún àwọn fódà abẹ́ rẹ̀) tàbí àtòjọ àwọn ọ̀nà (`@list.txt`)
 sí àwọn ebook tí a ti túmọ̀, láìsí ìntánẹ́ẹ̀tì, pẹ̀lú plugin calibre Argos Translate tí ó wà nínú
 `tools/argostranslate-calibre-plugin.zip`. Ó yàtọ̀ sí ìyípadà ìwé ohùn (audiobook): ebook nìkan ni ó ń kọ.
@@ -517,15 +517,15 @@ orísun mìíràn).
 èdè àkọ́kọ́, a sì máa ń túmọ̀ wọn gẹ́gẹ́ bí EPUB: a nílò `--from` nígbà tí wọn kò bá sọ èdè kankan, bí PDF àti TXT ṣe sábà máa ń rí.
 Láìsí `-o` tàbí `--output_dir`, a máa ń fi ìtúmọ̀ kọ̀ọ̀kan pamọ́ sí ẹ̀gbẹ́ ìwé rẹ̀ gẹ́gẹ́ bí `<name>.<lang>.<ext>`,
 a sì máa ń fo ìwé tí ìtúmọ̀ rẹ̀ ti wà tẹ́lẹ̀ (`--overwrite` láti tún un túmọ̀).
-Àwọn launcher inú fódà e2a ń ṣiṣẹ́ `tools/translate_ebook.py` pẹ̀lú `python_env`, kò sí ohun tí a nílò láti mú ṣiṣẹ́,
+Àwọn alátakò ní `tools/` sáré `tools/translate_ebook.py` pẹ̀lú `python_env`, kò sí nǹkankan láti ṣiṣẹ́,
 láti inú fódà èyíkéyìí (a máa ń ka àwọn ọ̀nà ìbátan láti ibi tí a ti bẹ̀rẹ̀ rẹ̀):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - Tàbí ní tààrà pẹ̀lú Python ti `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Tí a bá bẹ̀rẹ̀ rẹ̀ pẹ̀lú Python mìíràn,

@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### e2a 밖에서 전자책 번역: `translate_ebook.sh` / `translate_ebook.cmd`
+### e2a 밖에서 전자책 번역: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 EPUB/AZW3 파일, 폴더 전체(`-r`은 하위 폴더 포함) 또는 경로 목록(`@list.txt`)을
 오프라인으로 번역된 전자책으로 만듭니다. 다음 위치에 포함된 Argos Translate calibre 플러그인을 사용합니다:
 `tools/argostranslate-calibre-plugin.zip`. 오디오북 변환과는 별개이며, 전자책만 생성합니다.
@@ -517,15 +517,15 @@ calibre의 `ebook-convert`가 읽을 수 있는 다른 형식(PDF, DOCX, MOBI, T
 한 번만 EPUB으로 변환된 뒤 EPUB으로 번역됩니다. 언어 정보가 없는 경우(PDF와 TXT에서 흔함) `--from`이 필요합니다.
 `-o` 또는 `--output_dir`이 없으면 각 번역본은 원본 책 옆에 `<name>.<lang>.<ext>`로 저장되고,
 번역본이 이미 있는 책은 건너뜁니다(다시 번역하려면 `--overwrite`).
-e2a 폴더의 실행기는 `python_env`로 `tools/translate_ebook.py`를 실행하므로 따로 활성화할 필요가 없으며,
+의 런처는 `tools/` 실행 `tools/translate_ebook.py` 와 `python_env`, 활성화할 항목이 없습니다.
 어느 폴더에서든 실행할 수 있습니다(상대 경로는 실행한 위치 기준):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - 또는 `python_env`의 Python으로 직접 실행: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). 다른 Python으로 실행하면

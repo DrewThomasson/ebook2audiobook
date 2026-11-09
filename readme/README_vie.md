@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Dịch ebook bên ngoài e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+### Dịch ebook bên ngoài e2a: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 Dịch các tệp EPUB/AZW3, cả một thư mục (`-r` cho các thư mục con) hoặc một danh sách đường dẫn (`@list.txt`)
 thành ebook đã dịch, ngoại tuyến, bằng plugin calibre Argos Translate đi kèm trong
 `tools/argostranslate-calibre-plugin.zip`. Độc lập với việc chuyển đổi sách nói: nó chỉ ghi ra ebook.
@@ -517,15 +517,15 @@ Các định dạng khác mà `ebook-convert` của calibre đọc được (PDF
 ngôn ngữ đầu tiên, và được dịch dưới dạng EPUB: cần `--from` khi chúng không ghi ngôn ngữ, như PDF và TXT thường gặp.
 Nếu không có `-o` hoặc `--output_dir`, mỗi bản dịch được lưu cạnh cuốn sách của nó dưới tên `<name>.<lang>.<ext>`,
 và sách đã có bản dịch sẽ bị bỏ qua (`--overwrite` để dịch lại).
-Các trình khởi chạy trong thư mục e2a chạy `tools/translate_ebook.py` bằng `python_env`, không cần kích hoạt gì,
+Các trình khởi chạy trong `tools/` chạy `tools/translate_ebook.py` với `python_env`, không có gì để kích hoạt,
 từ bất kỳ thư mục nào (đường dẫn tương đối được tính từ nơi khởi chạy):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - Hoặc chạy trực tiếp bằng Python của `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Nếu được khởi chạy bằng Python khác,

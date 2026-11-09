@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### e2a-এর বাইরে ইবুক অনুবাদ: `translate_ebook.sh` / `translate_ebook.cmd`
+### e2a-এর বাইরে ইবুক অনুবাদ: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 EPUB/AZW3 ফাইল, একটি পুরো ফোল্ডার (এর সাবফোল্ডারের জন্য `-r`) বা পাথের একটি তালিকা (`@list.txt`)
 অফলাইনে অনূদিত ইবুকে রূপান্তর করে, এই ফাইলে থাকা Argos Translate calibre প্লাগইন দিয়ে:
 `tools/argostranslate-calibre-plugin.zip`। অডিওবুক রূপান্তর থেকে স্বাধীন: এটি শুধু ইবুক লেখে।
@@ -517,15 +517,15 @@ calibre-এর `ebook-convert` যে অন্যান্য ফরম্য�
 একবার EPUB-এ রূপান্তরিত হয় এবং EPUB হিসেবে অনূদিত হয়: যখন তাতে কোনো ভাষা উল্লেখ থাকে না, যেমন PDF ও TXT-এ প্রায়ই হয়, তখন `--from` প্রয়োজন।
 `-o` বা `--output_dir` ছাড়া প্রতিটি অনুবাদ তার বইয়ের পাশে `<name>.<lang>.<ext>` নামে সংরক্ষিত হয়,
 এবং যে বইয়ের অনুবাদ আগে থেকেই আছে তা বাদ দেওয়া হয় (আবার অনুবাদ করতে `--overwrite`)।
-e2a-এর ফোল্ডারের লঞ্চারগুলো `python_env` দিয়ে `tools/translate_ebook.py` চালায়, কিছু সক্রিয় করতে হয় না,
+লঞ্চার `tools/` দৌড়ানো `tools/translate_ebook.py` সঙ্গে `python_env`, সক্রিয় করার মতো কিছু নেই,
 যেকোনো ফোল্ডার থেকে (আপেক্ষিক পাথ যেখান থেকে চালু করা হয় সেখান থেকে ধরা হয়):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - অথবা সরাসরি `python_env`-এর Python দিয়ে: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`)। অন্য কোনো Python দিয়ে চালু করলে,

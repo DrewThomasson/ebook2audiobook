@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### e2a dışında e-kitap çevirme: `translate_ebook.sh` / `translate_ebook.cmd`
+### e2a dışında e-kitap çevirme: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 EPUB/AZW3 dosyalarını, bütün bir klasörü (alt klasörleri için `-r`) veya bir yol listesini (`@list.txt`)
 çevrimdışı olarak çevrilmiş e-kitaplara dönüştürür; bunun için şu dosyayla gelen Argos Translate calibre eklentisini kullanır:
 `tools/argostranslate-calibre-plugin.zip`. Sesli kitap dönüştürmeden bağımsızdır: yalnızca e-kitap yazar.
@@ -517,15 +517,15 @@ calibre'nin `ebook-convert` aracının okuduğu diğer biçimler (PDF, DOCX, MOB
 EPUB'a dönüştürülür ve EPUB olarak çevrilir: dil bilgisi taşımadıklarında (PDF ve TXT'de sık görülür) `--from` gerekir.
 `-o` veya `--output_dir` olmadan her çeviri kitabının yanına `<name>.<lang>.<ext>` olarak kaydedilir
 ve çevirisi zaten bulunan kitap atlanır (yeniden çevirmek için `--overwrite`).
-e2a klasöründeki başlatıcılar `tools/translate_ebook.py` dosyasını `python_env` ile çalıştırır, etkinleştirilecek bir şey yoktur,
+İçindeki fırlatıcıları `tools/` Çalışıyor `tools/translate_ebook.py` ile `python_env`Etkinleştirilecek bir şey yok
 herhangi bir klasörden çalışır (göreli yollar başlatıldığı yere göre alınır):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - Veya doğrudan `python_env` içindeki Python ile: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Başka bir Python ile başlatılırsa
