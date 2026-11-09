@@ -125,6 +125,10 @@ footnote_markup = {
 
 footnote_marker_re = re.compile(r'^[\[\(]?(?:\d{1,4}|[a-z]{1,2}|[ivxlc]{1,6}|[*†‡§¶#]{1,3})[\]\)]?\.?$', re.IGNORECASE)
 footnote_href_re = re.compile(r'#[^#]*(?:note|fn|ftn|edn)', re.IGNORECASE)
+# a number token: digits joined by "." or "," or by a space (or NBSP) only when a 3 digits group follows, i.e. 1 234
+number_token_pattern = r'\d+(?:(?:[.,]|[ \u00A0\u202F](?=\d{3}(?!\d)))\d+)*'
+# word chars that cannot touch a number, CJK scripts excluded as they never put spaces around numbers
+number_glue_class = r'[^\W\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]'
 
 ########### Classes
 
@@ -1864,6 +1868,10 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text = non_text_filter(text)
             # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
+            # ranges, currencies and percents first so years conversion does not eat 1990-2000, $1500 or 15%
+            text = range2words(text, lang)
+            text = currency2words(text, lang, lang_iso1, is_num2words_compat)
+            text = percent2words(text, lang)
             if stanza_nlp:
                 msg = legends['msg_converting_dates']
                 print(msg)
@@ -2328,24 +2336,31 @@ def get_num2words_compat(lang_iso1:str)->bool:
     except Exception as e:
         return False
 
+def parse_number(num_str:str, lang:str)->str|None:
+    # locale number to a bare number using "." as decimal point, i.e. 1.234,5 (deu) or 1,234.5 (eng) -> 1234.5
+    # thousands groups are exactly 3 digits; returns None when it is not a single number (date, version, list…)
+    tok = unicodedata.normalize('NFKC', num_str)
+    if lang in language_decimal_comma:
+        if re.fullmatch(r'\d{1,3}(?:[. ]\d{3})+(?:,\d{1,12})?|\d{1,18}(?:,\d{1,12})?', tok):
+            integer_part, _, decimal_part = tok.partition(',')
+        elif re.fullmatch(r'\d{1,18}\.\d{1,12}', tok):
+            # comma locales still meet dot decimals (i.e. 3.14) when the dot is not a thousands group
+            integer_part, _, decimal_part = tok.partition('.')
+        else:
+            return None
+    elif re.fullmatch(r'\d{1,3}(?:,\d{3})+(?:\.\d{1,12})?|\d{1,18}(?:\.\d{1,12})?', tok):
+        integer_part, _, decimal_part = tok.partition('.')
+    else:
+        return None
+    integer_part = re.sub(r'\D', '', integer_part)
+    return f'{integer_part}.{decimal_part}' if decimal_part else integer_part
+
 def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:bool, max_single_value:int=999_999_999_999_999_999)->str:
-    # separators follow the language locale: 1,234.5 (eng) or 1.234,5 / 1 234,5 (deu, fra, ell…)
-    # thousands groups are exactly 3 digits so lists like "1,2,3" are never merged into a single number,
-    # and chains like dates or versions (12.03.2024, 1.2.3) are read part by part
-    is_decimal_comma = lang in language_decimal_comma
-    dec_sep = ',' if is_decimal_comma else '.'
-    grp_seps = '. ' if is_decimal_comma else ','
-    # digits joined by "." or "," or by a space (or NBSP) only when a 3 digits group follows, i.e. 1 234
-    number_re = re.compile(
-        r'(?<!\w)'
-        r'(\d+(?:(?:[.,]|[ \u00A0\u202F](?=\d{3}(?!\d)))\d+)*)',
-        re.UNICODE
-    )
-    grouped_re = re.compile(r'\d{1,3}(?:[' + re.escape(grp_seps) + r']\d{3})+(?:' + re.escape(dec_sep) + r'\d{1,12})?')
-    plain_re = re.compile(r'\d{1,18}(?:' + re.escape(dec_sep) + r'\d{1,12})?')
-    # comma locales still meet dot decimals (i.e. 3.14) when the dot is not a thousands group
-    alt_decimal_re = re.compile(r'\d{1,18}\.\d{1,12}') if is_decimal_comma else None
+    # separators follow the language locale (see parse_number), so lists like "1,2,3" are never merged
+    # into a single number, and chains like dates or versions (12.03.2024, 1.2.3) are read part by part
+    number_re = re.compile(r'(?<!\w)(' + number_token_pattern + r')', re.UNICODE)
     phoneme_map = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+    dec_sep = ',' if lang in language_decimal_comma else '.'
     dec_word = phoneme_map.get(dec_sep) or phoneme_map.get('.') or phoneme_map.get(',') or dec_sep
 
     def _to_words(clean:str, fallback:str)->str:
@@ -2363,26 +2378,109 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
             return ' '.join(dec_word if ch == '.' else phoneme_map.get(ch, ch) for ch in clean)
 
     def _clean_single_num(num_str:str)->str:
-        tok = unicodedata.normalize('NFKC', num_str)
-        if grouped_re.fullmatch(tok) or plain_re.fullmatch(tok):
-            integer_part, _, decimal_part = tok.partition(dec_sep)
-            integer_part = re.sub(r'\D', '', integer_part)
-            return _to_words(f'{integer_part}.{decimal_part}' if decimal_part else integer_part, num_str)
-        if alt_decimal_re is not None and alt_decimal_re.fullmatch(tok):
-            return _to_words(tok, num_str)
+        clean = parse_number(num_str, lang)
+        if clean is not None:
+            return _to_words(clean, num_str)
         # not a number for this locale (date, version, list…): read each part on its own
         return ''.join(
             _to_words(part, part) if part.isdigit()
             else ', ' if part == ','
             else ' ' if part == '.'
             else part
-            for part in re.split(r'(\d+)', tok)
+            for part in re.split(r'(\d+)', unicodedata.normalize('NFKC', num_str))
         )
 
     def clean_match(match:re.Match)->str:
         return _clean_single_num(match.group(1))
 
     return number_re.sub(clean_match, text)
+
+def range2words(text:str, lang:str)->str:
+    # numeric ranges 1990-2000, 10–20 or 5—7 are read with the language word (1990 to 2000, 10 bis 20…)
+    # or a short pause when the language has none; a spaced hyphen (5 - 3) stays a minus for math2words
+    range_word = language_number_words.get(lang, {}).get('range')
+    range_re = re.compile(
+        r'(?<!' + number_glue_class + r')(?<![.,\-–—/])(' + number_token_pattern + r')([%٪％]?)'  # 15%-20% too
+        r'(?:-|\s*[–—]\s*)'
+        r'(' + number_token_pattern + r')(?!' + number_glue_class + r')(?![\-–—/])'
+    )
+
+    def _repl(m:re.Match)->str:
+        if range_word:
+            return f'{m.group(1)}{m.group(2)} {range_word} {m.group(3)}'
+        return f'{m.group(1)}{m.group(2)}, {m.group(3)}'
+
+    return range_re.sub(_repl, text)
+
+def percent2words(text:str, lang:str)->str:
+    # 5% / 5 % / %5 -> number and percent word in the language order (5 percent, 百分之 5, yüzde 5)
+    number_words = language_number_words.get(lang, {})
+    percent_word = number_words.get('percent')
+    if not percent_word or not re.search(r'[%٪％]', text):
+        return text
+    percent_re = re.compile(
+        r'(?<!' + number_glue_class + r')(' + number_token_pattern + r')\s?[%٪％]'
+        r'|[%٪％]\s?(' + number_token_pattern + r')(?!' + number_glue_class + r')'
+    )
+
+    def _repl(m:re.Match)->str:
+        num = m.group(1) or m.group(2)
+        return f'{percent_word} {num}' if number_words.get('percent_before') else f'{num} {percent_word}'
+
+    return percent_re.sub(_repl, text)
+
+def get_scale_words(lang_iso1:str)->dict:
+    # scale words taken from num2words itself, i.e. {'million': 1000000, 'millions': 1000000, 'millionen': 1000000…}
+    scale_words = {}
+    for power in (3, 6, 9, 12):
+        for n in (1, 2, 5):
+            try:
+                words = num2words(n * 10 ** power, lang=lang_iso1).split()
+                if len(words) > 1 and ' '.join(words[:-1]) == num2words(n, lang=lang_iso1):
+                    scale_words[words[-1].lower()] = 10 ** power
+            except Exception:
+                continue
+    return scale_words
+
+def currency2words(text:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str:
+    # $1,000 / 1.000 € / $5 million -> amount with the currency name in the language (one thousand dollars, mille euros…)
+    # left untouched when num2words has no such currency for the language
+    if not is_num2words_compat or not any(sym in text for sym in currency_symbols):
+        return text
+    new_lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
+    scale_words = get_scale_words(new_lang_iso1)
+    sym_pat = '(?:' + '|'.join(re.escape(s) for s in sorted(currency_symbols, key=len, reverse=True)) + ')'
+    if scale_words:
+        scale_pat = r'(?:\s+(?i:(' + '|'.join(re.escape(w) for w in sorted(scale_words, key=len, reverse=True)) + r'))(?!\w))?'
+    else:
+        scale_pat = r'()'
+    currency_re = re.compile(
+        r'(' + sym_pat + r')\s?(' + number_token_pattern + r')(?!' + number_glue_class + r')' + scale_pat  # $1,000 or $5 million
+        + r'|(?<!' + number_glue_class + r')(?<![.,])(' + number_token_pattern + r')' + scale_pat + r'\s?(' + sym_pat + r')'  # 1.000 € or 5 millions €
+    )
+
+    def _repl(m:re.Match)->str:
+        if m.group(1):
+            symbol, num_str, scale = m.group(1), m.group(2), m.group(3)
+        else:
+            symbol, num_str, scale = m.group(6), m.group(4), m.group(5)
+        clean = parse_number(num_str, lang)
+        if clean is None:
+            return m.group(0)
+        # ¥ is the yuan in chinese texts, the yen everywhere else
+        code = 'CNY' if symbol == '¥' and lang == 'zho' else currency_symbols[symbol]
+        value = round(float(clean) * scale_words.get(scale.lower(), 1) if scale else float(clean), 2)
+        value = int(value) if value.is_integer() else value
+        try:
+            words = num2words(value, to='currency', currency=code, lang=new_lang_iso1)
+        except Exception:
+            return m.group(0)
+        if not words:
+            return m.group(0)
+        # keep a space from a glued prefix, i.e. A$5
+        return f' {words}' if m.start() > 0 and m.string[m.start() - 1].isalnum() else words
+
+    return currency_re.sub(_repl, text)
 
 def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str:
     try:

@@ -28,6 +28,53 @@ language_decimal_comma = [
     'sqi', 'srd', 'srp', 'swe', 'tat', 'tgk', 'tuk', 'tur', 'ukr', 'uzb', 'vie'
 ]
 
+# spoken word for "%" and for a numeric range like 10-20 (i.e. "ten to twenty"),
+# percent_before when the language says the percent word first (百分之五, yüzde beş, asilimia tano)
+language_number_words = {
+    "eng": {"percent": "percent", "range": "to"},
+    "fra": {"percent": "pour cent", "range": "à"},
+    "deu": {"percent": "Prozent", "range": "bis"},
+    "ita": {"percent": "per cento", "range": "a"},
+    "spa": {"percent": "por ciento", "range": "a"},
+    "por": {"percent": "por cento", "range": "a"},
+    "cat": {"percent": "per cent", "range": "a"},
+    "nld": {"percent": "procent", "range": "tot"},
+    "swe": {"percent": "procent", "range": "till"},
+    "dan": {"percent": "procent", "range": "til"},
+    "nob": {"percent": "prosent", "range": "til"},
+    "fin": {"percent": "prosenttia"},
+    "hun": {"percent": "százalék"},
+    "ell": {"percent": "τοις εκατό", "range": "έως"},
+    "rus": {"percent": "процентов", "range": "до"},
+    "ukr": {"percent": "відсотків", "range": "до"},
+    "bul": {"percent": "процента", "range": "до"},
+    "pol": {"percent": "procent", "range": "do"},
+    "ces": {"percent": "procent", "range": "až"},
+    "slk": {"percent": "percent", "range": "až"},
+    "hrv": {"percent": "posto", "range": "do"},
+    "ron": {"percent": "la sută", "range": "până la"},
+    "tur": {"percent": "yüzde", "range": "ila", "percent_before": True},
+    "ara": {"percent": "بالمئة", "range": "إلى"},
+    "fas": {"percent": "درصد", "range": "تا"},
+    "heb": {"percent": "אחוז", "range": "עד"},
+    "urd": {"percent": "فیصد", "range": "سے"},
+    "hin": {"percent": "प्रतिशत", "range": "से"},
+    "ben": {"percent": "শতাংশ", "range": "থেকে"},
+    "tam": {"percent": "சதவீதம்", "range": "முதல்"},
+    "tel": {"percent": "శాతం", "range": "నుండి"},
+    "zho": {"percent": "百分之", "range": "至", "percent_before": True},
+    "jpn": {"percent": "パーセント", "range": "から"},
+    "kor": {"percent": "퍼센트", "range": "에서"},
+    "vie": {"percent": "phần trăm", "range": "đến"},
+    "tha": {"percent": "เปอร์เซ็นต์", "range": "ถึง"},
+    "ind": {"percent": "persen", "range": "sampai"},
+    "zlm": {"percent": "peratus", "range": "hingga"},
+    "swh": {"percent": "asilimia", "range": "hadi", "percent_before": True},
+}
+
+# currency symbols read with num2words to='currency' (i.e. $1,000 -> one thousand dollars)
+currency_symbols = {'US$': 'USD', 'R$': 'BRL', '$': 'USD', '€': 'EUR', '£': 'GBP', '¥': 'JPY', '₹': 'INR', '₽': 'RUB', '₩': 'KRW', '₪': 'ILS'}
+
 punctuation_switch = {
     # Quotes causing hallucinations in some TTS engines
     '«': '"', '»': '"',  # French-style quotes

@@ -22,6 +22,7 @@ from .conf_lang import (
     punctuation_list_set, punctuation_split_hard, punctuation_split_hard_set,
     punctuation_split_soft, punctuation_split_soft_set, punctuation_switch,
     specialchars_mapping, chars_remove, year_to_decades_languages, language_decimal_comma,
+    language_number_words, currency_symbols,
 )
 
 from .conf_models import (
@@ -63,6 +64,7 @@ __all__ = [
     "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
     "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
     "specialchars_mapping", "chars_remove", "year_to_decades_languages", "language_decimal_comma",
+    "language_number_words", "currency_symbols",
     
     # from conf_models
     "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "SML_TAG_PATTERN", "IPA_REMAINING_PATTERN", "sml_escape_tag", "default_fine_tuned", "default_tts_engine",
