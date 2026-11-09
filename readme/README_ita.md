@@ -517,7 +517,7 @@ Gli altri formati letti da `ebook-convert` di calibre (PDF, DOCX, MOBI, TXT, ...
 prima lingua, e tradotti come EPUB: `--from` è necessario quando non indicano alcuna lingua, come spesso accade per PDF e TXT.
 Senza `-o` o `--output_dir`, ogni traduzione viene salvata accanto al suo libro come `<name>.<lang>.<ext>`,
 e un libro la cui traduzione esiste già viene saltato (`--overwrite` per tradurlo di nuovo).
-I lanciatori in `tools/` corrono `tools/translate_ebook.py` con `python_env`, niente da attivare,
+I launcher nella cartella `tools/` eseguono `tools/translate_ebook.py` con `python_env`, nulla da attivare,
 da qualsiasi cartella (i percorsi relativi vengono presi da dove viene avviato):
    - **Linux/MacOS**
      ```bash

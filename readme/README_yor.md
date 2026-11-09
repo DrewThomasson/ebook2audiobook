@@ -517,7 +517,7 @@ orísun mìíràn).
 èdè àkọ́kọ́, a sì máa ń túmọ̀ wọn gẹ́gẹ́ bí EPUB: a nílò `--from` nígbà tí wọn kò bá sọ èdè kankan, bí PDF àti TXT ṣe sábà máa ń rí.
 Láìsí `-o` tàbí `--output_dir`, a máa ń fi ìtúmọ̀ kọ̀ọ̀kan pamọ́ sí ẹ̀gbẹ́ ìwé rẹ̀ gẹ́gẹ́ bí `<name>.<lang>.<ext>`,
 a sì máa ń fo ìwé tí ìtúmọ̀ rẹ̀ ti wà tẹ́lẹ̀ (`--overwrite` láti tún un túmọ̀).
-Àwọn alátakò ní `tools/` sáré `tools/translate_ebook.py` pẹ̀lú `python_env`, kò sí nǹkankan láti ṣiṣẹ́,
+Àwọn launcher inú fódà `tools/` ń ṣiṣẹ́ `tools/translate_ebook.py` pẹ̀lú `python_env`, kò sí ohun tí a nílò láti mú ṣiṣẹ́,
 láti inú fódà èyíkéyìí (a máa ń ka àwọn ọ̀nà ìbátan láti ibi tí a ti bẹ̀rẹ̀ rẹ̀):
    - **Linux/MacOS**
      ```bash

@@ -517,7 +517,7 @@ Ostatní formáty, které čte `ebook-convert` z calibre (PDF, DOCX, MOBI, TXT, 
 prvním jazykem, a přeloží se jako EPUB: `--from` je potřeba, když neuvádějí žádný jazyk, což se u PDF a TXT často stává.
 Bez `-o` nebo `--output_dir` se každý překlad uloží vedle své knihy jako `<name>.<lang>.<ext>`,
 a kniha, jejíž překlad už existuje, se přeskočí (`--overwrite` pro nový překlad).
-Odpalovací zařízení v `tools/` běží `tools/translate_ebook.py` s `python_env`, nic k aktivaci,
+Spouštěče ve složce `tools/` spouštějí `tools/translate_ebook.py` s `python_env`, není třeba nic aktivovat,
 z libovolné složky (relativní cesty se berou od místa spuštění):
    - **Linux/MacOS**
      ```bash

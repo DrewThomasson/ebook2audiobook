@@ -517,7 +517,7 @@ calibre'nin `ebook-convert` aracının okuduğu diğer biçimler (PDF, DOCX, MOB
 EPUB'a dönüştürülür ve EPUB olarak çevrilir: dil bilgisi taşımadıklarında (PDF ve TXT'de sık görülür) `--from` gerekir.
 `-o` veya `--output_dir` olmadan her çeviri kitabının yanına `<name>.<lang>.<ext>` olarak kaydedilir
 ve çevirisi zaten bulunan kitap atlanır (yeniden çevirmek için `--overwrite`).
-İçindeki fırlatıcıları `tools/` Çalışıyor `tools/translate_ebook.py` ile `python_env`Etkinleştirilecek bir şey yok
+`tools/` klasöründeki başlatıcılar `tools/translate_ebook.py` dosyasını `python_env` ile çalıştırır, etkinleştirilecek bir şey yoktur,
 herhangi bir klasörden çalışır (göreli yollar başlatıldığı yere göre alınır):
    - **Linux/MacOS**
      ```bash

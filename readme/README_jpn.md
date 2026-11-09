@@ -517,7 +517,7 @@ calibreの `ebook-convert` が読み込めるその他の形式（PDF、DOCX、M
 一度だけEPUBに変換され、EPUBとして翻訳されます。言語情報を持たない場合（PDFやTXTによくあります）は `--from` が必要です。
 `-o` または `--output_dir` を指定しない場合、各翻訳は元の書籍の横に `<name>.<lang>.<ext>` として保存され、
 翻訳がすでに存在する書籍はスキップされます（再翻訳するには `--overwrite`）。
-のランチャー `tools/` run `tools/translate_ebook.py` と `python_env`、有効化するものはありません、
+`tools/` フォルダ内のランチャーは `python_env` で `tools/translate_ebook.py` を実行するため、有効化は不要で、
 どのフォルダからでも実行できます（相対パスは起動した場所が基準になります）:
    - **Linux/MacOS**
      ```bash

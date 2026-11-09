@@ -517,7 +517,7 @@ Miundo mingine ambayo `ebook-convert` ya calibre husoma (PDF, DOCX, MOBI, TXT, .
 lugha ya kwanza, na kutafsiriwa kama EPUB: `--from` inahitajika zisipobainisha lugha, kama ilivyo mara nyingi kwa PDF na TXT.
 Bila `-o` au `--output_dir`, kila tafsiri huhifadhiwa kando ya kitabu chake kama `<name>.<lang>.<ext>`,
 na kitabu ambacho tafsiri yake tayari ipo huachwa (`--overwrite` ili kukitafsiri tena).
-Vizinduzi katika `tools/` run `tools/translate_ebook.py` na `python_env`, hakuna cha kuamilisha,
+Vizinduzi vilivyo kwenye folda ya `tools/` huendesha `tools/translate_ebook.py` kwa `python_env`, hakuna cha kuamilisha,
 kutoka folda yoyote (njia za jamaa huchukuliwa kutoka mahali kilipoanzishwa):
    - **Linux/MacOS**
      ```bash
