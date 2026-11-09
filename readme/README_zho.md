@@ -13,14 +13,18 @@ CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
 ### 感谢支持ebook2audiobook开发者！
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+<p>
+  <a href="https://ko-fi.com/athomasson2">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
+  </a>
+</p>
 
 ### 本地运行
-
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
-
+说明 [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
-
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
@@ -140,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## 支持的语言
-| **阿拉伯语 (ar)** | **中文 (zh)** | **英语 (en)** | **西班牙语 (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **法语 (fr)** | **德语 (de)** | **意大利语 (it)** | **葡萄牙语 (pt)** |
-| **波兰语 (pl)** | **土耳其语 (tr)** | **俄语 (ru)** | **荷兰语 (nl)** |
-| **捷克语 (cs)** | **日语 (ja)** | **印地语 (hi)** | **孟加拉语 (bn)** |
-| **匈牙利语 (hu)** | **韩语 (ko)** | **越南语 (vi)** | **瑞典语 (sv)** |
-| **波斯语 (fa)** | **约鲁巴语 (yo)** | **斯瓦希里语 (sw)** | **印度尼西亚语 (id)** |
-| **斯洛伐克语 (sk)** | **克罗地亚语 (hr)** | **泰米尔语 (ta)** | **丹麦语 (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -673,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 设备检测
 - [x] 对语音克隆上传的任何背景参考音频进行降噪
 - [x] 自定义微调模型上传
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] IOS App
+- [ ] 安卓App
 
 #### 用户请求
 - [ ] 至少为xttsv2、fairseq、vits、piper添加欧洲葡萄牙语语言模型（帮助欢迎）

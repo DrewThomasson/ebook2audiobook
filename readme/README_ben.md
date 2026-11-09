@@ -12,15 +12,19 @@
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
-### ebook2audiobook-এর ডেভেলপারদের সমর্থন করার জন্য ধন্যবাদ!
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+### Ebook2audiobook ডেভেলপারদের সমর্থন করার জন্য ধন্যবাদ!
+<p>
+  <a href="https://ko-fi.com/athomasson2">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
+  </a>
+</p>
 
 ### স্থানীয়ভাবে চালান
-
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
-
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)নির্দেশাবলী
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
-
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
@@ -140,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## সমর্থিত ভাষা
-| **আরবি (ar)** | **চীনা (zh)** | **ইংরেজি (en)** | **স্প্যানিশ (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **ফরাসি (fr)** | **জার্মান (de)** | **ইতালীয় (it)** | **পর্তুগিজ (pt)** |
-| **পোলিশ (pl)** | **তুর্কি (tr)** | **রাশিয়ান (ru)** | **ডাচ (nl)** |
-| **চেক (cs)** | **জাপানি (ja)** | **হিন্দি (hi)** | **বাংলা (bn)** |
-| **হাঙ্গেরীয় (hu)** | **কোরিয়ান (ko)** | **ভিয়েতনামী (vi)** | **সুইডিশ (sv)** |
-| **ফারসি (fa)** | **ইয়োরুবা (yo)** | **সোয়াহিলি (sw)** | **ইন্দোনেশিয়ান (id)** |
-| **স্লোভাক (sk)** | **ক্রোয়েশিয়ান (hr)** | **তামিল (ta)** | **ডেনিশ (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -673,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU ডিভাইস শনাক্তকরণ
 - [x] ভয়েস ক্লোনিং আপলোডের জন্য কোনও ব্যাকগ্রাউন্ড রেফারেন্স অডিওকে অস্বীকার করুন
 - [x] কাস্টম সূক্ষ্ম সুরযুক্ত মডেল আপলোড
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] IOS অ্যাপ
+- [ ] এনড্রয়েড
 
 #### ব্যবহারকারীর অনুরোধ
 - [ ] অন্তত xttsv2, fairseq, vits, piper-এর জন্য ইউরোপীয় পর্তুগিজ ভাষা মডেল যোগ করা (সাহায্য স্বাগত)

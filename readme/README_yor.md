@@ -12,15 +12,19 @@ Lo ọ̀pá-ìṣẹ́ yìí pẹ̀lú ojúṣe àti ní ìbámu pẹ̀lú gbogb
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
-### A dúpẹ́ fún àtìlẹ́yìn àwọn olùdàgbàsókè ebook2audiobook!
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+### O ṣeun fún àtìlẹyìn fún àwọn olùṣèwádìí ebook2audiobook!
+<p>
+  <a href="https://ko-fi.com/athomasson2">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
+  </a>
+</p>
 
-### Ṣíṣe ní agbègbè
-
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
-
+### Ṣiṣẹ ni agbegbe
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)Àwọn Ìlànà
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
-
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
@@ -140,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Àwọn Èdè Tí A Ṣe Àtìlẹ́yìn Fún
-| **Èdè Lárúbáwá (ar)** | **Èdè Ṣáínà (zh)** | **Èdè Gẹ̀ẹ́sì (en)** | **Èdè Sípáníìṣì (es)** |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Èdè Faransé (fr)** | **Èdè Jámánì (de)** | **Èdè Ítálì (it)** | **Èdè Pọtugí (pt)** |
-| **Èdè Pólándì (pl)** | **Èdè Tọ́kì (tr)** | **Èdè Rọ́ṣíà (ru)** | **Èdè Dọ́ọ̀ṣì (nl)** |
-| **Èdè Ṣẹ́ẹ̀kì (cs)** | **Èdè Jàpáànù (ja)** | **Èdè Híńdì (hi)** | **Èdè Bẹ̀ngálì (bn)** |
-| **Èdè Họ̀ńgárì (hu)** | **Èdè Kòríà (ko)** | **Èdè Fíẹ̀tìnámù (vi)** | **Èdè Swídìn (sv)** |
-| **Èdè Páṣíà (fa)** | **Èdè Yorùbá (yo)** | **Èdè Swahili (sw)** | **Èdè Indonéṣíà (id)** |
-| **Èdè Slofákíà (sk)** | **Èdè Kroéṣíà (hr)** | **Èdè Támílì (ta)** | **Èdè Dáníṣì (da)** |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -673,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Ìdánimọ̀ Ẹ̀rọ GPU
 - [x] Yọ eyikeyi ohun afetigbọ itọkasi abẹlẹ fun gbigbasilẹ ohun afetigbọ
 - [x] Awoṣe aṣa ti o dara-tuned gbe soke
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] Ohun elo IOS
+- [ ] Ohun elo Android
 
 #### Àwọn ìbéèrè oníṣe
 - [ ] Ṣàfikún àwòṣe èdè Portuguese Yúróòpù fún ó kéré tán xttsv2, fairseq, vits, piper (a kí ìrànlọ́wọ́ káàbọ̀)

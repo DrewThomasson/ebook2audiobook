@@ -13,14 +13,18 @@ Utilisez cet outil de manière responsable et conformément à toutes les lois a
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
 ### Merci de soutenir les développeurs d'ebook2audiobook !
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+<p>
+  <a href="https://ko-fi.com/athomasson2">
+    <img src="https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Ko-Fi">
+  </a>
+  <a href="https://secure.job-currency.com/_spec/short_r.php/0BJCp4">
+    <img src="https://img.shields.io/badge/JOB-2E7D32?style=for-the-badge&logo=bitcoin&logoColor=white" alt="JOB">
+  </a>
+</p>
 
 ### Exécuter localement
-
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#instructions)
-
+Instructions [![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)
 [![Docker Build](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/Docker-Build.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
-
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
@@ -140,15 +144,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Langues prises en charge
-| **Arabe (ar)**    | **Chinois (zh)**    | **Anglais (en)**   | **Espagnol (es)**   |
-|:------------------:|:------------------:|:------------------:|:------------------:|
-| **Français (fr)**    | **Allemand (de)**     | **Italien (it)**   | **Portugais (pt)** |
-| **Polonais (pl)**    | **Turc (tr)**    | **Russe (ru)**   | **Néerlandais (nl)**     |
-| **Tchèque (cs)**     | **Japonais (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
-| **Hongrois (hu)** | **Coréen (ko)**     | **Vietnamien (vi)**| **Suédois (sv)**   |
-| **Persan (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonésien (id)**|
-| **Slovaque (sk)**    | **Croate (h)**   | **Tamoul (ta)**     | **Danois (da)**    |
-- [**+1130 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+[+1696 languages here](SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -673,8 +669,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Détection des dispositifs
 - [x] Dénoisez tout son de référence d'arrière-plan pour le téléchargement de clonage vocal
 - [x] Téléchargement personnalisé du modèle affiné
-- [ ] [Make a IOS app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
-- [ ] [Make an android app](https://github.com/DrewThomasson/ebook2audiobook/pull/35#issuecomment-2496495212)
+- [ ] Application IOS
+- [ ] Application Android
 
 #### Demandes utilisateur
 - [ ] Ajouter un modèle de langue portugaise européenne pour xttsv2, fairseq, vits, piper au moins (aide bienvenue)
