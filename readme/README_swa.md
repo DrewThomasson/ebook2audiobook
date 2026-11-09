@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Tafsiri vitabu pepe nje ya e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+### Tafsiri vitabu pepe nje ya e2a: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 Hutafsiri faili za EPUB/AZW3, folda nzima (`-r` kwa folda zake ndogo) au orodha ya njia (`@list.txt`)
 kuwa vitabu pepe vilivyotafsiriwa, nje ya mtandao, kwa programu-jalizi ya calibre ya Argos Translate inayokuja ndani ya
 `tools/argostranslate-calibre-plugin.zip`. Inajitegemea kutoka kwa ubadilishaji wa kitabu cha sauti: huandika vitabu pepe tu.
@@ -517,15 +517,15 @@ Miundo mingine ambayo `ebook-convert` ya calibre husoma (PDF, DOCX, MOBI, TXT, .
 lugha ya kwanza, na kutafsiriwa kama EPUB: `--from` inahitajika zisipobainisha lugha, kama ilivyo mara nyingi kwa PDF na TXT.
 Bila `-o` au `--output_dir`, kila tafsiri huhifadhiwa kando ya kitabu chake kama `<name>.<lang>.<ext>`,
 na kitabu ambacho tafsiri yake tayari ipo huachwa (`--overwrite` ili kukitafsiri tena).
-Vizinduzi vilivyo kwenye folda ya e2a huendesha `tools/translate_ebook.py` kwa `python_env`, hakuna cha kuamilisha,
+Vizinduzi katika `tools/` run `tools/translate_ebook.py` na `python_env`, hakuna cha kuamilisha,
 kutoka folda yoyote (njia za jamaa huchukuliwa kutoka mahali kilipoanzishwa):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - Au moja kwa moja kwa Python ya `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Kikianzishwa kwa Python nyingine yoyote,
