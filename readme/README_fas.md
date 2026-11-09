@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## مشارکت
-قبل از باز کردن یک مشکل یا درخواست pull، [CONTRIBUTING.md](CONTRIBUTING.md) را بخوانید: قوانین نرمال‌سازی کد پایتون،
+قبل از باز کردن یک مشکل یا درخواست pull، [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md) را بخوانید: قوانین نرمال‌سازی کد پایتون،
 گردش کار درخواست انشعاب و pull، راهنمای رابط کاربری گرافیکی و ترجمه‌های README، اضافه کردن موتور TTS، آزمایش.
 
 ## اهدای سخت‌افزار برای آزمایش‌های بتا مورد نیاز است

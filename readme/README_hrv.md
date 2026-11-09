@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## Doprinos
-Prije otvaranja izdanja ili zahtjeva za povlačenje, pročitajte [CONTRIBUTING.md](CONTRIBUTING.md): Pravila normalizacije Python koda,
+Prije otvaranja izdanja ili zahtjeva za povlačenje, pročitajte [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md): Pravila normalizacije Python koda,
 tijek rada zahtjeva za grananje i povlačenje, legende grafičkog sučelja i prijevodi README, dodavanje TTS motora, testiranje.
 
 ## Tražimo donaciju hardvera za beta testiranje

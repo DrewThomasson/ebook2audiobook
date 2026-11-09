@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## Участие в разработке
-Перед открытием задачи или пул-запроса прочитайте [CONTRIBUTING.md](CONTRIBUTING.md): Правила нормализации кода Python,
+Перед открытием задачи или пул-запроса прочитайте [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md): Правила нормализации кода Python,
 рабочий процесс запроса ветвления и тяги, легенды графического интерфейса и переводы README, добавление движка TTS, тестирование.
 
 ## Требуется пожертвование оборудования для бета-тестов

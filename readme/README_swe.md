@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 <a id="contributing"></a>
 ## Att medverka
-Innan du öppnar ett problem eller en pull-begäran, läs [CONTRIBUTING.md](CONTRIBUTING.md): Python-kodens normaliseringsregler,
+Innan du öppnar ett problem eller en pull-begäran, läs [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md): Python-kodens normaliseringsregler,
 arbetsflöde för förgrenings- och pull-begäran, GUI-förklaringar och README-översättningar, lägga till en TTS-motor, testa.
 
 ## Hårdvarudonation för betatester sökes
