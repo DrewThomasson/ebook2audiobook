@@ -9,7 +9,7 @@
 
 <a id="supported-versions"></a>
 ## Supported Versions
-Only the latest release receives security fixes. They are made on the current version branch and shipped in the next release.
+Only the latest release receives security fixes.
 
 | Version | Supported |
 |---|---|
