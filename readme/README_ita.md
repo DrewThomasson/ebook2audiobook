@@ -103,13 +103,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Translate ebooks out of e2a](#translate-ebooks)
 
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Extra esagerato per addestrare modelli e simili (tutti i modelli Coqui-tts supportati e piper-tts in un unico semplice comando) 
-- Per informazioni su questo @ DrewThomasson, sta attualmente lavorando allo sviluppo di questo, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Crea una guida di formazione facile da usare per tutti i modelli coqui-tts nel [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## Informazioni sulla normalizzazione del codice Python per i contributori
-- nessuna riga vuota tra il codice, tranne tra funzioni e classi.
-- apice singolo usato per tutte le chiavi tranne che per dict() e json. dict['key'] sempre richiamato con apice singolo
-- indentazione di 4 spazi, nessuna tabulazione
-- tipizzazione rigorosa per tutte le funzioni e per la dichiarazione dei loro argomenti e valori di ritorno
-- nessuno spazio tra l'argomento e la sua tipizzazione, nessuno spazio tra la funzione, il «->» e il valore di ritorno
-
-Esempio:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## Contributi
+Prima di aprire un problema o una richiesta pull, leggi [CONTRIBUTING.md](CONTRIBUTING.md): Regole di normalizzazione del codice Python,
+flusso di lavoro di richiesta branch e pull, legende GUI e traduzioni README, aggiunta di un motore TTS, test.
 
 ## Cercasi donazione di hardware per i beta test
 Accettiamo qualsiasi tipo di hardware per testare il nostro sviluppo, come:

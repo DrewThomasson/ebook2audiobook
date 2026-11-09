@@ -103,13 +103,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Translate ebooks out of e2a](#translate-ebooks)
 
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## मॉडलों के प्रशिक्षण आदि के लिए अतिरिक्त ओवरकिल (सभी समर्थित Coqui-tts मॉडल और piper-tts एक आसान कमांड में) 
-- इस @ DrewThomasson के बारे में जानकारी के लिए, वह वर्तमान में इसके विकास पर काम कर रहे हैं, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## योगदानकर्ताओं के लिए Python कोड सामान्यीकरण जानकारी
-- फ़ंक्शन और क्लास के बीच को छोड़कर, कोड के बीच कोई खाली पंक्ति नहीं।
-- dict() और json को छोड़कर सभी कुंजियों के लिए एकल उद्धरण का उपयोग किया जाता है। dict['key'] हमेशा एकल उद्धरण के साथ कॉल किया जाता है
-- 4 स्थान इंडेंटेशन, बिल्कुल भी टैब नहीं
-- सभी फ़ंक्शनों और उनके तर्कों तथा रिटर्न मानों की घोषणा के लिए सख्त टाइपिंग
-- तर्क और उसकी टाइपिंग के बीच कोई स्थान नहीं, फ़ंक्शन, "->" और रिटर्न मान के बीच कोई स्थान नहीं
-
-उदाहरण:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## योगदान
+कोई समस्या या पुल अनुरोध खोलने से पहले, [CONTRIBUTING.md](CONTRIBUTING.md) पढ़ें: पायथन कोड सामान्यीकरण नियम,
+शाखा और पुल अनुरोध वर्कफ़्लो, जीयूआई लीजेंड्स और रीडमी अनुवाद, एक टीटीएस इंजन जोड़ना, परीक्षण।
 
 ## बीटा परीक्षणों के लिए हार्डवेयर दान की तलाश है
 हम अपने विकास का परीक्षण करने के लिए किसी भी प्रकार का हार्डवेयर स्वीकार करते हैं जैसे:

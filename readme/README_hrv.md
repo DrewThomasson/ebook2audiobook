@@ -103,13 +103,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Translate ebooks out of e2a](#translate-ebooks)
 
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Dodatni overkill za treniranje modela i slično (svi podržani Coqui-tts modeli i piper-tts u jednoj jednostavnoj naredbi) 
-- Za informacije o ovom @ DrewThomasson, on trenutno radi na razvoju ovog, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Napravite jednostavan vodič za obuku za sve coqui-tts modele u [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Završeno na [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## Informacije o normalizaciji Python koda za suradnike
-- nema praznog retka između koda, osim između funkcija i klasa.
-- jednostruki navodnik korišten za sve ključeve osim za dict() i json. dict['key'] uvijek pozvan s jednostrukim navodnikom
-- uvlaka od 4 razmaka, nikakvi tabulatori
-- strogo tipiziranje za sve funkcije i deklaraciju njihovih argumenata i povratnih vrijednosti
-- nema razmaka između argumenta i njegovog tipiziranja, nema razmaka između funkcije, „->“ i povratne vrijednosti
-
-Primjer:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## Sudjelujuće
+Prije otvaranja izdanja ili zahtjeva za povlačenje, pročitajte [CONTRIBUTING.md](CONTRIBUTING.md): Pravila normalizacije Python koda,
+tijek rada zahtjeva za grananje i povlačenje, legende grafičkog sučelja i prijevodi README, dodavanje TTS motora, testiranje.
 
 ## Tražimo donaciju hardvera za beta testiranje
 Prihvaćamo bilo koju vrstu hardvera za testiranje našeg razvoja, kao što su:

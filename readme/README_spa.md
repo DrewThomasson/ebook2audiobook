@@ -110,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Extra Overkill para modelos de entrenamiento y similares (todos los modelos Coqui-tts y piper-tts compatibles en un solo comando fácil)
-- Para obtener información sobre este @ DrewThomasson, actualmente está trabajando en el desarrollo de este, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Hacer una guía de entrenamiento fácil de usar para todos los modelos de coqui-tts en el [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completado en [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## Información de normalización de código Python para colaboradores
-- no hay línea en blanco entre el código, a menos que sea entre funciones y clases.
-- comilla única utilizada para todas las teclas a menos que para dict() y json. dict['key'] siempre se llame con comilla única
-- 4 espacios de sangría, sin pestaña en absoluto
-- tipado estricto para todas las funciones y sus valores de declaración y retorno de argumentos
-- no hay espacio entre el argumento y su escritura, no hay espacio entre la función, el "->" y el valor de retorno
-
-Ejemplo:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## Contribuir 
+Antes de abrir un problema o una solicitud de extracción, lea [CONTRIBUTING.md](CONTRIBUTING.md): Reglas de normalización de código Python,
+flujo de trabajo de solicitud de ramificación y extracción, leyendas de GUI y traducciones README, añadiendo un motor TTS, pruebas.
 
 ## Se busca donación de hardware para pruebas beta
 Aceptamos cualquier tipo de hardware para probar nuestro desarrollo como:

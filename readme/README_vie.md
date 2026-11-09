@@ -103,13 +103,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Translate ebooks out of e2a](#translate-ebooks)
 
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Phần thừa thãi để huấn luyện mô hình và những thứ tương tự (tất cả các mô hình Coqui-tts được hỗ trợ và piper-tts trong một lệnh đơn giản)
-- Để biết thông tin về @DrewThomasson này, anh ấy hiện đang làm việc để phát triển điều này, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Tạo gui đào tạo dễ sử dụng cho tất cả các mô hình coqui-tts trong  Đã hoàn thành tại [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## Thông tin chuẩn hóa mã Python cho người đóng góp
-- không có dòng trống giữa mã, ngoại trừ giữa các hàm và lớp.
-- dấu nháy đơn được dùng cho tất cả khóa ngoại trừ dict() và json. dict['key'] luôn được gọi bằng dấu nháy đơn
-- thụt lề 4 dấu cách, hoàn toàn không dùng tab
-- định kiểu nghiêm ngặt cho tất cả các hàm cũng như khai báo đối số và giá trị trả về của chúng
-- không có dấu cách giữa đối số và định kiểu của nó, không có dấu cách giữa hàm, "->" và giá trị trả về
-
-Ví dụ:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## Contributing 
+Trước khi mở một vấn đề hoặc một yêu cầu kéo, hãy đọc [CONTRIBUTING.md](CONTRIBUTING.md): các quy tắc chuẩn hóa mã Python,
+quy trình làm việc yêu cầu rẽ nhánh và kéo, chú thích GUI và bản dịch README, thêm công cụ TTS, kiểm tra.
 
 ## Cần quyên góp phần cứng cho việc thử nghiệm beta
 Chúng tôi chấp nhận bất kỳ loại phần cứng nào để thử nghiệm quá trình phát triển của mình, chẳng hạn như:

@@ -103,13 +103,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Translate ebooks out of e2a](#translate-ebooks)
 
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Extra overkill voor het trainen van modellen en dergelijke (alle ondersteunde Coqui-tts-modellen en piper-tts in één eenvoudige opdracht) 
-- Voor info over deze @ DrewThomasson werkt hij momenteel aan de ontwikkeling hiervan, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Maak een gebruiksvriendelijke trainingsgui voor alle coqui-tts-modellen in de [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Voltooid bij [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## Informatie over Python-codenormalisatie voor bijdragers
-- geen lege regel tussen de code, behalve tussen functies en klassen.
-- enkele aanhalingstekens gebruikt voor alle sleutels behalve voor dict() en json. dict['key'] altijd aangeroepen met enkele aanhalingstekens
-- 4 spaties inspringing, helemaal geen tabs
-- strikte typering voor alle functies en de declaratie van hun argumenten en retourwaarden
-- geen spatie tussen het argument en de typering ervan, geen spatie tussen de functie, de "->" en de retourwaarde
-
-Voorbeeld:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## Bijdragen van
+Lees [CONTRIBUTING.md](CONTRIBUTING.md): Python-code-normalisatieregels voordat u een probleem of een pull-verzoek opent,
+vertakkings- en pull-aanvraagworkflow, GUI-legenda's en README-vertalingen, het toevoegen van een TTS-engine, testen.
 
 ## Hardwaredonatie voor bètatests gezocht
 We accepteren elk soort hardware om onze ontwikkeling te testen, zoals:
