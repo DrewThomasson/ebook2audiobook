@@ -103,13 +103,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Translate ebooks out of e2a](#translate-ebooks)
 
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Extra-Overkill für das Trainieren von Modellen und Ähnliches (alle unterstützten Coqui-tts-Modelle und piper-tts in einem einzigen einfachen Befehl) 
-- Zur Information darüber @DrewThomasson, er arbeitet derzeit an der Entwicklung dieses, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## Informationen zur Python-Code-Normalisierung für Mitwirkende
-- keine Leerzeile zwischen dem Code, außer zwischen Funktionen und Klassen.
-- einfaches Anführungszeichen für alle Schlüssel, außer bei dict() und json. dict['key'] wird immer mit einfachem Anführungszeichen aufgerufen
-- 4 Leerzeichen Einrückung, überhaupt kein Tab
-- strikte Typisierung für alle Funktionen sowie die Deklaration ihrer Argumente und Rückgabewerte
-- kein Leerzeichen zwischen dem Argument und seiner Typisierung, kein Leerzeichen zwischen der Funktion, dem „->“ und dem Rückgabewert
-
-Beispiel:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## Beitragspflichtiges
+Bevor Sie ein Problem oder eine Pull-Anforderung öffnen, lesen Sie [CONTRIBUTING.md](CONTRIBUTING.md): Python-Code-Normalisierungsregeln,
+branch- und Pull-Request-Workflow, GUI-Legenden und README-Übersetzungen, Hinzufügen einer TTS-Engine, Testen.
 
 ## Hardware-Spende für Beta-Tests gesucht
 Wir nehmen jede Art von Hardware an, um unsere Entwicklung zu testen, wie zum Beispiel:

@@ -103,13 +103,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Translate ebooks out of e2a](#translate-ebooks)
 
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## 모델 학습 등을 위한 추가적인 오버킬(지원되는 모든 Coqui-tts 모델과 piper-tts를 하나의 쉬운 명령으로) 
-- For info about this @DrewThomasson, he is currently working on the development of this, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## 기여자를 위한 Python 코드 정규화 정보
-- 함수와 클래스 사이를 제외하고 코드 사이에 빈 줄 없음.
-- dict()와 json을 제외한 모든 키에 작은따옴표 사용. dict['key']는 항상 작은따옴표로 호출
-- 4칸 들여쓰기, 탭은 전혀 사용 안 함
-- 모든 함수와 그 인수 및 반환 값 선언에 대한 엄격한 타이핑
-- 인수와 그 타이핑 사이에 공백 없음, 함수, "->", 반환 값 사이에 공백 없음
-
-예시:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## 기여
+문제 또는 끌어오기 요청을 열기 전에 [CONTRIBUTING.md](CONTRIBUTING.md): Python 코드 정규화 규칙을 읽고,
+분기 및 풀 요청 워크플로, GUI 범례 및 README 번역, TTS 엔진 추가, 테스트.
 
 ## 베타 테스트를 위한 하드웨어 기부를 찾습니다
 다음과 같이 개발 테스트를 위한 모든 종류의 하드웨어를 받습니다:

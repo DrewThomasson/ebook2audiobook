@@ -103,13 +103,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Translate ebooks out of e2a](#translate-ebooks)
 
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Ekstra Berlebihan untuk melatih model dan semacamnya (Semua model Coqui-tts yang didukung dan piper-tts dalam satu perintah mudah)
-- Untuk info tentang @DrewThomasson ini, dia saat ini sedang mengerjakan pengembangan ini, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Buat gui pelatihan yang mudah digunakan untuk semua model coqui - tts di  Diselesaikan di [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## Informasi normalisasi Kode Python untuk kontributor
-- tidak ada baris kosong di antara kode, kecuali di antara fungsi dan kelas.
-- tanda kutip tunggal digunakan untuk semua kunci kecuali untuk dict() dan json. dict['key'] selalu dipanggil dengan tanda kutip tunggal
-- indentasi 4 spasi, sama sekali bukan tab
-- pengetikan ketat untuk semua fungsi serta deklarasi argumen dan nilai kembaliannya
-- tidak ada spasi antara argumen dan pengetikannya, tidak ada spasi antara fungsi, "->" dan nilai kembalian
-
-Contoh:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## BERKONTRIBUSI
+Sebelum membuka masalah atau pull request, baca [CONTRIBUTING.md](CONTRIBUTING.md): Aturan normalisasi kode Python,
+cabang dan tarik alur kerja permintaan, legenda GUI dan terjemahan Readme, menambahkan mesin tts, pengujian.
 
 ## Donasi perangkat keras untuk uji beta dicari
 Kami menerima segala jenis perangkat keras untuk menguji pengembangan kami seperti:

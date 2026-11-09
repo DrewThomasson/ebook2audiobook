@@ -5,7 +5,7 @@ Summary: Convert eBooks to audiobooks with chapters and metadata
 Author: Drew Thomasson
 Project-URL: Homepage, https://github.com/DrewThomasson/ebook2audiobook
 Classifier: Programming Language :: Python :: 3
-Classifier: License :: OSI Approved :: MIT License
+Classifier: License :: OSI Approved :: Apache Software License
 Classifier: Operating System :: OS Independent
 Requires-Python: <3.13,>3.9
 Description-Content-Type: text/markdown

@@ -110,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## 训练模型等的额外过度杀伤（所有支持的Coqui-tts模型和piper-tts在一个简单的命令中）
-- 有关这个@ DrewThomasson的信息，他目前正在开发这个， [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] 为 [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) 中的所有 coqui-tts 模型制作易用的训练 GUI，已在 [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune) 中完成
-
-
-## 贡献者的Python代码规范化信息
-- 除非在函数和类之间，否则代码之间没有空行。
-- 用于所有键的单引号，除非用于dict ()和json。dict ['key']始终使用单引号调用
-- 4个空格缩进，完全没有制表符
-- 严格键入所有函数及其参数声明和返回值
-- 参数及其键入之间没有空格，函数、“- >”和返回值之间没有空格
-
-示例：
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## 贡献
+在打开问题或拉取请求之前，请阅读[CONTRIBUTING.md](CONTRIBUTING.md) ： Python代码规范化规则，
+分支和拉取请求工作流程， GUI图例和自述文件翻译，添加TTS引擎，测试。
 
 ## 想要为Beta测试捐赠硬件
 我们接受任何类型的硬件来测试我们的开发，例如：
