@@ -1,6 +1,7 @@
-gradio==6.30.0
+gradio==6.31.0
 coqui-tts[languages]==0.28.0
 piper-tts==1.4.2
+ptts==0.4.1
 argostranslate
 stanza
 cryptography
@@ -51,4 +52,3 @@ torchvggish
 pyannote-audio
 demucs-simple
 huggingface-hub
-ptts==0.4.1
