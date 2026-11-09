@@ -103,13 +103,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Translate ebooks out of e2a](#translate-ebooks)
 
 - [Cloned Voices](#cloned-voices)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train TTS Model](#fine-tune-your-own-tts-model)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Extra nadštandard na trénovanie modelov a podobne (všetky podporované modely Coqui-tts a piper-tts v jednom jednoduchom príkaze) 
-- Ak chcete získať informácie o tomto @ DrewThomasson, v súčasnosti pracuje na vývoji tohto, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Vytvorte ľahko použiteľné tréningové gui pre všetky modely coqui-tts v [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Dokončené v [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## Informácie o normalizácii kódu Python pre prispievateľov
-- žiadny prázdny riadok medzi kódom, okrem medzi funkciami a triedami.
-- jednoduché úvodzovky použité pre všetky kľúče okrem dict() a json. dict['key'] vždy volaný s jednoduchými úvodzovkami
-- odsadenie 4 medzery, vôbec žiadne tabulátory
-- striktné typovanie pre všetky funkcie a deklaráciu ich argumentov a návratových hodnôt
-- žiadna medzera medzi argumentom a jeho typovaním, žiadna medzera medzi funkciou, „->“ a návratovou hodnotou
-
-Príklad:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## Prispievanie
+Pred otvorením problému alebo žiadosti o vytiahnutie si prečítajte [CONTRIBUTING.md](CONTRIBUTING.md): Pravidlá normalizácie kódu Pythonu,
+workflow branch and pull request, GUI legendy a README preklady, pridanie TTS motora, testovanie.
 
 ## Hľadáme darovanie hardvéru na beta testy
 Prijímame akýkoľvek druh hardvéru na testovanie nášho vývoja, ako napríklad:

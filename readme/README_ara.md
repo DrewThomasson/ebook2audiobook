@@ -110,6 +110,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -760,55 +761,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## المبالغة الإضافية لنماذج التدريب وما شابه (جميع نماذج Coqui - tts المدعومة و piper - tts في أمر واحد سهل)
-- للحصول على معلومات حول هذا @ DrewThomasson، يعمل حاليًا على تطوير هذا، [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] اجعل واجهة المستخدم الرسومية التدريبية سهلة الاستخدام لجميع نماذج coqui - tts في [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) مكتملة في [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## معلومات تطبيع كود بايثون للمساهمين
-- لا يوجد سطر فارغ بين التعليمات البرمجية، إلا بين الوظائف والفئات.
-- اقتباس واحد يستخدم لجميع المفاتيح ما لم يتم استدعاء الإملاء() و json. dict[' key '] دائمًا مع اقتباس واحد
-- 4 مسافات المسافة البادئة، وليس علامة التبويب على الإطلاق
-- الكتابة الصارمة لجميع الدوال وإعلان الحجج وقيم الإرجاع
-- لا توجد مسافة بين الوسيطة وكتابتها، ولا توجد مسافة بين الدالة و "->" وقيمة الإرجاع
-
-مثال:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## المساهمة
+قبل فتح مشكلة أو طلب سحب، اقرأ [CONTRIBUTING.md](CONTRIBUTING.md): قواعد تطبيع كود بايثون،
+سير عمل طلب الفرع والسحب، وأساطير واجهة المستخدم الرسومية وترجمات README، وإضافة محرك TTS، والاختبار.
 
 ## مطلوب التبرع بالأجهزة للاختبارات التجريبية
 نحن نقبل أي نوع من الأجهزة لاختبار تطورنا مثل:
