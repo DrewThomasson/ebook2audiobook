@@ -165,6 +165,7 @@ os.environ['CALIBRE_CACHE_DIRECTORY'] = run_dir
 os.environ['CALIBRE_CONFIG_DIRECTORY'] = run_dir
 os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
+bug_report_env_opt_out = os.environ.get('DO_NOT_TRACK', '0').strip().lower() in ('1', 'true', 'yes') # the user's own opt-out, read before DO_NOT_TRACK is forced for third-party telemetry
 os.environ['DO_NOT_TRACK'] = 'TRUE'
 os.environ['HF_HUB_CACHE'] = tts_dir
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
@@ -224,7 +225,6 @@ default_vram_flush_ratio = 0.85 # 0 disables the check
 bug_report_enabled = True # automatic anonymized crash/exception reports (DO_NOT_TRACK=1 also disables)
 bug_report_url = 'https://www.radsl.net/bug_report.lol' # https endpoint receiving the JSON bug report (POST), empty disables the reporter
 bug_reports_dir = os.path.join(tmp_dir, 'bug_reports')
-bug_report_env_opt_out = os.environ.get('DO_NOT_TRACK', '0').strip().lower() in ('1', 'true', 'yes')
 
 # ---------------------------------------------------------------------
 # Interface configuration
