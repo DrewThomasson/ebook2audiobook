@@ -21,18 +21,19 @@ Your version is in `VERSION.txt`.
 
 <a id="reporting-a-vulnerability"></a>
 ## Reporting a Vulnerability
-> [!IMPORTANT]
-**Don't report a vulnerability in a public issue, a Discussion or on Discord.**
-
-Report it privately through GitHub: open the **Security** tab of the repository, then **Report a vulnerability**,
-or go directly to [this form](https://github.com/DrewThomasson/ebook2audiobook/security/advisories/new).
+Report it in a [new issue](https://github.com/DrewThomasson/ebook2audiobook/issues/new/choose) with the `Security report` template.
+Search the open and closed issues first to be sure it hasn't been reported already.
 
 Include:
 - E2A version (`VERSION.txt`), OS, script mode (Native/Docker) and process mode (Gradio/Headless)
 - The affected component (file, CLI option, GUI element, workflow)
-- Steps to reproduce, ideally a minimal proof of concept
+- Steps to reproduce
 - The impact: what an attacker can do, and what access they need first (local network, GUI access, a crafted file, etc.)
 - A suggested fix, if you have one
+
+> [!IMPORTANT]
+**Issues are public: describe the vulnerability and how to reproduce it, but don't post a ready-to-use exploit.<br>
+If a full proof of concept is needed, a maintainer will ask you for it.**
 
 Use public-domain texts and your own test files only. Never attach copyrighted eBooks, real personal data or secrets.
 
@@ -43,10 +44,9 @@ Use public-domain texts and your own test files only. Never attach copyrighted e
 ## What to Expect
 E2A is maintained by volunteers. We aim to:
 - acknowledge your report within 7 days
-- confirm or decline it, and keep you informed of the progress
-- release a fix, then publish a GitHub Security Advisory crediting you (unless you prefer to stay anonymous)
+- confirm or decline it in the issue, and keep you informed of the progress
+- release a fix, crediting you in the release notes
 
-Please keep the vulnerability private until the fix is released, or for 90 days after your report if we can't agree on a date.
 There is no bug bounty.
 
 <a id="scope"></a>
