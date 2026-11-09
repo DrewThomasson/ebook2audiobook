@@ -1,5 +1,6 @@
 import difflib
 import json
+import os
 import re
 import sys
 import time
@@ -37,6 +38,17 @@ PROTECT = re.compile(
 # names MT translates when they stand alone (Windows -> Fenster/Janelas, Docker -> Sztauer/Acoplagem):
 # a text holding no other word is kept as is, never sent to MT
 KEEP = re.compile(r'\b(?:Windows|Linux|MacOS|Docker|ARM)\b')
+# English rewrites sent to MT in place of words it gets wrong, on the protected text (tokens are markers by then,
+# never rewritten): launchers -> rocket launchers (Trägerraketen, Wyrzutnie, draagraketten, 发射器),
+# run before code -> to run on foot (laufen, corrono, běží)
+PREEDIT = [
+    (re.compile(r'\blauncher(s?)\b'), r'launch script\1'),
+    (re.compile(r'\bLauncher(s?)\b'), r'Launch script\1'),
+    (re.compile(r'\brun(?= ⟦)'), 'execute'),
+    (re.compile(r'\bRun(?= ⟦)'), 'Execute'),
+]
+# lines MT could not translate with all their tokens, per MT language: kept in English and reported, never cached
+REVIEW:dict = {}
 MARKER = re.compile(r'⟦\s*(\d+)\s*⟧')
 STRAY = re.compile(r'[⟦⟧]')
 LINE_PREFIX = re.compile(r'^(\s*(?:[-*+]\s+|\d+\.\s+|#{1,6}\s+|>\s+)?(?:\[[ x]\]\s+)?)')
@@ -98,6 +110,16 @@ def protect(text:str)->tuple:
         return f'\u27e6{len(tokens)-1}\u27e7'
     return PROTECT.sub(repl, text), tokens
 
+def faithful(tr_text:str, tokens:list, ordered:bool=False)->bool:
+    # all the English tokens, no more, no less, and no MT marker left; ordered: also in English order
+    found:list = PROTECT.findall(tr_text)
+    return not STRAY.search(tr_text) and (found == list(tokens) if ordered else sorted(found) == sorted(tokens))
+
+def preedit(protected:str)->str:
+    for pattern, repl in PREEDIT:
+        protected = pattern.sub(repl, protected)
+    return protected
+
 def restore(text:str, tokens:list)->Optional[str]:
     # every placeholder back exactly once (MT may pad it with spaces), else None: no marker MT broke or glued to a word
     # is ever left in the text. Callable replacement: a token is literal text, its backslashes (windows paths) are no regex escapes
@@ -106,8 +128,10 @@ def restore(text:str, tokens:list)->Optional[str]:
     return MARKER.sub(lambda m: tokens[int(m.group(1))], text)
 
 def realign_tokens(tr_line:str, eng_tokens:list)->Optional[str]:
-    # tokens MT kept stay where they are, the ones it altered are swapped in place for the missing English ones
-    # (in English order), extra ones are dropped. None when MT lost tokens entirely: no position left to put them back
+    # tokens MT kept stay where they are, a single one it altered is swapped in place for the missing English one,
+    # extra ones are dropped. None when MT lost tokens entirely (no position left to put them back) or altered several
+    # while some are missing: which English token each one stands for is a guess, and MT may have moved them
+    # (SOV order), English order would swap script and env in "run `script` with `env`"
     pool:list = list(eng_tokens)
     kept:list = []
     for tok in PROTECT.findall(tr_line):
@@ -116,6 +140,8 @@ def realign_tokens(tr_line:str, eng_tokens:list)->Optional[str]:
             kept.append(True)
         else:
             kept.append(False)
+    if pool and kept.count(False) > 1:
+        return None
     spare = iter(pool)
     flags = iter(kept)
     removed:bool = False
@@ -168,21 +194,10 @@ def chunk_text(text:str)->list:
         chunks.append(current)
     return chunks
 
-def translate_segments(text:str, lang:str)->str:
-    # tokens never reach MT: only the prose between them is translated, each token stays verbatim in its own place
-    out:list = []
-    pos:int = 0
-    for m in [*PROTECT.finditer(text), None]:
-        segment:str = text[pos:m.start() if m else len(text)]
-        s = re.match(r'^(\s*)(.*?)(\s*)$', segment, re.S)
-        if re.search(r'[A-Za-z]', KEEP.sub('', s.group(2))):
-            segment = s.group(1) + ' '.join(mymemory(chunk, lang) for chunk in chunk_text(s.group(2))).strip() + s.group(3)
-            time.sleep(THROTTLE)
-        out.append(segment)
-        if m:
-            out.append(m.group(0))
-            pos = m.end()
-    return ''.join(out).replace('\n', ' ')
+def machine_translate(text:str, lang:str)->str:
+    translated:str = ' '.join(mymemory(chunk, lang) for chunk in chunk_text(text)).replace('\n', ' ')
+    time.sleep(THROTTLE)
+    return translated
 
 def translate_text(text:str, lang:str, cache:dict)->str:
     protected, tokens = protect(text)
@@ -190,15 +205,27 @@ def translate_text(text:str, lang:str, cache:dict)->str:
     if not re.search(r'[A-Za-z]', KEEP.sub('', protected)):
         return text
     key:str = f'{lang}|{text}'
-    if key in cache and not STRAY.search(cache[key]):
+    if key in cache and faithful(cache[key], tokens):
         return cache[key]
-    translated:str = ' '.join(mymemory(chunk, lang) for chunk in chunk_text(protected))
-    restored:Optional[str] = restore(translated, tokens)
-    # markers lost or broken: segment mode, never tokens pushed to the end of the line
-    result:str = restored if restored is not None else translate_segments(text, lang)
-    result = result.replace('\n', ' ')
+    protected = preedit(protected)
+    # always the whole line in one MT call, never its prose cut at the tokens: a fragment sent alone ("The launchers in",
+    # "run", "with") comes back with the wrong sense (Trägerraketen, 得分, második osztály) and in English word order
+    # 1. tokens as markers: MT cannot alter them
+    result:Optional[str] = restore(machine_translate(protected, lang), tokens)
+    if result is None or not faithful(result, tokens):
+        # 2. markers broken: tokens left in the sentence, MT sees its real code/links, a single one it altered is swapped
+        # back in place. English token order only: a marker carries its token wherever MT moves it, a raw token does not
+        # prove its role, MT may swap script and env ("run `env` with `script`") and the token count alone would pass it
+        result = realign_tokens(machine_translate(restore(protected, tokens), lang), tokens)
+        if result is not None and not faithful(result, tokens, ordered=True):
+            result = None
+    if result is None:
+        # 3. no faithful translation: English kept, reported for a translation by hand, not cached so the next run tries again
+        pending:list = REVIEW.setdefault(lang, [])
+        if text not in pending:
+            pending.append(text)
+        return text
     cache[key] = result
-    time.sleep(THROTTLE)
     return result
 
 def translate_line(line:str, lang:str, cache:dict)->str:
@@ -259,9 +286,7 @@ def harvest_block(eng_block:list, tr_block:list, lang:str, cache:dict)->None:
         if not tr_line.startswith(prefix):
             continue
         tr_body:str = tr_line[len(prefix):]
-        if not (eng_body.strip() and tr_body.strip() and eng_body != tr_body) or STRAY.search(tr_body):
-            continue
-        if sorted(PROTECT.findall(eng_body)) != sorted(PROTECT.findall(tr_body)):
+        if not (eng_body.strip() and tr_body.strip() and eng_body != tr_body) or not faithful(tr_body, PROTECT.findall(eng_body)):
             continue
         cache[f'{lang}|{eng_body}'] = tr_body
 
@@ -294,29 +319,28 @@ def audit_and_repair(out_blocks:list, new_blocks:list, lang:str, cache:dict)->tu
         retranslated:int = 0
         for tr_line, eng_line, frozen in zip(tr_block, eng_block, mask):
             _, eng_tokens = protect(eng_line)
-            stray:bool = bool(STRAY.search(tr_line))
-            if frozen or (not stray and sorted(PROTECT.findall(tr_line)) == sorted(eng_tokens)):
+            if frozen or faithful(tr_line, eng_tokens):
                 fixed_block.append(tr_line)
                 continue
+            fixed_line:Optional[str] = None if STRAY.search(tr_line) else realign_tokens(tr_line, eng_tokens)
+            if fixed_line is None:
+                # a token lost or an MT marker left in the text: retranslated now, whole line, same path as a changed line
+                # (cache, markers, tokens in the sentence, else English for review), never its fragments one by one
+                fixed_block.append(translate_line(eng_line, lang, cache))
+                retranslated += 1
+                continue
+            realigned += 1
+            fixed_block.append(fixed_line)
             m = LINE_PREFIX.match(eng_line)
             prefix:str = m.group(1) if m else ''
             eng_body:str = eng_line[len(prefix):]
-            fixed_line:Optional[str] = None if stray else realign_tokens(tr_line, eng_tokens)
-            if fixed_line is None:
-                # a token lost or an MT marker left in the text: retranslated now around its tokens,
-                # once written the line has all its tokens and no later run would pick it up again
-                fixed_line = prefix + translate_segments(eng_body, lang)
-                retranslated += 1
-            else:
-                realigned += 1
-            fixed_block.append(fixed_line)
             tr_body:str = fixed_line[len(prefix):] if fixed_line.startswith(prefix) else fixed_line
             if eng_body.strip():
                 cache[f'{lang}|{eng_body}'] = tr_body
         if realigned:
             notes.append(f'block {idx+1}: inline code/links/tags altered by MT on {realigned} line(s), English tokens put back in place')
         if retranslated:
-            notes.append(f'block {idx+1}: {retranslated} line(s) lost tokens or kept MT markers, retranslated around their tokens')
+            notes.append(f'block {idx+1}: {retranslated} line(s) lost tokens or kept MT markers, retranslated whole')
         repaired.append(fixed_block)
     return repaired, notes
 
@@ -333,6 +357,23 @@ def verify(lang_text:str, eng_text:str)->list:
 def rebuild(new_blocks:list, lang:str, cache:dict)->list:
     return [translate_block(b, lang, cache) for b in new_blocks]
 
+def report_review(target:Path, out_text:str, lang:str)->int:
+    # only the lines still in English once written: a later attempt in the same run (audit) may have translated them
+    lines:list = out_text.split('\n')
+    rel:Path = target.relative_to(ROOT)
+    count:int = 0
+    for text in REVIEW.get(lang, []):
+        line_no:int = next((n for n, line in enumerate(lines, 1) if line.endswith(text)), 0)
+        if not line_no:
+            continue
+        count += 1
+        msg:str = f'kept in English, MT lost its inline code/links: {text.strip()}'
+        if os.environ.get('GITHUB_ACTIONS') == 'true':
+            print(f'::warning file={rel},line={line_no}::{msg}')
+        else:
+            print(f'[review] {rel}:{line_no}: {msg}')
+    return count
+
 def main()->int:
     new_src:str = README.read_text(encoding='utf-8')
     if not BASELINE.exists():
@@ -347,6 +388,7 @@ def main()->int:
     opcodes:list = sm.get_opcodes()
     changed:int = sum(1 for tag, *_ in opcodes if tag != 'equal')
     print(f'{changed} changed region(s) detected in README.md')
+    reviews:int = 0
     for iso3, mm_code in LANGS.items():
         target:Path = I18N_DIR / f'README_{iso3}.md'
         if not target.exists():
@@ -388,8 +430,11 @@ def main()->int:
         target.write_text(out_text, encoding='utf-8', newline='\n')
         save_cache(cache)
         print(f'[{iso3}] updated')
+        reviews += report_review(target, out_text, mm_code)
     BASELINE.write_text(new_src, encoding='utf-8', newline='\n')
     print('baseline updated')
+    if reviews:
+        print(f'{reviews} line(s) kept in English: translate them by hand, the next runs keep them as they are')
     return 0
 
 if __name__ == '__main__':

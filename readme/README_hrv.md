@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Prevođenje e-knjiga izvan e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+### Prevođenje e-knjiga izvan e2a: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 Prevodi EPUB/AZW3 datoteke, cijelu mapu (`-r` za njezine podmape) ili popis putanja (`@list.txt`)
 u prevedene e-knjige, izvanmrežno, pomoću calibre dodatka Argos Translate isporučenog u
 `tools/argostranslate-calibre-plugin.zip`. Neovisno o pretvorbi u audioknjigu: zapisuje samo e-knjige.
@@ -517,15 +517,15 @@ Ostali formati koje čita calibreov `ebook-convert` (PDF, DOCX, MOBI, TXT, ...) 
 prvog jezika, i prevode kao EPUB: `--from` je potreban kada ne navode jezik, što je kod PDF-a i TXT-a često.
 Bez `-o` ili `--output_dir` svaki se prijevod sprema pokraj svoje knjige kao `<name>.<lang>.<ext>`,
 a knjiga čiji prijevod već postoji preskače se (`--overwrite` za ponovno prevođenje).
-Pokretači u mapi e2a pokreću `tools/translate_ebook.py` s `python_env`, ništa ne treba aktivirati,
+Pokretači u mapi `tools/` pokreću `tools/translate_ebook.py` s `python_env`, ništa ne treba aktivirati,
 iz bilo koje mape (relativne putanje uzimaju se od mjesta pokretanja):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - Ili izravno s Pythonom iz `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Ako se pokrene bilo kojim drugim Pythonom,

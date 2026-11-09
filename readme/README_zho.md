@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### 在 e2a 之外翻译电子书：`translate_ebook.sh` / `translate_ebook.cmd`
+### 在 e2a 之外翻译电子书：`tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 将 EPUB/AZW3 文件、整个文件夹（`-r` 包含其子文件夹）或路径列表（`@list.txt`）
 离线翻译为电子书，使用的是随附于以下位置的 Argos Translate calibre 插件：
 `tools/argostranslate-calibre-plugin.zip`。独立于有声书转换：它只输出电子书。
@@ -517,15 +517,15 @@ calibre 的 `ebook-convert` 可读取的其他格式（PDF、DOCX、MOBI、TXT �
 先转换为 EPUB（仅一次），再按 EPUB 翻译：当文件未标明语言时（PDF 和 TXT 常常如此）需要 `--from`。
 未指定 `-o` 或 `--output_dir` 时，每个译本都会以 `<name>.<lang>.<ext>` 保存在原书旁边，
 已有译本的书会被跳过（使用 `--overwrite` 重新翻译）。
-e2a 文件夹中的启动脚本会用 `python_env` 运行 `tools/translate_ebook.py`，无需激活任何环境，
+`tools/` 文件夹中的启动脚本会用 `python_env` 运行 `tools/translate_ebook.py`，无需激活任何环境，
 可在任意文件夹中运行（相对路径以启动位置为准）：
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - 或直接使用 `python_env` 的 Python：`./python_env/bin/python tools/translate_ebook.py ...`
      （Windows：`python_env\Scripts\python.exe tools\translate_ebook.py ...`）。如果用其他 Python 启动，

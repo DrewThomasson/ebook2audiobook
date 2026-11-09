@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Översätt e-böcker utanför e2a: `translate_ebook.sh` / `translate_ebook.cmd`
+### Översätt e-böcker utanför e2a: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 Översätter EPUB/AZW3-filer, en hel mapp (`-r` för dess undermappar) eller en lista med sökvägar (`@list.txt`)
 till översatta e-böcker, offline, med calibre-pluginet Argos Translate som levereras i
 `tools/argostranslate-calibre-plugin.zip`. Oberoende av ljudbokskonverteringen: det skriver bara e-böcker.
@@ -517,15 +517,15 @@ Andra format som calibres `ebook-convert` läser (PDF, DOCX, MOBI, TXT, ...) kon
 första språket, och översätts som EPUB: `--from` behövs när de inte anger något språk, vilket PDF och TXT ofta inte gör.
 Utan `-o` eller `--output_dir` sparas varje översättning bredvid sin bok som `<name>.<lang>.<ext>`,
 och en bok vars översättning redan finns hoppas över (`--overwrite` för att översätta den igen).
-Startskripten i e2a:s mapp kör `tools/translate_ebook.py` med `python_env`, inget behöver aktiveras,
+Startskripten i mappen `tools/` kör `tools/translate_ebook.py` med `python_env`, inget behöver aktiveras,
 från valfri mapp (relativa sökvägar utgår från där det startas):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - Eller direkt med Python från `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Startas det med någon annan Python,

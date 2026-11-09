@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### Traduci ebook da e2a: `translate_ebook.sh`/`translate_ebook.cmd`
+### Traduci ebook da e2a: `tools/translate_ebook.sh`/`tools/translate_ebook.cmd`
 Traduce file EPUB/AZW3, un'intera cartella (`-r` per le sue sottocartelle) o un elenco di percorsi (`@list.txt`)
 in ebook tradotti, offline, con il plugin calibre Argos Translate incluso in
 `tools/argostranslate-calibre-plugin.zip`. Indipendente dalla conversione dell'audiolibro: scrive solo ebook.
@@ -517,15 +517,15 @@ Gli altri formati letti da `ebook-convert` di calibre (PDF, DOCX, MOBI, TXT, ...
 prima lingua, e tradotti come EPUB: `--from` è necessario quando non indicano alcuna lingua, come spesso accade per PDF e TXT.
 Senza `-o` o `--output_dir`, ogni traduzione viene salvata accanto al suo libro come `<name>.<lang>.<ext>`,
 e un libro la cui traduzione esiste già viene saltato (`--overwrite` per tradurlo di nuovo).
-I launcher nella cartella di e2a eseguono `tools/translate_ebook.py` con `python_env`, nulla da attivare,
+I launcher nella cartella `tools/` eseguono `tools/translate_ebook.py` con `python_env`, nulla da attivare,
 da qualsiasi cartella (i percorsi relativi vengono presi da dove viene avviato):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - Oppure direttamente con il Python di `python_env`: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Avviato con qualsiasi altro Python,

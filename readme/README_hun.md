@@ -502,7 +502,7 @@ options:
 ```
 
 <a id="translate-ebooks"></a>
-### E-könyvek fordítása az e2a-n kívül: `translate_ebook.sh` / `translate_ebook.cmd`
+### E-könyvek fordítása az e2a-n kívül: `tools/translate_ebook.sh` / `tools/translate_ebook.cmd`
 Lefordítja az EPUB/AZW3 fájlokat, egy teljes mappát (`-r` az almappáihoz) vagy egy útvonallistát (`@list.txt`)
 lefordított e-könyvekké, offline, a következő helyen mellékelt Argos Translate calibre bővítménnyel:
 `tools/argostranslate-calibre-plugin.zip`. Független a hangoskönyv-átalakítástól: csak e-könyveket ír.
@@ -517,15 +517,15 @@ A calibre `ebook-convert` eszköze által olvasott egyéb formátumok (PDF, DOCX
 első nyelv előtt, és EPUB-ként fordítódnak: a `--from` akkor szükséges, ha nincs megadva nyelvük, ami PDF és TXT esetén gyakori.
 `-o` vagy `--output_dir` nélkül minden fordítás a könyve mellé kerül `<name>.<lang>.<ext>` néven,
 és az a könyv, amelynek fordítása már létezik, kimarad (`--overwrite` az újrafordításhoz).
-Az e2a mappájában lévő indítók a `python_env` segítségével futtatják a `tools/translate_ebook.py` fájlt, semmit sem kell aktiválni,
+A `tools/` mappában lévő indítók a `python_env` segítségével futtatják a `tools/translate_ebook.py` fájlt, semmit sem kell aktiválni,
 bármelyik mappából (a relatív útvonalak az indítás helyétől számítanak):
    - **Linux/MacOS**
      ```bash
-     ./translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
+     ./tools/translate_ebook.sh /path/to/books -r --to fra,spa --output_dir /path/to/books_translated
      ```
    - **Windows**
      ```bash
-     translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
+     tools\translate_ebook.cmd C:\books -r --to fra,spa --output_dir C:\books_translated
      ```
    - Vagy közvetlenül a `python_env` Pythonjával: `./python_env/bin/python tools/translate_ebook.py ...`
      (Windows: `python_env\Scripts\python.exe tools\translate_ebook.py ...`). Ha más Pythonnal indítják,
