@@ -5144,7 +5144,7 @@ def finalize_audiobook(session_id:str)->tuple:
                 if abs_libs:
                     abs_library_id = next((v for name, v in abs_libs if name == session['abs_library']), '')
                     if abs_library_id:
-                        a_title = os.path.basename(session['audiobook'])
+                        a_title = Path(session['audiobook']).stem
                         a_author = str(session.get('metadata', {}).get('creator') or '')
                         a_series = str(session.get('metadata', {}).get('series') or '')
                         a_series_index = str(session.get('metadata', {}).get('series_index') or '')
