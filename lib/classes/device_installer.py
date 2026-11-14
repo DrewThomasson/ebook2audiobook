@@ -1769,15 +1769,18 @@ class DeviceInstaller():
                             return 1
                 msg = legends['msg_all_packages_ok']
                 print(msg)
-            # a requirement depending on the plain build (piper-tts -> onnxruntime) installs it next to the
-            # device build picked above, and both unpack into site-packages/onnxruntime/: keep onnx_pkg only.
-            # runs on every pass, not only after an install, to also repair envs that already hold both
-            self.finalize_exclusive_packages({'onnxruntime': onnx_pkg})
             self.remove_unusable_torchcodec()
             if self.install_missing_dependencies() == 1:
                 return 1
             if self.repair_incomplete_packages() == 1:
                 return 1
+            # a requirement depending on the plain build (piper-tts, minisbd -> onnxruntime) installs it next to the
+            # device build picked above, and both unpack into site-packages/onnxruntime/: keep onnx_pkg only.
+            # last step: install_missing_dependencies() brings the plain build back with the dependency it installs
+            # (argostranslate -> minisbd -> onnxruntime), and the two builds mixed in one folder fail at the first
+            # import ("cannot import name 'set_default_logger_callback' from 'onnxruntime.capi._pybind_state'").
+            # runs on every pass, not only after an install, to also repair envs that already hold both
+            self.finalize_exclusive_packages({'onnxruntime': onnx_pkg})
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)
@@ -1827,7 +1830,9 @@ class DeviceInstaller():
             return 0
         msg = legends['msg_reinstalling_incomplete'].format(pkgs=', '.join(incomplete))
         print(msg)
-        cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir)
+        # --no-deps: the same version only gets its files back, its dependencies are install_missing_dependencies()'
+        # job. Resolving them again puts the plain onnxruntime back next to onnxruntime-gpu (piper-tts -> onnxruntime)
+        cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir, '--no-deps')
         for name in incomplete:
             cmd += ['--reinstall-package', name]
         try:
