@@ -333,6 +333,7 @@ class SessionContext:
             "chapters_dir": None,
             "sentences_dir": None,
             "pronunciations": None,
+            "cast": None,
             "epub_path": None,
             "final_name": None,
             "filename_noext": None,
@@ -3106,14 +3107,16 @@ pronunciation_guides = {}
 spoken_sentences_file = 'spoken.json'
 spoken_combine_key = 'combine'
 
-def get_pronunciation_guide_path(session:dict)->str|None:
-    # --pronunciations when given, else the guide named after the series, so every book of it reads the same file,
-    # else the guide named after the title
-    if session.get('pronunciations'):
-        return session['pronunciations']
+def get_series_file_path(session:dict, folder:str)->str|None:
+    # the file of this book in a folder of per-series files (pronunciation guides, voice casts): named after the
+    # series, so every book of it reads the same file, else after the title
     metadata = session.get('metadata') or {}
     name = get_sanitized(str(metadata.get('series') or metadata.get('title') or ''))
-    return os.path.join(pronunciations_dir, f'{name}.json') if name else None
+    return os.path.join(folder, f'{name}.json') if name else None
+
+def get_pronunciation_guide_path(session:dict)->str|None:
+    # --pronunciations when given, else the guide of the series or the title
+    return session.get('pronunciations') or get_series_file_path(session, pronunciations_dir)
 
 def load_pronunciation_guide(path:str)->tuple[dict|None, str]:
     # returns the guide (None when there is nothing to apply) and the one line that says what happened to it.
@@ -3194,6 +3197,114 @@ def apply_pronunciations(text:str, guide:dict|None)->str:
         pos = tag.end()
     parts.append(guide['pattern'].sub(_say, text[pos:]))
     return ''.join(parts)
+
+def get_cast_path(session:dict)->str|None:
+    # --cast when given, else the cast of the series or the title
+    return session.get('cast') or get_series_file_path(session, casts_dir)
+
+def cast_key(name:str)->str:
+    # a character is found whatever the case and the spacing of its name
+    return ' '.join(name.split()).casefold()
+
+def load_cast(path:str)->tuple[dict|None, str]:
+    # returns the cast (None when there is none to apply) and the one line that says what happened to it.
+    # A cast is {"Alice": {"voice": "voices/eng/adult/female/alice.wav", "aliases": ["Ally"]}}: each name and
+    # alias leads to the voice file of its character. A voice path that is not absolute starts at the app folder,
+    # as a --voice path does
+    root = os.path.dirname(casts_dir)
+    shown = os.path.relpath(path, root) if os.path.dirname(path) == casts_dir else path
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        return None, legends['msg_cast_none'].format(path=shown)
+    except (OSError, ValueError) as e:
+        return None, legends['msg_cast_invalid'].format(path=shown, reason=e)
+    if not isinstance(data, dict):
+        return None, legends['msg_cast_invalid'].format(path=shown, reason='it must be an object of character entries')
+    voices, characters, skipped = {}, [], []
+    for name, entry in data.items():
+        name = ' '.join(name.split())
+        voice = entry.get('voice') if isinstance(entry, dict) else None
+        aliases = entry.get('aliases', []) if isinstance(entry, dict) else None
+        if not name or not isinstance(voice, str) or not voice.strip() or not isinstance(aliases, list) or not all(isinstance(alias, str) for alias in aliases):
+            skipped.append(f'{name or "an entry with no name"} (it needs a "voice" as text, and "aliases" as a list of names)')
+            continue
+        voice = os.path.normpath(os.path.join(root, voice.strip()))
+        if not os.path.isfile(voice):
+            skipped.append(f'{name} (no voice file at {voice})')
+            continue
+        # the first character to hold a name keeps it
+        if cast_key(name) in voices:
+            skipped.append(f'{name} (the name is already taken)')
+            continue
+        voices[cast_key(name)] = voice
+        characters.append(name)
+        for alias in aliases:
+            key = cast_key(alias)
+            if not key or key in voices:
+                skipped.append(f'alias "{alias}" of {name} (it is empty or already taken)')
+            else:
+                voices[key] = voice
+    note = legends['msg_cast_skipped'].format(reasons=', '.join(skipped)) if skipped else ''
+    return {'path': path, 'voices': voices}, legends['msg_cast_in_use'].format(path=shown, names=', '.join(characters) or 'none', skipped=note)
+
+def get_cast(session:dict)->tuple[dict|None, str|None]:
+    # the cast of this session's book and the line that describes it. It is read on each call: whether an entry
+    # holds depends on its voice file being there, not on the cast file alone
+    path = get_cast_path(session)
+    return load_cast(path) if path else (None, None)
+
+def apply_cast(text:str, cast:dict|None)->str:
+    # [voice:Alice] becomes [voice:<the voice file of Alice>]. A value that is a file is a path and stays as
+    # written, and so does a name the cast does not have: the engine reads that passage with the voice of the block
+    if not cast or not cast['voices']:
+        return text
+    def _voice(tag:re.Match)->str:
+        value = (tag.group('value') or '').strip()
+        if tag.group('tag') != 'voice' or tag.group('close') or not value or os.path.exists(os.path.abspath(value)):
+            return tag.group(0)
+        voice = cast['voices'].get(cast_key(value))
+        return f'[voice:{voice}]' if voice else tag.group(0)
+    return SML_TAG_PATTERN.sub(_voice, text)
+
+def get_engine_sentences(sentences:list, guide:dict|None, cast:dict|None)->list:
+    # the text an engine is given for each sentence of a block: names respelled by the guide, [voice:Name] tags
+    # resolved by the cast, and each sentence carrying its own voice. An engine keeps the voice of a [voice] tag
+    # until [/voice], also from one sentence to the next, so a sentence inside a passage opened earlier starts with
+    # that tag again, and a sentence that leaves a passage open closes it. Any sentence can then be converted
+    # alone, and the record of what the engine was given changes when the voice of the sentence does
+    def _voice_after(tags:list, voice:str|None)->str|None:
+        for tag in tags:
+            voice = None if tag.group('close') else (tag.group('value') or '').strip() or None
+        return voice
+
+    engine_sentences = []
+    voice = None
+    for sentence in sentences:
+        text = apply_cast(apply_pronunciations(sentence.strip(), guide), cast)
+        tags = [tag for tag in SML_TAG_PATTERN.finditer(text) if tag.group('tag') == 'voice']
+        carried = voice
+        voice = left_open = _voice_after(tags, carried)
+        # sentences are cut where a passage starts or ends, which leaves a [voice] tag at the end of the sentence
+        # before the passage and a [/voice] at the start of the one after it. Neither has anything to read there
+        # and is left out, so a sentence beside a passage does not change with the voice of that passage
+        ends_on_open = bool(tags) and not tags[-1].group('close') and not text[tags[-1].end():].strip()
+        starts_on_close = bool(carried and tags) and bool(tags[0].group('close')) and not text[:tags[0].start()].strip()
+        trimmed = text[:tags[-1].start()] if ends_on_open else text
+        trimmed = trimmed[tags[0].end():] if starts_on_close else trimmed
+        if trimmed.strip() and (ends_on_open or starts_on_close):
+            text = trimmed.strip()
+            if ends_on_open:
+                left_open = _voice_after(tags[:-1], carried)
+            if starts_on_close:
+                carried = None
+        if carried:
+            text = f'[voice:{carried}]{text}'
+        if left_open:
+            text = f'{text}[/voice]'
+        engine_sentences.append(text)
+    return engine_sentences
 
 def load_spoken_sentences(block_dir:str)->dict:
     # {sentence index: text given to the engine} for the sentences of a block that were not read as written.
@@ -3583,6 +3694,9 @@ def convert_chapters2audio(session_id:str)->bool:
         guide, msg = get_pronunciation_guide(session)
         if msg:
             show_alert(session_id, {'type': 'info', 'msg': msg})
+        cast, msg = get_cast(session)
+        if msg:
+            show_alert(session_id, {'type': 'info', 'msg': msg})
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
         block_resume = blocks_current['block_resume']
@@ -3657,16 +3771,18 @@ def convert_chapters2audio(session_id:str)->bool:
                 start_sentence = 0
                 chapter_audio_file = os.path.join(chapters_dir, f'{block_id}.{default_audio_proc_format}')
                 block_dir = os.path.join(sentences_dir, block_id)
-                # a sentence is stale when the guide now gives the engine another text than the one its audio was made from.
-                # The record also says when the chapter file is older than the sentences it is made of
+                # a sentence is stale when the guide or the cast now gives the engine another text than the one its
+                # audio was made from. The record also says when the chapter file is older than the sentences it is made of
                 spoken_sentences = load_spoken_sentences(block_dir)
-                stale_sentences = {j for j in valid_idx if spoken_sentences.get(str(j), sentences[j].strip()) != apply_pronunciations(sentences[j].strip(), guide)}
+                engine_sentences = get_engine_sentences(sentences, guide, cast)
+                stale_sentences = {j for j in valid_idx if spoken_sentences.get(str(j), sentences[j].strip()) != engine_sentences[j]}
                 recombine = bool(spoken_sentences.get(spoken_combine_key))
                 stale_only = False
                 guide_stale = False
-                # a [voice], [direct] or [emotion] passage can run over several sentences and the engine carries it from
-                # one sentence to the next: a stale sentence of such a block cannot be converted on its own
-                has_passages = any(TTS_SML.get(tag.group('tag'), {}).get('paired') for s in sentences for tag in SML_TAG_PATTERN.finditer(s))
+                # a [direct] or [emotion] passage can run over several sentences and the engine carries it from one
+                # sentence to the next: a stale sentence of such a block cannot be converted on its own. A [voice]
+                # passage is carried by each sentence itself
+                has_passages = any(tag.group('tag') != 'voice' and TTS_SML.get(tag.group('tag'), {}).get('paired') for s in sentences for tag in SML_TAG_PATTERN.finditer(s))
                 if x < block_resume and not block_changed:
                     if not os.path.exists(chapter_audio_file):
                         show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_audio_missing'].format(block=x)})
@@ -3686,7 +3802,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             # the sentences that are not stale keep their audio (all are converted in a block with a
                             # passage) and the resume point stays where it is
                             if stale_sentences:
-                                show_alert(session_id, {'type': 'info', 'msg': legends['msg_block_pronunciation_changed'].format(chapter=ch_num, block=x, count=len(stale_sentences))})
+                                show_alert(session_id, {'type': 'info', 'msg': legends['msg_block_spoken_changed'].format(chapter=ch_num, block=x, count=len(stale_sentences))})
                             missing_sentences = set(valid_idx) if has_passages and stale_sentences else stale_sentences
                             start_sentence = block_len
                             stale_only = True
@@ -3730,7 +3846,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             if j == start_sentence and start_sentence > 0:
                                 show_alert(session_id, {'type': 'info', 'msg': legends['msg_resuming_from'].format(sentence=global_sent)})
                             sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                            spoken = apply_pronunciations(sentence, guide)
+                            spoken = engine_sentences[j]
                             run, error = tts_manager.convert_sentence2audio(sentence_file, spoken, block_voice=block_voice)
                             if not run:
                                 show_alert(session_id, {'type': 'warning', 'msg': error})
@@ -3738,7 +3854,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             if record_spoken_sentence(spoken_sentences, j, sentence, spoken):
                                 save_spoken_sentences(block_dir, spoken_sentences)
                             if spoken != sentence:
-                                print(legends['msg_pronunciation_spoken'].format(spoken=spoken))
+                                print(legends['msg_sentence_spoken'].format(spoken=spoken))
                             converted = True
                             if j >= start_sentence:
                                 blocks_current['sentence_resume'] = j
@@ -4892,6 +5008,7 @@ def convert_ebook(args:dict)->tuple:
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['interlude_enabled'] = bool(args.get('interlude_enabled', False))
             session['pronunciations'] = args.get('pronunciations') or None
+            session['cast'] = args.get('cast') or None
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
             session['language_iso1'] = args.get('language_iso1') or ''

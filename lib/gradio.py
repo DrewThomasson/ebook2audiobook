@@ -2027,7 +2027,13 @@ def build_interface(args:dict)->gr.Blocks:
                                 progress_bar(0.0, desc=msg)
                                 tts_manager = TTSManager(session)
                                 block_voice = block.get('voice') or session.get('voice')
-                                spoken = apply_pronunciations(text, get_pronunciation_guide(session)[0])
+                                # the edit is read in the voice of the passage it sits in, as the conversion reads it
+                                sentence_idx = session.get('audiobook_edit_sentence_idx')
+                                block_sentences = list(block.get('sentences') or [])
+                                if not (isinstance(sentence_idx, int) and 0 <= sentence_idx < len(block_sentences)):
+                                    sentence_idx, block_sentences = 0, ['']
+                                block_sentences[sentence_idx] = text
+                                spoken = get_engine_sentences(block_sentences, get_pronunciation_guide(session)[0], get_cast(session)[0])[sentence_idx]
                                 converted, error = tts_manager.convert_sentence2audio(preview_file, spoken, block_voice=block_voice)
                                 if converted and not os.path.exists(preview_file):
                                     converted, error = False, f'{Path(preview_file).name} was not created!'
@@ -3516,7 +3522,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 visible_main = False
                                 visible_blocks = True
                                 ebook_name = Path(session['ebook']).stem
-                                guide_msg = get_pronunciation_guide(session)[1]
+                                guide_msg = '\n\n'.join(msg for msg in (get_pronunciation_guide(session)[1], get_cast(session)[1]) if msg)
                                 blocks_current = session['blocks_current']
                                 blocks = blocks_current['blocks']
                                 max_page = max((len(blocks) - 1) // page_size, 0)

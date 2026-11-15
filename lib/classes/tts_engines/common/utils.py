@@ -1039,8 +1039,17 @@ class TTSUtils:
                 return False, error
             inline_voice = os.path.abspath(value)
             if not os.path.exists(inline_voice):
-                error = f'_convert_sml() error: voice {inline_voice} does not exist!'
-                return False, error
+                # a path that leads nowhere stops the sentence. Anything else is the name of a character: the
+                # voice cast replaces the names it has with their voice file before the sentence gets here, so
+                # this one has no voice and the passage keeps the voice it would have without the tag
+                if re.search(r'[\\/]', value) or os.path.splitext(value)[1].lower() in voice_formats:
+                    error = f'_convert_sml() error: voice {inline_voice} does not exist!'
+                    return False, error
+                unknown_voices = self.params.setdefault('unknown_voices', set())
+                if value not in unknown_voices:
+                    unknown_voices.add(value)
+                    print(legends['msg_cast_unknown_voice'].format(name=value))
+                return True, None
             self.params['inline_voice'] = self.params['current_voice'] = inline_voice
             return True, None
         elif tag == 'emotion':
