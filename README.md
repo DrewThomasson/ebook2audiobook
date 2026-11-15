@@ -223,15 +223,19 @@ to let the web page reconnect to the new connection socket.**
 Another way to install and launch ebook2audiobook, without cloning the repo: pip installs the `ebook2audiobook` command<br>
 (all OS, any python 3.8+). The cloned repo with its launchers above keeps working the same way.
 
-1. **Install the command**
+1. **Install the command** from PyPI
    ```bash
-   pipx install git+https://github.com/DrewThomasson/ebook2audiobook.git
+   pipx install ebook2audiobook
+   ```
+   or with uv
+   ```bash
+   uv tool install ebook2audiobook
    ```
    or with pip
    ```bash
-   pip install git+https://github.com/DrewThomasson/ebook2audiobook.git
+   pip install ebook2audiobook
    ```
-   <i>Without git installed, use `https://github.com/DrewThomasson/ebook2audiobook/archive/refs/heads/main.tar.gz` in place of the `git+https://...` URL.</i>
+   <i>For the latest code not released yet, use `git+https://github.com/DrewThomasson/ebook2audiobook.git` in place of `ebook2audiobook`.</i>
 
 2. **Install / Run ebook2audiobook**, with the same options as the launchers:
    ```bash
@@ -255,7 +259,7 @@ Another way to install and launch ebook2audiobook, without cloning the repo: pip
   builds the image from that folder. Run the `docker run` / `docker compose` commands it prints from that folder too:<br>
   their `./ebooks`, `./audiobooks`... mounts and the compose files are relative to it. The image takes the same options,<br>
   with paths inside the container (`/app/...`), see [Docker](#docker).
-- **Update**: `pipx reinstall ebook2audiobook`, or `pip install --force-reinstall git+https://github.com/DrewThomasson/ebook2audiobook.git`.<br>
+- **Update**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` or `pip install -U ebook2audiobook`.<br>
   The next start updates the app files and keeps `python_env`, models, voices, audiobooks and anything you added to the folder.
 - **Uninstall**: `pip uninstall`, `pipx uninstall` or `uv tool uninstall` alone only remove the command:<br>
   the folder and its gigabytes of models stay. Uninstall ebook2audiobook with the command itself first:
@@ -433,8 +437,8 @@ Linux/Mac:
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 pip/pipx install (all OS, python 3.8+, no clone needed):
-    pipx install git+https://github.com/DrewThomasson/ebook2audiobook.git
-    (or: pip install git+https://github.com/DrewThomasson/ebook2audiobook.git)
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
     Gradio/GUI:
     ebook2audiobook
     Headless mode:

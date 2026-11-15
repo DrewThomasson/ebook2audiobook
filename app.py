@@ -205,8 +205,8 @@ Gradio/GUI:
 Headless mode:
 ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
 pip/pipx install (all OS, python 3.8+, no clone needed):
-pipx install git+https://github.com/DrewThomasson/ebook2audiobook.git
-(or: pip install git+https://github.com/DrewThomasson/ebook2audiobook.git)
+pipx install ebook2audiobook
+(or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
 Gradio/GUI:
 ebook2audiobook
 Headless mode:
