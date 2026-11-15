@@ -984,6 +984,11 @@ class TTSUtils:
                 parts.append(tail)
         return parts
 
+    def _direction_matches(self, direction:str, table:list)->list:
+        # the values of the keyword table entries a [direct:...] direction hits, in table order (rules: TTS_SML['direct'])
+        words = [word for word in re.findall(r'[^\W\d_]+', direction.lower()) if not word.startswith(TTS_SML['direct']['exclude'])]
+        return [value for keywords, value in table if any(word in keywords or (word.startswith(keywords) and not word.endswith('less')) for word in words)]
+
     def _convert_sml(self, sml:str)->tuple:
         import torch
         import numpy as np

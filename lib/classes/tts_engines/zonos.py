@@ -325,16 +325,14 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
         cached = self.params.get('direction_request')
         if cached and cached[0] == direction:
             return cached[1]
-        words = re.findall(r'[^\W\d_]+', direction.lower())
         emotion = {}
         rate = 1.0
-        for keywords, effect in TTS_SML['direct']['zonos']:
-            if any(word.startswith(keywords) for word in words):
-                for name, v in effect.items():
-                    if name == 'rate':
-                        rate *= v
-                    else:
-                        emotion[name] = emotion.get(name, 0.0) + v
+        for effect in self._direction_matches(direction, TTS_SML['direct']['zonos']):
+            for name, v in effect.items():
+                if name == 'rate':
+                    rate *= v
+                else:
+                    emotion[name] = emotion.get(name, 0.0) + v
         emotion = {k: round(max(-1.0, min(1.0, v)), 4) for k, v in emotion.items() if abs(v) > 1e-4}
         request = {}
         if emotion:

@@ -168,7 +168,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause:N]` — fixed pause (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
 - `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
-- `[direct:quiet, tense, slowing down]...[/direct]`: a reading direction for a passage, in free text, never spoken. Maya1 reads it as that passage's voice instruction; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an `[emotion]` tag inside the passage keeps the emotion; other engines ignore it
+- `[direct:quiet, tense, slowing down]...[/direct]`: a reading direction for a passage, in free text, never spoken. Maya1 adds it to its voice description as the tone and, for keywords it knows (whispering, angry, sarcastic and the like), puts its own expression token before the text; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an `[emotion]` tag inside the passage keeps the emotion; other engines ignore it
 
 **Check our other repo dedicated to add SML automatically in your ebook -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -483,7 +483,7 @@ SML tags available:
 	[pause:N] — fixed pause (**N sec.**)
 	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
 	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
-	[direct:quiet, tense, slowing down]...[/direct]: a reading direction for a passage, in free text, never spoken. Maya1 reads it as that passage's voice instruction; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an [emotion] tag inside the passage keeps the emotion; other engines ignore it
+	[direct:quiet, tense, slowing down]...[/direct]: a reading direction for a passage, in free text, never spoken. Maya1 adds it to its voice description as the tone and, for keywords it knows (whispering, angry, sarcastic and the like), puts its own expression token before the text; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an [emotion] tag inside the passage keeps the emotion; other engines ignore it
 
 ```
 
