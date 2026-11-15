@@ -15,7 +15,27 @@
 # embedding is upstream's se_extractor.get_se() without its split by VAD (whisper_timestamped + silero through
 # torch.hub) or whisper (faster-whisper): e2a's voice files are already cleaned and trimmed, so the clip is cut in pieces
 # of about ref_split seconds, as split_audio_vad does, and extract_se averages their embeddings
-import os, sys, json, types, shutil, hashlib, argparse, importlib.util, importlib.machinery, faulthandler
+import os, sys, stat, json, types, shutil, hashlib, argparse, importlib.util, importlib.machinery, faulthandler
+
+def nltk_data_private(nltk_data:str|None)->bool:
+    # nltk >= 3.10 reads a data folder only when no other account can write to it: owner (or root) and no group or
+    # world write bit, on the folder and everything in it. e2a's models/ is 775 (launcher, docker groups) and a umask
+    # 002 makes new entries group writable: this worker creates them private from here on and the write bit is taken
+    # off what is there. True when an entry had to be fixed: nltk asks for its packages to be fetched again
+    os.umask(os.umask(0) | 0o022)
+    fixed = False
+    if os.name != 'posix' or not nltk_data or not os.path.isdir(nltk_data):
+        return fixed
+    for current, dirs, files in os.walk(nltk_data):
+        for path in [current] + [os.path.join(current, name) for name in dirs + files]:
+            try:
+                st = os.lstat(path)
+                if not stat.S_ISLNK(st.st_mode) and st.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+                    os.chmod(path, stat.S_IMODE(st.st_mode) & ~(stat.S_IWGRP | stat.S_IWOTH))
+                    fixed = True
+            except OSError:
+                pass
+    return fixed
 
 def main()->int:
     # the protocol owns a private copy of fd 1; fd 1 itself is pointed at stderr so
@@ -95,11 +115,15 @@ def main()->int:
         import nltk
         # g2p_en (english frontend) and g2pkk (korean) fetch their nltk data at import into the default folder:
         # fetched once into NLTK_DATA instead (set by e2a, under models/tts/openvoice)
+        # a package with an entry that had to be made private is fetched again, as nltk asks
+        refetch = nltk_data_private(os.environ.get('NLTK_DATA'))
         for resource, package in (('taggers/averaged_perceptron_tagger_eng', 'averaged_perceptron_tagger_eng'), ('taggers/averaged_perceptron_tagger', 'averaged_perceptron_tagger'), ('corpora/cmudict', 'cmudict')):
             try:
+                if refetch:
+                    raise LookupError(resource)
                 nltk.data.find(resource)
             except LookupError:
-                nltk.download(package, download_dir=os.environ.get('NLTK_DATA'), quiet=True)
+                nltk.download(package, download_dir=os.environ.get('NLTK_DATA'), quiet=True, force=refetch)
         import numpy as np
         import torch
         import torch.distributed

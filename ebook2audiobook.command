@@ -638,6 +638,11 @@ build_docker_image() {
 	case "$DEVICE_TAG" in
 		cpu|mps) COMPOSE_PROFILES=cpu;; cu*) COMPOSE_PROFILES=cuda;; rocm*) COMPOSE_PROFILES=rocm;; jetson*) COMPOSE_PROFILES=jetson;; xpu) COMPOSE_PROFILES=xpu;; vulkan) COMPOSE_PROFILES=vulkan;; *) COMPOSE_PROFILES=cpu;;
 	esac
+	# a vulkan image runs on the CPU too: without /dev/dri (no GPU, Docker Desktop on macOS) it is run like the cpu image
+	if [[ "$DEVICE_TAG" == "vulkan" && ! -e /dev/dri ]]; then
+		cmd_options=""
+		COMPOSE_PROFILES=cpu
+	fi
 	export COMPOSE_PROFILES
 	get_dri_gids
 	SERVICE="ebook2audiobook-${COMPOSE_PROFILES}"
@@ -663,8 +668,8 @@ build_docker_image() {
 		docker build --no-cache --progress plain --build-arg PYTHON_VERSION="$py_vers" --build-arg APP_VERSION="$APP_VERSION" --build-arg DEVICE_TAG="$DEVICE_TAG" --build-arg DOCKER_DEVICE_STR="$ARG" --build-arg DOCKER_PROGRAMS_STR="${DOCKER_PROGRAMS[*]}" --build-arg CALIBRE_INSTALLER_URL="$CALIBRE_INSTALLER_URL" --build-arg ISO3_LANG="$ISO3_LANG" -t "$DOCKER_IMG_NAME" . || return 1
 		docker image prune --force
 		echo "Docker image ready! to run your docker: "
-		echo "	GUI mode: docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"e2a_venvs:/app/lib/classes/tts_engines/venvs\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME"
-		echo "	Headless mode: docker run -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"e2a_venvs:/app/lib/classes/tts_engines/venvs\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
+		echo "	GUI mode: docker run --security-opt label=disable -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"e2a_venvs:/app/lib/classes/tts_engines/venvs\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME"
+		echo "	Headless mode: docker run --security-opt label=disable -v \"./ebooks:/app/ebooks\" -v \"./audiobooks:/app/audiobooks\" -v \"./models:/app/models\" -v \"./voices:/app/voices\" -v \"./tmp:/app/tmp\" -v \"e2a_venvs:/app/lib/classes/tts_engines/venvs\" -v \"/my/real/ebooks/folder/absolute/path:/app/custom_ebooks\" -v \"/my/real/output/folder/absolute/path:/app/audiobooks\" ${cmd_options} --rm -it -p 7860:7860 $DOCKER_IMG_NAME --headless --ebook /app/custom_ebooks/myfile.pdf [--voice /app/my/voicepath/voice.mp3 etc..]"
 	fi
 }
 

@@ -1,5 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.classes.tts_engines.common.hf_download import hf_download
 from lib.lang import legends
 
 #sys.stderr = StdoutFilter(sys.stdout)
@@ -69,7 +70,6 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
 
     def load_engine(self)->Any:
         try:
-            from huggingface_hub import hf_hub_download
             msg = legends['msg_loading_tts_model'].format(model=self.tts_key)
             print(msg)
             self.cleanup_memory()
@@ -90,16 +90,18 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                         raise RuntimeError(error) from e
                 else:
                     try:
+                        # byte progress in the terminal and the GUI
+                        progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
                         hf_repo = self.models[self.session['fine_tuned']]['repo']
                         if self.session['fine_tuned'] == 'internal':
                             hf_sub = ''
                             if self.speakers_path is None:
-                                self.speakers_path = hf_hub_download(repo_id=hf_repo, filename='speakers_xtts.pth', cache_dir=self.cache_dir)
+                                self.speakers_path = hf_download(progress_bar, msg, repo_id=hf_repo, filename='speakers_xtts.pth', cache_dir=self.cache_dir)
                         else:
                             hf_sub = self.models[self.session['fine_tuned']]['sub']
-                        config_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][0]}', cache_dir=self.cache_dir)
-                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][1]}', cache_dir=self.cache_dir)
-                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][2]}', cache_dir=self.cache_dir)
+                        config_path = hf_download(progress_bar, msg, repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][0]}', cache_dir=self.cache_dir)
+                        checkpoint_path = hf_download(progress_bar, msg, repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][1]}', cache_dir=self.cache_dir)
+                        vocab_path = hf_download(progress_bar, msg, repo_id=hf_repo, filename=f'{hf_sub}{self.models[self.session["fine_tuned"]]["files"][2]}', cache_dir=self.cache_dir)
                         engine = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.device)
                     except Exception as e:
                         error = f'load_engine(): HuggingFace checkpoint loading failed: {e}'

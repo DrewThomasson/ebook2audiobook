@@ -860,6 +860,16 @@ if "%DOCKER_DESKTOP%"=="1" (
 	set "wsl_cmd=wsl --user root -d %DOCKER_WSL_CONTAINER% --"
     for /f "delims=" %%i in ('wsl --user root -d %DOCKER_WSL_CONTAINER% -- wslpath "%SAFE_SCRIPT_DIR:\=/%"') do set "WSL_DIR=%%i"
 )
+rem a vulkan image runs on the CPU too: without /dev/dri (no GPU, Docker Desktop, Podman) it is run like the cpu image
+if /i "%DEVICE_TAG%"=="vulkan" (
+	set "HAS_DRI=0"
+	if defined wsl_cmd if not "%DOCKER_MODE%"=="podman" %wsl_cmd% test -e /dev/dri >nul 2>&1 && set "HAS_DRI=1"
+	if "!HAS_DRI!"=="0" (
+		set "cmd_options="
+		set "COMPOSE_PROFILES=cpu"
+		set "SERVICE=ebook2audiobook-cpu"
+	)
+)
 call :get_iso3_lang "%OS_LANG%"
 set "ISO3_LANG=!ISO3_LANG!"
 if "%DOCKER_MODE%"=="podman" (

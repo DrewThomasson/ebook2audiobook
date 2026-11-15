@@ -225,7 +225,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                     os.remove(tmp_out_wav)
                                 if not reply.get('ok'):
                                     # no retry: core.py unloads the engine, which stops the VC worker. A GPU server that died counts
-                                    # against its package (dropped on the second death, CPU last)
+                                    # against its package (dropped on the second death, next GPU package, CPU last)
                                     if reply.get('server_exited') and self.engine_zs.backend != 'cpu':
                                         self.engine_zs.gpu_crashes[self.engine_zs.package_name] = self.engine_zs.gpu_crashes.get(self.engine_zs.package_name, 0) + 1
                                     if os.path.exists(vc_wav):
@@ -237,7 +237,7 @@ class Vits(TTSUtils, TTSRegistry, name='vits'):
                                 os.remove(vc_wav)
                                 if audio_part.ndim > 1:
                                     audio_part = audio_part.mean(axis=1)
-                                audio_part = self._resample_audiodata(audio_part, int(samplerate), self.params['samplerate'])
+                                self.params['samplerate'] = int(samplerate)
                             else:
                                 with torch.inference_mode():
                                     with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):

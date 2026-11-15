@@ -97,7 +97,8 @@ class Orpheus(TTSUtils, TTSRegistry, name='orpheus'):
             self.model_dir = os.path.join(self.cache_dir, tts_engine, self.checkpoint['repo'].replace('/', '--')) if self.checkpoint else ''
             self.tokenizer_dir = os.path.join(self.cache_dir, tts_engine, settings['repo'].replace('/', '--'))
             self.snac_dir = os.path.join(self.cache_dir, tts_engine, settings['snac'].replace('/', '--'))
-            self.worker_env = {k: v for k, v in os.environ.items() if k not in ('PYTHONHOME', 'PYTHONPATH', 'PYTHONSTARTUP', 'VIRTUAL_ENV', 'CONDA_PREFIX', 'CONDA_DEFAULT_ENV', 'CONDA_PYTHON_EXE', 'CONDA_SHLVL', '__PYVENV_LAUNCHER__')}
+            # OMP_NUM_THREADS sizes e2a's own torch (conf.py, core.py): left out, the worker's torch takes every core
+            self.worker_env = {k: v for k, v in os.environ.items() if k not in ('PYTHONHOME', 'PYTHONPATH', 'PYTHONSTARTUP', 'VIRTUAL_ENV', 'CONDA_PREFIX', 'CONDA_DEFAULT_ENV', 'CONDA_PYTHON_EXE', 'CONDA_SHLVL', '__PYVENV_LAUNCHER__', 'OMP_NUM_THREADS')}
             self.worker_env['VIRTUAL_ENV'] = self.venv_dir
             self.worker_env['PATH'] = os.pathsep.join([os.path.dirname(self.venv_python), self.worker_env.get('PATH', '')])
             self.worker_env['PYTHONUNBUFFERED'] = '1'
@@ -423,7 +424,7 @@ class Orpheus(TTSUtils, TTSRegistry, name='orpheus'):
             import torch
             import numpy as np
             import soundfile as sf
-            from lib.classes.tts_engines.common.audio import is_audio_data_valid, detect_gender
+            from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 sentence_parts = self._split_sentence_on_sml(sentence)
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
@@ -446,6 +447,7 @@ class Orpheus(TTSUtils, TTSRegistry, name='orpheus'):
                     if not any(c.isalnum() for c in part):
                         continue
                     else:
+                        trim_audio_buffer = 0.002
                         # re-read per part: an inline [voice:…] tag can switch the voice in the middle of the sentence.
                         # No voice file, or the custom model's own one: the model's own voice. Any other voice file:
                         # a built-in speaker converted to it (default_vc_model), the same-gender one for the
@@ -495,7 +497,7 @@ class Orpheus(TTSUtils, TTSRegistry, name='orpheus'):
                             })
                             if not reply.get('ok'):
                                 # no retry: core.py unloads the engine, which stops the VC worker. A GPU server that died counts
-                                # against its package (dropped on the second death, CPU last)
+                                # against its package (dropped on the second death, next GPU package, CPU last)
                                 if reply.get('server_exited') and self.engine_zs.backend != 'cpu':
                                     self.engine_zs.gpu_crashes[self.engine_zs.package_name] = self.engine_zs.gpu_crashes.get(self.engine_zs.package_name, 0) + 1
                                 if os.path.exists(vc_file):
@@ -507,7 +509,7 @@ class Orpheus(TTSUtils, TTSRegistry, name='orpheus'):
                             os.unlink(vc_file)
                             if audio_part.ndim > 1:
                                 audio_part = audio_part.mean(axis=1)
-                            audio_part = self._resample_audiodata(audio_part, int(zs_samplerate), int(samplerate))
+                            samplerate = zs_samplerate
                         if os.path.exists(part_file):
                             os.unlink(part_file)
                         if not is_audio_data_valid(audio_part):
@@ -518,6 +520,8 @@ class Orpheus(TTSUtils, TTSRegistry, name='orpheus'):
                         if part_tensor.numel() == 0:
                             error = 'part_tensor not valid'
                             return False, error
+                        if part[-1].isalnum() or part[-1] == '—':
+                            part_tensor = trim_audio(part_tensor.squeeze(0), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         self.audio_segments.append(part_tensor)
                         if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
                             silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100

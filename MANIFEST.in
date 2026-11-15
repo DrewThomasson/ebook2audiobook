@@ -1,1 +1,2 @@
-include requirements.txt
+# The app files of the pip package are listed once, in app_tree_items of setup.py, which adds them to the sdist
+# and the wheel: do not include them here too.

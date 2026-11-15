@@ -6,7 +6,7 @@ models = {
         "repo": "tts_models/[lang_iso1]/[xxx]",
         "sub": {
             "css10/vits": ['es','hu','fi','fr','nl','ru','el'],
-            "custom/vits": ['ca'],
+            "custom/vits": ['ca','sr'],
             "custom/vits-female": ['bn', 'fa'],
             "cv/vits": ['bg','cs','da','et','ga','hr','lt','lv','mt','pt','ro','sk','sl','sv'],
             "mai/vits": ['uk'],

@@ -17,6 +17,7 @@ e2a.cmd --help
 '''
 
 default_language_code = 'eng' # ISO-639-3
+language_separator = 'zzz' # language_mapping's "More languages (A to Z)" line of the language list, not a language
 session_info = 'In headless mode, store it in case of interruption, crash,\nor reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option.\n************************************************************************'
 year_to_decades_languages = ['eng', 'deu', 'nld', 'nob', 'dan', 'swe']
 

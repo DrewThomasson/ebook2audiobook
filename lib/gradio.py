@@ -82,7 +82,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
                                     gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value=legends['gr_device_markdown'])
-                                    gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[(k, v['proc']) for k, v in devices.items()], type='value', value=default_device, interactive=True)
+                                    gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=get_compatible_devices(default_tts_engine), type='value', value=default_device, interactive=True)
                             with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_tts_engine', elem_classes=['gr-group']):
                                     gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value=legends['gr_tts_rating'])
@@ -267,74 +267,74 @@ def build_interface(args:dict)->gr.Blocks:
                             )
                         # ZONOS2: every slider at 0 is the plain cloned voice, each one moves away from it
                         with gr.Group(elem_id='gr_group_zonos_emotion_sliders', elem_classes=['gr-group'], visible=bool(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled'])) as gr_group_zonos_emotion_sliders:
-                                    gr_zonos_emotion_happy = gr.Slider(
-                                        label=legends['gr_zonos_emotion_happy'],
-                                        minimum=0.0,
-                                        maximum=1.0,
-                                        step=0.01,
-                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy']),
-                                        elem_id='gr_zonos_emotion_happy'
-                                    )
-                                    gr_zonos_emotion_sad = gr.Slider(
-                                        label=legends['gr_zonos_emotion_sad'],
-                                        minimum=0.0,
-                                        maximum=1.0,
-                                        step=0.01,
-                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad']),
-                                        elem_id='gr_zonos_emotion_sad'
-                                    )
-                                    gr_zonos_emotion_angry = gr.Slider(
-                                        label=legends['gr_zonos_emotion_angry'],
-                                        minimum=0.0,
-                                        maximum=1.0,
-                                        step=0.01,
-                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry']),
-                                        elem_id='gr_zonos_emotion_angry'
-                                    )
-                                    gr_zonos_emotion_surprised = gr.Slider(
-                                        label=legends['gr_zonos_emotion_surprised'],
-                                        minimum=0.0,
-                                        maximum=1.0,
-                                        step=0.01,
-                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised']),
-                                        elem_id='gr_zonos_emotion_surprised'
-                                    )
-                                    gr_zonos_emotion_valence = gr.Slider(
-                                        label=legends['gr_zonos_emotion_valence'],
-                                        minimum=-1.0,
-                                        maximum=1.0,
-                                        step=0.01,
-                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence']),
-                                        elem_id='gr_zonos_emotion_valence',
-                                        info=legends['gr_zonos_emotion_valence_info']
-                                    )
-                                    gr_zonos_emotion_arousal = gr.Slider(
-                                        label=legends['gr_zonos_emotion_arousal'],
-                                        minimum=-1.0,
-                                        maximum=1.0,
-                                        step=0.01,
-                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal']),
-                                        elem_id='gr_zonos_emotion_arousal',
-                                        info=legends['gr_zonos_emotion_arousal_info']
-                                    )
-                                    gr_zonos_emotion_strength = gr.Slider(
-                                        label=legends['gr_zonos_emotion_strength'],
-                                        minimum=0.0,
-                                        maximum=2.0,
-                                        step=0.05,
-                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']),
-                                        elem_id='gr_zonos_emotion_strength',
-                                        info=legends['gr_zonos_emotion_strength_info']
-                                    )
-                                    gr_zonos_emotion_cfg_scale = gr.Slider(
-                                        label=legends['gr_zonos_emotion_cfg_scale'],
-                                        minimum=1.0,
-                                        maximum=3.0,
-                                        step=0.05,
-                                        value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']),
-                                        elem_id='gr_zonos_emotion_cfg_scale',
-                                        info=legends['gr_zonos_emotion_cfg_scale_info']
-                                    )
+                            gr_zonos_emotion_happy = gr.Slider(
+                                label=legends['gr_zonos_emotion_happy'],
+                                minimum=0.0,
+                                maximum=1.0,
+                                step=0.01,
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy']),
+                                elem_id='gr_zonos_emotion_happy'
+                            )
+                            gr_zonos_emotion_sad = gr.Slider(
+                                label=legends['gr_zonos_emotion_sad'],
+                                minimum=0.0,
+                                maximum=1.0,
+                                step=0.01,
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad']),
+                                elem_id='gr_zonos_emotion_sad'
+                            )
+                            gr_zonos_emotion_angry = gr.Slider(
+                                label=legends['gr_zonos_emotion_angry'],
+                                minimum=0.0,
+                                maximum=1.0,
+                                step=0.01,
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry']),
+                                elem_id='gr_zonos_emotion_angry'
+                            )
+                            gr_zonos_emotion_surprised = gr.Slider(
+                                label=legends['gr_zonos_emotion_surprised'],
+                                minimum=0.0,
+                                maximum=1.0,
+                                step=0.01,
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised']),
+                                elem_id='gr_zonos_emotion_surprised'
+                            )
+                            gr_zonos_emotion_valence = gr.Slider(
+                                label=legends['gr_zonos_emotion_valence'],
+                                minimum=-1.0,
+                                maximum=1.0,
+                                step=0.01,
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence']),
+                                elem_id='gr_zonos_emotion_valence',
+                                info=legends['gr_zonos_emotion_valence_info']
+                            )
+                            gr_zonos_emotion_arousal = gr.Slider(
+                                label=legends['gr_zonos_emotion_arousal'],
+                                minimum=-1.0,
+                                maximum=1.0,
+                                step=0.01,
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal']),
+                                elem_id='gr_zonos_emotion_arousal',
+                                info=legends['gr_zonos_emotion_arousal_info']
+                            )
+                            gr_zonos_emotion_strength = gr.Slider(
+                                label=legends['gr_zonos_emotion_strength'],
+                                minimum=0.0,
+                                maximum=2.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']),
+                                elem_id='gr_zonos_emotion_strength',
+                                info=legends['gr_zonos_emotion_strength_info']
+                            )
+                            gr_zonos_emotion_cfg_scale = gr.Slider(
+                                label=legends['gr_zonos_emotion_cfg_scale'],
+                                minimum=1.0,
+                                maximum=3.0,
+                                step=0.05,
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']),
+                                elem_id='gr_zonos_emotion_cfg_scale',
+                                info=legends['gr_zonos_emotion_cfg_scale_info']
+                            )
                     with gr.Tab(legends['gr_tab_gptsovits_params'], elem_id='gr_tab_gptsovits_params', elem_classes='gr-tab', visible=False) as gr_tab_gptsovits_params:
                         gr_markdown_tab_gptsovits_params = gr.Markdown(
                             elem_id='gr_markdown_tab_gptsovits_params',
@@ -675,6 +675,34 @@ def build_interface(args:dict)->gr.Blocks:
             
             ############## End of Gradio Components creation
 
+            def _lock_error(session_id:str, legend_key:str='error_conversion_running')->str:
+                # message for a task refused because the session status (the lock) is not READY/END
+                session = context.get_session(session_id)
+                if session and session.get('status') == status_tags['SWITCH']:
+                    return legends['error_session_switch_pending']
+                return legends[legend_key]
+
+            def _take_lock(session_id:str)->None:
+                # start of a task: the status is the lock, and the tracker keeps a page reload from replacing the session
+                session = context.get_session(session_id)
+                session['status'] = status_tags['CONVERTING']
+                context_tracker.begin_task(session_id)
+
+            def _release_lock(session_id:str)->bool:
+                # end of a task: back to READY, or end the session if its tab was closed meanwhile
+                # (on_unload() only flags a CONVERTING or busy session, the task is the one to end it)
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        if session['status'] == status_tags['DISCONNECTED']:
+                            context_tracker.end_session(session_id, session['socket_hash'])
+                            return False
+                        session['status'] = status_tags['READY']
+                        return True
+                    return False
+                finally:
+                    context_tracker.end_task(session_id)
+
             def _disable_components(session_id:str, exceptions:list|None=None)->tuple:
                 if session_id is None:
                     outputs = tuple([gr.update() for _ in range(len(outputs_disable_components))])
@@ -685,7 +713,8 @@ def build_interface(args:dict)->gr.Blocks:
                     if 'gr_session_switch_btn' in exceptions:
                         outputs[outputs_disable_components.index(gr_session_switch_btn)] = gr.update(interactive=True)
                     # a conversion supersedes the sentence editor: close it, drop its preview and give back
-                    # the audiobook list/delete button it had locked (✎ and 📦 stay disabled until _enable_components())
+                    # the audiobook list it had locked (🗑, ✎ and 📦 stay disabled until _enable_components():
+                    # nothing can be deleted while a conversion is running)
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         preview_file = session.get('audiobook_edit_preview')
@@ -699,7 +728,6 @@ def build_interface(args:dict)->gr.Blocks:
                     outputs[outputs_disable_components.index(gr_row_audiobook_edit)] = gr.update(visible=False)
                     outputs[outputs_disable_components.index(gr_audiobook_edit_player)] = gr.update(value=None)
                     outputs[outputs_disable_components.index(gr_audiobook_list)] = gr.update(interactive=True)
-                    outputs[outputs_disable_components.index(gr_audiobook_del_btn)] = gr.update(interactive=True)
                     outputs[outputs_disable_components.index(gr_audiobook_player)] = gr.update(visible=True)
                 return outputs
 
@@ -745,6 +773,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 visible_export_btn = os.path.exists(os.path.join(process_dir, f"__edit_pending_{base_name}{Path(audiobook).suffix.lower()}"))
                             outputs[outputs_enable_components.index(gr_audiobook_edit_btn)] = gr.update(interactive=enabled_edit_btn)
                             outputs[outputs_enable_components.index(gr_audiobook_export_btn)] = gr.update(visible=visible_export_btn, interactive=enabled_edit_btn)
+                            outputs[outputs_enable_components.index(gr_audiobook_del_btn)] = gr.update(interactive=session.get('audiobook_edit_block_id') is None)
                             visible_custom_model_del_btn = True if session['custom_model'] is not None else False
                             return tuple(outputs)
                 except Exception as e:
@@ -753,31 +782,50 @@ def build_interface(args:dict)->gr.Blocks:
                 outputs = tuple(gr.update() for _ in range(len(outputs_enable_components)))
                 return outputs
 
+            def _enable_on_end(session_id:str)->tuple:
+                # the session can be gone by now: a tab unload/reload pops it (SessionTracker.end_session) and get_session
+                # returns {}. Read it once with .get(): an unknown session gets no update, like one not ended yet
+                session = context.get_session(session_id)
+                if session.get('status') in [status_tags['END'], status_tags['READY']]:
+                    is_text_mode = session.get('ebook_mode') == ebook_modes['TEXT']
+                    return _enable_components(session_id) + (1 if is_text_mode else 0,)
+                return tuple(gr.update() for _ in range(len(outputs_enable_components))) + (0,)
+
             def _disable_on_voice_upload()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(9)])
-                return outputs + (gr.update(visible='hidden'), gr.update(visible='hidden'))
+                return outputs + (gr.update(visible='hidden'), gr.update(visible='hidden'), gr.update(interactive=False), gr.update(interactive=False))
 
             def _enable_on_voice_upload(session_id:str, ebook_src:str, ebook_textarea:str, ebook_mode:str)->tuple:
                 visible_buttons = 'hidden'
-                enabled_convert_btn = False
                 session = context.get_session(session_id)
-                outputs = tuple([gr.update(interactive=False) for _ in range(8)])
+                outputs = tuple([gr.update() for _ in range(9)])
+                audiobook_outputs = (gr.update(), gr.update())
                 if session and session.get('id', False):
-                    outputs = tuple([gr.update(interactive=True) for _ in range(8)])
-                    enabled_convert_btn = True if (ebook_src and ebook_mode != ebook_modes['TEXT']) or (ebook_textarea and ebook_mode == ebook_modes['TEXT']) else enabled_convert_btn
                     visible_buttons = True if session['voice'] is not None else visible_buttons
-                return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_buttons), gr.update(visible=visible_buttons))
+                    # another task took the lock meanwhile: it gives the components back itself
+                    if session['status'] in [status_tags['READY'], status_tags['END']]:
+                        enabled_convert_btn = True if (ebook_src and ebook_mode != ebook_modes['TEXT']) or (ebook_textarea and ebook_mode == ebook_modes['TEXT']) else False
+                        outputs = tuple([gr.update(interactive=True) for _ in range(8)]) + (gr.update(interactive=enabled_convert_btn),)
+                        editor_closed = session.get('audiobook_edit_block_id') is None
+                        audiobook_outputs = (gr.update(interactive=bool(session.get('audiobook')) and editor_closed), gr.update(interactive=editor_closed))
+                return outputs + (gr.update(visible=visible_buttons), gr.update(visible=visible_buttons)) + audiobook_outputs
 
             def _disable_on_custom_upload()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(11)])
-                return outputs + (gr.update(visible='hidden'),)
+                return outputs + (gr.update(visible='hidden'), gr.update(interactive=False), gr.update(interactive=False))
 
             def _enable_on_custom_upload(session_id:str, custom_model:str|None, ebook_data:any, ebook_textarea:any)->tuple:
-                outputs = tuple([gr.update(interactive=True) for _ in range(10)])
-                enabled_convert_btn = True if ebook_data or ebook_textarea else False
                 session = context.get_session(session_id)
+                outputs = tuple([gr.update() for _ in range(11)])
+                audiobook_outputs = (gr.update(), gr.update())
                 visible_custom_model_del_btn = True if session and _is_custom_model(session.get('custom_model_dir'), custom_model) else False
-                return outputs + (gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_custom_model_del_btn))
+                # another task took the lock meanwhile: it gives the components back itself
+                if session and session.get('id', False) and session['status'] in [status_tags['READY'], status_tags['END']]:
+                    enabled_convert_btn = True if ebook_data or ebook_textarea else False
+                    outputs = tuple([gr.update(interactive=True) for _ in range(10)]) + (gr.update(interactive=enabled_convert_btn),)
+                    editor_closed = session.get('audiobook_edit_block_id') is None
+                    audiobook_outputs = (gr.update(interactive=bool(session.get('audiobook')) and editor_closed), gr.update(interactive=editor_closed))
+                return outputs + (gr.update(visible=visible_custom_model_del_btn),) + audiobook_outputs
 
             def _show_gr_modal(type:str, msg:str)->str:
                 return f'''
@@ -976,6 +1024,9 @@ def build_interface(args:dict)->gr.Blocks:
                             except Exception:
                                 session['translate_iso1'] = None
                         translate_visible = translate_enabled_state and bool(translate_options)
+                        # the engine list first: it may change the engine, and the device list follows the engine
+                        tts_engine_update = _update_gr_tts_engine_list(session_id)
+                        device_update = _update_gr_device_list(session_id)
                         return (
                             gr.update(visible=visible_xtts),
                             gr.update(visible=visible_bark),
@@ -990,12 +1041,12 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=session['ebook_mode']),
                             gr.update(value=bool(session['blocks_preview'])),
                             gr.update(value=bool(session.get('interlude_enabled', False))),
-                            gr.update(value=session['device']),
+                            device_update,
                             gr.update(value=session['language']),
                             gr.update(value=translate_enabled_state),
                             gr.update(visible=translate_visible, choices=translate_options, value=translate),
                             _update_gr_voice_list(session_id),
-                            _update_gr_tts_engine_list(session_id),
+                            tts_engine_update,
                             gr.update(value=_show_rating(session['tts_engine'])),
                             _update_gr_custom_model_list(session_id),
                             gr.update(value=session['output_format']),
@@ -1188,12 +1239,14 @@ def build_interface(args:dict)->gr.Blocks:
                     from urllib.parse import urlparse
                     title = Path(audiobook).stem
                     author = str(session.get('metadata', {}).get('creator') or '')
+                    series = str(session.get('metadata', {}).get('series') or '')
+                    series_index = str(session.get('metadata', {}).get('series_index') or '')
                     if not url or not api_token or not library_id:
                         return (gr.update(interactive=True), 'Configure ABS settings first')
                     parsed = urlparse(url)
                     if not parsed.scheme or not parsed.netloc:
                         return (gr.update(interactive=True), 'Invalid server URL')
-                    ok, msg = upload_to_abs([audiobook], title, author, url, api_token, library_id)
+                    ok, msg = upload_to_abs([audiobook], title, author, url, api_token, library_id, series=series, series_index=series_index)
                     if ok:
                         return (gr.update(interactive=True), f'{msg}')
                     else:
@@ -1266,7 +1319,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(value='', visible=False), gr.update(visible=visible_main),
                                 gr.update(visible=visible_xtts), gr.update(visible=visible_bark), gr.update(visible=visible_zonos), gr.update(visible=visible_gptsovits), gr.update(visible=visible_orpheus), gr.update(visible=visible_sparktts), gr.update(visible=visible_chattts), gr.update(visible=visible_csm), gr.update(visible=visible_abs),
                                 gr.update(interactive=enabled_convert_btn), gr.update(visible=visible_ebook_src, value=ebook_data), gr.update(visible=visible_ebook_textarea, value=ebook_textarea),
-                                gr.update(value=session['device']), gr.update(value=session['audiobook']), _update_gr_audiobook_list(session_id),
+                                _update_gr_device_list(session_id), gr.update(value=session['audiobook']), _update_gr_audiobook_list(session_id),
                                 _update_gr_voice_list(session_id), gr.update(''), gr.update(value='')
                             )
                         elif session['status'] in [status_tags['CONVERTING']]:
@@ -1286,6 +1339,9 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
+                        # gradio can hand this single-select Dropdown's value as a list ([] once cleared)
+                        if isinstance(selected, (list, tuple)):
+                            selected = selected[0] if selected else None
                         if session.get('audiobook') != selected:
                             session['audiobook'] = selected
                         visible = session['audiobook'] is not None
@@ -1300,11 +1356,13 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['audiobook'] is not None: 
+                        if isinstance(session['audiobook'], str):
                             vtt = Path(session['audiobook']).with_suffix('.vtt')
+                            # a warning, not exception_alert(): the list stays usable during a conversion and
+                            # exception_alert() would put the session back to READY, releasing the lock it holds
                             if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
                                 error = legends['error_file_not_found'].format(name=Path(session['audiobook']).name)
-                                exception_alert(session_id, error)
+                                show_alert(session_id, {"type": "warning", "msg": error})
                                 return gr.update(value=0.0), gr.update(value=None), gr.update(value=None)
                             audio_info = mediainfo(session['audiobook'])
                             duration = audio_info.get('duration', False)
@@ -1315,7 +1373,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 return gr.update(value=0.0), gr.update(value=session['audiobook']), gr.update(value=vtt_content)
                             else:
                                 error = legends['error_audiobook_corrupted'].format(name=Path(session['audiobook']).name)
-                                exception_alert(session_id, error)
+                                show_alert(session_id, {"type": "warning", "msg": error})
                 except Exception as e:
                     error = f'_update_gr_audiobook_player(): {e}'
                     exception_alert(session_id, error)
@@ -1493,12 +1551,21 @@ def build_interface(args:dict)->gr.Blocks:
                             state['msg'] = error
                         else:                  
                             session = context.get_session(session_id)
-                            if session and session.get('id', False):
+                            if session and session.get('id', False) and session['status'] not in [status_tags['READY'], status_tags['END']]:
+                                error = _lock_error(session_id)
+                                state['type'] = 'warning'
+                                state['msg'] = error
+                            elif session and session.get('id', False):
                                 voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
                                 voice_name = get_sanitized(voice_name)
                                 final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
-                                extractor = VoiceExtractor(session, f, voice_name)
-                                status, msg = extractor.extract_voice()
+                                # the voice conversion holds the lock: no ebook conversion, edit or deletion meanwhile
+                                _take_lock(session_id)
+                                try:
+                                    extractor = VoiceExtractor(session, f, voice_name)
+                                    status, msg = extractor.extract_voice()
+                                finally:
+                                    _release_lock(session_id)
                                 if status:
                                     session['voice'] = final_voice_file
                                     if session.get('ebook_mode') == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
@@ -1550,6 +1617,10 @@ def build_interface(args:dict)->gr.Blocks:
                     if selected is not None:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
+                            if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                                error = _lock_error(session_id)
+                                show_alert(session_id, {"type": "warning", "msg": error})
+                                return gr.update(visible=False), gr.update()
                             speaker_path = os.path.abspath(selected)
                             speaker = re.sub(r'\.wav$|\.npz|\.pth$', '', os.path.basename(selected))
                             builtin_root = os.path.join(voices_dir, session['language'])
@@ -1596,7 +1667,10 @@ def build_interface(args:dict)->gr.Blocks:
                     if selected is not None:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
-                            if _is_custom_model(session['custom_model_dir'], selected):
+                            if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                                error = _lock_error(session_id)
+                                show_alert(session_id, {"type": "warning", "msg": error})
+                            elif _is_custom_model(session['custom_model_dir'], selected):
                                 selected_name = os.path.basename(selected)
                                 session['status'] = status_tags['DELETION']
                                 msg = legends['msg_confirm_delete'].format(name=selected_name)
@@ -1612,6 +1686,10 @@ def build_interface(args:dict)->gr.Blocks:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
                             selected_name = Path(selected).stem
+                            if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                                error = _lock_error(session_id)
+                                show_alert(session_id, {"type": "warning", "msg": error})
+                                return gr.update(visible=False), gr.update()
                             session['status'] = status_tags['DELETION']
                             msg = legends['msg_confirm_delete'].format(name=selected_name)
                             return gr.update(value=_show_gr_modal(session['status'], msg), visible=True), gr.update(value='confirm_audiobook_del')
@@ -1624,7 +1702,8 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        busy = session['status'] in [status_tags['CONVERTING'], status_tags['EDIT']]
+                        # same rule as _click_gr_audiobook_edit_btn(): ✎ is only usable when no task holds the lock
+                        busy = session['status'] not in [status_tags['READY'], status_tags['END']]
                         enabled = bool(selected) and not busy
                         pending = False
                         if selected and os.path.isfile(str(selected)) and session.get('session_dir'):
@@ -1678,7 +1757,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if session and session.get('id', False):
                         error = None
                         if session['status'] not in [status_tags['READY'], status_tags['END']]:
-                            error = legends['error_editor_unavailable']
+                            error = _lock_error(session_id, 'error_editor_unavailable')
                         elif not audiobook or not os.path.exists(audiobook):
                             error = legends['error_no_audiobook_selected']
                         else:
@@ -1735,6 +1814,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                     if data:
                                                         for value, attributes in data:
                                                             metadata[key] = value
+                                                metadata['series'], metadata['series_index'] = get_epub_series(epubBook)
                                             metadata['language'] = audio_tags.get('language') or metadata['language']
                                             metadata['title'] = metadata['title'] or base_name.replace('_', ' ')
                                             metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
@@ -1846,7 +1926,7 @@ def build_interface(args:dict)->gr.Blocks:
                         interlude = session['audiobook_edit_interlude']
                         interlude_file = os.path.join(session['chapters_dir'], 'interludes', f'{interlude}-{interlude + 1}.{default_audio_proc_format}') if session.get('chapters_dir') else ''
                         if session['status'] not in [status_tags['READY'], status_tags['END']]:
-                            error = legends['error_conversion_running']
+                            error = _lock_error(session_id)
                         elif not session.get('process_dir') or not os.path.exists(interlude_file):
                             error = legends['error_edit_context_lost']
                         elif len(prompt) > 500:
@@ -1865,7 +1945,7 @@ def build_interface(args:dict)->gr.Blocks:
                             channels = 1 if int(interlude_info.get('channels') or 2) == 1 else 2
                             from lib.classes.interlude_generator import InterludeGenerator
                             generator = None
-                            session['status'] = status_tags['CONVERTING']
+                            _take_lock(session_id)
                             session['cancellation_requested'] = False
                             try:
                                 msg = legends['msg_generating_interlude'].format(prompt=prompt)
@@ -1891,7 +1971,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         torch.cuda.empty_cache()
                                 except Exception:
                                     pass
-                                session['status'] = status_tags['READY']
+                                _release_lock(session_id)
                         show_alert(session_id, {"type": "warning", "msg": error})
                         return gr.update(), gr.update(interactive=True), gr.update(interactive=bool(session.get('audiobook_edit_preview'))), gr.update(interactive=True)
                     if session and session.get('id', False):
@@ -1907,7 +1987,7 @@ def build_interface(args:dict)->gr.Blocks:
                         max_chars = int(language_mapping[lang]['max_chars'] / 1.5)
                         sentence_len = len(' '.join(SML_TAG_PATTERN.sub('', text).split()))
                         if session['status'] not in [status_tags['READY'], status_tags['END']]:
-                            error = legends['error_conversion_running']
+                            error = _lock_error(session_id)
                         elif block is None or not session.get('process_dir'):
                             error = legends['error_edit_context_lost']
                         elif len(raw_text) > 500:
@@ -1937,7 +2017,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['tts_engine'] = block.get('tts_engine') or session['tts_engine']
                             session['fine_tuned'] = block.get('fine_tuned') or session['fine_tuned']
                             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
-                            session['status'] = status_tags['CONVERTING']
+                            _take_lock(session_id)
                             session['cancellation_requested'] = False
                             tts_manager = None
                             converted = False
@@ -1961,7 +2041,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 if not converted:
                                     unload_tts_manager(tts_manager)
                                 session['tts_engine'], session['fine_tuned'], session['model_cache'] = engine_backup
-                                session['status'] = status_tags['READY']
+                                _release_lock(session_id)
                         if error is not None:
                             show_alert(session_id, {"type": "warning", "msg": error})
                         return gr.update(), gr.update(interactive=True), gr.update(interactive=bool(session.get('audiobook_edit_preview'))), gr.update(interactive=True)
@@ -1980,7 +2060,7 @@ def build_interface(args:dict)->gr.Blocks:
                         preview_file = session.get('audiobook_edit_preview')
                         interlude_file = os.path.join(session['chapters_dir'], 'interludes', f'{interlude}-{interlude + 1}.{default_audio_proc_format}') if session.get('chapters_dir') else ''
                         if session['status'] not in [status_tags['READY'], status_tags['END']]:
-                            error = legends['error_conversion_running']
+                            error = _lock_error(session_id)
                         elif not os.path.exists(interlude_file):
                             error = legends['error_edit_context_lost']
                         elif not preview_file or not os.path.exists(preview_file):
@@ -2048,7 +2128,7 @@ def build_interface(args:dict)->gr.Blocks:
                         blocks_saved = session.get('blocks_saved') or {}
                         block = next((b for b in blocks_saved.get('blocks', []) if b['id'] == block_id), None)
                         if session['status'] not in [status_tags['READY'], status_tags['END']]:
-                            error = legends['error_conversion_running']
+                            error = _lock_error(session_id)
                         elif block is None or sentence_idx is None or sentence_idx >= len(block.get('sentences', [])):
                             error = legends['error_edit_context_lost']
                         elif not preview_file or not os.path.exists(preview_file):
@@ -2060,7 +2140,7 @@ def build_interface(args:dict)->gr.Blocks:
                             sentence_file = os.path.join(session['sentences_dir'], block_id, f'{sentence_idx}.{default_audio_proc_format}')
                             backup_file = f'{sentence_file}.bak'
                             chapter_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
-                            session['status'] = status_tags['CONVERTING']
+                            _take_lock(session_id)
                             session['cancellation_requested'] = False
                             try:
                                 msg = legends['msg_replacing_sentence'].format(sentence=sentence_idx, block=block_id)
@@ -2094,7 +2174,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     combine_audio_sentences(session_id, chapter_file, block_id, sentence_count)
                                     error = 'combine_audio_sentences() failed! original sentence restored.'
                             finally:
-                                session['status'] = status_tags['READY']
+                                _release_lock(session_id)
                             if error is None:
                                 Path(os.path.join(session['process_dir'], f"__edit_pending_{session['final_name']}")).touch()
                                 session['audiobook_edit_pending'] = True
@@ -2194,7 +2274,7 @@ def build_interface(args:dict)->gr.Blocks:
                         error = None
                         target = audiobook
                         if session['status'] not in [status_tags['READY'], status_tags['END']]:
-                            error = legends['error_conversion_running']
+                            error = _lock_error(session_id)
                         elif not target or not os.path.exists(target):
                             error = legends['error_no_audiobook_selected']
                         elif Path(target).suffix.lstrip('.').lower() not in output_formats:
@@ -2238,6 +2318,7 @@ def build_interface(args:dict)->gr.Blocks:
                                             if data:
                                                 for value, attributes in data:
                                                     metadata[key] = value
+                                        metadata['series'], metadata['series_index'] = get_epub_series(epubBook)
                                     metadata['language'] = audio_tags.get('language') or metadata['language']
                                     metadata['title'] = metadata['title'] or base_name.replace('_', ' ')
                                     metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
@@ -2272,7 +2353,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 else:
                                     interludes_dir = os.path.join(session['chapters_dir'], 'interludes')
                                     session['interlude_enabled'] = os.path.isdir(interludes_dir) and any(f.endswith(f'.{default_audio_proc_format}') and not f.startswith('__') for f in os.listdir(interludes_dir))
-                                session['status'] = status_tags['CONVERTING']
+                                _take_lock(session_id)
                                 session['cancellation_requested'] = False
                                 exported_files = None
                                 try:
@@ -2282,7 +2363,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     exported_files = combine_audio_chapters(session_id)
                                 finally:
                                     session['output_format'], session['output_channel'], session['output_split'], session['interlude_enabled'] = output_backup
-                                    session['status'] = status_tags['READY']
+                                    _release_lock(session_id)
                                 if not exported_files:
                                     error = 'combine_audio_chapters() failed!'
                                 else:
@@ -2323,13 +2404,21 @@ def build_interface(args:dict)->gr.Blocks:
                 return gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), convert_update
 
             def _click_gr_deletion(session_id:str, voice_path:str, custom_model:str, audiobook:str, method:str|None=None)->tuple:
+                deleting = False
                 try:
                     nonlocal models, voice_options
-                    if method is not None:
+                    if method is None:
+                        # ✗: the modal is closed, the lock taken by 🗑 must be released too
+                        session = context.get_session(session_id)
+                        if session and session.get('id', False) and session['status'] == status_tags['DELETION']:
+                            session['status'] = status_tags['READY']
+                    else:
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
                             if session['status'] == status_tags['DELETION']:
                                 session['status'] = status_tags['READY']
+                                context_tracker.begin_task(session_id)
+                                deleting = True
                                 models = load_engine_presets(session['tts_engine'])
                                 if method == 'confirm_voice_del':
                                     selected_name = Path(voice_path).stem
@@ -2373,7 +2462,6 @@ def build_interface(args:dict)->gr.Blocks:
                                 elif method == 'confirm_audiobook_del':
                                     selected_name = Path(audiobook).stem
                                     base_selected_name = re.sub(r'_part\d+$', '', selected_name)
-                                    count_files = sum(1 for f, _ in audiobook_options if re.sub(r'_part\d+$', '', Path(f).stem) == base_selected_name)
                                     if os.path.isdir(audiobook):
                                         shutil.rmtree(audiobook, ignore_errors=True)
                                     else:
@@ -2381,12 +2469,18 @@ def build_interface(args:dict)->gr.Blocks:
                                             os.remove(audiobook)
                                         except FileNotFoundError:
                                             pass
-                                    if count_files <= 1:
+                                    # what is left on disk, not audiobook_options: that list is shared by all the sessions
+                                    audiobook_dir = os.path.dirname(audiobook)
+                                    remaining_stems = [Path(f).stem for f in os.listdir(audiobook_dir) if not f.lower().endswith('.vtt')] if os.path.isdir(audiobook_dir) else []
+                                    # the subtitles belong to the stem: each part has its own, the formats of a same part share it
+                                    if selected_name not in remaining_stems:
                                         vtt_path = Path(audiobook).with_suffix('.vtt')
                                         if os.path.exists(vtt_path):
                                             os.remove(vtt_path)
-                                        language = session['translate'] if session['translate_enabled'] and session['translate'] is not None else session['language']
-                                        process_dir = os.path.join(session['session_dir'], hashlib.md5((selected_name).encode()).hexdigest())
+                                    # the conversion data belongs to the book (part-less name it was created with):
+                                    # it goes with the last part/format of it
+                                    if not any(re.sub(r'_part\d+$', '', stem) == base_selected_name for stem in remaining_stems):
+                                        process_dir = os.path.join(session['session_dir'], hashlib.md5(base_selected_name.encode()).hexdigest())
                                         shutil.rmtree(process_dir, ignore_errors=True)
                                     msg = legends['msg_audiobook_deleted'].format(name=selected_name)
                                     session['audiobook'] = None
@@ -2395,6 +2489,9 @@ def build_interface(args:dict)->gr.Blocks:
                 except Exception as e:
                     error = f'_click_gr_deletion(): {e}!'
                     exception_alert(session_id, error)
+                finally:
+                    if deleting:
+                        context_tracker.end_task(session_id)
                 return  gr.update(value='', visible=False), gr.update(), gr.update(), gr.update()
 
             def _update_gr_voice_list(session_id:str)->dict:
@@ -2496,8 +2593,10 @@ def build_interface(args:dict)->gr.Blocks:
                                                         session['voice'] = default_engine_settings[session['tts_engine']]['voice']
                         else:
                             if options and options[0][1] is not None:
-                                new_voice_path = models[session['fine_tuned']]['voice']
-                                if os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in options):
+                                # this session's own engine presets, not the shared 'models' another event may have
+                                # reloaded for its engine meanwhile (an inner speaker engine's preset has voice None)
+                                new_voice_path = load_engine_presets(session['tts_engine']).get(session['fine_tuned'], {}).get('voice')
+                                if isinstance(new_voice_path, str) and os.path.exists(new_voice_path) and any(v[1] == new_voice_path for v in options):
                                     session['voice'] = new_voice_path
                                 else:
                                     session['voice'] = options[0][1]
@@ -2575,12 +2674,34 @@ def build_interface(args:dict)->gr.Blocks:
                         if session.get('translate_enabled') and session.get('translate'):
                             language = session['translate']
                         tts_engine_options = get_compatible_tts_engines(language)
+                        if not tts_engine_options:
+                            # no engine speaks this language (a source language for translation): keep the engine
+                            return gr.update()
                         if session['tts_engine'] not in tts_engine_options:
                             session['tts_engine'] = tts_engine_options[0]
                         return gr.update(choices=tts_engine_options, value=session['tts_engine'])
                 except Exception as e:
                     error = f'_update_gr_tts_engine_list(): {e}!'
                     exception_alert(session_id, error)              
+                return gr.update()
+
+            def _update_gr_device_list(session_id:str)->dict:
+                try:
+                    session = context.get_session(session_id)
+                    if session and session.get('id', False):
+                        # the selected engine's devices this machine has (default_engine_settings "devices"). A device
+                        # the engine cannot run on goes to its best one (get_best_device), in the dropdown, with a
+                        # warning, before any conversion. Headless mode has no fallback: convert_ebook() stops
+                        device_options = get_compatible_devices(session['tts_engine'])
+                        if session['device'] not in [device for _, device in device_options]:
+                            best_device = get_best_device(session['tts_engine'])
+                            msg = legends['msg_device_reset'].format(engine=session['tts_engine'], device=str(session['device']).upper(), new_device=best_device.upper())
+                            session['device'] = best_device
+                            show_alert(session_id, {'type': 'warning', 'msg': msg})
+                        return gr.update(choices=device_options, value=session['device'])
+                except Exception as e:
+                    error = f'_update_gr_device_list(): {e}!'
+                    exception_alert(session_id, error)
                 return gr.update()
 
             def _update_gr_custom_model_list(session_id:str)->dict:
@@ -2597,8 +2718,8 @@ def build_interface(args:dict)->gr.Blocks:
                             for name, details in models.items()
                             if details.get("lang") in ("multi", session['language']) or language in (details.get("languages") or {})
                         ]
-                        if session['tts_engine'] in tts_engines_with_custom_model:
-                            custom_model_tts_dir = _check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
+                        custom_model_tts_dir = _check_custom_model_tts(session['custom_model_dir'], session['tts_engine']) if session['tts_engine'] in tts_engines_with_custom_model else None
+                        if custom_model_tts_dir is not None:
                             custom_model_options += [
                                 (
                                     str(dir),
@@ -2633,15 +2754,19 @@ def build_interface(args:dict)->gr.Blocks:
             def _change_gr_language(session_id:str, selected:str)->tuple:
                 session = context.get_session(session_id)
                 if not session or not session.get('id', False):
-                    return tuple(gr.update() for _ in range(3))
+                    return tuple(gr.update() for _ in range(4))
+                if selected == language_separator:
+                    # the "More languages (A to Z)" line of the list is not a language: back to the session's one
+                    return (gr.update(value=session.get('language')),) + tuple(gr.update() for _ in range(3))
                 if session.get('language') != selected:
                     session['language'] = selected
                     return (
+                        gr.update(),
                         _update_gr_translate_list(session_id),
                         _update_gr_tts_engine_list(session_id),
                         _update_gr_custom_model_list(session_id)
                     )
-                return tuple(gr.update() for _ in range(3))
+                return tuple(gr.update() for _ in range(4))
 
             def _click_gr_translate_enabled(session_id:str, checked:bool)->tuple:
                 session = context.get_session(session_id)
@@ -2697,7 +2822,11 @@ def build_interface(args:dict)->gr.Blocks:
                         if session and session.get('id', False):
                             custom_model_tts_dir = _check_custom_model_tts(session['custom_model_dir'], tts_engine)
                             custom_model_count = sum(1 for dir in os.listdir(custom_model_tts_dir) if os.path.isdir(os.path.join(custom_model_tts_dir, dir)))
-                            if custom_model_count >= max_custom_model:
+                            if session['status'] not in [status_tags['READY'], status_tags['END']]:
+                                error = _lock_error(session_id)
+                                state['type'] = 'warning'
+                                state['msg'] = error
+                            elif custom_model_count >= max_custom_model:
                                 error = legends['error_max_custom_models'].format(max=max_custom_model)
                                 state['type'] = 'warning'
                                 state['msg'] = error
@@ -2706,7 +2835,12 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['tts_engine'] = tts_engine
                                 if analyze_uploaded_file(custom_file, models['internal']['files'], default_engine_settings[tts_engine].get('files_sharded')):
                                     session['custom_model'] = custom_file
-                                    model = extract_custom_model(session_id)
+                                    # the custom model extraction holds the lock: no ebook conversion, edit or deletion meanwhile
+                                    _take_lock(session_id)
+                                    try:
+                                        model = extract_custom_model(session_id)
+                                    finally:
+                                        _release_lock(session_id)
                                     if model is not None:
                                         session['custom_model'] = model
                                         session['fine_tuned'] = default_fine_tuned
@@ -2792,12 +2926,14 @@ def build_interface(args:dict)->gr.Blocks:
                                 gr.update(visible=visible_csm),
                                 gr.update(visible=visible_custom_model),
                                 gr.update(label=file_label),
-                                _update_gr_custom_model_list(session_id)
+                                _update_gr_custom_model_list(session_id),
+                                _update_gr_device_list(session_id)
                             )
                 except Exception as e:
                     error = f'_change_gr_tts_engine_list(): {e}'
                     exception_alert(session_id, error)
-                return tuple(gr.update() for _ in range(12))
+                # the engine may already be the session's (a language change switched it): the device list follows anyway
+                return tuple(gr.update() for _ in range(12)) + (_update_gr_device_list(session_id),)
 
             def _change_gr_output_format_list(session_id:str, val:str)->None:
                 session = context.get_session(session_id)
@@ -2840,6 +2976,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 show_alert(back_id, {"type": "warning", "msg": msg})
                                 return gr.update(), gr.update(), backup_session_id, gr.update(), None, None
                             new_session_id = new_id.strip()
+                            if new_session_id != back_id and context_tracker.is_busy(new_session_id):
+                                # its status is the lock of the task running on it: neither reset it nor load it now
+                                error = legends['error_session_task_running']
+                                show_alert(back_id, {"type": "warning", "msg": error})
+                                return gr.update(), gr.update(), backup_session_id, gr.update(), None, None
                             session['status'] = status_tags['READY']
                             if new_session_id == back_id:
                                 return gr.update(), gr.update(interactive=False), back_id, gr.update(value='🔒︎'), None, back_id
@@ -2946,6 +3087,8 @@ def build_interface(args:dict)->gr.Blocks:
                     translate_enabled:bool, translate_target:str|None
                 )->tuple:
                 error = None
+                # the whole conversion holds the session: a page reload waits for it instead of replacing the session
+                context_tracker.begin_task(session_id)
                 try:
                     session = context.get_session(session_id)
                     reset_ebook_session(session_id, force=True, filter_keys=False)
@@ -2960,7 +3103,8 @@ def build_interface(args:dict)->gr.Blocks:
                                 "blocks_preview": blocks_preview,
                                 "interlude_enabled": interlude_enabled,
                                 "device": device,
-                                "tts_engine": tts_engine,
+                                # the Dropdown sends None when gradio cleared it (its value left out of new choices)
+                                "tts_engine": tts_engine if tts_engine in default_engine_settings else session['tts_engine'],
                                 "ebook": None,
                                 "ebook_mode": ebook_mode,
                                 "ebook_src": ebook_src if ebook_mode == ebook_modes['SINGLE'] else session['ebook_src'],
@@ -3049,10 +3193,15 @@ def build_interface(args:dict)->gr.Blocks:
                                                     "type": "warning",
                                                     "msg": legends['msg_unsupported_format_skipping'].format(name=Path(skipped).name)
                                                 })
+                                            # skipped files leave the batch too: finalize_audiobook() counts what is left in
+                                            # session['ebook_list'], they would keep the session CONVERTING after the last book
+                                            session['ebook_list'] = list(clean_list)
                                             ebook_list_full = copy.deepcopy(clean_list)
                                             args['ebook_list'] = ebook_list_full
                                             queue = list(ebook_list_full)
-                                            if args['blocks_preview']:
+                                            if not queue:
+                                                error = legends['error_directory_required']
+                                            elif args['blocks_preview']:
                                                 selected = session.get('ebook_selected')
                                                 ebook_map = {os.path.abspath(p): p for p in ebook_list_full}
                                                 if selected and selected in ebook_map:
@@ -3080,7 +3229,7 @@ def build_interface(args:dict)->gr.Blocks:
                                                 args['voice'] = override
                                                 progress_status, passed = convert_ebook(args)
                                                 if not passed:
-                                                    error = progress_status or legends['error_conversion_failed'].format(name=ebook_name)
+                                                    error = progress_status or legends['error_conversion_failed'].format(name=Path(file).name)
                                                     break
                                                 last_progress_status = progress_status
                                                 if args['blocks_preview']:
@@ -3117,6 +3266,8 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'_start_conversion(): {e}'
                     exception_alert(session_id, error)
                     return gr.update(value=error)
+                finally:
+                    context_tracker.end_task(session_id)
 
             def _update_gr_audiobook_list(session_id:str)->dict:
                 try:
@@ -3149,6 +3300,21 @@ def build_interface(args:dict)->gr.Blocks:
                     exception_alert(session_id, error)              
                 return gr.update()
 
+            def _click_gr_convert_btn(session_id:str)->tuple:
+                # ▶ only starts from an idle session: another task (ebook/voice conversion, edit, deletion) holds the lock
+                session = context.get_session(session_id)
+                if session and session.get('id', False) and session['status'] not in [status_tags['READY'], status_tags['END']]:
+                    return tuple(gr.update() for _ in range(len(outputs_disable_components)))
+                return _disable_components(session_id)
+
+            def _click_check_override_ebook(session_id:str, ebook_mode:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int, translate_enabled:bool, translate_target:str|None)->tuple:
+                # the CONVERTING branch of _check_override_ebook() continues a directory batch: a click must never reach it
+                session = context.get_session(session_id)
+                if session and session.get('id', False) and session['status'] not in [status_tags['READY'], status_tags['END']]:
+                    show_alert(session_id, {"type": "warning", "msg": _lock_error(session_id)})
+                    return gr.update(), event
+                return _check_override_ebook(session_id, ebook_mode, ebook_data, ebook_textarea, blocks_preview, event, translate_enabled, translate_target)
+
             def _check_override_ebook(session_id:str, ebook_mode:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int, translate_enabled:bool, translate_target:str|None)->tuple:
                 try:
                     session = context.get_session(session_id)
@@ -3168,10 +3334,14 @@ def build_interface(args:dict)->gr.Blocks:
                                         source = session['ebook_src']
                                 else:
                                     if ebook_mode == ebook_modes['DIRECTORY']:
-                                        if not ebook_data:
+                                        # same filter, order and preview pick as _start_conversion(): the resume check is for the book converted first
+                                        supported = sorted([f for f in (ebook_data or []) if any(f.endswith(ext) for ext in ebook_formats)], key=natural_sort_key)
+                                        if not supported:
                                             error = legends['error_directory_required']
                                         else:
-                                            source = ebook_data[0]
+                                            supported_map = {os.path.abspath(f): f for f in supported}
+                                            selected = session.get('ebook_selected')
+                                            source = supported_map[selected] if blocks_preview and selected in supported_map else supported[0]
                                     elif ebook_mode == ebook_modes['SINGLE']:
                                         if not ebook_data:
                                             error = legends['error_ebook_required']
@@ -3433,6 +3603,11 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     nonlocal models
                     msg = legends['msg_session_load_error']
+                    # a task still holds this session (reload during a conversion, second tab...): set_session() below
+                    # would replace it under the task, so wait until the task has ended
+                    if data.get('id', False) and context_tracker.is_busy(data.get('id')):
+                        error = legends['error_session_task_running']
+                        return gr.update(), gr.update(), gr.update(value=''), _update_gr_glassmask(str=error)
                     if not data.get('id', False):
                         session = context.set_session(str(uuid.uuid4()))
                     else:
@@ -3480,6 +3655,9 @@ def build_interface(args:dict)->gr.Blocks:
                             session['translate_enabled'] = False
                             session['translate'] = None
                             session['translate_iso1'] = None
+                    if session.get('language') not in language_mapping or session.get('language') == language_separator:
+                        # a saved separator line or a language the list no longer has
+                        session['language'] = default_language_code
                     effective_lang = session.get('language')
                     if session.get('translate_enabled') and session.get('translate'):
                         effective_lang = session['translate']
@@ -3492,6 +3670,9 @@ def build_interface(args:dict)->gr.Blocks:
                     if isinstance(session.get('audiobook'), str):
                         if not os.path.exists(session['audiobook']):
                             session['audiobook'] = None
+                    elif session.get('audiobook') is not None:
+                        # a saved value that is not a path (a list the Dropdown once sent) is no selection
+                        session['audiobook'] = None
                     if session.get('audiobook_edit_preview') and os.path.exists(session['audiobook_edit_preview']):
                         os.unlink(session['audiobook_edit_preview'])
                     session['audiobook_edit_block_id'] = None
@@ -3619,16 +3800,7 @@ def build_interface(args:dict)->gr.Blocks:
                     )
                 else:
                     return event.then(
-                        fn=lambda s: (
-                            _enable_components(s) + (1,)
-                            if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
-                            and context.get_session(s)['ebook_mode'] == ebook_modes['TEXT']
-                            else (
-                                _enable_components(s) + (0,)
-                                if context.get_session(s)['status'] in [status_tags['END'], status_tags['READY']]
-                                else [gr.update()] * len(outputs_enable_components) + [0]
-                            )
-                        ),
+                        fn=_enable_on_end,
                         inputs=[gr_session],
                         outputs=outputs_enable_components + [gr_end_event],
                         show_progress_on=[gr_progress]
@@ -3665,7 +3837,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_translate_enabled, gr_translate,
                 gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn,
                 gr_abs_upload_btn,
-                gr_audiobook_edit_btn, gr_audiobook_export_btn,
+                gr_audiobook_edit_btn, gr_audiobook_export_btn, gr_audiobook_del_btn,
                 gr_interlude_enabled
             ]
             outputs_edit_blocks = [
@@ -3807,12 +3979,14 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_on_voice_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
                 gr_custom_model_file, gr_custom_model_list, gr_session_switch_btn,
-                gr_convert_btn, gr_voice_play, gr_voice_del_btn
+                gr_convert_btn, gr_voice_play, gr_voice_del_btn,
+                gr_audiobook_edit_btn, gr_audiobook_del_btn
             ]
             outputs_on_custom_upload = [
                 gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_language, gr_tts_engine_list,
                 gr_custom_model_list, gr_voice_file, gr_session_switch_btn,
-                gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_del_btn
+                gr_voice_play, gr_voice_del_btn, gr_convert_btn, gr_custom_model_del_btn,
+                gr_audiobook_edit_btn, gr_audiobook_del_btn
             ]
             
             ######### event triggers
@@ -3905,7 +4079,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_language.change(
                 fn=_change_gr_language,
                 inputs=[gr_session, gr_language],
-                outputs=[gr_translate, gr_tts_engine_list, gr_custom_model_list],
+                outputs=[gr_language, gr_translate, gr_tts_engine_list, gr_custom_model_list],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
@@ -3927,7 +4101,7 @@ def build_interface(args:dict)->gr.Blocks:
             ).then(
                 fn=_change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_group_custom_model, gr_custom_model_file, gr_custom_model_list],
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_group_custom_model, gr_custom_model_file, gr_custom_model_list, gr_device],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
@@ -3938,7 +4112,7 @@ def build_interface(args:dict)->gr.Blocks:
             gr_tts_engine_list.change(
                 fn=_change_gr_tts_engine_list,
                 inputs=[gr_session, gr_tts_engine_list],
-                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_group_custom_model, gr_custom_model_file, gr_custom_model_list],
+                outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_group_custom_model, gr_custom_model_file, gr_custom_model_list, gr_device],
                 show_progress_on=[gr_progress]
             ).then(
                 fn=_update_gr_voice_list,
@@ -4044,7 +4218,7 @@ def build_interface(args:dict)->gr.Blocks:
                         {js_show_elements}
                     }}
                 '''
-)
+            )
             gr_progress.change(
                 fn=None,
                 inputs=[gr_progress],
@@ -4606,14 +4780,17 @@ def build_interface(args:dict)->gr.Blocks:
             ########### Main chains
 
             _chain_enable(
-                _chain_check_override(
-                    gr_convert_btn.click(
-                        fn=_disable_components,
-                        inputs=[gr_session],
-                        outputs=outputs_disable_components,
-                        show_progress_on=[gr_progress],
-                        queue=False
-                    )
+                gr_convert_btn.click(
+                    fn=_click_gr_convert_btn,
+                    inputs=[gr_session],
+                    outputs=outputs_disable_components,
+                    show_progress_on=[gr_progress],
+                    queue=False
+                ).then(
+                    fn=_click_check_override_ebook,
+                    inputs=[gr_session, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_event, gr_translate_enabled, gr_translate],
+                    outputs=[gr_modal, gr_event],
+                    show_progress_on=[gr_progress]
                 ),
                 always=False
             ).then(

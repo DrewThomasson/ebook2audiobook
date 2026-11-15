@@ -1,6 +1,7 @@
 import os, sys, re, json, shutil, platform, tarfile, zipfile, urllib.request
 from multiprocessing.managers import DictProxy
 from lib.classes.subprocess_pipe import SubprocessPipe
+from lib.classes.tts_engines.common.hf_download import hf_download
 from lib.conf import systems, devices, tts_dir
 from lib.conf_models import TTS_VOICE_CONVERSION, default_vc_model, default_engine_settings, audiocpp_packages, audiocpp_asr, audiocpp_repo
 from lib.lang import legends
@@ -13,16 +14,17 @@ class VoiceConversion(SubprocessPipe):
     # The engines send {"op": "vc", "source", "voice", "file", "text", "language"} whatever the model (send() below):
     # task "vc" converts source (worker --vc-only), task "tts" speaks text in the voice (the worker's clone op), and then
     # resynthesis is True: the engine does not run its own voice for it.
+    # It runs on the device selected when audio.cpp can (CUDA, Vulkan, Metal: no ROCm nor XPU build, those take Vulkan),
+    # else on the next GPU package, Vulkan included, else on CPU: the ebook conversion goes on, with an alert.
     # Also the one place for the audiocpp_server packages (packages(), install()), shared with the audio.cpp TTS engines
     # (AudioCpp).
     # GPU packages whose server died during a conversion, per e2a process: package -> crash count (shared by the audio.cpp
     # engines and the voice conversion, they run the same packages). One crash restarts the same package, a second one
-    # drops it until e2a restarts (next GPU package, else CPU)
+    # drops it until e2a restarts (next GPU package; then the voice conversion takes CPU, AudioCpp stops the conversion)
     gpu_crashes = {}
 
     def __init__(self, session:DictProxy)->None:
         try:
-            from huggingface_hub import hf_hub_download
             from lib.classes.tts_engines.common.preset_loader import load_engine_presets
             self.session = session
             show_alert = getattr(sys.modules.get('lib.core'), 'show_alert', None)
@@ -47,7 +49,7 @@ class VoiceConversion(SubprocessPipe):
             self.languages = settings['languages'] if self.resynthesis else None
             family_cfg = settings['audiocpp'] if settings else {}
             engine_name = cfg.get('engine') or cfg['family']
-            attempts, gpu_wanted = VoiceConversion.packages(session, engine_name)
+            attempts, gpu_wanted = VoiceConversion.packages(session['device'], engine_name, cpu_fallback=True)
             # the GGUF of the engine's internal preset (Chatterbox, Qwen3-TTS: the very file their engine uses) or the listed
             # one, real files under models/tts/audiocpp/<repo>/ for the reason given in AudioCpp.__init__
             preset = load_engine_presets(cfg['engine'])['internal'] if cfg.get('engine') else {'repo': audiocpp_repo, 'files': cfg['files']}
@@ -56,8 +58,8 @@ class VoiceConversion(SubprocessPipe):
             print(msg)
             if progress_bar is not None:
                 progress_bar(0.0, desc=msg)
-            self.model_path = [hf_hub_download(repo_id=preset['repo'], filename=f, cache_dir=tts_dir, local_dir=os.path.join(tts_dir, 'audiocpp', preset['repo'].replace('/', '--'))) for f in preset['files']][0]
-            asr_path = [hf_hub_download(repo_id=audiocpp_repo, filename=f, cache_dir=tts_dir, local_dir=os.path.join(tts_dir, 'audiocpp', audiocpp_repo.replace('/', '--'))) for f in asr_files][0] if asr_files else ''
+            self.model_path = [hf_download(progress_bar, msg, repo_id=preset['repo'], filename=f, cache_dir=tts_dir, local_dir=os.path.join(tts_dir, 'audiocpp', preset['repo'].replace('/', '--'))) for f in preset['files']][0]
+            asr_path = [hf_download(progress_bar, msg, repo_id=audiocpp_repo, filename=f, cache_dir=tts_dir, local_dir=os.path.join(tts_dir, 'audiocpp', audiocpp_repo.replace('/', '--'))) for f in asr_files][0] if asr_files else ''
             worker_script = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'workers', 'audiocpp_worker.py')
             for attempt, self.package_name in enumerate(attempts):
                 package = audiocpp_packages[self.package_name]
@@ -96,6 +98,23 @@ class VoiceConversion(SubprocessPipe):
                         show_alert(session['id'], {'type': 'warning', 'msg': msg})
                     else:
                         print(msg)
+            # a voice other than the engine's built-in ones: each sentence also goes through the voice conversion (task
+            # "tts": spoken again by its model). The device it really runs on: the one selected (Jetson / CUDA packages for
+            # those, Metal for MPS), else the GPU package or CPU it switched to. On the GPU selected: no alert. After a switch
+            # to another GPU (Vulkan) the ebook conversion is slightly slower than with a built-in voice, on CPU much slower
+            backend_devices = {'cuda': devices['CUDA']['proc'], 'vulkan': devices['VULKAN']['proc'], 'metal': devices['MPS']['proc']}
+            vc_device = session['device'] if self.backend == 'cuda' and session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']] else backend_devices.get(self.backend, devices['CPU']['proc'])
+            on_cpu = vc_device == devices['CPU']['proc']
+            msg = None
+            if vc_device != session['device']:
+                msg = legends['msg_vc_device_switch_cpu' if on_cpu else 'msg_vc_device_switch'].format(engine=session['tts_engine'], vc_model=self.vc_model, device=session['device'].upper(), new_device=vc_device.upper())
+            elif on_cpu:
+                msg = legends['msg_vc_cpu_slow'].format(engine=session['tts_engine'], vc_model=self.vc_model)
+            if msg is not None:
+                if show_alert is not None:
+                    show_alert(session['id'], {'type': 'warning', 'msg': msg})
+                else:
+                    print(msg)
         except Exception as e:
             error = f'VoiceConversion.__init__() error: {e}'
             raise RuntimeError(error) from e
@@ -109,14 +128,13 @@ class VoiceConversion(SubprocessPipe):
         return SubprocessPipe.send(self, request)
 
     @staticmethod
-    def packages(session:DictProxy, engine_name:str)->tuple:
-        # the audiocpp_server packages to try on this machine for session['device'], best first. Returns
-        # (attempts, gpu_wanted); raises when no package fits the machine
-        show_alert = getattr(sys.modules.get('lib.core'), 'show_alert', None)
+    def packages(device:str, engine_name:str, cpu_fallback:bool=False)->tuple:
+        # the audiocpp_server packages to try on this machine for device, best first. Returns (attempts, gpu_wanted);
+        # raises when no package fits the machine, or no GPU package on a GPU device without cpu_fallback
         machine = platform.machine().lower()
-        gpu_wanted = session['device'] != devices['CPU']['proc']
+        gpu_wanted = device != devices['CPU']['proc']
         # CUDA packages for NVIDIA devices only: ROCm and XPU go to Vulkan, MPS to Metal
-        cuda_wanted = session['device'] in [devices['CUDA']['proc'], devices['JETSON']['proc']]
+        cuda_wanted = device in [devices['CUDA']['proc'], devices['JETSON']['proc']]
         packages = audiocpp_packages
         jetpack = board_sm = None
         if sys.platform == systems['LINUX'] and os.path.exists('/etc/nv_tegra_release'):
@@ -175,16 +193,19 @@ class VoiceConversion(SubprocessPipe):
             else:
                 error = legends['error_zonos2_no_package'].format(engine=engine_name, machine=machine_desc)
             raise ValueError(error)
-        # first choice, then the other GPU packages, then one CPU package to fall back on if a GPU one cannot start
-        attempts = [usable[0]]
-        if packages[usable[0]]['gpu']:
-            attempts = [k for k in usable if packages[k]['gpu']] + [k for k in usable if not packages[k]['gpu']][:1]
-        if gpu_wanted and not packages[usable[0]]['gpu'] and not any(n >= 2 for n in VoiceConversion.gpu_crashes.values()):
-            msg = legends['msg_zonos2_cpu_fallback'].format(engine=engine_name, machine=machine_desc)
-            if show_alert is not None:
-                show_alert(session['id'], {'type': 'warning', 'msg': msg})
-            else:
-                print(msg)
+        if gpu_wanted:
+            # first choice, then the other GPU packages if it cannot start (CUDA -> Vulkan). AudioCpp (the TTS engine): a
+            # GPU device runs on a GPU package or not at all, none for this machine (or none left after two crashes) stops
+            # the conversion. The voice conversion (cpu_fallback): one CPU package last, the only one then, and the ebook
+            # conversion goes on
+            attempts = [k for k in usable if packages[k]['gpu']]
+            if cpu_fallback:
+                attempts += [k for k in usable if not packages[k]['gpu']][:1]
+            if not attempts:
+                error = legends['error_zonos2_no_gpu_package'].format(engine=engine_name, machine=machine_desc, device=device.upper())
+                raise ValueError(error)
+        else:
+            attempts = [usable[0]]
         return attempts, gpu_wanted
 
     @staticmethod
