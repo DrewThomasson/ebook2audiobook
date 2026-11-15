@@ -5,7 +5,7 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
+import argparse, asyncio, atexit, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
 import traceback, socket, unicodedata, codecs, urllib.request, uuid, zipfile, multiprocessing
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
@@ -188,9 +188,22 @@ class SessionTracker:
 
 class SessionContext:
     def __init__(self):
-        self.manager:Manager = Manager()
+        self.manager:SyncManager = self._start_manager()
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
         self.cancellation_events = {}
+
+    @staticmethod
+    def _start_manager()->SyncManager:
+        # The manager listens on a Unix socket at <tempdir>/pymp-XXXXXXXX/listener-XXXXXXXX, and tempdir is run/
+        # under the install path. A socket path is capped at 107 bytes on Linux and 103 on macOS, so a long
+        # install path cannot bind it. The socket then goes to a private folder under /tmp instead.
+        if os.name == 'nt' or len(os.fsencode(tempfile.gettempdir())) + len('/pymp-XXXXXXXX/listener-XXXXXXXX') <= 103:
+            return Manager()
+        socket_dir = tempfile.mkdtemp(prefix='e2a-', dir='/tmp')
+        atexit.register(shutil.rmtree, socket_dir, ignore_errors=True)
+        manager = SyncManager(address=os.path.join(socket_dir, 'manager'), ctx=multiprocessing.get_context())
+        manager.start()
+        return manager
 
     def _recursive_proxy(self, data:Any, manager:SyncManager|None)->Any:
         if manager is None:
