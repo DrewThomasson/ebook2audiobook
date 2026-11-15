@@ -3144,10 +3144,12 @@ def load_pronunciation_guide(path:str)->tuple[dict|None, str]:
         # and maps to nothing: what it matches is given to the engine as the book has it
         key = word.replace('’', "'")
         alternative = r'\s+'.join(re.escape(part) for part in key.split(' ')).replace("'", "['’]")
+        if ' '.join(say.split()).replace('’', "'") == key:
+            say = None
         if case_sensitive:
-            exact[key] = None if say == word else say
+            exact[key] = say
         else:
-            folded[key.casefold()] = None if say == word else say
+            folded[key.casefold()] = say
             alternative = f'(?i:{alternative})'
         alternatives.append((len(key), alternative))
     # longest entry first, so "King's Landing" wins over "King". The lookahead lets a plural or possessive s follow
