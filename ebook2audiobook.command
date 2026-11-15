@@ -264,7 +264,9 @@ linux_app() {
 	local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
 	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
 	local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
-	if [[ -f "$MENU_ENTRY" ]]; then open_desktop_app; return 0; fi
+	# E2A_NO_DESKTOP_ENTRY=1: a package (nix) ships its own menu entry running its own command, this one would
+	# start the launcher outside of it
+	if [[ -f "$MENU_ENTRY" || "${E2A_NO_DESKTOP_ENTRY:-0}" == "1" ]]; then open_desktop_app; return 0; fi
 	mkdir -p "$HOME/.local/share/applications"
 	cat > "$MENU_ENTRY" <<EOF
 [Desktop Entry]
