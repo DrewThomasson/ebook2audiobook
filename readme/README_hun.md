@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 E-könyvből hangoskönyv (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU átalakító e-könyvből hangoskönyvvé fejezetekkel és metaadatokkal<br/>
 fejlett TTS-motorok használatával és még sok mással.<br/>
 Támogatja a hangklónozást és az 1696 nyelvet!
-> [!IMPORTANT]
+> FONTOS
 **Ez az eszköz kizárólag DRM-mentes, legálisan beszerzett e-könyvekhez használható.** <br>
 A szerzők nem felelősek a szoftver bárminemű visszaéléséért, sem az ebből eredő jogi következményekért. <br>
 Használd ezt az eszközt felelősségteljesen, az összes vonatkozó törvénnyel összhangban.
@@ -138,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 GB RAM min., 8 GB ajánlott.
 - 1 GB VRAM min., 4 GB ajánlott.
 - Engedélyezett virtualizáció, ha Windowson fut (csak Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - Cuda, ROCm, JETSON
 - MPS (Apple Silicon CPU)
 
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Nézd meg másik repónkat, amely az SML automatikus hozzáadásának szentelt az e-könyvedhez -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> FONTOS
 **Mielőtt telepítési vagy hibajegyet nyitnál, gondosan keress rá a nyitott és lezárt jegyek fülön<br>
 hogy biztos legyél benne, hogy a problémád még nem létezik.**
 
@@ -214,7 +214,7 @@ Ezért először manuálisan el kell távolítanod minden olyan szöveget, amely
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (minden operációs rendszer, csak egyszer telepítve és a python_env mappájában található Pythonnal)
 
-> [!IMPORTANT]
+> FONTOS
 **Ha a szkriptet leállítják és újra futtatják, frissítened kell a Gradio GUI felületedet<br>
 hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
 
@@ -715,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Gyakori problémák:
 - Az NVIDIA/ROCm/XPU/MPS GPU-mat nem érzékeli?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  A CPU lassú (jobb szerver SMP CPU-n), míg a GPU szinte valós idejű átalakítást tud nyújtani.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Nincs azonban zero-shot hangklónozása, és a hangok Siri minőségűek, de CPU-n sokkal gyorsabb).
 - „Függőségi problémáim vannak” - Egyszerűen használd a Dockert, teljesen önálló, és van headless módja,
    adj hozzá  paramétert a docker run parancs végéhez további információkért. `--help`
@@ -763,20 +763,20 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1)
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtrális TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Beszélőcske (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1)
 - [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
-- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] Konfuciusz4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] Pontok TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
 - [x] Szarka TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] Moss TTS helyi / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] ÚjTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1)
 - [x] Szupertonikus (https://github.com/supertone-inc/supertonic)[cite: 1]
@@ -810,28 +810,28 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Török (tur)
 - [x] Orosz (orosz)
 - [x] Holland (nld)
-- [x] Czech (ces)
+- [x] Cseh (ces)
 - [x] Japán (jpn)
-- [x] Hindi (hin)
+- [x] hindi (hin)
 - [x] Bengáli (ben)
-- [x] Hungarian (hun)
+- [x] magyar (hun)
 - [x] Koreai (kor)
 - [x] Vietnami (vie)
 - [x] Svéd (swe)
 - [x] Perzsa (fas)
-- [x] Yoruba (yor)
+- [x] joruba (yor)
 - [x] Szuahéli (swa)
 - [x] Indonéz (ind)
-- [x] Slovak (slk)
+- [x] Szlovák (slk)
 - [x] Horvát (hrv)
 
 #### Operációs rendszer kompatibilitás
 - [x] 🪟 Windows x86
-- [x] 🪟 Ablakok él
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
 - [x] 🍎 Apple Silicon Mac
 - [x] 🐧 Linux x86
-- [x] Linux 🐧 ÉLESÍTÉSE
+- [x] 🐧 ARM Linux
 
 **********
 

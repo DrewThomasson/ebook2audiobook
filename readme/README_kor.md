@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 전자책을 오디오북으로(E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 전자책을 챕터 및 메타데이터가 포함된 오디오북으로 변환하는 CPU/GPU 변환기<br/>
 고급 TTS 엔진 등을 사용합니다.<br/>
 음성 복제 및 1696개 언어 지원!
-> [!IMPORTANT]
+> 중 요
 **이 도구는 DRM이 없고 합법적으로 취득한 전자책에만 사용하도록 만들어졌습니다.** <br>
 저작자는 이 소프트웨어의 어떠한 오용이나 그로 인한 법적 결과에 대해 책임지지 않습니다. <br>
 이 도구를 책임감 있게, 그리고 적용 가능한 모든 법률을 준수하여 사용하십시오.
@@ -124,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 이미지로 된 텍스트 페이지가 있는 파일을 위한 **OCR 스캔**
 - 🔊 **고품질 텍스트 음성 변환**, 거의 실시간부터 거의 실제 음성까지
 - 🗣️ 자신의 음성 파일을 사용한 **선택적 음성 복제**
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **1,696개 언어 지원** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **저사양 친화적** — **2 GB RAM / 1 GB VRAM**(최소)에서 실행
 - 🎵 **오디오북 출력 형식**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **SML 태그 지원** — 중단, 멈춤, 음성 전환 등의 세밀한 제어 ([see below](#sml-tags-available))
@@ -166,11 +166,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — 무음(무작위 범위 **1.0–1.6 sec.**)
 - `[pause:N]` — 고정 멈춤(**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — 기본 음성 또는 GUI/CLI에서 선택한 음성에서 음성 전환
-- `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
+- `[emotion:sadness]...[/emotion]` — Zonos 전용: 구절에 대한 감정(기쁨, 슬픔, 혐오, 두려움, 놀람, 분노, 기타, 중립) 또는 `[emotion:sadness=0.7,neutral=0.3]`과 같은 혼합 감정. 다른 엔진은 이를 무시합니다.
 
 **전자책에 SML을 자동으로 추가하는 데 전념하는 다른 저장소를 확인하세요 -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> 중 요
 **설치 또는 버그 문제를 게시하기 전에, 열린 문제와 닫힌 문제 탭을 주의 깊게 검색하여<br>
 귀하의 문제가 아직 존재하지 않는지 확인하십시오.**
 
@@ -214,7 +214,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (모든 OS, 한 번만 설치하고 python_env 폴더의 Python 사용)
 
-> [!IMPORTANT]
+> 중 요
 **스크립트를 중지하고 다시 실행하면 Gradio GUI 인터페이스를 새로 고쳐야 합니다<br>
 웹 페이지가 새로운 연결 소켓에 다시 연결될 수 있도록 하기 위해서입니다.**
 
@@ -757,18 +757,18 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 피쉬 스피치/피쉬 오디오 (https://github.com/fishaudio/fish-speech)[cite: 1)
 - [x] 힉스 오디오 TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
-- [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
+- [x] OmniVoice(https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1)
-- [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
-- [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
+- [x] Qwen3-TTS(https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
+- [x] VibeVoice(https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
-- [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
+- [x] Voxtral TTS(https://github.com/voxtral/voxtral-tts)[cite: 1]
 - [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1)
 - [x] CosyVoice/CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1)
 - [x] Index-tts/Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
-- [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
+- [x] XTTSv2(https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] 브리즈 TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
-- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] 공자4 TTS(https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] 점 TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1)
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
@@ -783,26 +783,26 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 이로도리 TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
 - [x] 파이퍼 (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1)
-- [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
+- [x] Fairseq(https://github.com/facebookresearch/fairseq)[cite: 1]
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
-- [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
+- [x] Tacotron2(https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] 거북이 (https://github.com/neonbjb/tortoise-tts)[cite: 1]
-- [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
+- [x] Zonos(https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] 껍질 (https://github.com/suno-ai/bark)[cite: 1]
 - [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1)
-- [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
-- [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
-- [x] ChatTTS (https://github.com/2noise/ChatTTS)
-- [x] Spark-TTS (https://github.com/sparkaudio/spark-tts)
-- [x] MeloTTS (https://github.com/myshell-ai/MeloTTS)
-- [x] CSM (https://github.com/SesameAILabs/csm)
+- [x] Orpheus-TTS(https://github.com/canopyai/Orpheus-TTS)
+- [x] OpenVoice(https://github.com/myshell-ai/OpenVoice)
+- [x] ChatTTS(https://github.com/2noise/ChatTTS)
+- [x] Spark-TTS(https://github.com/sparkaudio/spark-tts)
+- [x] MeloTTS(https://github.com/myshell-ai/MeloTTS)
+- [x] CSM(https://github.com/SesameAILabs/csm)
 
 #### Readme 번역
 - [x] 아랍어 (ara)
 - [x] 중국어 (zho)
-- [x] English (eng)
+- [x] 영어(eng)
 - [x] 스페인어 (스파)
-- [x] French (fra)
+- [x] 프랑스어(fra)
 - [x] 독일어 (deu)
 - [x] 이탈리아어 (ita)
 - [x] 포르투갈어 (por)
@@ -853,10 +853,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 -->
 
 ## 크레디트
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
-- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml inference code for Zonos2.
-- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- An all-in-one, pure C++ inference engine for audio models, powered by ggml.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- 연구 및 실제 제작 과정에서 검증된 TTS(텍스트-음성 변환)용 딥러닝 툴킷.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- 빠르고 로컬 기반의 신경망 TTS(텍스트-음성 변환) 엔진.
+- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2용 ggml 추론 코드.
+- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- ggml 기반의 오디오 모델용 올인원 순수 C++ 추론 엔진.
 
 <a id="special-thanks"></a>
 ## 특별히 감사드립니다

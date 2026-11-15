@@ -39,13 +39,13 @@ Använd detta verktyg ansvarsfullt och i enlighet med alla tillämpliga lagar.
 
 <a id="gui-interface"></a>
 #### Grafiskt gränssnitt (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Klicka för att se bilder på webb-GUI:t</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Språk som stöds
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,60 @@ Du bör därför först manuellt ta bort all text som du inte vill omvandla till
 **Om skriptet stoppas och körs igen måste du uppdatera ditt Gradio-GUI-gränssnitt<br>
 så att webbsidan kan återansluta till den nya anslutningssocketen.**
 
+<a id="pip-install"></a>
+### Installera med pip/pipx
+Ett annat sätt att installera och starta ebook2audiobook, utan att klona repot: pip installerar kommandot `ebook2audiobook`<br>
+(alla operativsystem, vilken version av Python som helst 3.8+). Den klonade databasen med sina startskript ovan fortsätter att fungera på samma sätt.
+
+1. **Installera kommandot** från PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   eller med UV
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   eller med kärna
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>För den senaste koden som ännu inte har släppts ska du använda `git+https://github.com/DrewThomasson/ebook2audiobook.git` i stället för `ebook2audiobook`.</i>
+
+2. **Installera/Kör ebook2audiobook**, med samma alternativ som startskripten:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Om kommandot inte hittas (pips skriptmapp finns inte i din PATH): `python -m ebook2audiobook`
+
+- Vid första starten kopieras ebook2audiobook till `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` på Windows) och installeras där<br>
+  med dess startskript, precis som `./ebook2audiobook.command` eller `ebook2audiobook.cmd` skulle göra.
+- För att använda en annan mapp ska du ställa in `E2A_HOME` före den första starten och behålla inställningen för de kommande<br>
+  (dvs. `export E2A_HOME=/data/ebook2audiobook` på Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` och sedan en ny terminal på Windows).
+- Den mappen är en vanlig ebook2audiobook-mapp: `./ebook2audiobook.command` (`./e2a.sh`) och `ebook2audiobook.cmd` (`e2a.cmd`) fungerar också i den.
+- Om den mappen redan innehåller en klonad eller nedladdad ebook2audiobook startas den som den är och pip ändrar den aldrig.
+- Relativa sökvägar angivna för `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` och `--output_dir`<br>
+  läses från mappen där du skriver kommandot.
+- Du behöver inte inaktivera din venv eller conda env: ebook2audiobook körs alltid i sin egen `python_env`.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (eventuellt med `--docker_mode compose` eller `--docker_mode podman`)<br>
+  skapar image-filen från den mappen. Kör även kommandona `docker run` / `docker compose` som skrivs ut från den mappen:<br>
+  deras `./ebooks`, `./audiobooks` … monteringar och compose-filerna är relativa till den. Image-filen använder samma alternativ,<br>
+  med sökvägar inuti containern (`/app/...`), se [Docker](#docker).
+- **Uppdatering**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` eller `pip install -U ebook2audiobook`.<br>
+  Nästa gång du startar uppdateras appfilerna och `python_env`, modeller, röster, ljudböcker och allt du har lagt till i mappen behålls.
+- **Avinstallera**: `pip uninstall`, `pipx uninstall` eller `uv tool uninstall` tar endast bort kommandot:<br>
+  mappen och dess gigabyte med modeller blir kvar. Avinstallera först ebook2audiobook med själva kommandot:
+  1. Flytta dina ljudböcker från mappens undermapp `audiobooks`: allt i mappen raderas.
+  2. `ebook2audiobook --uninstall`<br>
+     Den kör avinstallationsprogrammet för mappen, som ber dig att bekräfta och sedan tar bort genvägarna, de program som den installerade<br>
+     (listad i `.installed`) och mappinnehållet, och raderar sedan mappen.
+  3. Kör kommandot som skrivs ut sist för att ta bort själva `ebook2audiobook`, vilket beror på hur du installerade det:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` eller `pip uninstall ebook2audiobook`.
+  4. Om du byggde Docker-avbildningar: `docker rmi athomasson2/ebook2audiobook:<tag>` och `docker volume rm e2a_venvs`<br>
+     (med Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` och `podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### Grundläggande användning
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ så att webbsidan kan återansluta till den nya anslutningssocketen.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (alla operativsystem)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Sökväg till din e-boksfil
@@ -260,6 +319,10 @@ så att webbsidan kan återansluta till den nya anslutningssocketen.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (alla operativsystem)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Eller för alla operativsystem**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)

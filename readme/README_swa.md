@@ -39,13 +39,13 @@ Tumia zana hii kwa uwajibikaji na kwa kufuata sheria zote zinazotumika.
 
 <a id="gui-interface"></a>
 #### Kiolesura cha GUI
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Bofya ili kuona picha za GUI ya Wavuti</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Lugha Zinazoungwa Mkono
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,60 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
 **Ikiwa hati itasimamishwa na kuendeshwa tena, unahitaji kuonyesha upya kiolesura chako cha GUI cha gradio<br>
 ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
 
+<a id="pip-install"></a>
+### Sakinisha kwa kutumia pip / pipx
+Njia nyingine ya kusakinisha na kuzindua ebook2audiobook, bila kunakili hifadhi: pip husakinisha amri ya `ebook2audiobook`<br>
+(OS zote, python yoyote 3.8 na kuendelea). Hifadhi iliyonakiliwa pamoja na hati zake za uzinduzi zilizo hapo juu zinaendelea kufanya kazi kwa njia ileile.
+
+1. **Sakinisha amri** kutoka PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   au yenye uv
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   au kwa pip
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>Kwa msimbo wa hivi karibuni ambao bado haujatolewa, tumia `git+https://github.com/DrewThomasson/ebook2audiobook.git` badala ya `ebook2audiobook`.</i>
+
+2. **Sakinisha / Endesha ebook2audiobook**, ukitumia machaguo yale yale kama yale ya hati za uzinduzi:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Ikiwa amri haipatikani (folda ya hati za pip haipo kwenye PATH yako): `python -m ebook2audiobook`
+
+- Ufunguzi wa kwanza hunakili ebook2audiobook kwenye `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` kwenye Windows) na kuiweka hapo<br>
+  kwa kutumia hati yake ya uzinduzi, kama vile `./ebook2audiobook.command` au `ebook2audiobook.cmd` ingefanya.
+- Ili utumie folda nyingine, weka `E2A_HOME` kabla ya ufunguzi wa kwanza na uendelee kuiweka kwa ajili ya ufunguzi unaofuata<br>
+  (yaani `export E2A_HOME=/data/ebook2audiobook` kwenye Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` kisha terminali mpya kwenye Windows).
+- Folda hiyo ni folda ya kawaida ya ebook2audiobook: `./ebook2audiobook.command` (`./e2a.sh`) na `ebook2audiobook.cmd` (`e2a.cmd`) pia zinafanya kazi ndani yake.
+- Ikiwa folda hiyo tayari ina kitabu cha kielektroniki kilichonakiliwa au kupakuliwa, kinazinduliwa jinsi kilivyo na pip haikibadilishi kamwe.
+- Njia za kulinganisha zilizotolewa kwa `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` na `--output_dir`<br>
+  husomwa kutoka kwenye folda ambapo unaandika amri.
+- Hakuna haja ya kulemaza venv yako au conda env: ebook2audiobook daima hufanya kazi katika `python_env` yake mwenyewe.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (kwa hiari pamoja na `--docker_mode compose` au `--docker_mode podman`)<br>
+  hujenga picha kutoka kwenye folda hiyo. Endesha amri za `docker run` / `docker compose` zinazochapishwa kutoka kwenye folda hiyo pia:<br>
+  `./ebooks`, `./audiobooks`... zao huwekwa na mafaili ya kuunganisha yanahusiana nayo. Picha inachukua machaguo yaleyale,<br>
+  yenye njia ndani ya kontena (`/app/...`), angalia [Docker](#docker).
+- **Sasisho**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` au `pip install -U ebook2audiobook`.<br>
+  Ufunguzi unaofuata unasasisha mafaili ya programu na kuhifadhi `python_env`, miundo, sauti, vitabu vya sauti na kitu chochote ulichoweka kwenye folda.
+- **Ondoa**: `pip uninstall`, `pipx uninstall` au `uv tool uninstall` pekee huondoa tu amri:<br>
+  folda na gigabaiti zake za modeli hubaki. Ondoa ebook2audiobook kwa kutumia amri yenyewe kwanza:
+  1. Ondoa vitabu vyako vya sauti kutoka kwenye folda ndogo ya `audiobooks` ya folda: kila kitu kilicho kwenye folda kinafutwa.
+  2. `ebook2audiobook --uninstall`<br>
+     Inatumia programu ya kuondoa ya folda, ambayo inakuomba uthibitishe kisha inaondoa njia za mkato, programu ambazo iliweka<br>
+     (imeorodheshwa katika `.installed`) na maudhui ya folda, kisha inafuta folda hiyo.
+  3. Tumia amri inayochapisha mwisho ili kuondoa `ebook2audiobook` yenyewe, ambayo inategemea jinsi ulivyoifunga:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` au `pip uninstall ebook2audiobook`.
+  4. Ikiwa ulijenga picha za Docker: `docker rmi athomasson2/ebook2audiobook:<tag>` na `docker volume rm e2a_venvs`<br>
+     (pamoja na Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` na `podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### Matumizi ya Msingi
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (mifumo yote ya uendeshaji)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Njia ya faili yako ya eBook
@@ -260,6 +319,10 @@ ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (mifumo yote ya uendeshaji)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Au kwa mifumo yote ya uendeshaji**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)

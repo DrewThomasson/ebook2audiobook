@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 ই-বুক থেকে অডিওবুক (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 অধ্যায় ও মেটাডেটা সহ ই-বুক থেকে অডিওবুকে রূপান্তরকারী CPU/GPU কনভার্টার<br/>
 উন্নত TTS ইঞ্জিন ইত্যাদি ব্যবহার করে।<br/>
 ভয়েস ক্লোনিং এবং 1696 টি ভাষা সমর্থন করে!
-> [!IMPORTANT]
+> গুরুত্বপূর্ণ
 **এই টুলটি কেবল DRM-মুক্ত, বৈধভাবে অর্জিত ই-বুকের সাথে ব্যবহারের জন্য তৈরি করা হয়েছে।** <br>
 লেখকগণ এই সফটওয়্যারের কোনো অপব্যবহার বা তা থেকে উদ্ভূত কোনো আইনি পরিণতির জন্য দায়ী নন। <br>
 এই টুলটি দায়িত্বের সাথে এবং সমস্ত প্রযোজ্য আইন মেনে ব্যবহার করুন।
@@ -166,11 +166,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — নীরবতা (এলোমেলো পরিসর **1.0–1.6 sec.**)
 - `[pause:N]` — নির্দিষ্ট বিরতি (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — ডিফল্ট বা GUI/CLI থেকে নির্বাচিত ভয়েস থেকে ভয়েস পরিবর্তন করুন
-- `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
+- `[emotion:sadness]...[/emotion]` — শুধুমাত্র Zonos: একটি অংশের জন্য আবেগ (আনন্দ, দুঃখ, ঘৃণা, ভয়, বিস্ময়, রাগ, অন্যান্য, নিরপেক্ষ) বা `[emotion:sadness=0.7,neutral=0.3]`-এর মতো একটি মিশ্রণ; অন্যান্য ইঞ্জিন এটি উপেক্ষা করে
 
 **আপনার ই-বুকে স্বয়ংক্রিয়ভাবে SML যোগ করার জন্য নিবেদিত আমাদের অন্য রেপোটি দেখুন -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> গুরুত্বপূর্ণ
 **ইনস্টলেশন বা বাগ সমস্যা পোস্ট করার আগে, খোলা ও বন্ধ সমস্যার ট্যাবে সাবধানে অনুসন্ধান করুন<br>
 এটা নিশ্চিত করতে যে আপনার সমস্যাটি ইতিমধ্যে নেই।**
 
@@ -210,11 +210,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    
 1. **ওয়েব অ্যাপ খুলুন**: ওয়েব অ্যাপে প্রবেশ করতে এবং ই-বুক রূপান্তর করতে টার্মিনালে প্রদত্ত URL-এ ক্লিক করুন। `http://localhost:7860/`
 2. **পাবলিক লিঙ্কের জন্য**:
-   `./ebook2audiobook.command --share` (লিনাক্স/ম্যাকওএস)
+   `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (সমস্ত OS, শুধুমাত্র একবার ইনস্টল করা হয়েছে এবং এর python_env ফোল্ডারের পাইথন সহ)
 
-> [!IMPORTANT]
+> গুরুত্বপূর্ণ
 **যদি স্ক্রিপ্ট বন্ধ করে আবার চালানো হয়, তাহলে আপনাকে আপনার Gradio GUI ইন্টারফেস রিফ্রেশ করতে হবে<br>
 যাতে ওয়েব পৃষ্ঠাটি নতুন কানেকশন সকেটে পুনরায় সংযুক্ত হতে পারে।**
 
@@ -765,31 +765,31 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] ভক্সট্রাল টিটিএস (https://github.com/voxtral/voxtral-tts)[cite: 1]
 - [x] চ্যাটারবক্স (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
-- [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
+- [x] ইন্ডেক্স-TTS / ইন্ডেক্স TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
 - [x] কনফুসিয়াস 4 টিটিএস (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] বিন্দু TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] কোকোরো-টিটিএস (https://github.com/hexgrad/kokoro)[cite: 1]
-- [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
-- [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
+- [x] কুゲルঅডিও (https://github.com/kugel-audio/kugelaudio)[cite: 1]
+- [x] ম্যাগপাই TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
 - [x] মস টিটিএস স্থানীয় / ন্যানো (https://github.com/OpenBMB/MossTTS)[cite: 1]
 - [x] নিউটিটিএস / নিউটিএস (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] পকেট টিটিএস (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] গ্র্যাডিয়াম ফোনন (https://github.com/gradium-ai/xn-ptts)[cite: 1]
 - [x] সুপারটনিক (https://github.com/supertone-inc/supertonic)[cite: 1]
-- [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
+- [x] ইরোডরি TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
 - [x] পাইপার (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
 - [x] ফেয়ারসিক (https://github.com/facebookresearch/fairseq)[cite: 1]
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
-- [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
+- [x] ট্যাকোট্রন2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] কচ্ছপ (https://github.com/neonbjb/tortoise-tts)[cite: 1]
 - [x] জোনোস (https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] বার্ক (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] আপনারTTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] অর্ফিয়াস-টিটিএস (https://github.com/canopyai/Orpheus-TTS)
 - [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
 - [x] ChatTTS (https://github.com/2noise/ChatTTS)
@@ -819,7 +819,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] ভিয়েতনামী (vie)
 - [x] সুইডিশ (SWE)
 - [x] ফার্সি (FAS)
-- [x] Yoruba (yor)
+- [x] ইওরুবা (ইওরু)
 - [x] সোয়াহিলি (সোয়া)
 - [x] ইন্দোনেশীয় (ind)
 - [x] স্লোভাক (slk)
@@ -827,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### 💻 ওএস কম্প্যাটিবিলিটি
 - [x] 🪟 উইন্ডোজ x86
-- [x] 🪟 আর্ম উইন্ডোজ
+- [x] 🪟 ARM Windows
 - [x] 🍎 ম্যাক ইন্টেল x86
 - [x] 🍎 অ্যাপল সিলিকন ম্যাক
 - [x] 🐧 লিনাক্স x86
-- [x] 🐧 আর্ম লিনাক্স
+- [x] 🐧 ARM Linux
 
 **********
 

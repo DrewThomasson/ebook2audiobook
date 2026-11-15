@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 Sách điện tử thành sách nói (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 Bộ chuyển đổi CPU/GPU từ sách điện tử sang sách nói với các chương và siêu dữ liệu<br/>
 sử dụng các engine TTS tiên tiến và nhiều hơn nữa.<br/>
 Hỗ trợ nhân bản giọng nói và 1696 ngôn ngữ!
-> [!IMPORTANT]
+> LƯU Ý QUAN TRỌNG
 **Công cụ này chỉ dành để sử dụng với các sách điện tử không có DRM và được mua hợp pháp.** <br>
 Các tác giả không chịu trách nhiệm cho bất kỳ việc lạm dụng phần mềm này hay bất kỳ hậu quả pháp lý nào phát sinh. <br>
 Hãy sử dụng công cụ này một cách có trách nhiệm và tuân thủ mọi luật hiện hành.
@@ -124,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **Quét OCR** cho các tệp có trang văn bản dưới dạng hình ảnh
 - 🔊 **Chuyển văn bản thành giọng nói chất lượng cao**, từ gần thời gian thực đến giọng gần như thật
 - 🗣️ **Nhân bản giọng nói tùy chọn** bằng tệp giọng nói của riêng bạn
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Hỗ trợ 1.696 ngôn ngữ** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Thân thiện với tài nguyên thấp** — chạy trên **2 GB RAM / 1 GB VRAM (tối thiểu)**
 - 🎵 **Định dạng đầu ra sách nói**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Hỗ trợ thẻ SML** — kiểm soát chi tiết các điểm ngắt, khoảng dừng, chuyển giọng và hơn thế nữa ([see below](#sml-tags-available))
@@ -138,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 GB RAM tối thiểu, 8 GB khuyến nghị.
 - 1 GB VRAM tối thiểu, 4 GB khuyến nghị.
 - Bật ảo hóa nếu chạy trên Windows (chỉ Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
 - MPS (CPU Apple Silicon)
 
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Hãy xem repo khác của chúng tôi dành riêng cho việc thêm SML tự động vào sách điện tử của bạn -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> LƯU Ý QUAN TRỌNG
 **Trước khi đăng vấn đề cài đặt hoặc lỗi, hãy tìm kiếm cẩn thận trong tab các vấn đề đang mở và đã đóng<br>
 để chắc chắn rằng vấn đề của bạn chưa tồn tại.**
 
@@ -214,7 +214,7 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (tất cả các hệ điều hành, chỉ cài đặt một lần và với python trong thư mục python_env của nó)
 
-> [!IMPORTANT]
+> LƯU Ý QUAN TRỌNG
 **Nếu tập lệnh bị dừng và chạy lại, bạn cần làm mới giao diện GUI Gradio của mình<br>
 để trang web kết nối lại với socket kết nối mới.**
 
@@ -715,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Các vấn đề thường gặp:
 - GPU NVIDIA/ROCm/XPU/MPS của tôi không được phát hiện?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU chậm (tốt hơn trên CPU smp máy chủ) trong khi GPU có thể chuyển đổi gần như thời gian thực.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Tuy nhiên nó không có nhân bản giọng nói zero-shot, và là giọng chất lượng Siri, nhưng nhanh hơn nhiều trên cpu).
 - "Tôi gặp vấn đề về phụ thuộc" - Chỉ cần dùng docker, nó hoàn toàn độc lập và có chế độ headless,
    thêm tham số  ở cuối lệnh docker run để biết thêm thông tin. `--help`
@@ -755,7 +755,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
 - [x] Âm thanh FireRed/ FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
 - [x] Âm thanh Fish-speech/ Fish (https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] TTS âm thanh Higgs (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
@@ -765,17 +765,17 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
 - [x] Hộp trò chuyện (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
-- [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
+- [x] Chỉ mục-tts / Chỉ mục TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
-- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] TTS Khổng Tử4 (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] Chấm TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
 - [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] Moss TTS cục bộ / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
 - [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] Gradi Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1)
@@ -814,12 +814,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Tiếng Nhật (jpn)
 - [x] Tiếng Hindi (hin)
 - [x] Tiếng Bengali (ben)
-- [x] Hungarian (hun)
+- [x] Tiếng Hungary (hun)
 - [x] Tiếng Hàn (kor)
 - [x] Vietnamese (VIE)
 - [x] Tiếng Thụy Điển (swe)
 - [x] Tiếng Ba Tư (FAS)
-- [x] Yoruba (yor)
+- [x] Tiếng Yoruba (yor)
 - [x] Tiếng Swahili (swa)
 - [x] Tiếng Indonesia (ind)
 - [x] Tiếng Slovak (slk)
@@ -827,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Tương thích hệ điều hành
 - [x] 🪟 Windows x86
-- [x] 🪟 CỬA SỔ ARM
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Máy Mac dùng chip Apple Silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 
@@ -853,10 +853,10 @@ Chúng tôi chấp nhận bất kỳ loại phần cứng nào để thử nghi�
 -->
 
 ## Tín dụng
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Bộ công cụ học sâu dành cho công nghệ chuyển văn bản thành giọng nói, đã được kiểm nghiệm thực tế trong nghiên cứu và sản xuất.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Công cụ chuyển văn bản thành giọng nói bằng mạng nơ-ron nhanh và cục bộ.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- mã suy luận ggml cho Zonos2.
-- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- An all-in-one, pure C++ inference engine for audio models, powered by ggml.
+- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Một công cụ suy luận C++ thuần túy, tất cả trong một, dành cho các mô hình âm thanh, được hỗ trợ bởi ggml.
 
 <a id="special-thanks"></a>
 ## Lời cảm ơn đặc biệt
