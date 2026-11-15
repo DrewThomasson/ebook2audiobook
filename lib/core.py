@@ -319,6 +319,7 @@ class SessionContext:
             "audiobook_edit_interlude": None,
             "audiobook_edit_preview": None,
             "audiobook_edit_preview_text": None,
+            "audiobook_edit_preview_spoken": None,
             "audiobook_edit_pending": False,
             ####### Ebook conversion
             "ebook": None,
@@ -3137,9 +3138,8 @@ def load_pronunciation_guide(path:str)->tuple[dict|None, str]:
         if not word or not say or not isinstance(case_sensitive, bool):
             skipped.append(str(i))
             continue
-        if say == word:
-            continue
-        # one spelling for both apostrophes, any run of whitespace between the words of a name
+        # one spelling for both apostrophes, any run of whitespace between the words of a name.
+        # An entry read as written stays in the pattern, so a shorter entry cannot match inside it
         key = word.replace('’', "'")
         alternative = r'\s+'.join(re.escape(part) for part in key.split(' ')).replace("'", "['’]")
         if case_sensitive:
@@ -3152,7 +3152,7 @@ def load_pronunciation_guide(path:str)->tuple[dict|None, str]:
     # the name ("the Lannisters", "Qyburn's") and nothing else: "Valyrian" is not "Valyria"
     alternatives.sort(key=lambda a: -a[0])
     pattern = re.compile(r'(?<!\w)(?:' + '|'.join(a for _, a in alternatives) + r')(?=s?(?!\w))') if alternatives else None
-    note = legends['msg_pronunciation_guide_skipped'].format(count=len(skipped), reason=f'entries {", ".join(skipped)} need a "word" and a "say" as text') if skipped else ''
+    note = legends['msg_pronunciation_guide_skipped'].format(count=len(skipped), reason=f'entries {", ".join(skipped)} need a "word" and a "say" as text, and "case_sensitive" as true or false') if skipped else ''
     guide = {'path': path, 'pattern': pattern, 'exact': exact, 'folded': folded}
     return guide, legends['msg_pronunciation_guide_in_use'].format(path=shown, count=len(data) - len(skipped), skipped=note)
 
@@ -3199,16 +3199,20 @@ def load_spoken_sentences(block_dir:str)->dict:
     except (OSError, ValueError):
         return {}
 
-def save_spoken_sentence(block_dir:str, spoken_sentences:dict, idx:int, sentence:str, spoken:str)->None:
+def record_spoken_sentence(spoken_sentences:dict, idx:int, sentence:str, spoken:str)->bool:
+    # True when the record changed and has to be saved
     key = str(idx)
     if spoken != sentence:
         if spoken_sentences.get(key) == spoken:
-            return
+            return False
         spoken_sentences[key] = spoken
     elif key in spoken_sentences:
         del spoken_sentences[key]
     else:
-        return
+        return False
+    return True
+
+def save_spoken_sentences(block_dir:str, spoken_sentences:dict)->None:
     file = os.path.join(block_dir, spoken_sentences_file)
     with open(f'{file}.tmp', 'w', encoding='utf-8') as f:
         json.dump(spoken_sentences, f, ensure_ascii=False)
@@ -3650,6 +3654,9 @@ def convert_chapters2audio(session_id:str)->bool:
                 spoken_sentences = load_spoken_sentences(block_dir)
                 stale_sentences = {j for j in valid_idx if spoken_sentences.get(str(j), sentences[j].strip()) != apply_pronunciations(sentences[j].strip(), guide)}
                 stale_only = False
+                # a [voice], [direct] or [emotion] passage can run over several sentences and the engine carries it from
+                # one sentence to the next: a stale sentence of such a block cannot be converted on its own
+                has_passages = any(TTS_SML.get(tag.group('tag'), {}).get('paired') for s in sentences for tag in SML_TAG_PATTERN.finditer(s))
                 if x < block_resume and not block_changed:
                     if not os.path.exists(chapter_audio_file):
                         show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_audio_missing'].format(block=x)})
@@ -3666,20 +3673,27 @@ def convert_chapters2audio(session_id:str)->bool:
                             show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_missing_files'].format(block=x, count=len(missing_sentences))})
                             _reset_chapter_file(block_id)
                         else:
-                            # every other sentence keeps its audio and the resume point stays where it is
                             show_alert(session_id, {'type': 'info', 'msg': legends['msg_block_pronunciation_changed'].format(chapter=ch_num, block=x, count=len(stale_sentences))})
-                            os.unlink(chapter_audio_file)
-                            missing_sentences = stale_sentences
-                            start_sentence = block_len
-                            stale_only = True
+                            if has_passages:
+                                _reset_chapter_file(block_id)
+                            else:
+                                # every other sentence keeps its audio and the resume point stays where it is. The chapter
+                                # file and the record are replaced once the sentences are done, so a run stopped before
+                                # that finds the same sentences stale again
+                                missing_sentences = stale_sentences
+                                start_sentence = block_len
+                                stale_only = True
                 elif block_changed and x <= block_resume:
                     show_alert(session_id, {'type': 'info', 'msg': legends['msg_chapter_changed'].format(chapter=ch_num, block=x)})
                     _reset_chapter_file(block_id)
                 elif x == block_resume and not block_changed:
-                    if sentence_resume == 0 and os.path.isdir(block_dir):
-                        shutil.rmtree(block_dir)
                     start_sentence = sentence_resume
                     missing_sentences = {j for j in stale_sentences if j < start_sentence}
+                    if has_passages and missing_sentences:
+                        start_sentence = 0
+                        missing_sentences = set()
+                    if start_sentence == 0 and os.path.isdir(block_dir):
+                        shutil.rmtree(block_dir)
                 # the branches above may have removed the block's folder, and its record with it
                 spoken_sentences = load_spoken_sentences(block_dir)
                 show_alert(session_id, {'type': 'info', 'msg': legends['msg_chapter_containing'].format(chapter=ch_num, block=x, count=block_len)})
@@ -3706,14 +3720,17 @@ def convert_chapters2audio(session_id:str)->bool:
                             if not run:
                                 show_alert(session_id, {'type': 'warning', 'msg': error})
                                 return False
-                            save_spoken_sentence(block_dir, spoken_sentences, j, sentence, spoken)
+                            if record_spoken_sentence(spoken_sentences, j, sentence, spoken) and not stale_only:
+                                save_spoken_sentences(block_dir, spoken_sentences)
                             if spoken != sentence:
                                 print(legends['msg_pronunciation_spoken'].format(spoken=spoken))
                             converted = True
                             if j >= start_sentence:
                                 blocks_current['sentence_resume'] = j
                             now = time.monotonic()
-                            if not baseline_initialized:
+                            # not while only stale sentences are converted: the resume point is behind this block, and
+                            # a saved copy would mark the later blocks whose text changed as already converted
+                            if not baseline_initialized and not stale_only:
                                 session['blocks_current'] = blocks_current
                                 session['blocks_saved'] = copy.deepcopy(blocks_current)
                                 save_json_blocks(session_id, 'blocks_saved')
@@ -3739,6 +3756,8 @@ def convert_chapters2audio(session_id:str)->bool:
                     if not combine_audio_sentences(session_id, chapter_audio_file, block_id, block_len):
                         show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
                         return False
+                    if stale_only:
+                        save_spoken_sentences(block_dir, spoken_sentences)
             #blocks_current['block_resume'] = 0
             #blocks_current['sentence_resume'] = 0
             session['blocks_current'] = blocks_current

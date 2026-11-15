@@ -38,9 +38,9 @@ A JSON list of entries:
 | `ipa` | no | Kept for engines that read phonemes. No engine uses it yet. |
 | `note` | no | Where the pronunciation comes from. |
 
-An entry with no `word` or no `say` is left out and named in the line the conversion prints; the other
-entries still apply. A file that is not a JSON list is left out as a whole. The conversion never stops
-for a guide.
+An entry with no `word` or no `say`, or whose `case_sensitive` is not `true` or `false`, is left out and
+named in the line the conversion prints; the other entries still apply. A file that is not a JSON list is
+left out as a whole. The conversion never stops for a guide.
 
 ## What an entry matches
 
@@ -61,7 +61,9 @@ the GUI editor and `--export_blocks` keep the book's spelling.
 
 Each converted sentence remembers the text the engine was given. On the next run of a book, a sentence
 whose text would now be different is converted again and its chapter is put together again; every other
-sentence keeps its audio. This holds for each book of a series on its own next run.
+sentence keeps its audio. A chapter block that holds a `[voice]`, `[direct]` or `[emotion]` passage is
+converted again as a whole instead, because a passage can run over several sentences.
+This holds for each book of a series on its own next run.
 
 ## Limits
 

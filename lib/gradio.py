@@ -2027,12 +2027,14 @@ def build_interface(args:dict)->gr.Blocks:
                                 progress_bar(0.0, desc=msg)
                                 tts_manager = TTSManager(session)
                                 block_voice = block.get('voice') or session.get('voice')
-                                converted, error = tts_manager.convert_sentence2audio(preview_file, apply_pronunciations(text, get_pronunciation_guide(session)[0]), block_voice=block_voice)
+                                spoken = apply_pronunciations(text, get_pronunciation_guide(session)[0])
+                                converted, error = tts_manager.convert_sentence2audio(preview_file, spoken, block_voice=block_voice)
                                 if converted and not os.path.exists(preview_file):
                                     converted, error = False, f'{Path(preview_file).name} was not created!'
                                 if converted:
                                     session['audiobook_edit_preview'] = preview_file
                                     session['audiobook_edit_preview_text'] = text
+                                    session['audiobook_edit_preview_spoken'] = spoken
                                     msg = legends['msg_edited_sentence_converted']
                                     print(msg)
                                     progress_bar(1.0, desc=msg)
@@ -2168,8 +2170,11 @@ def build_interface(args:dict)->gr.Blocks:
                                     session['blocks_current'] = blocks_current
                                     save_db_blocks(session_id)
                                     save_json_blocks(session_id, 'blocks_saved')
+                                    # the text the preview was made from, whatever the guide says by now
                                     block_dir = os.path.dirname(sentence_file)
-                                    save_spoken_sentence(block_dir, load_spoken_sentences(block_dir), sentence_idx, text, apply_pronunciations(text, get_pronunciation_guide(session)[0]))
+                                    spoken_sentences = load_spoken_sentences(block_dir)
+                                    if record_spoken_sentence(spoken_sentences, sentence_idx, text, session.get('audiobook_edit_preview_spoken') or text):
+                                        save_spoken_sentences(block_dir, spoken_sentences)
                                     os.unlink(backup_file)
                                 else:
                                     os.replace(backup_file, sentence_file)
