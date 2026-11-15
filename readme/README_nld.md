@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 E-book naar audioboek (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU-converter van e-book naar audioboek met hoofdstukken en metadata<br/>
 met geavanceerde TTS-engines en nog veel meer.<br/>
 Ondersteunt stemklonen en 1696 talen!
-> [!IMPORTANT]
+> Belangrijk
 **Deze tool is uitsluitend bedoeld voor gebruik met DRM-vrije, legaal verkregen e-books.** <br>
 De auteurs zijn niet verantwoordelijk voor enig misbruik van deze software of voor eventuele juridische gevolgen daarvan. <br>
 Gebruik deze tool verantwoord en in overeenstemming met alle toepasselijke wetten.
@@ -124,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **OCR-scanning** voor bestanden met tekstpagina's als afbeeldingen
 - 🔊 **Hoogwaardige tekst-naar-spraak**, van bijna realtime tot een bijna echte stem
 - 🗣️ **Optioneel stemklonen** met je eigen stembestand
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Ondersteunt 1696 talen** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Geschikt voor beperkte middelen** — draait op **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Uitvoerformaten van het audioboek**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **SML-tags ondersteund** — nauwkeurige controle over onderbrekingen, pauzes, stemwisselingen en meer ([see below](#sml-tags-available))
@@ -138,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 GB RAM min., 8 GB aanbevolen.
 - 1 GB VRAM min., 4 GB aanbevolen.
 - Virtualisatie ingeschakeld bij gebruik op Windows (alleen Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
 - MPS (Apple Silicon-CPU)
 
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Bekijk onze andere repo die gewijd is aan het automatisch toevoegen van SML in je e-book -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> Belangrijk
 **Voordat je een installatie- of bugprobleem plaatst, zoek zorgvuldig in het tabblad met open en gesloten issues<br>
 om er zeker van te zijn dat je probleem nog niet bestaat.**
 
@@ -214,7 +214,7 @@ Daarom moet je eerst handmatig alle tekst verwijderen die je niet naar audio wil
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (alle besturingssystemen, slechts eenmaal geïnstalleerd en met de Python van de map python_env)
 
-> [!IMPORTANT]
+> Belangrijk
 **Als het script wordt gestopt en opnieuw uitgevoerd, moet je je Gradio-GUI-interface vernieuwen<br>
 zodat de webpagina opnieuw verbinding kan maken met de nieuwe verbindings-socket.**
 
@@ -715,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Veelvoorkomende problemen:
 - Mijn NVIDIA/ROCm/XPU/MPS-GPU wordt niet gedetecteerd?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  De CPU is traag (beter op een server-SMP-CPU), terwijl de GPU een bijna realtime conversie kan bereiken.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Het heeft echter geen zero-shot stemklonen, en de stemmen zijn van Siri-kwaliteit, maar het is veel sneller op de CPU).
 - "Ik heb problemen met afhankelijkheden" - Gebruik gewoon Docker, het is volledig zelfstandig en heeft een headless-modus,
    voeg de parameter  toe aan het einde van het docker run-commando voor meer informatie. `--help`
@@ -763,23 +763,23 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Kletskous (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
 - [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
 - [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
-- [x] Dots TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
+- [x] Punten TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
 - [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
 - [x] Mos TTS Lokaal / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] NieuweTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
-- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
-- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1]
+- [x] Gradium-fonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
+- [x] Supertonica (https://github.com/supertone-inc/supertonic)[cite: 1]
 - [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
 - [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
@@ -789,7 +789,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Schildpad (https://github.com/neonbjb/tortoise-tts)[cite: 1]
 - [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] Schors (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] JeTTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
 - [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
 - [x] ChatTTS (https://github.com/2noise/ChatTTS)
@@ -827,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Compatibiliteit met OS
 - [x] 🪟 Windows x86
-- [x] 🪟 Armramen
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac met Apple Silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 
@@ -853,7 +853,7 @@ We accepteren elk soort hardware om onze ontwikkeling te testen, zoals:
 -->
 
 ## Dankwoord
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Een deep learning-toolkit voor tekst-naar-spraak, beproefd in onderzoek en productie.
 - [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Snelle en lokale neurale tekst-naar-spraak-engine.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml inferentiecode voor Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Een alles-in-één, pure C++ inferentie-engine voor audiomodellen, aangedreven door ggml.

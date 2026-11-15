@@ -39,13 +39,13 @@
 
 <a id="gui-interface"></a>
 #### 그래픽 인터페이스(GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>웹 GUI 이미지를 보려면 클릭하세요</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## 지원 언어
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,60 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **스크립트를 중지하고 다시 실행하면 Gradio GUI 인터페이스를 새로 고쳐야 합니다<br>
 웹 페이지가 새로운 연결 소켓에 다시 연결될 수 있도록 하기 위해서입니다.**
 
+<a id="pip-install"></a>
+### pip/pipx로 설치
+리포지토리를 복제하지 않고 ebook2audiobook을 설치하고 실행하는 또 다른 방법: pip가 `ebook2audiobook` 명령을 설치합니다<br>
+(모든 OS, Python 3.8 이상). 위의 실행 스크립트가 포함된 복제된 리포지토리는 계속해서 동일한 방식으로 작동합니다.
+
+1. PyPI에서 **명령어 설치**
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   또는 자외선(UV)
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   또는 pip를 사용하여 설치
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>아직 출시되지 않은 최신 코드의 경우, `ebook2audiobook` 대신 `git+https://github.com/DrewThomasson/ebook2audiobook.git`을(를) 사용하세요.</i>
+
+2. **ebook2audiobook 설치/실행** (실행 스크립트와 동일한 옵션 사용):
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   명령어를 찾을 수 없는 경우(pip의 스크립트 폴더가 PATH에 없는 경우): `python -m ebook2audiobook`
+
+- 첫 번째 시작 시 ebook2audiobook을 `~/ebook2audiobook`(Windows의 경우 `%USERPROFILE%\ebook2audiobook`)에 복사하고 해당 위치에 설치합니다.<br>
+  `./ebook2audiobook.command` 또는 `ebook2audiobook.cmd`과 정확히 동일한 방식으로 실행 스크립트를 사용하여 실행합니다.
+- 다른 폴더를 사용하려면 첫 번째 시작 전에 `E2A_HOME`을(를) 설정하고 다음 시작을 위해 계속 설정된 상태로 유지하세요.<br>
+  (즉, Linux/MacOS에서는 `export E2A_HOME=/data/ebook2audiobook`, Windows에서는 `setx E2A_HOME D:\ebook2audiobook` 다음 새 터미널).
+- 이 폴더는 일반적인 ebook2audiobook 폴더입니다. `./ebook2audiobook.command`(`./e2a.sh`) 및 `ebook2audiobook.cmd`(`e2a.cmd`)도 이 폴더에서 작동합니다.
+- 해당 폴더에 이미 복제되거나 다운로드된 ebook2audiobook이 있는 경우, 그대로 시작되며 pip는 이를 변경하지 않습니다.
+- `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` 및 `--output_dir`<br>에 지정된 상대 경로
+  명령을 입력하는 폴더에서 읽습니다.
+- venv 또는 conda env를 비활성화할 필요가 없습니다. ebook2audiobook은 항상 자체 `python_env`에서 실행됩니다.
+- **Docker**: `ebook2audiobook --script_mode build_docker`(선택적으로 `--docker_mode compose` 또는 `--docker_mode podman` 포함)<br>
+  해당 폴더에서 이미지를 빌드합니다. 해당 폴더에서 출력되는 `docker run` / `docker compose` 명령어도 실행하세요.<br>
+  해당 `./ebooks`, `./audiobooks`... 마운트 및 Compose 파일은 이를 기준으로 합니다. 이미지는 동일한 옵션을 사용합니다.<br>
+  컨테이너(`/app/...`) 내부의 경로와 함께, [Docker](#docker)을(를) 참조하세요.
+- **업데이트**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` 또는 `pip install -U ebook2audiobook`.<br>
+  다음 시작 시 앱 파일이 업데이트되며 `python_env`, 모델, 음성, 오디오북 및 폴더에 추가한 모든 항목이 유지됩니다.
+- **제거**: `pip uninstall`, `pipx uninstall` 또는 `uv tool uninstall`만으로는 명령만 제거됩니다.<br>
+  폴더와 수 기가바이트의 모델은 그대로 유지됩니다. 먼저 ebook2audiobook 자체를 명령어로 제거합니다.
+  1. 오디오북을 폴더의 `audiobooks` 하위 폴더에서 다른 곳으로 옮기세요. 폴더에 있는 모든 항목이 삭제됩니다.
+  2. `ebook2audiobook --uninstall`<br>
+     폴더의 제거 프로그램을 실행하며, 제거 프로그램을 통해 확인을 요청한 다음 바로 가기와 설치된 프로그램을 제거합니다.<br>
+     (`.installed`에 나열됨) 및 폴더 콘텐츠를 삭제한 다음 폴더를 삭제합니다.
+  3. `ebook2audiobook` 자체를 제거하기 위해 마지막으로 출력되는 명령을 실행하세요. 이 작업은 을 어떻게 설치했는지에 따라 달라집니다.<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` 또는 `pip uninstall ebook2audiobook`.
+  4. Docker 이미지를 빌드한 경우: `docker rmi athomasson2/ebook2audiobook:<tag>` 및 `docker volume rm e2a_venvs`<br>
+     (Podman 사용 시: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` 및 `podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### 기본 사용법
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx 설치** (모든 OS)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: 전자책 파일의 경로
@@ -260,6 +319,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx 설치** (모든 OS)
+     ```bash
+     ebook2audiobook --help
      ```
    - **또는 모든 OS 공통**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)

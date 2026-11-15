@@ -39,13 +39,13 @@
 
 <a id="gui-interface"></a>
 #### গ্রাফিকাল ইন্টারফেস (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>ওয়েব GUI-এর ছবি দেখতে ক্লিক করুন</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## সমর্থিত ভাষা
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,60 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **যদি স্ক্রিপ্ট বন্ধ করে আবার চালানো হয়, তাহলে আপনাকে আপনার Gradio GUI ইন্টারফেস রিফ্রেশ করতে হবে<br>
 যাতে ওয়েব পৃষ্ঠাটি নতুন কানেকশন সকেটে পুনরায় সংযুক্ত হতে পারে।**
 
+<a id="pip-install"></a>
+### pip / pipx দিয়ে ইনস্টল করুন
+রিপো ক্লোন না করে, ebook2audiobook ইনস্টল এবং চালু করার আরেকটি উপায়: pip `ebook2audiobook` কমান্ড ইনস্টল করে<br>
+(সমস্ত অপারেটিং সিস্টেম, যে কোনও python 3.8+)। উপরের লঞ্চ স্ক্রিপ্ট সহ ক্লোন করা রিপো একইভাবে কাজ করে চলেছে।
+
+1. PyPI থেকে **কমান্ডটি ইনস্টল করুন**
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   অথবা UV সহ
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   অথবা পিপ দিয়ে
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>যে কোডটি এখনও রিলিজ করা হয়নি তার জন্য, `ebook2audiobook`-এর বদলে `git+https://github.com/DrewThomasson/ebook2audiobook.git` ব্যবহার করুন।</i>
+
+2. **ebook2audiobook ইনস্টল করুন / চালান**, লঞ্চ স্ক্রিপ্টের মতো একই বিকল্পগুলি সহ:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   যদি কমান্ডটি না পাওয়া যায় (pip-এর স্ক্রিপ্ট ফোল্ডারটি আপনার PATH-এ না থাকে): `python -m ebook2audiobook`
+
+- প্রথমবার চালু করার সময় ebook2audiobook-কে `~/ebook2audiobook`-এ (Windows-এ `%USERPROFILE%\ebook2audiobook`-এ) কপি করা হয় এবং সেখানেই এটি ইনস্টল করা হয়<br>
+  তার লঞ্চ স্ক্রিপ্ট সহ, ঠিক যেমনটা `./ebook2audiobook.command` বা `ebook2audiobook.cmd` করবে।
+- অন্য কোনও ফোল্ডার ব্যবহার করতে, প্রথমবার চালু করার আগে `E2A_HOME` সেট করুন এবং পরবর্তী বারগুলির জন্য এটি সেট করা রাখুন<br>
+  (অর্থাৎ Linux/MacOS-এ `export E2A_HOME=/data/ebook2audiobook`, তারপর Windows-এ একটি নতুন টার্মিনাল `setx E2A_HOME D:\ebook2audiobook`)।
+- এই ফোল্ডারটি একটি সাধারণ ebook2audiobook ফোল্ডার: `./ebook2audiobook.command` (`./e2a.sh`) এবং `ebook2audiobook.cmd` (`e2a.cmd`) এটিতেও কাজ করে।
+- যদি সেই ফোল্ডারে ইতিমধ্যেই একটি ক্লোন করা বা ডাউনলোড করা ebook2audiobook থাকে, তাহলে এটি যেমন আছে তেমনই চালু করা হয় এবং pip এটি কখনও পরিবর্তন করে না।
+- `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` এবং `--output_dir`<br>-কে দেওয়া আপেক্ষিক পাথগুলি
+  যে ফোল্ডারে আপনি কমান্ডটি টাইপ করেন সেখান থেকে পড়া হয়।
+- আপনাকে আপনার venv বা conda env নিষ্ক্রিয় করতে হবে না: ebook2audiobook সবসময় তার নিজস্ব `python_env`-এ চলে।
+- **ডকার**: `ebook2audiobook --script_mode build_docker` (ঐচ্ছিকভাবে `--docker_mode compose` বা `--docker_mode podman` সহ)<br>
+  সেই ফোল্ডার থেকে ইমেজ তৈরি করে। এটি সেই ফোল্ডার থেকেও প্রিন্ট করে এমন `docker run` / `docker compose` কমান্ডগুলি চালান:<br>
+  তাদের `./ebooks`, `./audiobooks`... মাউন্ট এবং কম্পোজ ফাইলগুলি এটির সাপেক্ষে। ইমেজ একই বিকল্পগুলি গ্রহণ করে,<br>
+  কন্টেনারের (`/app/...`) ভেতরের পাথ সহ, [Docker](#docker) দেখুন।
+- **আপডেট**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` বা `pip install -U ebook2audiobook`.<br>
+  পরবর্তী শুরুতে অ্যাপ ফাইলগুলি আপডেট করা হয় এবং `python_env`, মডেল, ভয়েস, অডিওবুক এবং আপনি ফোল্ডারে যোগ করা যে কোনও কিছু সংরক্ষিত থাকে।
+- **আনইনস্টল করুন**: শুধুমাত্র `pip uninstall`, `pipx uninstall` বা `uv tool uninstall` কমান্ডটি সরিয়ে দেয়:<br>
+  ফোল্ডারটি এবং এর গিগাবাইট মডেলগুলি রয়ে যায়। প্রথমে কমান্ডটি ব্যবহার করে ebook2audiobook আনইনস্টল করুন:
+  1. আপনার অডিওবুকগুলিকে ফোল্ডারের `audiobooks` সাবফোল্ডার থেকে সরিয়ে আনুন: ফোল্ডারের সমস্ত কিছু মুছে ফেলা হবে।
+  2. `ebook2audiobook --uninstall`<br>
+     এটি ফোল্ডারের আনইনস্টলার চালায়, যা আপনাকে নিশ্চিত করতে বলে এবং তারপর শর্টকাটগুলি, এর দ্বারা ইনস্টল করা প্রোগ্রামগুলি সরিয়ে দেয়<br>
+     (`.installed`-এ তালিকাভুক্ত) এবং ফোল্ডারের বিষয়বস্তু, তারপর এটি ফোল্ডারটি মুছে ফেলে।
+  3. `ebook2audiobook` নিজেই সরানোর জন্য এটি যে কমান্ডটি সর্বশেষ প্রিন্ট করে সেটি চালান, যা আপনি কীভাবে এটি ইনস্টল করেছেন তার উপর নির্ভর করে:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` বা `pip uninstall ebook2audiobook`।
+  4. আপনি যদি Docker ইমেজ তৈরি করে থাকেন: `docker rmi athomasson2/ebook2audiobook:<tag>` এবং `docker volume rm e2a_venvs`<br>
+     (Podman-এর সাথে: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` এবং `podman volume rm e2a_venvs`)।
+
 <a id="basic-usage"></a>
 ### প্রাথমিক ব্যবহার
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx ইনস্টল করুন** (সব অপারেটিং সিস্টেম)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: আপনার ই-বুক ফাইলের পথ
@@ -260,6 +319,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx ইনস্টল করুন** (সব অপারেটিং সিস্টেম)
+     ```bash
+     ebook2audiobook --help
      ```
    - **অথবা সব OS-এর জন্য**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)

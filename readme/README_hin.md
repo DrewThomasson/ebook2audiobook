@@ -1,5 +1,5 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 ई-बुक से ऑडियोबुक (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 अध्यायों और मेटाडेटा के साथ ई-बुक से ऑडियोबुक में बदलने वाला CPU/GPU कन्वर्टर<br/>
@@ -166,7 +166,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — मौन (यादृच्छिक सीमा **1.0–1.6 sec.**)
 - `[pause:N]` — निश्चित विराम (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — डिफ़ॉल्ट या GUI/CLI से चुनी गई आवाज़ से आवाज़ बदलें
-- `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
+- `[emotion:sadness]...[/emotion]` — सिर्फ़ Zonos: किसी अंश के लिए भावना (खुशी, उदासी, घृणा, डर, हैरानी, गुस्सा, अन्य, तटस्थ) या `[emotion:sadness=0.7,neutral=0.3]` जैसा कोई मिश्रण; अन्य इंजन इसे नज़रअंदाज़ करते हैं
 
 **आपकी ई-बुक में स्वचालित रूप से SML जोड़ने के लिए समर्पित हमारे दूसरे रेपो को देखें -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -776,7 +776,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] मैग्पी टीटीएस (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
 - [x] मॉस टीटीएस लोकल / नैनो (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] NewTTS / न्यूTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] पॉकेट टीटीएस (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] ग्रैडियम फोनॉन (https://github.com/gradium-ai/xn-ptts)[cite: 1]
 - [x] सुपरटोनिक (https://github.com/supertone-inc/supertonic)[cite: 1]
@@ -789,7 +789,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] कछुआ (https://github.com/neonbjb/tortoise-tts)[cite: 1]
 - [x] ज़ोनोस (https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] छाल (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] आपका TTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] ऑर्फ़ियस - टीटीएस (https://github.com/canopyai/Orpheus-TTS)
 - [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
 - [x] ChatTTS (https://github.com/2noise/ChatTTS)
@@ -827,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### 💻 OS संगतता
 - [x] 🪟 Windows x86
-- [x] 🪟 आर्म विंडो
+- [x] 🪟 ARM Windows
 - [x] 🍎 मैक इंटेल x86
 - [x] 🍎 एप्पल सिलिकॉन मैक
 - [x] 🐧 Linux x86
-- [x] 🐧 आर्म लिनक्स
+- [x] 🐧 ARM Linux
 
 **********
 
@@ -853,8 +853,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 -->
 
 ## क्रेडिट
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- टेक्स्ट-टू-स्पीच के लिए एक डीप लर्निंग टूलकिट, जिसका रिसर्च और प्रोडक्शन में खूब परीक्षण किया गया है।
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- तेज़ और लोकल न्यूरल टेक्स्ट-टू-स्पीच इंजन।
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2 के लिए ggml अनुमान कोड।
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- ggml द्वारा संचालित, ऑडियो मॉडल के लिए एक ऑल - इन - वन, शुद्ध C++ अनुमान इंजन।
 

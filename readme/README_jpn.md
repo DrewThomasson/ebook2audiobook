@@ -5,7 +5,7 @@
 電子書籍から章とメタデータ付きのオーディオブックへのCPU/GPUコンバーター<br/>
 高度なTTSエンジンなどを使用。<br/>
 音声クローニングと1696言語をサポート！
-> [!IMPORTANT]
+> 重要
 **このツールは、DRMフリーで合法的に取得された電子書籍でのみ使用することを目的としています。** <br>
 作者は、このソフトウェアのいかなる誤用、またはそれに起因する法的結果について責任を負いません。 <br>
 このツールは責任を持って、適用されるすべての法律に従って使用してください。
@@ -166,11 +166,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — 無音（ランダム範囲 **1.0–1.6 sec.**）
 - `[pause:N]` — 固定の一時停止（**N sec.**）
 - `[voice:/path/to/voice/file]...[/voice]` — デフォルトまたはGUI/CLIで選択した音声から音声を切り替え
-- `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
+- `[emotion:sadness]...[/emotion]` — Zonosのみ：文章に対する感情（喜び、悲しみ、嫌悪、恐怖、驚き、怒り、その他、中立）または`[emotion:sadness=0.7,neutral=0.3]`のような組み合わせ。他のエンジンはこれを無視します。
 
 **電子書籍にSMLを自動的に追加することに特化した別のリポジトリをご覧ください -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> 重要
 **インストールやバグの問題を投稿する前に、未解決および解決済みの課題タブを注意深く検索してください<br>
 あなたの問題がまだ存在しないことを確認するためです。**
 
@@ -210,11 +210,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    
 1. **Webアプリを開く**: ターミナルに表示されるURLをクリックして、Webアプリにアクセスし電子書籍を変換します。 `http://localhost:7860/`
 2. **公開リンクの場合**:
-   `./ebook2audiobook.command --share` （ Linux/MacOS ）
+   `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share`（すべてのOS、インストール後1回のみ、python_envフォルダーのPythonを使用）
 
-> [!IMPORTANT]
+> 重要
 **スクリプトを停止して再実行した場合、Gradio GUIインターフェースを更新する必要があります<br>
 Webページが新しい接続ソケットに再接続できるようにするためです。**
 
@@ -752,50 +752,50 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] 少なくともxttsv2、fairseq、vits、piper向けにシンド語の言語モデルを追加（支援歓迎）
 
 #### TTSエンジン
-- [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
+- [x] ドラマボックス（https://github.com/dramabox-ai/dramabox)[cite: 1]）
 - [x] FireRed Audio/FireRedTTS 3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
-- [x] Fish-speech / Fish Audio (https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] 魚の会話/魚の音声（https://github.com/fishaudio/fish-speech)[cite: 1]
+- [x] HiggsオーディオTTS（https://github.com/higgs-audio/higgs-audio)[cite: 1]）
 - [x] Maya 1 (https://github.com/maya-ai/maya1)[cite: 1]
-- [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
+- [x] OmniVoice（https://github.com/k2-fsa/OmniVoice)[cite: 1]）
 - [x] F 5 - TTS (https://github.com/swivid/f5-tts)[cite: 1]
 - [x] Qwen 3 - TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
-- [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
+- [x] VibeVoice（https://github.com/vibevoice-community/VibeVoice)[cite: 1]）
 - [x] VoxCPM 2 (https://github.com/voxcpm/voxcpm)[cite: 1]
-- [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Voxtral TTS（https://github.com/voxtral/voxtral-tts)[cite: 1]）
+- [x] おしゃべり（https://github.com/resemble-ai/chatterbox)[cite: 1]）
 - [x] CosyVoice/CosyVoice 3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
 - [x] Index - tts/Index TTS 2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv 2 (https://github.com/coqui-ai/XTTS)[cite: 1]
-- [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
+- [x] Breeze TTS（https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]）
 - [x] 孔子4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] ドットTTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT - SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro - TTS (https://github.com/hexgrad/kokoro)[cite: 1]
-- [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
-- [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
-- [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] KugelAudio（https://github.com/kugel-audio/kugelaudio)[cite: 1]
+- [x] Magpie TTS（https://github.com/magpie-tts/magpie-tts)[cite: 1]）
+- [x] MioTTS（https://github.com/mio-tts/miotts)[cite: 1]）
+- [x] Moss TTSローカル/ナノ（https://github.com/OpenBMB/MossTTS)[cite: 1]
 - [x] NewTTS/NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] ポケットTTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
-- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
-- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1]
+- [x] グラディウム・フォノン（https://github.com/gradium-ai/xn-ptts)[cite: 1]）
+- [x] 上音（https://github.com/supertone-inc/supertonic)[cite: 1]）
 - [x] いろどりTTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
-- [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
-- [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
-- [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
-- [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
+- [x] パイパー（https://github.com/rhasspy/piper)[cite: 1]）
+- [x] VITS（https://github.com/jaywalnut330/vits)[cite: 1]）
+- [x] Fairseq（https://github.com/facebookresearch/fairseq)[cite: 1]）
+- [x] GlowTTS（https://github.com/jaywalnut330/glow-tts)[cite: 1]）
 - [x] Tacotron 2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] カメ(https://github.com/neonbjb/tortoise-tts)[cite: 1]
-- [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
+- [x] Zonos（https://github.com/Zyphra/Zonos)[cite: 1]）
 - [x] BARK (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] YourTTS（https://github.com/Edresson/YourTTS)[cite: 1]）
 - [x] Orpheus - TTS (https://github.com/canopyai/Orpheus-TTS)
-- [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
-- [x] ChatTTS (https://github.com/2noise/ChatTTS)
+- [x] OpenVoice（https://github.com/myshell-ai/OpenVoice)
+- [x] ChatTTS（https://github.com/2noise/ChatTTS)
 - [x] Spark - TTS (https://github.com/sparkaudio/spark-tts)
-- [x] MeloTTS (https://github.com/myshell-ai/MeloTTS)
-- [x] CSM (https://github.com/SesameAILabs/csm)
+- [x] MeloTTS（https://github.com/myshell-ai/MeloTTS)
+- [x] CSM（https://github.com/SesameAILabs/csm)
 
 #### Readmeの翻訳
 - [x] アラビア語(ara)
@@ -827,9 +827,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### 💻 OSの互換性
 - [x] 🪟 Windows x 86
-- [x] ウィンドウを🪟アーム
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x 86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Appleシリコン搭載Mac
 - [x] Linux x86
 - [x] 🐧 ARM Linux
 
@@ -853,10 +853,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 -->
 
 ## クレジット
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
-- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml inference code for Zonos2.
-- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- An all-in-one, pure C++ inference engine for audio models, powered by ggml.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- テキスト読み上げ用の深層学習ツールキット。研究および実稼働環境で実績あり。
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- 高速でローカルなニューラルテキスト読み上げエンジン。
+- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2用のggml推論コード。
+- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- ggmlを搭載した、オーディオモデル用のオールインワンの純粋なC++推論エンジン。
 
 <a id="special-thanks"></a>
 ## 特別な感謝

@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 Z e-knihy na audioknihu (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU převodník z e-knihy na audioknihu s kapitolami a metadaty<br/>
 s využitím pokročilých TTS enginů a mnoha dalšího.<br/>
 Podporuje klonování hlasu a 1696 jazyků!
-> [!IMPORTANT]
+> DŮLEŽITÉ
 **Tento nástroj je určen pouze pro použití s e-knihami bez DRM, získanými legálně.** <br>
 Autoři nenesou odpovědnost za jakékoli zneužití tohoto softwaru ani za případné právní následky. <br>
 Používejte tento nástroj zodpovědně a v souladu se všemi platnými zákony.
@@ -124,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **OCR skenování** pro soubory s textovými stránkami ve formě obrázků
 - 🔊 **Vysoce kvalitní převod textu na řeč**, od téměř reálného času po téměř skutečný hlas
 - 🗣️ **Volitelné klonování hlasu** pomocí vlastního hlasového souboru
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Podporuje 1 696 jazyků** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Vhodné pro omezené zdroje** — běží na **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Výstupní formáty audioknihy**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Podpora SML tagů** — jemné ovládání přerušení, pauz, přepínání hlasu a dalšího ([see below](#sml-tags-available))
@@ -138,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 GB RAM min., 8 GB doporučeno.
 - 1 GB VRAM min., 4 GB doporučeno.
 - Povolená virtualizace při spuštění ve Windows (pouze Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
 - MPS (CPU Apple Silicon)
 
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Podívejte se na náš další repozitář věnovaný automatickému přidávání SML do vaší e-knihy -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> DŮLEŽITÉ
 **Než nahlásíte problém s instalací nebo chybu, pečlivě prohledejte záložku otevřených a uzavřených issues<br>
 abyste se ujistili, že váš problém ještě neexistuje.**
 
@@ -214,7 +214,7 @@ Proto byste měli nejprve ručně odstranit veškerý text, který nechcete pře
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (všechny OS, pouze jednou nainstalováno a s pythonem ze složky python_env)
 
-> [!IMPORTANT]
+> DŮLEŽITÉ
 **Pokud je skript zastaven a znovu spuštěn, musíte obnovit své grafické rozhraní Gradio<br>
 aby se webová stránka mohla znovu připojit k novému připojovacímu socketu.**
 
@@ -715,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Časté problémy:
 - Moje GPU NVIDIA/ROCm/XPU/MPS není detekováno?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU je pomalé (lepší na serverovém SMP CPU), zatímco GPU může mít téměř převod v reálném čase.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Nemá však klonování hlasu zero-shot a hlasy jsou kvality Siri, ale na CPU je mnohem rychlejší).
 - „Mám problémy se závislostmi“ - Použijte prostě Docker, je zcela samostatný a má režim headless,
    pro více informací přidejte na konec příkazu docker run parametr . `--help`
@@ -763,8 +763,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1)
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
-- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
+- [x] Ukecanec (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
 - [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1)
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1)
@@ -800,7 +800,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 #### Překlad souboru Readme
 - [x] Arabština (ara)
 - [x] Čínština (zho)
-- [x] English (eng)
+- [x] Angličtina (eng)
 - [x] Španělština (Spa)
 - [x] Francouzština (fra)
 - [x] Němčina (deu)
@@ -810,7 +810,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Turečtina (tur)
 - [x] Ruština (rus)
 - [x] Holandština (nld)
-- [x] Czech (ces)
+- [x] Čeština (ces)
 - [x] Japonština (jpn)
 - [x] Hindština (hin)
 - [x] Bengálština (ben)
@@ -819,7 +819,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Vietnamština (vie)
 - [x] Švédština (swe)
 - [x] Perština (fas)
-- [x] Yoruba (yor)
+- [x] Jorubština (yor)
 - [x] Svahilština (swa)
 - [x] Indonéština (ind)
 - [x] Slovenština (slk)
@@ -827,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Kompatibilita s operačními systémy
 - [x] 🪟 Windows x86
-- [x] 🪟 ODJISTIT OKNA
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac s čipem Apple Silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 
