@@ -273,6 +273,21 @@ if not any(_v in os.environ for _v in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVI
     os.environ['ROCR_VISIBLE_DEVICES'] = '0'
     os.environ['HIP_VISIBLE_DEVICES'] = '0'
 
+# PYTHONUTF8/PYTHONIOENCODING above only reach child processes: this interpreter opened its std streams at startup.
+# Started without the launcher and redirected (pipe, log file, IDE, task scheduler), Windows encodes them with the ANSI
+# code page (cp936/gbk, cp1252...) and one sentence char outside it raised UnicodeEncodeError mid-conversion.
+# A real Windows console is already utf-8 (WindowsConsoleIO) and stays untouched
+def std_streams_utf8()->None:
+    for stream in [sys.stdout, sys.stderr]:
+        if stream is None or not hasattr(stream, 'reconfigure'):
+            continue
+        try:
+            if (stream.encoding or '').lower().replace('-', '').replace('_', '') != 'utf8':
+                stream.reconfigure(encoding='utf-8', errors='backslashreplace')
+        except (ValueError, OSError):
+            pass
+std_streams_utf8()
+
 # ---------------------------------------------------------------------
 # TLS trust
 # ---------------------------------------------------------------------
