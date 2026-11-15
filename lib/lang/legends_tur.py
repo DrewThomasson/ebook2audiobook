@@ -495,6 +495,7 @@ legends = {
     'msg_upgrading_outdated_deps': 'Başka bir paketten daha eski bağımlılıkların yükseltilmesi için şunlar gerekir: {pkgs}',
     'msg_vulkan_torch_libomp': 'Takılı Vulkan torch\'ta {dll} yok ve yüklenemiyor: Yayınlanan wheel\'den yeniden yükleniyor.',
     'msg_reinstalling_incomplete': 'Eksik dosyaları olan paketler yeniden yükleniyor: {pkgs}',
+    'msg_install_lock_wait': 'Başka bir ebook2audiobook {env} içine paket yüklüyor, bitmesi bekleniyor…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} kaldırılıyor: torchcodec, torch {torch} (2.9\'nin altında) ile çalışmaz, pyannote onsuz çalışır.',
     'msg_removing_obsolete': 'Eski paket {pkg} kaldırılıyor…',
     'msg_remove_obsolete_failed': 'Eski paket {pkg} kaldırılamadı (kritik değil): {e}',

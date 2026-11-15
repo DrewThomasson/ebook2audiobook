@@ -495,6 +495,7 @@ legends = {
     'msg_upgrading_outdated_deps': 'Peningkatan dependensi yang lebih lama dari paket lain memerlukan: {pkgs}',
     'msg_vulkan_torch_libomp': 'Torch Vulkan yang diinstal tidak memiliki {dll} dan tidak dapat dimuat: menginstalnya ulang dari wheel yang dipublikasikan.',
     'msg_reinstalling_incomplete': 'Menginstal ulang paket dengan file yang hilang: {pkgs}',
+    'msg_install_lock_wait': 'ebook2audiobook lain sedang memasang paket di {env}, menunggu hingga selesai…',
     'msg_removing_unusable_torchcodec': 'Menghapus torchcodec {version}: tidak ada torchcodec yang berjalan dengan torch {torch} (di bawah 2.9), pyannote berfungsi tanpa itu.',
     'msg_removing_obsolete': 'Menghapus paket usang {pkg}…',
     'msg_remove_obsolete_failed': 'Gagal menghapus paket usang {pkg} (tidak fatal): {e}',

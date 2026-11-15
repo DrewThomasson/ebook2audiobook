@@ -495,6 +495,7 @@ legends = {
     'msg_upgrading_outdated_deps': '다른 패키지보다 오래된 종속성을 업그레이드하려면 다음이 필요합니다. {pkgs}',
     'msg_vulkan_torch_libomp': '설치된 Vulkan 토치가 {dll}을(를) 갖추지 않아 로드할 수 없습니다. 게시된 휠에서 다시 설치합니다.',
     'msg_reinstalling_incomplete': '파일이 누락된 패키지 재설치 중: {pkgs}',
+    'msg_install_lock_wait': '다른 ebook2audiobook이 {env}에 패키지를 설치하는 중입니다. 완료될 때까지 기다리는 중…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} 제거 중: torch {torch}(2.9 미만)에서는 torchcodec이 실행되지 않으며, pyannote는 torchcodec 없이 작동합니다.',
     'msg_removing_obsolete': '오래된 패키지 {pkg}을(를) 제거하는 중…',
     'msg_remove_obsolete_failed': '오래된 패키지 {pkg} 제거 실패(치명적이지 않음): {e}',
