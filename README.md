@@ -249,7 +249,8 @@ Another way to install and launch ebook2audiobook, without cloning the repo: pip
 - The first start copies ebook2audiobook to `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` on Windows) and installs it there<br>
   with its launcher, exactly like `./ebook2audiobook.command` or `ebook2audiobook.cmd` would do.
 - To use another folder, set `E2A_HOME` before the first start and keep it set for the next ones<br>
-  (i.e. `export E2A_HOME=/data/ebook2audiobook` on Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` then a new terminal on Windows).
+  (i.e. `export E2A_HOME=/data/ebook2audiobook` on Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` then a new terminal on Windows).<br>
+  Keep its path short: 98 characters at most on Linux/MacOS, 179 on Windows, see [Common Issues](#common-issues).
 - That folder is a regular ebook2audiobook folder: `./ebook2audiobook.command` (`./e2a.sh`) and `ebook2audiobook.cmd` (`e2a.cmd`) work in it too.
 - If that folder already holds a cloned or downloaded ebook2audiobook, it is started as it is and pip never changes it.
 - Relative paths given to `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` and `--output_dir`<br>
@@ -721,6 +722,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    add `--help` parameter at the end of the docker run command for more information.
 - "I'm getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
    we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
+- Piper stops with `Error processing file '.../phontab': No such file or directory`? - The path of your ebook2audiobook folder is too long.
+   Piper reads its espeak-ng data from `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` on Windows) and cannot open it<br>
+   past 159 characters (229 on Windows), so the folder path itself must be 98 characters at most on Linux/MacOS, 179 on Windows.<br>
+   Clone or install ebook2audiobook in a shorter folder (pip / pipx / Nix: set `E2A_HOME` to one).
 
 ## ***** ROADMAP *****
 - All Features open to public Contributions ⭐
