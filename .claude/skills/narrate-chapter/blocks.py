@@ -90,11 +90,7 @@ def tag_errors(text):
             continue
         _, close, name, value = token
         if name == 'pause':
-            try:
-                seconds = float(value) if value else 0
-            except ValueError:
-                seconds = -1
-            if close or seconds < 0:
+            if close or (value and not re.fullmatch(r'\d+(\.\d+)?|\.\d+', value)):
                 errors.append(f'{written(token)} is not [pause] or [pause:N] with N in seconds')
         elif name == 'break':
             if close or value:

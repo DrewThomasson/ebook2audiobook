@@ -47,8 +47,9 @@ One block is one chapter. `original.json` is never edited: it is what step 4 che
 ids, so a book already exported keeps its `W` files, and a later chapter is marked in the same
 `marked.json`. From then on `<indexes>` in steps 4 and 6 is every chapter marked so far: the
 session has one audiobook file, and each conversion rebuilds it from the chapters kept.
-Chapters already converted keep their audio. To keep an earlier pass's file as it was, copy
-it elsewhere before converting.
+Chapters already converted keep their audio, except the last one converted, which redoes its
+last sentence, and a chapter with a name whose guide entry changed. To keep an earlier
+pass's file as it was, copy it elsewhere before converting.
 
 Done when `list` shows the blocks and the chapters to work on are chosen.
 
