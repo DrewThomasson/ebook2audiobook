@@ -3234,6 +3234,10 @@ def load_cast(path:str)->tuple[dict|None, str]:
         if not os.path.isfile(voice):
             skipped.append(f'{name} (no voice file at {voice})')
             continue
+        # the path is written into a [voice:...] tag, which ends at the first ]
+        if ']' in voice:
+            skipped.append(f'{name} (the path of its voice file holds a ], which a [voice] tag cannot carry: {voice})')
+            continue
         # the first character to hold a name keeps it
         if cast_key(name) in voices:
             skipped.append(f'{name} (the name is already taken)')
@@ -3242,6 +3246,8 @@ def load_cast(path:str)->tuple[dict|None, str]:
         characters.append(name)
         for alias in aliases:
             key = cast_key(alias)
+            if key == cast_key(name):
+                continue
             if not key or key in voices:
                 skipped.append(f'alias "{alias}" of {name} (it is empty or already taken)')
             else:
@@ -3262,7 +3268,7 @@ def apply_cast(text:str, cast:dict|None)->str:
         return text
     def _voice(tag:re.Match)->str:
         value = (tag.group('value') or '').strip()
-        if tag.group('tag') != 'voice' or tag.group('close') or not value or os.path.exists(os.path.abspath(value)):
+        if tag.group('tag') != 'voice' or tag.group('close') or not value or os.path.isfile(os.path.abspath(value)):
             return tag.group(0)
         voice = cast['voices'].get(cast_key(value))
         return f'[voice:{voice}]' if voice else tag.group(0)
@@ -3775,7 +3781,14 @@ def convert_chapters2audio(session_id:str)->bool:
                 # audio was made from. The record also says when the chapter file is older than the sentences it is made of
                 spoken_sentences = load_spoken_sentences(block_dir)
                 engine_sentences = get_engine_sentences(sentences, guide, cast)
-                stale_sentences = {j for j in valid_idx if spoken_sentences.get(str(j), sentences[j].strip()) != engine_sentences[j]}
+                # audio made before sentences carried the voice of their passage has a record without those tags.
+                # It is the same audio as long as no cast gives the sentence another voice
+                uncast_sentences = get_engine_sentences(sentences, guide, None) if cast else engine_sentences
+                stale_sentences = set()
+                for j in valid_idx:
+                    recorded = spoken_sentences.get(str(j), sentences[j].strip())
+                    if recorded != engine_sentences[j] and not (recorded == apply_pronunciations(sentences[j].strip(), guide) and engine_sentences[j] == uncast_sentences[j]):
+                        stale_sentences.add(j)
                 recombine = bool(spoken_sentences.get(spoken_combine_key))
                 stale_only = False
                 guide_stale = False
