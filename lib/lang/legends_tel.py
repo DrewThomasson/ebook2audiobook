@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'Intel GPU {kmd}కి బంధించబడి SYCL/OpenCLకి కనిపిస్తోంది, కానీ Level Zero ఏ పరికరాన్నీ నివేదించడం లేదు. intel-level-zero-gpu ఇన్‌స్టాల్ లేదా అప్‌డేట్ చేసి మళ్లీ నడపండి. CPUకి మారుతోంది.',
     'msg_intel_l0_no_device': 'Intel GPU {kmd}కి బంధించబడింది, కానీ Level Zero ఏ పరికరాన్నీ నివేదించడం లేదు ({status}). intel-level-zero-gpu మరియు intel-opencl-icd ఇన్‌స్టాల్ చేసి మళ్లీ నడపండి. CPUకి మారుతోంది.',
     'msg_xpu_fallback': 'PyTorch ఫాల్‌బ్యాక్ ద్వారా XPU గుర్తించబడింది.',
+    'msg_xpu_unusable': 'ఇంటెల్ GPU కనుగొనబడింది, కానీ దానిపై టార్చ్ అమలు కాలేదు (GPU సపోర్ట్ చేయబడలేదు లేదా డ్రైవర్ చాలా పాతది). XPU డిసేబుల్ చేయబడింది, దానిని ఉపయోగించడానికి Intel గ్రాఫిక్స్ డ్రైవర్‌ను అప్‌డేట్ చేయండి.',
     'msg_gpu_runtime_silent': 'ఏ GPU బ్యాకెండ్ సరిపోలలేదు. PCIలో {gpus} GPU ఉంది, కానీ దాని రన్‌టైమ్ స్పందించలేదు. CPUకి మారుతోంది.',
     'msg_no_gpu_pci': 'PCI బస్‌లో GPU కనుగొనబడలేదు. CPUకి మారుతోంది.',
     'error_requirements_missing': 'హెచ్చరిక: {file} ఫైల్ కనుగొనబడలేదు. ప్యాకేజీ తనిఖీ దాటవేయబడుతోంది.',

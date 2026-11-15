@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'Intel GPU so mọ́ {kmd} ó sì hàn sí SYCL/OpenCL, ṣùgbọ́n Level Zero kò jábọ̀ ẹ̀rọ kankan. Ẹ fi sí i tàbí ẹ ṣe àtúnṣe intel-level-zero-gpu, kí ẹ sì tún ṣiṣẹ́. À ń yí padà sí CPU.',
     'msg_intel_l0_no_device': 'Intel GPU so mọ́ {kmd} ṣùgbọ́n Level Zero kò jábọ̀ ẹ̀rọ kankan ({status}). Ẹ fi intel-level-zero-gpu àti intel-opencl-icd sí i, kí ẹ sì tún ṣiṣẹ́. À ń yí padà sí CPU.',
     'msg_xpu_fallback': 'A rí XPU nípasẹ̀ ọ̀nà àfidípò PyTorch.',
+    'msg_xpu_unusable': 'A rí Intel GPU ṣùgbọ́n torch kò lè ṣiṣẹ́ lórí rẹ̀ (a kò ṣe àtìlẹyìn fún GPU tàbí awakọ̀ náà ti gbó jù). XPU ti dínà, ṣe ìlọsíwájú àwọn awakọ àwòrán Intel láti lò ó.',
     'msg_gpu_runtime_silent': 'Kò sí ẹ̀yìn GPU kankan tó bá a mu. GPU {gpus} wà lórí PCI ṣùgbọ́n àyíká ìṣiṣẹ́ rẹ̀ kò dáhùn. À ń yí padà sí CPU.',
     'msg_no_gpu_pci': 'A kò rí GPU kankan lórí PCI. À ń yí padà sí CPU.',
     'error_requirements_missing': 'Ìkìlọ̀: a kò rí fáìlì {file}. A fò àyẹ̀wò àwọn àpò.',

@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'Intel GPU 已绑定到 {kmd} 且对 SYCL/OpenCL 可见，但 Level Zero 未报告设备。请安装或更新 intel-level-zero-gpu 后重新运行。改用 CPU。',
     'msg_intel_l0_no_device': 'Intel GPU 已绑定到 {kmd}，但 Level Zero 未报告设备（{status}）。请安装 intel-level-zero-gpu 和 intel-opencl-icd 后重新运行。改用 CPU。',
     'msg_xpu_fallback': '通过 PyTorch 回退检测到 XPU。',
+    'msg_xpu_unusable': '找到英特尔 GPU，但 Torch 无法在其上运行（不支持该 GPU 或驱动程序版本过旧）。XPU 已禁用，请更新英特尔显卡驱动程序以使用它。',
     'msg_gpu_runtime_silent': '没有匹配的 GPU 后端。PCI 上有 {gpus} GPU，但其运行时没有响应。改用 CPU。',
     'msg_no_gpu_pci': '在 PCI 总线上未找到 GPU。改用 CPU。',
     'error_requirements_missing': '警告：未找到文件 {file}。跳过包检查。',
