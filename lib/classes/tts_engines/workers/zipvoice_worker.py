@@ -2,7 +2,7 @@
 # it must not import anything from e2a. Driven by SubprocessPipe(keep_alive=True).
 #
 # protocol (one JSON object per line):
-#   stdout <- {"ready": true, "samplerate": 24000|48000, "device": "...", "backend": "torch"|"onnx"} once loaded
+#   stdout <- {"ready": true, "samplerate": 24000|48000, "device": "...", "backend": "torch"|"onnx", "checkpoint": repo} once loaded
 #             {"ready": false, "error": "..."} then exit 1 if loading failed
 #   stdin  -> {"op": "tts", "text", "voice", "file", "num_step", "guidance_scale", "t_shift", "speed", "target_rms"}
 #   stdout <- {"ok": true, "file": "...", "samplerate": n, "samples": n}
@@ -41,33 +41,48 @@ def main()->int:
         vocoder_cfg = json.loads(args.vocoder)
         os.makedirs(args.cache_dir, exist_ok=True)
         from huggingface_hub import snapshot_download
-        # plain-folder downloads (local_dir): the HF cache layout symlinks, and huggingface_hub's symlink
-        # probe races under threaded downloads (WinError 1314 on windows without symlink rights).
-        # Only the checkpoint's own files: a repo can hold several models (k2-fsa/ZipVoice). Downloaded once,
-        # then never checked again (an offline start keeps working).
-        onnx_files = ckpt_cfg.get('onnx') or {}
-        if onnx_files:
-            weights_file = ckpt_file = ''
-            model_files = list(onnx_files.values())
-        else:
-            # a .pt checkpoint is kept as the one weight set inference loads (see below): its .e2a.safetensors
-            ckpt_file = os.path.join(args.model_dir, ckpt_cfg['ckpt'])
-            weights_file = f'{os.path.splitext(ckpt_file)[0]}.e2a.safetensors' if ckpt_file.endswith('.pt') else ckpt_file
-            model_files = [] if os.path.exists(weights_file) else [ckpt_cfg['ckpt']]
-        # model.json / tokens.txt come from assets_repo when the checkpoint ships without them (fine-tunes of the
-        # base model keep its config and its token table)
-        assets_repo = ckpt_cfg.get('assets_repo') or ckpt_cfg['repo']
-        assets_dir = args.assets_dir if assets_repo != ckpt_cfg['repo'] else args.model_dir
-        config_file = os.path.join(assets_dir, ckpt_cfg['config'])
-        token_file = os.path.join(assets_dir, ckpt_cfg['tokens'])
-        asset_files = [ckpt_cfg['config'], ckpt_cfg['tokens']]
-        if assets_dir == args.model_dir:
-            model_files += asset_files
-        model_files = [f for f in model_files if not os.path.exists(os.path.join(args.model_dir, f))]
-        if model_files:
-            snapshot_download(ckpt_cfg['repo'], local_dir=args.model_dir, allow_patterns=model_files)
-        if assets_dir != args.model_dir and not all(os.path.exists(os.path.join(assets_dir, f)) for f in asset_files):
-            snapshot_download(assets_repo, local_dir=assets_dir, allow_patterns=asset_files)
+
+        def fetch(cfg:dict, model_dir:str, assets_dir:str)->tuple:
+            # plain-folder downloads (local_dir): the HF cache layout symlinks, and huggingface_hub's symlink
+            # probe races under threaded downloads (WinError 1314 on windows without symlink rights).
+            # Only the checkpoint's own files: a repo can hold several models (k2-fsa/ZipVoice). Downloaded once,
+            # then never checked again (an offline start keeps working).
+            onnx_files = cfg.get('onnx') or {}
+            if onnx_files:
+                ckpt_file = weights_file = ''
+                model_files = list(onnx_files.values())
+            else:
+                # a .pt checkpoint, or one whose keys carry a prefix (a transformers wrapper's "model."), is kept
+                # as the one weight set inference loads (see below): its .e2a.safetensors
+                ckpt_file = os.path.join(model_dir, cfg['ckpt'])
+                weights_file = f'{os.path.splitext(ckpt_file)[0]}.e2a.safetensors' if ckpt_file.endswith('.pt') or cfg.get('prefix') else ckpt_file
+                model_files = [] if os.path.exists(weights_file) else [cfg['ckpt']]
+            # model.json / tokens.txt come from assets_repo when the checkpoint ships without them (fine-tunes of
+            # the base model keep its config and its token table)
+            assets_repo = cfg.get('assets_repo') or cfg['repo']
+            assets_dir = assets_dir if assets_repo != cfg['repo'] else model_dir
+            asset_files = [cfg['config'], cfg['tokens']]
+            if assets_dir == model_dir:
+                model_files += asset_files
+            model_files = [f for f in model_files if not os.path.exists(os.path.join(model_dir, f))]
+            if model_files:
+                snapshot_download(cfg['repo'], local_dir=model_dir, allow_patterns=model_files)
+            if assets_dir != model_dir and not all(os.path.exists(os.path.join(assets_dir, f)) for f in asset_files):
+                snapshot_download(assets_repo, local_dir=assets_dir, allow_patterns=asset_files)
+            return model_dir, ckpt_file, weights_file, onnx_files, os.path.join(assets_dir, cfg['config']), os.path.join(assets_dir, cfg['tokens'])
+
+        try:
+            model_dir, ckpt_file, weights_file, onnx_files, config_file, token_file = fetch(ckpt_cfg, args.model_dir, args.assets_dir)
+        except Exception as e:
+            # a gated repo refuses the download until the account of HF_TOKEN accepted its conditions: its
+            # ungated "fallback" checkpoint then (its own folder beside the gated one's under models/tts/zipvoice)
+            refused = type(e).__name__ in ('GatedRepoError', 'RepositoryNotFoundError') or getattr(getattr(e, 'response', None), 'status_code', None) in (401, 403)
+            if not (refused and ckpt_cfg.get('fallback')):
+                raise
+            print(f"{ckpt_cfg['repo']} refused ({type(e).__name__}): {ckpt_cfg['fallback']['repo']} instead", file=sys.stderr)
+            ckpt_cfg = ckpt_cfg['fallback']
+            fallback_dir = os.path.join(os.path.dirname(args.model_dir), ckpt_cfg['repo'].replace('/', '--'))
+            model_dir, ckpt_file, weights_file, onnx_files, config_file, token_file = fetch(ckpt_cfg, fallback_dir, fallback_dir)
         if not all(os.path.exists(os.path.join(args.vocoder_dir, f)) for f in vocoder_cfg['files']):
             snapshot_download(vocoder_cfg['repo'], local_dir=args.vocoder_dir, allow_patterns=vocoder_cfg['files'])
         import numpy as np
@@ -116,22 +131,27 @@ def main()->int:
             session_opts = ort.SessionOptions()
             session_opts.intra_op_num_threads = os.cpu_count() or 1
             session_opts.inter_op_num_threads = 1
-            text_encoder = ort.InferenceSession(os.path.join(args.model_dir, onnx_files['text_encoder']), sess_options=session_opts, providers=['CPUExecutionProvider'])
-            fm_decoder = ort.InferenceSession(os.path.join(args.model_dir, onnx_files['fm_decoder']), sess_options=session_opts, providers=['CPUExecutionProvider'])
+            text_encoder = ort.InferenceSession(os.path.join(model_dir, onnx_files['text_encoder']), sess_options=session_opts, providers=['CPUExecutionProvider'])
+            fm_decoder = ort.InferenceSession(os.path.join(model_dir, onnx_files['fm_decoder']), sess_options=session_opts, providers=['CPUExecutionProvider'])
             feat_dim = int(model_config['model']['feat_dim'])
             model = None
         else:
             if weights_file != ckpt_file and not os.path.exists(weights_file):
                 # icefall checkpoints ({"model": state_dict}, training ones with the optimizer, the sampler and
-                # the averaged model too: 1.8 GB for 123M params) and plain state dicts (fp16 ones too): the
-                # weights alone are saved once as fp32 safetensors, read through mmap, and the .pt is dropped.
+                # the averaged model too: 1.8 GB for 123M params), plain state dicts (fp16 ones too) and
+                # safetensors whose keys carry a prefix: the weights alone are saved once as fp32 safetensors
+                # with upstream's key names, read through mmap, and the original is dropped.
                 # weights_only False: icefall pickles its params (zipvoice.utils.common.AttributeDict) beside
                 # the weights, importable now that the tree is on sys.path
-                from safetensors.torch import save_file
-                checkpoint = torch.load(ckpt_file, map_location='cpu', weights_only=False, mmap=True)
+                from safetensors.torch import save_file, load_file
+                if ckpt_file.endswith('.safetensors'):
+                    checkpoint = load_file(ckpt_file)
+                else:
+                    checkpoint = torch.load(ckpt_file, map_location='cpu', weights_only=False, mmap=True)
                 state = checkpoint['model'] if isinstance(checkpoint, dict) and isinstance(checkpoint.get('model'), dict) else checkpoint
-                # DDP training saves every key under module.
-                state = {k.removeprefix('module.'): v.float() if v.is_floating_point() else v for k, v in state.items() if isinstance(v, torch.Tensor)}
+                prefix = ckpt_cfg.get('prefix', '')
+                # DDP training saves every key under module.; a wrapper's own keys (no prefix) are not the model's
+                state = {k.removeprefix('module.').removeprefix(prefix): v.float() if v.is_floating_point() else v for k, v in state.items() if isinstance(v, torch.Tensor) and k.removeprefix('module.').startswith(prefix)}
                 save_file({k: v.contiguous() for k, v in state.items()}, f'{weights_file}.part')
                 os.replace(f'{weights_file}.part', weights_file)
                 del checkpoint, state
@@ -201,7 +221,7 @@ def main()->int:
                     return tokens
         return tokenizer.texts_to_tokens([text])[0]
 
-    proto.write(json.dumps({'ready': True, 'samplerate': sampling_rate, 'device': device, 'backend': backend}) + '\n')
+    proto.write(json.dumps({'ready': True, 'samplerate': sampling_rate, 'device': device, 'backend': backend, 'checkpoint': ckpt_cfg['repo']}) + '\n')
     refs = {}
     asr = None
     while True:

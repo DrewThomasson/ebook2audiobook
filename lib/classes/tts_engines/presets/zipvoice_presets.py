@@ -9,7 +9,8 @@ from lib.conf_models import TTS_ENGINES, default_engine_settings
 # tokenizer: "emilia" (English through espeak-ng en-us + Chinese through pinyin, by script), "espeak" (espeak-ng voice
 # lang, IPA tokens), "simple" (characters); lowercase: the character table has no capitals.
 # onnx: {"text_encoder", "fm_decoder"} instead of ckpt, for releases that only ship k2-fsa's ONNX export (run on cpu by
-# onnxruntime, whatever the device).
+# onnxruntime, whatever the device). prefix: key prefix of the weights to strip (a transformers wrapper's "model.").
+# fallback: the checkpoint used instead when a gated repo refuses the download (HF_TOKEN's account did not accept it).
 # Optional sampling defaults of the checkpoint (else the engine's): num_step, guidance_scale, t_shift; speed_factor
 # multiplies the speed; short_text = ViZipVoice's slower speech on 1 to 4 word sentences; ref_max = reference window (s).
 # Keep the internal keys in sync with default_engine_settings[TTS_ENGINES['ZIPVOICE']]['languages'].
@@ -25,9 +26,12 @@ arabic_base = {"repo": "karim1993/zipvoice-ar-finetuned", "ckpt": "zipvoice_ar/e
 arabic_distill = {"repo": "karim1993/zipvoice-ar-finetuned", "ckpt": "zipvoice_distill_ar/checkpoint-2000.pt", "config": "zipvoice_distill_ar/model.json", "tokens": "zipvoice_distill_ar/tokens.txt", "model": "zipvoice_distill", "tokenizer": "espeak", "lang": "ar", "num_step": 8, "guidance_scale": 3.0}
 serbian_base = {"repo": "karim1993/zipvoice-sr-finetuned", "ckpt": "zipvoice_sr/epoch-15-avg-4.safetensors", "config": "zipvoice_sr/model.json", "tokens": "zipvoice_sr/tokens.txt", "model": "zipvoice", "tokenizer": "espeak", "lang": "sr"}
 serbian_distill = {"repo": "karim1993/zipvoice-sr-finetuned", "ckpt": "zipvoice_distill_sr/checkpoint-2000.safetensors", "config": "zipvoice_distill_sr/model.json", "tokens": "zipvoice_distill_sr/tokens.txt", "model": "zipvoice_distill", "tokenizer": "espeak", "lang": "sr", "num_step": 8, "guidance_scale": 3.0}
-# DhVaani-0.5 (ARTPARK-IISc, 27 Indic languages, character tokens): the original repo is gated, its ONNX export is not
-# (k2-fsa's export format, fp32 here: the int8 one trades quality for size)
-dhvaani = {"repo": "Bbkblo/DhVaani-0.5-ONNX", "onnx": {"text_encoder": "text_encoder.onnx", "fm_decoder": "fm_decoder.onnx"}, "config": "model.json", "tokens": "tokens.txt", "model": "zipvoice", "tokenizer": "simple", "lowercase": True}
+# DhVaani-0.5 (ARTPARK-IISc, 27 Indic languages + English, cased character tokens read as they are): upstream's model
+# code (its bundled _backend only trims the tokenizer and the lhotse-free mel extractor, same output), weights under its
+# transformers wrapper's "model.". The repo is gated: when HF_TOKEN's account has not accepted it, its ungated ONNX export
+# (same tokens.txt / model.json; k2-fsa's export format, fp32: the int8 one trades quality for size) runs on cpu instead
+dhvaani_onnx = {"repo": "Bbkblo/DhVaani-0.5-ONNX", "onnx": {"text_encoder": "text_encoder.onnx", "fm_decoder": "fm_decoder.onnx"}, "config": "model.json", "tokens": "tokens.txt", "model": "zipvoice", "tokenizer": "simple"}
+dhvaani = {"repo": "ARTPARK-IISc/DhVaani-0.5", "ckpt": "model.safetensors", "prefix": "model.", "config": "model.json", "tokens": "tokens.txt", "model": "zipvoice", "tokenizer": "simple", "fallback": dhvaani_onnx}
 # DhVaani's languages (its model card) -> e2a's iso-639-3 codes: Dogri as dgo, Konkani as gom, Nepali as npi, Odia as ory
 # (Rajasthani has no e2a code)
 dhvaani_languages = ("asm", "ben", "brx", "dgo", "guj", "hin", "hne", "bho", "kan", "kas", "gom", "mai", "mag", "mal", "mni", "mar", "npi", "ory", "pan", "san", "sat", "snd", "tam", "tel", "urd")

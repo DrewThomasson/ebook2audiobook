@@ -376,8 +376,10 @@ if any(ckpt.get('tashkeel') for ckpt in f5_checkpoints):
 zv = default_engine_settings[TTS_ENGINES['ZIPVOICE']]
 zv_presets = [cfg for cfg in load_presets('zipvoice').values() if any(wanted(lang) for lang in cfg['checkpoints'])]
 # the worker's own files: the checkpoint (or its ONNX pair) with model.json / tokens.txt, those from assets_repo when the
-# checkpoint ships without them; a .pt is converted to safetensors by the worker at its first start
-for ckpt in {json.dumps(ckpt, sort_keys=True): ckpt for cfg in zv_presets for lang, ckpt in cfg['checkpoints'].items() if wanted(lang)}.values():
+# checkpoint ships without them; a .pt is converted to safetensors by the worker at its first start. A gated checkpoint's
+# fallback too, so the key works whether HF_TOKEN's account accepted the gated repo or not (a refused job is reported)
+zv_wanted = [ckpt for cfg in zv_presets for lang, ckpt in cfg['checkpoints'].items() if wanted(lang)]
+for ckpt in {json.dumps(ckpt, sort_keys=True): ckpt for ckpt in zv_wanted + [c['fallback'] for c in zv_wanted if c.get('fallback')]}.values():
     zv_model_dir = os.path.join(tts_dir, 'zipvoice', ckpt['repo'].replace('/', '--'))
     zv_assets_repo = ckpt.get('assets_repo') or ckpt['repo']
     zv_files = (list(ckpt['onnx'].values()) if ckpt.get('onnx') else [ckpt['ckpt']]) + ([ckpt['config'], ckpt['tokens']] if zv_assets_repo == ckpt['repo'] else [])
