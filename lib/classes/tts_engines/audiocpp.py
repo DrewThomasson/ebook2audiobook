@@ -164,6 +164,23 @@ class AudioCpp(TTSUtils):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
+    def _direction_request(self)->dict:
+        # a [direct:...] passage on a family whose request takes a free-text "instruct" (maya1): the direction follows
+        # the configured voice description in the request's own options, which the server reads over the defaults it
+        # was started with. Worked out and printed once per direction; the other families read the passage plainly
+        direction = self.params.get('inline_direction')
+        instruct = self.family_cfg['request'].get('instruct')
+        if not direction or not instruct:
+            return {}
+        cached = self.params.get('direction_request')
+        if cached and cached[0] == direction:
+            return cached[1]
+        direction_text = direction.rstrip('. ')
+        request = {'options': {'instruct': f'{instruct.rstrip()} {direction_text[:1].upper()}{direction_text[1:]}.'}}
+        print(legends['msg_sml_direct'].format(value=direction, engine=self.session['tts_engine'], params=request['options']))
+        self.params['direction_request'] = (direction, request)
+        return request
+
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         part_file = f'{os.path.splitext(sentence_file)[0]}.{self.session["tts_engine"]}.wav'
         try:
@@ -202,7 +219,8 @@ class AudioCpp(TTSUtils):
                             'language': self.language_code,
                             'voice': self.params['current_voice'],
                             'voice_id': self.voice_id,
-                            'file': part_file
+                            'file': part_file,
+                            **self._direction_request()
                         })
                         if not reply.get('ok') and reply.get('server_exited') and self.backend != 'cpu':
                             # the GPU server died mid-sentence (driver abort): restart it once, drop the package on its second

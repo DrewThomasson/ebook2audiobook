@@ -1055,6 +1055,11 @@ class TTSUtils:
             # an empty dict ([emotion:neutral]) is the plain voice for the passage, not "no tag"
             self.params['inline_emotion'] = {k: round(max(-1.0, min(1.0, v)), 4) for k, v in emotion.items() if abs(v) > 1e-4}
             return True, None
+        elif tag == 'direct':
+            # kept as written: each engine that takes a reading direction turns it into its own request, the
+            # others never read it, so the direction is not spoken
+            self.params['inline_direction'] = None if close else ((value or '').strip() or None)
+            return True, None
         elif tag == 'ipa':
             if close:
                 value = '' # TODO: get the value between tag [ipa] and close [/ipa]

@@ -88,6 +88,33 @@ TTS_SML = {
         "values": ["happy", "sad", "angry", "surprised", "valence", "arousal"],
         "aliases": {"happiness": "happy", "joy": "happy", "sadness": "sad", "anger": "angry", "surprise": "surprised"},
         "map": {"fear": {"valence": -0.6, "arousal": 0.6}, "afraid": {"valence": -0.6, "arousal": 0.6}, "scared": {"valence": -0.6, "arousal": 0.6}, "disgust": {"valence": -0.6, "arousal": 0.2}, "disgusted": {"valence": -0.6, "arousal": 0.2}, "neutral": {}, "other": {}}
+    },
+    # a free-text reading direction for a passage, never spoken: [direct:quiet, tense, slowing down]...[/direct].
+    # maya1 reads it after its configured voice description, as that passage's "instruct". zonos has no free-text
+    # input, so "zonos" turns the direction into its controls: each entry whose keyword starts a word of the direction
+    # ("whisper" matches whispering, whispered) is applied once; emotion sliders are summed and clamped to their
+    # range, "rate" multiplies the speaking rate. An [emotion] tag inside the passage keeps the sliders to itself, the
+    # rate still applies. A direction with no keyword changes nothing. Every other engine ignores the tag.
+    "direct": {
+        "paired": True,
+        "zonos": [
+            (("happ", "joy", "cheer", "delight", "glad", "bright", "playful", "amus"), {"happy": 0.6}),
+            (("excit", "elat", "thrill", "triumph"), {"happy": 0.4, "arousal": 0.6}),
+            (("warm", "tender", "gentl", "fond", "affection", "loving"), {"valence": 0.4, "arousal": -0.2}),
+            (("sad", "sorrow", "grie", "mourn", "melanchol", "wist", "heartbr", "despair", "forlorn"), {"sad": 0.7}),
+            (("anger", "angr", "furi", "fury", "enrag", "raging", "outrage", "wrath", "hostil", "snarl"), {"angry": 0.7}),
+            (("irrita", "annoy", "bitter", "impatien", "resent", "stern", "cold"), {"angry": 0.4}),
+            (("surpris", "astonish", "amaz", "shock", "startl", "incredul"), {"surprised": 0.7}),
+            (("fearf", "afraid", "scared", "fright", "terrif", "terror", "panic", "dread", "horrif"), {"valence": -0.6, "arousal": 0.6}),
+            (("tense", "tension", "anxi", "nervous", "uneas", "worr", "suspens", "ominous", "menac", "urgen"), {"valence": -0.3, "arousal": 0.5}),
+            (("disgust", "revuls", "contempt", "sneer"), {"valence": -0.6, "arousal": 0.2}),
+            (("solemn", "gravely", "somber", "sombre", "grim"), {"valence": -0.3, "arousal": -0.3}),
+            (("calm", "sooth", "peace", "relax", "seren", "quiet", "soft", "hush", "whisper", "murmur", "subdued"), {"arousal": -0.4}),
+            (("tired", "weary", "wearil", "exhaust", "sleep", "drows", "listless"), {"arousal": -0.6}),
+            (("loud", "shout", "yell", "energetic", "intens", "forceful", "dramatic", "emphatic"), {"arousal": 0.6}),
+            (("slow", "unhurr", "deliberate", "measured", "linger"), {"rate": 0.8}),
+            (("fast", "quick", "rapid", "hurr", "rush", "breathless", "brisk"), {"rate": 1.25})
+        ]
     }
 }
 
