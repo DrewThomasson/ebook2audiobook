@@ -103,13 +103,17 @@ class BackgroundDetector:
         # (miopenStatusUnknownError). On ROCm builds, torch.backends.cudnn
         # maps to MIOpen; disabling it routes ops to native ATen kernels.
         # Cost is negligible for VAD-sized models.
-        if getattr(torch.version, 'hip', None) is not None:
+        is_hip = getattr(torch.version, 'hip', None) is not None
+        if is_hip:
             if DEVICE_SYSTEM == systems['WINDOWS']:
                 torch.backends.cudnn.enabled = False
+        # XPU and MPS only when VoiceExtractor resolved self.device to it (selected and found), never probed: asking
+        # torch.xpu.is_available() initializes the SYCL runtime in this process, and on an Intel GPU torch xpu cannot
+        # run on (UHD 770 iGPU, old driver) that is a Windows access violation inside device_count(), not a False.
+        # A CPU session on such a machine died there on every voice upload
         self.torch_device = torch.device(
-            devices['CUDA']['proc'] if (self.device == devices['CUDA']['proc'] and getattr(torch.version, 'hip', None) is None) or (getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM != systems['WINDOWS'])
-            else devices['XPU']['proc'] if hasattr(torch, devices['XPU']['proc']) and torch.xpu.is_available()
-            else devices['MPS']['proc'] if torch.backends.mps.is_available()
+            devices['CUDA']['proc'] if (self.device == devices['CUDA']['proc'] and not is_hip) or (is_hip and DEVICE_SYSTEM != systems['WINDOWS'])
+            else self.device if self.device in [devices['XPU']['proc'], devices['MPS']['proc']]
             else devices['CPU']['proc']
         )
         key = self.torch_device.type
@@ -242,13 +246,15 @@ class BackgroundDetector:
             # Drop local refs to free any short-lived tensors / annotations
             pipeline = waveform = sr = None
             gc.collect()
-            if torch.cuda.is_available():
+            # is_initialized(), not is_available(): only a runtime this process already started has a cache to empty,
+            # and the probe would start (and on XPU crash) the runtime of a backend the session never used
+            if torch.cuda.is_initialized():
                 try:
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
                 except Exception:
                     pass
-            if hasattr(torch, 'xpu') and torch.xpu.is_available():
+            if hasattr(torch, 'xpu') and torch.xpu.is_initialized():
                 try:
                     torch.xpu.empty_cache()
                 except Exception:

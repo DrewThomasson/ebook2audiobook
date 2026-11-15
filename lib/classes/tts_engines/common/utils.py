@@ -260,12 +260,16 @@ class TTSUtils:
         # (Debian bookworm ships level-zero 1.8.12), so this probe raises
         # AttributeError out of ctypes instead of returning False, and takes
         # TTSManager -> convert_chapters2audio() down with it.
-        try:
-            has_xpu = hasattr(torch, 'xpu') and torch.xpu.is_available()
-        except Exception as e:
-            has_xpu = False
-            error = f'[_apply_gpu_policy] XPU probe failed ({e!r}), treating as no XPU'
-            print(error)
+        # XPU sessions only: on an Intel GPU torch xpu cannot run on (UHD 770 iGPU, old
+        # driver) the probe is a Windows access violation, which no except catches, and
+        # it ran on CPU conversions too.
+        has_xpu = False
+        if device == devices['XPU']['proc']:
+            try:
+                has_xpu = hasattr(torch, 'xpu') and torch.xpu.is_available()
+            except Exception as e:
+                error = f'[_apply_gpu_policy] XPU probe failed ({e!r}), treating as no XPU'
+                print(error)
         is_rocm = bool(getattr(torch.version, 'hip', None))
         is_cuda = bool(getattr(torch.version, 'cuda', None)) and not is_rocm
         quality_mode = bool(using_gpu and enough_vram)

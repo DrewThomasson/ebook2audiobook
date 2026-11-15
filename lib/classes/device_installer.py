@@ -2269,11 +2269,15 @@ class DeviceInstaller():
             return False
 
         def _probe_gpus()->dict:
+            # 'probed': the child ran to its end (or died in torch), so a count of 0 is torch's own answer. A probe that
+            # could not run (timeout on a cold start, missing python, unreadable output) says nothing about the GPU
             try:
                 proc = subprocess.run([python_exec, detect_gpu_script], capture_output=True, text=True, timeout=30)
                 if proc.returncode != 0:
-                    return {'count': 0, 'backend': None, 'error': proc.stderr.strip() or 'non-zero exit'}
-                return json.loads(proc.stdout.strip() or '{}')
+                    # Windows reports a native crash as an NTSTATUS (0xc0000005 access violation), POSIX as -signal
+                    code = f'{proc.returncode:#x}' if proc.returncode > 255 else str(proc.returncode)
+                    return {'count': 0, 'backend': None, 'probed': True, 'error': proc.stderr.strip() or f'exit code {code}'}
+                return {**json.loads(proc.stdout.strip() or '{}'), 'probed': True}
             except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as e:
                 return {'count': 0, 'backend': None, 'error': str(e)}
 
@@ -2427,6 +2431,15 @@ class DeviceInstaller():
                     if gpu_info.get('error'):
                         error = legends['error_gpu_detection_warning'].format(e=gpu_info['error'])
                         print(error)
+                    # check_hardware() set devices['XPU']['found'] from Level Zero listing an Intel GPU, which does not
+                    # mean torch xpu runs on it: on an iGPU it does not support or an old driver, torch.xpu.is_available()
+                    # answers 0 or kills the process (Windows access violation in device_count()). Only this probe, in
+                    # its own process, can ask safely: XPU off, so nothing in the app (the device dropdown,
+                    # VoiceExtractor, the session device check) asks torch.xpu again
+                    if device_info['name'] == devices['XPU']['proc'] and gpu_info['count'] == 0 and gpu_info.get('probed'):
+                        devices['XPU']['found'] = False
+                        msg = legends['msg_xpu_unusable']
+                        print(msg)
                     if gpu_info['count'] > 0:
                         idx = ','.join(str(i) for i in range(gpu_info['count']))
                         if gpu_info['backend'] == 'cuda':
