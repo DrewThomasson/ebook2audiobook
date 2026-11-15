@@ -75,7 +75,10 @@ existing tag stays as it is.
   sentence end near where the delivery changes.
 - Plain narration gets no tag. A chapter where every sentence is directed has no plain
   reading left to differ from.
-- `[pause:2]` at a scene break; `N` is seconds.
+- `[pause:2]` at a scene break; `N` is seconds. The export already puts a `[pause]` at each
+  paragraph break, and those stay; the added pause goes beside the one at the scene break.
+- The export drops quotation marks, so dialogue is found by its "she said" and by sense. When
+  who speaks is unclear, read that part of the ebook itself.
 - `[voice:<path to voice file>]passage[/voice]` around a character's lines only when the user
   gave a voice file for that character. `[voice:...]` tags already in the text, such as those
   written by E2A-SML, stay where they are.
