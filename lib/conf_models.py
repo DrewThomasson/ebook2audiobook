@@ -88,6 +88,51 @@ TTS_SML = {
         "values": ["happy", "sad", "angry", "surprised", "valence", "arousal"],
         "aliases": {"happiness": "happy", "joy": "happy", "sadness": "sad", "anger": "angry", "surprise": "surprised"},
         "map": {"fear": {"valence": -0.6, "arousal": 0.6}, "afraid": {"valence": -0.6, "arousal": 0.6}, "scared": {"valence": -0.6, "arousal": 0.6}, "disgust": {"valence": -0.6, "arousal": 0.2}, "disgusted": {"valence": -0.6, "arousal": 0.2}, "neutral": {}, "other": {}}
+    },
+    # a free-text reading direction for a passage, never spoken: [direct:quiet, tense, slowing down]...[/direct].
+    # The engines that read it turn it into their own controls through keyword tables: an entry applies once when one
+    # of its keywords is a word of the direction or starts one ("whisper" matches whispering, whispered); a word ending
+    # in "less", "lessly" or "lessness" (joyless, fearlessly) only matches a keyword written in full, and a word
+    # starting with an "exclude" entry (happen, yellow) matches nothing. Negation is not read ("not angry" is angry).
+    # maya1: the direction joins the configured voice description as its tone, inside the same sentence (a second
+    # sentence there makes the model speak the description), and the first "maya1" entry it hits puts that inline
+    # token in front of each part of the passage. Only the model's delivery tokens are listed: its sound tokens
+    # (sigh, gasp, cry, scream, laugh) would sound once per part.
+    # zonos: no free-text input. The "zonos" entries it hits add up their emotion sliders (clamped to their range)
+    # and multiply the speaking rate by "rate". An [emotion] tag inside the passage keeps the sliders to itself, the
+    # rate still applies. A direction with no keyword changes nothing.
+    # Every other engine ignores the tag.
+    "direct": {
+        "paired": True,
+        "exclude": ("happen", "gentlem", "grima", "grime", "yellow", "ragged", "terrific", "sadis", "fastid", "fasting", "fasten"),
+        "maya1": [
+            (("whisper", "hush", "murmur"), "whisper"),
+            (("anger", "angr", "furi", "fury", "enrag", "rage", "raging", "outrage", "wrath", "hostil", "snarl"), "angry"),
+            (("appall", "horrif", "disgust", "revuls"), "appalled"),
+            (("sarcas", "sardonic", "mocking"), "sarcastic"),
+            (("mischie", "sly", "teasing", "playful"), "mischievous"),
+            (("excit", "elat", "thrill", "triumph"), "excited"),
+            (("disappoint", "deject"), "disappointed"),
+            (("curious", "curiosity", "wondering", "wonderment", "intrigu"), "curious")
+        ],
+        "zonos": [
+            (("happ", "joy", "cheer", "delight", "glad", "bright", "playful", "amus"), {"happy": 0.6}),
+            (("excit", "elat", "thrill", "triumph"), {"happy": 0.4, "arousal": 0.6}),
+            (("warm", "tender", "gentl", "fond", "affection", "loving"), {"valence": 0.4, "arousal": -0.2}),
+            (("sad", "unhapp", "sorrow", "grie", "mourn", "melanchol", "wist", "heartbr", "despair", "forlorn", "joyless", "cheerless"), {"sad": 0.7}),
+            (("anger", "angr", "furi", "fury", "enrag", "rage", "raging", "outrage", "wrath", "hostil", "snarl"), {"angry": 0.7}),
+            (("irrita", "annoy", "bitter", "impatien", "resent", "stern", "cold"), {"angry": 0.4}),
+            (("surpris", "astonish", "amaz", "shock", "startl", "incredul"), {"surprised": 0.7}),
+            (("fear", "afraid", "scared", "fright", "terrif", "terror", "panic", "dread", "horrif"), {"valence": -0.6, "arousal": 0.6}),
+            (("tense", "tension", "anxi", "nervous", "uneas", "worr", "suspens", "ominous", "menac", "urgen", "restless", "sleepless"), {"valence": -0.3, "arousal": 0.5}),
+            (("disgust", "revuls", "contempt", "sneer"), {"valence": -0.6, "arousal": 0.2}),
+            (("solemn", "gravely", "gravity", "somber", "sombre", "grim"), {"valence": -0.3, "arousal": -0.3}),
+            (("calm", "sooth", "peace", "relax", "seren", "quiet", "soft", "hush", "whisper", "murmur", "subdued"), {"arousal": -0.4}),
+            (("tired", "weary", "wearil", "exhaust", "sleep", "drows", "listless"), {"arousal": -0.6}),
+            (("loud", "shout", "yell", "energetic", "intens", "forceful", "dramatic", "emphatic"), {"arousal": 0.6}),
+            (("slow", "unhurr", "deliberate", "measured", "linger"), {"rate": 0.8}),
+            (("fast", "quick", "rapid", "hurr", "rush", "breathless", "brisk"), {"rate": 1.25})
+        ]
     }
 }
 

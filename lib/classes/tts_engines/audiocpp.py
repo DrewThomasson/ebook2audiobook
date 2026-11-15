@@ -51,6 +51,8 @@ class AudioCpp(TTSUtils):
                     raise ValueError(error)
             self.family_cfg = settings['audiocpp']
             self.family = self.family_cfg['family']
+            # only a family whose request takes a free-text "instruct" reads a [direct:...] direction
+            self.reads_direction = bool(self.family_cfg['request'].get('instruct'))
             # a preset may speak fewer languages than its engine (IndexTTS2 v2)
             languages = model_cfg.get('languages') or settings['languages']
             if self.language not in languages:
@@ -164,6 +166,30 @@ class AudioCpp(TTSUtils):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
+    def _direction_request(self)->tuple:
+        # a [direct:...] passage on a family whose request takes a free-text "instruct" (maya1): the request's own
+        # options, which the server reads over the defaults it was started with, and the inline token to put in front
+        # of the text (None when the direction hits no keyword of the family's table). Worked out and printed once per
+        # direction; the other families read the passage plainly
+        direction = self.params.get('inline_direction')
+        instruct = self.family_cfg['request'].get('instruct')
+        if not direction or not instruct:
+            return {}, None
+        cached = self.params.get('direction_request')
+        if cached and cached[0] == direction:
+            return cached[1], cached[2]
+        # the description is sent wrapped in double quotes and must stay one sentence: no quote or sentence mark inside
+        direction_text = re.sub(r'[\s,]*[.!?;:"]+[\s,]*', ', ', direction)
+        direction_text = re.sub(r'(^|[\s,]+)tone$', '', ' '.join(direction_text.split()).strip(' ,'), flags=re.IGNORECASE)
+        if not direction_text:
+            self.params['direction_request'] = (direction, {}, None)
+            return {}, None
+        request = {'options': {'instruct': f"{instruct.rstrip().rstrip('.')}, {direction_text} tone at high intensity."}}
+        token = next(iter(self._direction_matches(direction, TTS_SML['direct'].get(self.family, []))), None)
+        print(legends['msg_sml_direct'].format(value=direction, engine=self.session['tts_engine'], params={**request['options'], 'token': token}))
+        self.params['direction_request'] = (direction, request, token)
+        return request, token
+
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         part_file = f'{os.path.splitext(sentence_file)[0]}.{self.session["tts_engine"]}.wav'
         try:
@@ -196,13 +222,15 @@ class AudioCpp(TTSUtils):
                         trim_audio_buffer = 0.002
                         # only the voice path crosses the pipe: the worker cuts one reference clip per voice file and keeps it.
                         # Built-in voice engines: voice None = their own voice (voice_id), a voice file = converted to it
+                        direction_request, direction_token = self._direction_request()
                         reply = self.engine.send({
                             'op': 'tts',
-                            'text': part,
+                            'text': f'<{direction_token}> {part}' if direction_token else part,
                             'language': self.language_code,
                             'voice': self.params['current_voice'],
                             'voice_id': self.voice_id,
-                            'file': part_file
+                            'file': part_file,
+                            **direction_request
                         })
                         if not reply.get('ok') and reply.get('server_exited') and self.backend != 'cpu':
                             # the GPU server died mid-sentence (driver abort): restart it once, drop the package on its second

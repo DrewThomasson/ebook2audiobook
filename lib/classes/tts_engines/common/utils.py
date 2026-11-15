@@ -138,6 +138,10 @@ def tqdm_progress(label:str)->Any:
 
 class TTSUtils:
 
+    # True on the engines that turn a [direct:...] reading direction into a request of their own. For the others the
+    # tag is taken out of the sentence before it is split, so the sentence is spoken in the same parts as without it
+    reads_direction = False
+
     # Engines without a voice-conversion stage (bark, tortoise, yourtts, xtts)
     # never assign these; shared helpers may still read them.
     engine_zs = None
@@ -968,6 +972,18 @@ class TTSUtils:
         return current_voice, None
         
     def _split_sentence_on_sml(self, sentence:str)->list[str]:
+        if not self.reads_direction:
+            # one space where each [direct] tag and the spaces around it were; the rest of the sentence, the values
+            # of the other tags included, stays as written
+            kept:list[str] = []
+            last = 0
+            for m in SML_TAG_PATTERN.finditer(sentence):
+                if m.group('tag') == 'direct':
+                    before = sentence[last:m.start()].rstrip(' ')
+                    if before or not kept:
+                        kept.append(before + ' ')
+                    last = m.end() + len(sentence[m.end():]) - len(sentence[m.end():].lstrip(' '))
+            sentence = ''.join(kept) + sentence[last:]
         parts:list[str] = []
         last = 0
         for m in SML_TAG_PATTERN.finditer(sentence):
@@ -983,6 +999,11 @@ class TTSUtils:
             if tail:
                 parts.append(tail)
         return parts
+
+    def _direction_matches(self, direction:str, table:list)->list:
+        # the values of the keyword table entries a [direct:...] direction hits, in table order (rules: TTS_SML['direct'])
+        words = [word for word in re.findall(r'[^\W\d_]+', direction.lower()) if not word.startswith(TTS_SML['direct']['exclude'])]
+        return [value for keywords, value in table if any(word in keywords or (word.startswith(keywords) and not re.search(r'less(ly|ness)?$', word)) for word in words)]
 
     def _convert_sml(self, sml:str)->tuple:
         import torch
@@ -1054,6 +1075,11 @@ class TTSUtils:
                     emotion[name] = emotion.get(name, 0.0) + v * w * scale
             # an empty dict ([emotion:neutral]) is the plain voice for the passage, not "no tag"
             self.params['inline_emotion'] = {k: round(max(-1.0, min(1.0, v)), 4) for k, v in emotion.items() if abs(v) > 1e-4}
+            return True, None
+        elif tag == 'direct':
+            # kept as written: each engine that takes a reading direction turns it into its own request, the
+            # others never read it, so the direction is not spoken
+            self.params['inline_direction'] = None if close else ((value or '').strip() or None)
             return True, None
         elif tag == 'ipa':
             if close:

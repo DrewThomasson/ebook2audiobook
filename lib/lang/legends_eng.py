@@ -127,6 +127,8 @@ legends = {
     'gr_csm_top_k': 'Top-k',
     'gr_csm_top_k_info': 'Lower values give a steadier, more predictable delivery.',
     'msg_sml_emotion_ignored': 'Unknown [emotion:{value}] tag ignored. Use one of {values}, or a mix like sadness=0.7,neutral=0.3',
+    'msg_sml_direct': '[direct:{value}] on {engine}: {params}',
+    'msg_sml_direct_unmatched': '[direct:{value}] on {engine}: no word of it maps to an emotion or a speaking rate, the passage is read with the current settings',
     'error_zonos_emotion_format': '--enable_emotion takes name=value pairs separated by commas, e.g. happy=0.5,sad=0.2: "happy", "sad", "angry", "surprised" from 0.0 to 1.0, "valence", "arousal" from -1.0 to 1.0',
     'gr_abs_url': 'Server URL',
     'gr_abs_api_token': 'API Token',

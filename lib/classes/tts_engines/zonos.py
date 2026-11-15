@@ -11,6 +11,7 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
     # the same package (driver aborts can be rare), a second one drops it until e2a restarts (next GPU package, none
     # left stops the conversion)
     gpu_crashes = {}
+    reads_direction = True
 
     def __init__(self, session:DictProxy):
         # ZONOS2 (Zyphra zonos2.cpp): a native zonos2-server package per platform (default_engine_settings
@@ -316,6 +317,37 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
+    def _direction_request(self)->dict:
+        # the request fields a [direct:...] passage changes (keyword table TTS_SML['direct']['zonos']), worked out
+        # and printed once per direction
+        direction = self.params.get('inline_direction')
+        if not direction:
+            return {}
+        cached = self.params.get('direction_request')
+        if cached and cached[0] == direction:
+            return cached[1]
+        emotion = {}
+        rate = 1.0
+        matches = self._direction_matches(direction, TTS_SML['direct']['zonos'])
+        for effect in matches:
+            for name, v in effect.items():
+                if name == 'rate':
+                    rate *= v
+                else:
+                    emotion[name] = emotion.get(name, 0.0) + v
+        emotion = {k: round(max(-1.0, min(1.0, v)), 4) for k, v in emotion.items() if abs(v) > 1e-4}
+        request = {}
+        if emotion:
+            # like [emotion], the sliders replace the panel's for the passage
+            request.update(emotion_enabled=True, emotion=emotion)
+        if rate != 1.0:
+            # from the panel's rate, or 15 (the natural pace) when the panel leaves the pace to the model
+            request['speaking_rate'] = round((self.fine_tuned_params['speaking_rate'] or 15.0) * rate, 2)
+        # an empty request with matches (slow and fast together) is still a direction that was read
+        print(legends['msg_sml_direct' if matches else 'msg_sml_direct_unmatched'].format(value=direction, engine=self.session['tts_engine'], params=request))
+        self.params['direction_request'] = (direction, request)
+        return request
+
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         part_file = f'{os.path.splitext(sentence_file)[0]}.{self.session["tts_engine"]}.wav'
         try:
@@ -359,6 +391,7 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
                             'voice': self.params['current_voice'],
                             'file': part_file,
                             **self.fine_tuned_params,
+                            **self._direction_request(),
                             # inside [emotion:...]...[/emotion] the tag wins over the panel ([emotion:neutral] = {} = plain voice)
                             **({'emotion_enabled': True, 'emotion': self.params['inline_emotion']} if self.params.get('inline_emotion') is not None else {})
                         })

@@ -271,6 +271,7 @@ SML tags available:
 [pause:N] — fixed pause (N sec.)
 [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
 [emotion:sad]...[/emotion] — Zonos only: emotion for a passage (happy, sad, angry, surprised, valence, arousal; also fear, disgust, neutral) or a mix like [emotion:sad=0.7,angry=0.2]; other engines ignore it
+[direct:quiet, tense, slowing down]...[/direct]: a reading direction for a passage, in free text, never spoken. Maya1 adds it to its voice description as the tone and, for keywords it knows (whispering, angry, sarcastic and the like), puts its own expression token before the text; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an [emotion] tag inside the passage keeps the emotion; other engines ignore it
 ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
