@@ -300,6 +300,30 @@ get_iso3_lang() {
 	esac
 }
 
+check_path_length() {
+	# piper-tts bundles espeak-ng 1.52, which opens its data folder from a path of 159 bytes at most: past it piper
+	# stops with "Error processing file '.../phontab'". That folder sits 61 bytes below SCRIPT_DIR, so SCRIPT_DIR is
+	# 98 bytes at most (a non-ASCII character takes 2 to 4). Checked before anything is installed in a new folder;
+	# an installed one only gets a warning, every other engine runs there
+	local espeak_data="$SCRIPT_DIR/$PYTHON_ENV/lib/python$PYTHON_VERSION/site-packages/piper/espeak-ng-data"
+	local max_bytes=159
+	local data_bytes root_bytes max_root_bytes
+	data_bytes="$(printf '%s' "$espeak_data" | wc -c | tr -d '[:space:]')"
+	if (( data_bytes <= max_bytes )); then return 0; fi
+	root_bytes="$(printf '%s' "$SCRIPT_DIR" | wc -c | tr -d '[:space:]')"
+	max_root_bytes=$(( max_bytes - data_bytes + root_bytes ))
+	if [[ -f "$SCRIPT_DIR/$PYTHON_ENV/.provisioned" ]]; then
+		echo -e "\e[33m=============== Warning: the path of this ebook2audiobook folder is too long for the piper engine: $root_bytes bytes, $max_root_bytes at most (a non-ASCII character takes 2 to 4).\e[0m"
+		echo -e "\e[33mpiper cannot run from $SCRIPT_DIR, the other engines can. Move the folder to a shorter path to use piper.\e[0m"
+		return 0
+	fi
+	echo -e "\e[31m=============== Error: the path of this ebook2audiobook folder is too long: $root_bytes bytes, $max_root_bytes at most (a non-ASCII character takes 2 to 4).\e[0m"
+	echo "  $SCRIPT_DIR"
+	echo "The piper engine cannot read its espeak-ng data from a longer path, so python and its packages were not installed:"
+	echo "move this folder to a shorter path, or with a pip, pipx or Nix install set E2A_HOME to a shorter folder and delete this one."
+	return 1
+}
+
 check_python() {
 	if [[ "$SCRIPT_MODE" != "$FULL_DOCKER" ]] && ! command -v uv &>/dev/null; then
 		echo -e "\e[33mDownloading uv installer…\e[0m"
@@ -688,6 +712,7 @@ if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 	fi
 fi
 
+if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then check_path_length || exit 1; fi
 check_python || exit 1
 
 # Validate command arguments against conf.py

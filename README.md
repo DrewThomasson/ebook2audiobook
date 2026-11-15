@@ -722,10 +722,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    add `--help` parameter at the end of the docker run command for more information.
 - "I'm getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
    we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
-- Piper stops with `Error processing file '.../phontab': No such file or directory`? - The path of your ebook2audiobook folder is too long.
+- "The path of this ebook2audiobook folder is too long", or piper stops with `Error processing file '.../phontab'`?
    Piper reads its espeak-ng data from `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
-   (`python_env\Lib\site-packages\piper\espeak-ng-data` on Windows) and cannot open it<br>
-   past 159 characters (229 on Windows), so the folder path itself must be 98 characters at most on Linux/MacOS, 179 on Windows.<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` on Windows) and cannot open it past 159 bytes (229 on Windows),<br>
+   so the folder path itself must be 98 characters at most on Linux/MacOS, 179 on Windows (a non-ASCII character counts 2 to 4).<br>
+   The launchers check it before installing anything. A folder installed before that check only gets a warning: every engine but piper runs there.<br>
    Clone or install ebook2audiobook in a shorter folder (pip / pipx / Nix: set `E2A_HOME` to one).
 
 ## ***** ROADMAP *****

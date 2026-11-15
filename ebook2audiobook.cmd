@@ -307,6 +307,32 @@ if /i "%~1"=="te" set "ISO3_LANG=tel"
 if /i "%~1"=="yo" set "ISO3_LANG=yor"
 exit /b
 
+:check_path_length
+:: piper-tts bundles espeak-ng 1.52, which opens its data folder from a path of 229 bytes at most on Windows: past it
+:: piper stops with "Error processing file '...phontab'". That folder sits 50 bytes below SAFE_SCRIPT_DIR, so
+:: SAFE_SCRIPT_DIR is 179 bytes at most (a non-ASCII character takes 2 to 4). Checked before anything is installed in a
+:: new folder, an installed one only gets a warning: every other engine runs there. No parenthesized block around the
+:: path, which can hold ( ) or &, and no check at all if PowerShell cannot count it
+set "ESPEAK_DATA_SUFFIX=\%PYTHON_ENV%\Lib\site-packages\piper\espeak-ng-data"
+set "ROOT_BYTES="
+set "MAX_ROOT_BYTES="
+for /f "tokens=1,2" %%a in ('%PS_EXE% %PS_ARGS% -Command "$r=[Text.Encoding]::UTF8.GetByteCount($env:SAFE_SCRIPT_DIR); $m=229-$env:ESPEAK_DATA_SUFFIX.Length; [string]$r+' '+$m"') do (
+	set "ROOT_BYTES=%%a"
+	set "MAX_ROOT_BYTES=%%b"
+)
+if not defined MAX_ROOT_BYTES exit /b 0
+if %ROOT_BYTES% LEQ %MAX_ROOT_BYTES% exit /b 0
+if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" goto :check_path_length_failed
+echo %ESC%[33m=============== Warning: the path of this ebook2audiobook folder is too long for the piper engine: %ROOT_BYTES% bytes, %MAX_ROOT_BYTES% at most (a non-ASCII character takes 2 to 4).%ESC%[0m
+echo %ESC%[33mpiper cannot run from "%SAFE_SCRIPT_DIR%", the other engines can. Move the folder to a shorter path to use piper.%ESC%[0m
+exit /b 0
+:check_path_length_failed
+echo %ESC%[31m=============== Error: the path of this ebook2audiobook folder is too long: %ROOT_BYTES% bytes, %MAX_ROOT_BYTES% at most (a non-ASCII character takes 2 to 4).%ESC%[0m
+echo   "%SAFE_SCRIPT_DIR%"
+echo The piper engine cannot read its espeak-ng data from a longer path, so python and its packages were not installed:
+echo move this folder to a shorter path, or with a pip or pipx install set E2A_HOME to a shorter folder and delete this one.
+exit /b 1
+
 :check_python
 :: full_docker: the image python is used as is, nothing to install
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" exit /b 0
@@ -956,6 +982,10 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
+if "%SCRIPT_MODE%"=="%NATIVE%" (
+	call :check_path_length
+	if errorlevel 1 exit /b 1
+)
 call :check_python
 if errorlevel 1 exit /b 1
 if defined ARGS (
