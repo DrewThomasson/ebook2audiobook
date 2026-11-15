@@ -24,3 +24,6 @@ models/*
 .installed
 .env
 .gpu_choice
+.claude/worktrees/
+.claude/oversee/
+.claude/settings.local.json

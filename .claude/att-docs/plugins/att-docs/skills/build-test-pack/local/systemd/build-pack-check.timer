@@ -1,0 +1,14 @@
+# Checks the queue at 18:00, four hours before the nightly run, so a job with a
+# missing input can be fixed or removed before 22:00. A check the machine slept
+# through is not made up on waking: run after 22:00 it would only race the
+# nightly run.
+
+[Unit]
+Description=Check the test pack queue each evening
+
+[Timer]
+OnCalendar=*-*-* 18:00:00
+Persistent=false
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,7 @@
+{
+  "base": "voice-bridge-hooks",
+  "reviewLabel": "Ready for Review",
+  "reviewAnnouncement": "ready for review",
+  "readyLine": "PULL REQUEST <N> IS READY FOR YOUR REVIEW",
+  "spokenTerms": {}
+}

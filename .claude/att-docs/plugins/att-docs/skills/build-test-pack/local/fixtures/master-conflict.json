@@ -1,0 +1,66 @@
+{
+ "exports": [
+  {
+   "doc": "docs/HOLD/UC03-Loan-Holds.md",
+   "prefix": "BR-LIB.UC03",
+   "rules": [
+    {
+     "path": "UC03 Loan Holds",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC03-001",
+     "name": "BR-LIB.UC03-001 - Borrowing allowed",
+     "status": "active",
+     "description": "A patron with a current card may borrow up to five items.",
+     "source_document": "UC03 Loan Holds",
+     "source_page": "1",
+     "rule_summary": "A patron with a current card may borrow up to five items.",
+     "risk_level": "Medium",
+     "rule_category": "Validation",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC03 Loan Holds",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC03-002",
+     "name": "BR-LIB.UC03-002 - Hold blocks loans",
+     "status": "active",
+     "description": "A hold on the account blocks every new loan, even for a current card. Staff clear the hold to lift the block.",
+     "source_document": "UC03 Loan Holds",
+     "source_page": "2",
+     "rule_summary": "A hold on the account blocks every new loan, even for a current card.",
+     "risk_level": "High",
+     "rule_category": "Validation",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC03 Loan Holds",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC03-003",
+     "name": "BR-LIB.UC03-003 - Reset loan length",
+     "status": "active",
+     "description": "Reset restores the saved loan length and discards the unsaved edit.",
+     "source_document": "UC03 Loan Holds",
+     "source_page": "3",
+     "rule_summary": "Reset restores the saved loan length and discards the unsaved edit.",
+     "risk_level": "Medium",
+     "rule_category": "Data Integrity",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC03 Loan Holds",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC03-004",
+     "name": "BR-LIB.UC03-004 - Supervisor override",
+     "status": "active",
+     "description": "A supervisor override allows one loan despite a hold, and records a reason code.",
+     "source_document": "UC03 Loan Holds",
+     "source_page": "2",
+     "rule_summary": "A supervisor override allows one loan despite a hold, and records a reason code.",
+     "risk_level": "High",
+     "rule_category": "Validation",
+     "created": "2026-01-15"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+# Runs the idle check every minute. A check the machine slept through is not
+# made up: the next minute's run reads the same slots.
+
+[Unit]
+Description=Check each minute whether the local model is idle
+
+[Timer]
+OnCalendar=minutely
+AccuracySec=1s
+Persistent=false
+
+[Install]
+WantedBy=timers.target

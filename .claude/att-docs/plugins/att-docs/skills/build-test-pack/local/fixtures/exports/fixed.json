@@ -1,0 +1,24 @@
+{
+ "exports": [
+  {
+   "doc": "docs/OTHER/UC09-Unmapped.md",
+   "prefix": "BR-LIB.UC09",
+   "rules": [
+    {
+     "rule_id": "BR-LIB.UC09-001",
+     "name": "BR-LIB.UC09-001 - Guest pass",
+     "status": "active",
+     "path": "UC09 Guest Passes",
+     "requirement_type": "Business Rule",
+     "rule_category": "Security",
+     "description": "The reported card is blocked at once.",
+     "source_document": "UC09 Guest Passes",
+     "source_page": "Page 1: Passes",
+     "rule_summary": "A reported lost card is blocked at once.",
+     "risk_level": "High",
+     "created": "2026-08-01"
+    }
+   ]
+  }
+ ]
+}

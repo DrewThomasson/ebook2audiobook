@@ -1,0 +1,248 @@
+{
+  "source": "ffb37d7b23aadea51f9ab4d7c3cd91cd6b9df49f",
+  "tools": {
+    "allow_blocked_call": [
+      "confirm",
+      "session"
+    ],
+    "answer_prompt": [
+      "answers",
+      "confirm",
+      "decision",
+      "preapproved",
+      "session"
+    ],
+    "approve_pull_request": [
+      "body",
+      "confirm",
+      "number",
+      "preapproved",
+      "repo"
+    ],
+    "archive_sessions": [
+      "anyway",
+      "confirm",
+      "session"
+    ],
+    "catch_up": [
+      "session"
+    ],
+    "close_issue": [
+      "confirm",
+      "number",
+      "reason",
+      "repo"
+    ],
+    "close_session": [
+      "confirm",
+      "preapproved",
+      "session",
+      "stop"
+    ],
+    "comment_pull_request": [
+      "body",
+      "confirm",
+      "number",
+      "preapproved",
+      "repo"
+    ],
+    "context_usage": [
+      "session"
+    ],
+    "create_issue": [
+      "body",
+      "confirm",
+      "labels",
+      "milestone",
+      "preapproved",
+      "repo",
+      "title"
+    ],
+    "create_label": [
+      "color",
+      "confirm",
+      "description",
+      "name",
+      "preapproved",
+      "repo"
+    ],
+    "create_milestone": [
+      "confirm",
+      "description",
+      "due_date",
+      "preapproved",
+      "repo",
+      "title"
+    ],
+    "drop_request": [
+      "confirm",
+      "number",
+      "session"
+    ],
+    "edit_issue": [
+      "append",
+      "body",
+      "confirm",
+      "number",
+      "repo",
+      "section",
+      "section_number",
+      "section_text",
+      "title"
+    ],
+    "follow": [
+      "mode",
+      "session"
+    ],
+    "list_issues": [
+      "labels",
+      "milestone",
+      "offset",
+      "repo"
+    ],
+    "list_milestones": [
+      "offset",
+      "repo"
+    ],
+    "list_project_conversations": [
+      "include_scheduled",
+      "offset",
+      "project"
+    ],
+    "list_pull_requests": [
+      "offset",
+      "repo"
+    ],
+    "list_runs": [
+      "branch",
+      "offset",
+      "repo",
+      "workflow"
+    ],
+    "list_scheduled_tasks": [
+      "offset",
+      "project"
+    ],
+    "list_sessions": [
+      "replies"
+    ],
+    "merge_pull_request": [
+      "confirm",
+      "number",
+      "preapproved",
+      "repo"
+    ],
+    "needs_attention": [],
+    "next_update": [
+      "cursor",
+      "session"
+    ],
+    "nickname_session": [
+      "nickname",
+      "session"
+    ],
+    "plan_usage": [],
+    "pull_request_merged": [
+      "number",
+      "repo",
+      "session"
+    ],
+    "queued_requests": [
+      "session"
+    ],
+    "read_full_reply": [
+      "session"
+    ],
+    "read_issue": [
+      "number",
+      "offset",
+      "repo"
+    ],
+    "read_project_conversation": [
+      "include_scheduled",
+      "offset",
+      "position",
+      "project",
+      "title"
+    ],
+    "read_pull_request": [
+      "number",
+      "offset",
+      "part",
+      "repo"
+    ],
+    "read_reply": [
+      "session"
+    ],
+    "read_scheduled_task_result": [
+      "day",
+      "offset",
+      "project",
+      "task"
+    ],
+    "rename_all_sessions": [],
+    "rename_session": [
+      "anyway",
+      "name",
+      "session",
+      "work"
+    ],
+    "reopen_issue": [
+      "confirm",
+      "number",
+      "preapproved",
+      "repo"
+    ],
+    "reply_length": [
+      "length"
+    ],
+    "run_command": [
+      "confirm",
+      "index",
+      "request_id",
+      "session"
+    ],
+    "send": [
+      "amend",
+      "anyway",
+      "queue",
+      "session",
+      "text"
+    ],
+    "set_issue_fields": [
+      "add_labels",
+      "milestone",
+      "number",
+      "remove_labels",
+      "repo"
+    ],
+    "set_pull_request_draft": [
+      "confirm",
+      "draft",
+      "number",
+      "preapproved",
+      "repo"
+    ],
+    "start_session": [
+      "in_flight",
+      "milestone",
+      "model",
+      "name",
+      "repo",
+      "request",
+      "workers"
+    ],
+    "stop_following": [
+      "session"
+    ],
+    "stop_turn": [
+      "confirm",
+      "session",
+      "text"
+    ],
+    "summary": [
+      "full"
+    ],
+    "update_bridge": []
+  }
+}

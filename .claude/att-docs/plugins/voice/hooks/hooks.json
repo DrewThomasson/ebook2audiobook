@@ -1,0 +1,142 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "exec python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/plugin_version_check.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" speak-attention.sh",
+            "async": true,
+            "timeout": 1200
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" voice_bridge_reply.py attention",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" voice_bridge_reply.py attention",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" voice_bridge_reply.py answer",
+            "timeout": 600
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "K=${CLAUDE_CODE_MESSAGING_SOCKET##*/}; test -e \"${XDG_RUNTIME_DIR:-/tmp}/voice-bridge/attention/${K%.sock}.json\" || exit 0; exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" voice_bridge_reply.py attention",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "K=${CLAUDE_CODE_MESSAGING_SOCKET##*/}; F=\"${XDG_RUNTIME_DIR:-/tmp}/voice-bridge/follow/${K%.sock}\"; test -e \"$F.mode\" || exit 0; exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" voice_bridge_reply.py opened",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" speak-attention.sh",
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" speak-attention.sh",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" speak-attention.sh",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "K=${CLAUDE_CODE_MESSAGING_SOCKET##*/}; test -e \"${XDG_RUNTIME_DIR:-/tmp}/voice-bridge/attention/${K%.sock}.json\" || exit 0; exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" voice_bridge_reply.py attention",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" session_title.py hook prompt",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" speak-attention.sh",
+            "async": true,
+            "timeout": 1200
+          },
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" voice_bridge_reply.py",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "K=${CLAUDE_CODE_MESSAGING_SOCKET##*/}; F=\"${XDG_RUNTIME_DIR:-/tmp}/voice-bridge/follow/${K%.sock}\"; test -e \"$F.mode\" || exit 0; exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" voice_bridge_reply.py milestone",
+            "async": true,
+            "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "exec \"${CLAUDE_PLUGIN_ROOT}/hooks/run.sh\" session_title.py hook stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

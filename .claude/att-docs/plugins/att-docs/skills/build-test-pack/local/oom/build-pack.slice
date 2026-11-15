@@ -1,0 +1,5 @@
+# Installed by oom-setup.sh.
+# Holds the build-pack units so the MemoryHigh limit on
+# app.slice does not throttle a job.
+[Unit]
+Description=Test pack build units

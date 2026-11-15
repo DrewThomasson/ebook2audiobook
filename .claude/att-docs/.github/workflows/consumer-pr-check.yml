@@ -1,0 +1,144 @@
+name: Consumer pull request check
+
+# Proves the automation GitHub App can open a pull request in a repository that pins
+# Overmind. It mints a token for that one repository, creates a branch, commits a
+# one-line file through the contents API, and opens a draft pull request, using gh api
+# calls only and no clone. The run summary shows the pull request and the account that
+# authored it.
+#
+# The repository input names an entry in .github/consumers.json. Without keep, the pull request is closed and its branch deleted at the end.
+# With keep, both stay so you can watch the consumer's checks start.
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Consumer repository name from .github/consumers.json, without the owner
+        type: string
+        required: true
+      keep:
+        description: Leave the pull request and branch open
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: [self-hosted, overmind, Linux]
+    timeout-minutes: 10
+    env:
+      # Node actions check certificates against a list bundled with Node. This flag makes
+      # them read the operating system's store, which holds the inspecting proxy's root
+      # on some runners.
+      NODE_OPTIONS: --use-system-ca
+    steps:
+      # Stops an accidental run from a branch. The App key is a repository secret that a
+      # workflow on any branch can read, so this is a guard against slips, not a lock.
+      - name: Refuse a ref other than main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Run this workflow from main."
+          exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/consumers.json
+          sparse-checkout-cone-mode: false
+
+      - name: Resolve the repository
+        id: resolve
+        env:
+          REPOSITORY: ${{ inputs.repository }}
+        run: |
+          set -euo pipefail
+          name="$REPOSITORY"
+          if ! jq -e --arg name "$name" '.consumers | index($name)' .github/consumers.json >/dev/null; then
+            echo "::error::$name is not listed in .github/consumers.json."
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Mint an App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          owner: merph518
+          repositories: ${{ steps.resolve.outputs.name }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open a draft pull request
+        id: open
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NAME: ${{ steps.resolve.outputs.name }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          repo="merph518/$NAME"
+          branch="automation-check/${RUN_ID}-${RUN_ATTEMPT}"
+          base="$(gh api "repos/$repo" --jq .default_branch)"
+          sha="$(gh api "repos/$repo/git/ref/heads/$base" --jq .object.sha)"
+
+          # Recorded before the ref exists so the cleanup step always knows the name.
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          gh api -X POST "repos/$repo/git/refs" \
+            -f ref="refs/heads/$branch" -f sha="$sha" >/dev/null
+
+          content="$(printf 'Automation connectivity check, run %s\n' "$RUN_ID" | base64 -w0)"
+          path=".automation-check-${RUN_ID}-${RUN_ATTEMPT}"
+          gh api -X PUT "repos/$repo/contents/$path" \
+            -f message="chore: automation connectivity check" \
+            -f content="$content" -f branch="$branch" >/dev/null
+
+          url="$(gh pr create --repo "$repo" --draft --head "$branch" --base "$base" \
+            --title "chore: automation connectivity check" \
+            --body "Opened by the automation GitHub App to prove it can open a pull request here. It is safe to close.")"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+          author="$(gh pr view "$url" --json author --jq .author.login)"
+          {
+            echo "Pull request: $url"
+            echo "Author: $author"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # With keep, a pull request that opened stays. A branch with no pull request is an
+      # orphan from a failed run, so it is deleted either way.
+      - name: Clean up
+        if: always() && (!inputs.keep || steps.open.outputs.url == '')
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NAME: ${{ steps.resolve.outputs.name }}
+          PR_URL: ${{ steps.open.outputs.url }}
+          BRANCH: ${{ steps.open.outputs.branch }}
+        run: |
+          set -uo pipefail
+          repo="merph518/$NAME"
+          failed=0
+          delete_branch() {
+            # A branch that was never created answers 404 or 422, which needs no cleanup.
+            if out="$(gh api -X DELETE "repos/$repo/git/refs/heads/$BRANCH" 2>&1)"; then
+              return 0
+            fi
+            case "$out" in
+              *"Reference does not exist"*|*"404"*|*"Not Found"*) return 0 ;;
+            esac
+            echo "::error::Could not delete the branch $BRANCH in $repo: $out"
+            failed=1
+          }
+          if [ -n "$PR_URL" ]; then
+            if ! gh pr close "$PR_URL" --repo "$repo" --delete-branch; then
+              echo "::error::Could not close $PR_URL or delete its branch $BRANCH in $repo; remove them by hand."
+              failed=1
+              delete_branch
+            fi
+          elif [ -n "$BRANCH" ]; then
+            delete_branch
+          fi
+          exit "$failed"

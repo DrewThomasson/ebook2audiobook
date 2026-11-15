@@ -1,0 +1,147 @@
+name: Pin consumers
+
+# Opens a pull request in each consumer that moves its Overmind pin to a tag. The
+# release workflow calls it right after release-please tags a release. Run it by hand to
+# repeat a missed or failed run, for every consumer or for one.
+#
+# One job per consumer, each with its own App token narrowed to that consumer, so a
+# failure in one never stops the others. The run fails if any job failed. The scripts and
+# the consumer list come from main, not from the tag, so a rerun for an old tag that
+# predates this automation still works. The tag is fetched from the same full checkout,
+# and its changelog supplies the notes. The jobs read Overmind with the workflow's own
+# token and write the consumer with the App token.
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag, vMAJOR.MINOR.PATCH
+        type: string
+        required: true
+      consumer:
+        description: One consumer from .github/consumers.json; empty for all
+        type: string
+        required: false
+        default: ''
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, vMAJOR.MINOR.PATCH
+        type: string
+        required: true
+      consumer:
+        description: One consumer from .github/consumers.json, without the owner; empty for all
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+# A rerun for the same tag waits for the first run instead of racing it on the branch.
+concurrency:
+  group: pin-consumers-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: [self-hosted, overmind, Linux]
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      # The App key is a repository secret that a workflow on any branch can read, so
+      # this guards against slips, not against a determined author.
+      - name: Refuse a ref other than main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Run this workflow from main."
+          exit 1
+
+      - name: Check the tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::The tag must be vMAJOR.MINOR.PATCH, for example v1.2.3."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/consumers.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: List the consumers
+        id: plan
+        env:
+          CONSUMER: ${{ inputs.consumer }}
+        run: |
+          set -euo pipefail
+          if [ -n "$CONSUMER" ] && ! jq -e --arg c "$CONSUMER" '.consumers | index($c)' .github/consumers.json > /dev/null; then
+            echo "::error::$CONSUMER is not listed in .github/consumers.json."
+            exit 1
+          fi
+          matrix="$(jq -c --arg c "$CONSUMER" '{consumer: (if $c == "" then .consumers else [$c] end)}' .github/consumers.json)"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  pin:
+    needs: plan
+    name: pin ${{ matrix.consumer }}
+    runs-on: [self-hosted, overmind, Linux]
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      # Node actions check certificates against a list bundled with Node. This flag makes
+      # them read the operating system's store, which holds the inspecting proxy's root
+      # on some runners.
+      NODE_OPTIONS: --use-system-ca
+    steps:
+      # Reads main of this private repository with the workflow's own token. The whole
+      # history and every tag come down so the sync script can fetch the tag from this
+      # checkout, and the changelog is read from the tag.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The runners reuse their workspace, and the plan job's sparse checkout (or another
+      # workflow's) can leave sparse checkout on in a later full checkout. See ci.yml for
+      # why checkout does not clear it. Disabling it here restores the full tree; on a
+      # full checkout it does nothing.
+      - name: Clear a sparse checkout another workflow left behind
+        run: git sparse-checkout disable
+
+      # A sparse checkout, which the plan job and other workflows make, clones without
+      # file contents and marks the workspace as a partial clone. The sync script fetches
+      # the tag from this directory, and a directory with that mark cannot serve contents
+      # it lacks, so a consumer whose history needs one fails. The script drops the mark
+      # and fetches every object, and leaves a full checkout as it is. It gets the
+      # workflow's token, which can read this repository; the App token of the pin step
+      # is narrowed to the consumer.
+      - name: Fetch the objects a partial clone left behind
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/pin/overmind-complete-clone.sh
+
+      - name: Mint an App token for the consumer
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          owner: merph518
+          repositories: ${{ matrix.consumer }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Move the pin
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          OVERMIND_DIR: ${{ github.workspace }}
+          TAG: ${{ inputs.tag }}
+          CONSUMER: ${{ matrix.consumer }}
+        run: bash scripts/pin/overmind-pin.sh "$TAG" "$CONSUMER"

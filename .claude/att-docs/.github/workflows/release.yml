@@ -1,0 +1,82 @@
+name: Release
+
+# release-please keeps one release pull request open against main. It collects the
+# conventional commits merged since the last tag, writes the changelog, and moves the
+# version in the manifest and in every plugin.json. Merging that pull request is the
+# release: the next run tags the merge and publishes the GitHub release.
+#
+# The token comes from the automation GitHub App, not GITHUB_TOKEN. A pull request
+# GITHUB_TOKEN opens starts no workflows, so the release pull request would show no
+# checks and the voice bridge would refuse to merge it. Until the App's client ID is
+# set as a repository variable the job skips, so main stays green before the App exists.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Two pushes close together would otherwise race to edit the same release pull request.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    if: vars.AUTOMATION_APP_CLIENT_ID != ''
+    runs-on: [self-hosted, overmind]
+    timeout-minutes: 10
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    env:
+      # Node actions check certificates against a list bundled with Node. This flag makes
+      # them read the operating system's store, which holds the inspecting proxy's root
+      # on some runners.
+      NODE_OPTIONS: --use-system-ca
+    steps:
+      - name: Mint an App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open or update the release pull request, or tag a merged one
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          target-branch: main
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      # Plain bash on the Windows runners is the WSL launcher, so cmd reports the
+      # release there instead.
+      - name: Report the release
+        if: steps.release.outputs.release_created == 'true' && runner.os == 'Windows'
+        env:
+          TAG: ${{ steps.release.outputs.tag_name }}
+        shell: cmd
+        run: '>>"%GITHUB_STEP_SUMMARY%" echo Released %TAG%'
+
+      - name: Report the release
+        if: steps.release.outputs.release_created == 'true' && runner.os != 'Windows'
+        env:
+          TAG: ${{ steps.release.outputs.tag_name }}
+        shell: bash
+        run: echo "Released $TAG" >> "$GITHUB_STEP_SUMMARY"
+
+  # A merged release pull request tags the release; this opens the pin-move pull request
+  # in each consumer. The called workflow reports one result per consumer.
+  pin-consumers:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/pin-consumers.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit

@@ -1,0 +1,589 @@
+#!/usr/bin/env python3
+"""Controls the speech that speak-attention.sh reads aloud, and reports what it is doing.
+
+usage: speechctl status [--json]
+       speechctl skip | next | clear | pause | resume | toggle
+       speechctl volume up|down|<0.0-2.0>
+       speechctl pace up|down|<0.5-1.5>
+       speechctl voices | voice next|prev|<name>
+       speechctl speaker <id>|reset
+       speechctl noise|noise-w <0.0-2.0>|reset
+       speechctl silence <0.0-10.0>|reset
+       speechctl sessions [--json]
+       speechctl speech <session> on|alerts|off|cycle
+       speechctl managed <session> on|off
+       speechctl full-text <session> on|off
+
+It works through the files the hook keeps in $XDG_RUNTIME_DIR/speak-attention: now.json
+while a clip plays, the <session>.queue files, the <session>.managed markers that put a
+session in the session management widget, the <session>.fulltext markers that make a session
+read long replies in full, a paused flag, and settings.json for the voice,
+volume, pace and Piper's speaker, noise, noise-w and silence, which the hook reads before each
+clip. A volume change also sets the stream of a Piper clip that is playing, through
+pw-dump and pw-cli. An option that is not set is left out of the Piper command, so the model
+keeps its own default. Exit 2 is a bad argument, 1 a
+failure.
+"""
+import fcntl
+import glob
+import json
+import math
+import os
+import signal
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+import sessions as sessions_mod  # noqa: E402
+
+DIR = os.path.join(os.environ.get("XDG_RUNTIME_DIR") or "/tmp", "speak-attention")
+PIPER_DIR = os.environ.get("SPEAK_PIPER_DIR", os.path.expanduser("~/.local/share/piper"))
+DEFAULT_VOICE = "en_US-amy-medium"
+DEFAULT_VOLUME = 1.2
+PLAYERS = ("pw-play", "spd-say")
+STREAM_WAIT = 5  # seconds pw-dump and pw-cli may take when a volume change reaches a stream
+
+
+class Bad(Exception):
+    """A bad argument: exit 2."""
+
+
+def path(name):
+    return os.path.join(DIR, name)
+
+
+def write_atomic(target, text):
+    os.makedirs(DIR, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=DIR, prefix=".tmp.")
+    with os.fdopen(fd, "w") as f:
+        f.write(text)
+    os.replace(tmp, target)
+
+
+class Lock:
+    """An flock on a file in the folder, the lock flock(1) takes in the hook."""
+
+    def __init__(self, name):
+        os.makedirs(DIR, exist_ok=True)
+        self.f = open(path(name), "w")
+
+    def __enter__(self):
+        fcntl.flock(self.f, fcntl.LOCK_EX)
+        return self
+
+    def __exit__(self, *exc):
+        self.f.close()
+
+
+def read_json(target, default):
+    try:
+        with open(target, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return default
+
+
+def pid_alive(pid):
+    try:
+        with open("/proc/%d/stat" % pid) as f:
+            return f.read().rsplit(") ", 1)[1].split()[0] != "Z"
+    except (OSError, IndexError):
+        return False
+
+
+def comm(pid):
+    try:
+        with open("/proc/%d/comm" % pid) as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def now_playing():
+    """now.json while its hook, and its player if it has one yet, are really there."""
+    n = read_json(path("now.json"), None)
+    if not isinstance(n, dict):
+        return None
+    pp = n.get("player_pid")
+    ok = pid_alive(int(n.get("hook_pid") or 0)) and (pp is None or (
+        pid_alive(int(pp)) and comm(int(pp)) in PLAYERS))
+    if not ok:
+        # a file whose hook is gone is stale; one a live hook has just replaced is not
+        if not pid_alive(int(n.get("hook_pid") or 0)) and read_json(path("now.json"), None) == n:
+            try:
+                os.remove(path("now.json"))
+            except OSError:
+                pass
+        return None
+    return n
+
+
+def settings():
+    s = read_json(path("settings.json"), {})
+    return s if isinstance(s, dict) else {}
+
+
+def save_setting(key, value):
+    with Lock("settings.lock"):
+        s = settings()
+        s[key] = value
+        write_atomic(path("settings.json"), json.dumps(s))
+
+
+def is_paused():
+    return os.path.exists(path("paused"))
+
+
+def queue_lines(queue):
+    try:
+        with open(queue, encoding="utf-8") as f:
+            # a line is the spoken text, then a tab and its Markdown source for now.json
+            return [l.rstrip("\n").split("\t", 1)[0] for l in f if l.strip()]
+    except OSError:
+        return []
+
+
+def queue_of(sid):
+    return path(sid + ".queue")
+
+
+def drop_queue(sid):
+    with Lock(sid + ".cursor.lock"):
+        try:
+            os.remove(queue_of(sid))
+        except OSError:
+            pass
+
+
+def end_clip(n):
+    """Ends the clip now.json describes. The queue edit that goes with it is done first, so
+    the drain loop wakes to the new queue."""
+    pp = n.get("player_pid")
+    if pp is None:
+        # still rendering: the hook finds this token when the render is done
+        open(path("skip"), "w").close()
+        return
+    if n.get("engine") == "spd-say":
+        subprocess.run(["spd-say", "-C"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       check=False)
+    # a stopped process holds a TERM until it is continued
+    for sig in (signal.SIGTERM, signal.SIGCONT):
+        try:
+            os.kill(int(pp), sig)
+        except OSError:
+            pass
+
+
+def cmd_skip():
+    n = now_playing()
+    if n:
+        end_clip(n)
+
+
+def cmd_next():
+    n = now_playing()
+    if n:
+        drop_queue(n["session"])
+        end_clip(n)
+
+
+def cmd_clear():
+    for q in glob.glob(path("*.queue")):
+        drop_queue(os.path.basename(q)[: -len(".queue")])
+    cmd_skip()
+
+
+def cmd_pause():
+    os.makedirs(DIR, exist_ok=True)
+    open(path("paused"), "w").close()
+    n = now_playing()
+    if not n or n.get("player_pid") is None:
+        return
+    if n.get("engine") == "spd-say":
+        # Speech Dispatcher cannot pause a client reliably: the clip is cancelled and the
+        # hook puts its line back, since the marker names this clip.
+        write_atomic(path("requeue"), str(n.get("clip", "")))
+        subprocess.run(["spd-say", "-C"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       check=False)
+        # a clip that ended by itself just before the cancel has been read: no requeue
+        if not pid_alive(int(n["player_pid"])):
+            try:
+                os.remove(path("requeue"))
+            except OSError:
+                pass
+    else:
+        try:
+            os.kill(int(n["player_pid"]), signal.SIGSTOP)
+        except OSError:
+            pass
+
+
+def cmd_resume():
+    try:
+        os.remove(path("paused"))
+    except OSError:
+        pass
+    n = now_playing()
+    if n and n.get("player_pid") is not None and n.get("engine") != "spd-say":
+        try:
+            os.kill(int(n["player_pid"]), signal.SIGCONT)
+        except OSError:
+            pass
+
+
+def cmd_toggle():
+    cmd_resume() if is_paused() else cmd_pause()
+
+
+def stream_props(o):
+    return (o.get("info") or {}).get("props") or {}
+
+
+def set_live_volume(n, value):
+    """Sets the volume of the stream pw-play opened for the clip in now.json (n), so a clip
+    already playing follows a change. The stream is the node of the PipeWire client whose
+    process id is the clip's player_pid. It is set through the node's volume property, the
+    one pw-play's --volume sets, and never with wpctl, which writes the channel volumes that
+    WirePlumber saves for the Speech role and applies to every later stream. A Speech
+    Dispatcher clip, a clip still rendering, or a PipeWire that cannot be asked has no
+    stream to set."""
+    if not n or n.get("engine") == "spd-say" or n.get("player_pid") is None:
+        return
+    pid = int(n["player_pid"])
+    try:
+        dump = json.loads(subprocess.run(["pw-dump"], capture_output=True, text=True,
+                                         timeout=STREAM_WAIT, check=True).stdout)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return
+    objs = [o for o in dump if isinstance(o, dict)]
+    clients = {o.get("id") for o in objs if o.get("type") == "PipeWire:Interface:Client"
+               and stream_props(o).get("application.process.id") == pid}
+    for o in objs:
+        props = stream_props(o)
+        if (o.get("type") == "PipeWire:Interface:Node" and props.get("client.id") in clients
+                and props.get("media.class") == "Stream/Output/Audio"):
+            try:
+                subprocess.run(["pw-cli", "set-param", str(o["id"]), "Props",
+                                "{ volume: %s }" % value], stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, timeout=STREAM_WAIT, check=False)
+            except (OSError, subprocess.SubprocessError):
+                pass
+
+
+def cmd_volume(arg):
+    cur = float(settings().get("volume", DEFAULT_VOLUME))
+    if arg in ("up", "down"):
+        value = cur + (0.1 if arg == "up" else -0.1)
+    else:
+        try:
+            value = float(arg)
+        except ValueError:
+            raise Bad("volume takes up, down or a number from 0.0 to 2.0")
+        if not 0.0 <= value <= 2.0:
+            raise Bad("volume takes up, down or a number from 0.0 to 2.0")
+    value = round(min(2.0, max(0.0, value)), 1)
+    save_setting("volume", value)
+    set_live_volume(now_playing(), value)
+    print(value)
+
+
+def current_pace():
+    """The pace the hook uses: settings.json, else SPEAK_PIPER_LENGTH, else 0.85, passing over
+    any that is not a finite number so a step from a bad value starts at the default."""
+    for v in (settings().get("pace"), os.environ.get("SPEAK_PIPER_LENGTH")):
+        try:
+            v = float(v)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(v):
+            return v
+    return 0.85
+
+
+def cmd_pace(arg):
+    """Piper's length scale, so a smaller pace is faster: up adds a step and down takes one off."""
+    msg = "pace takes up, down or a number from 0.5 to 1.5 (smaller is faster)"
+    if arg in ("up", "down"):
+        value = current_pace() + (0.05 if arg == "up" else -0.05)
+    else:
+        try:
+            value = float(arg)
+        except ValueError:
+            raise Bad(msg)
+        if not 0.5 <= value <= 1.5:  # also false for nan
+            raise Bad(msg)
+    value = round(min(1.5, max(0.5, value)), 2)
+    save_setting("pace", value)
+    print(value)
+
+
+# name -> (setting key, lowest, highest) for the Piper options that take a number
+PIPER_RANGES = {"noise": ("noise", 0.0, 2.0), "noise-w": ("noise_w", 0.0, 2.0),
+                "silence": ("silence", 0.0, 10.0)}
+
+
+def clear_setting(key):
+    with Lock("settings.lock"):
+        s = settings()
+        s.pop(key, None)
+        write_atomic(path("settings.json"), json.dumps(s))
+
+
+def cmd_piper_number(name, arg):
+    key, low, high = PIPER_RANGES[name]
+    if arg == "reset":
+        clear_setting(key)
+        print("reset")
+        return
+    msg = "%s takes a number from %s to %s, or reset" % (name, low, high)
+    try:
+        value = float(arg)
+    except ValueError:
+        raise Bad(msg)
+    if not low <= value <= high:  # also false for nan
+        raise Bad(msg)
+    save_setting(key, value)
+    print(value)
+
+
+def speaker_count(voice):
+    """num_speakers from the voice's .onnx.json, or None when it cannot be read."""
+    meta = read_json(os.path.join(PIPER_DIR, voice + ".onnx.json"), {})
+    n = meta.get("num_speakers") if isinstance(meta, dict) else None
+    return n if isinstance(n, int) and n > 0 else None
+
+
+def cmd_speaker(arg):
+    if arg == "reset":
+        clear_setting("speaker")
+        print("reset")
+        return
+    if not arg.isdigit():
+        raise Bad("speaker takes a speaker number or reset")
+    count = speaker_count(current_voice())
+    if count is not None and int(arg) >= count:
+        raise Bad("%s has %d speakers, numbered 0 to %d" % (current_voice(), count, count - 1))
+    save_setting("speaker", int(arg))
+    print(int(arg))
+
+
+def voices():
+    return sorted(os.path.basename(p)[: -len(".onnx")] for p in glob.glob(os.path.join(PIPER_DIR, "*.onnx")))
+
+
+def current_voice():
+    v = settings().get("voice")
+    if v:
+        return v
+    model = os.environ.get("SPEAK_PIPER_MODEL")
+    return os.path.basename(model)[: -len(".onnx")] if model and model.endswith(".onnx") else DEFAULT_VOICE
+
+
+def cmd_voice(arg):
+    available = voices()
+    if arg in ("next", "prev"):
+        if not available:
+            raise Bad("no Piper voices in " + PIPER_DIR)
+        cur = current_voice()
+        i = available.index(cur) if cur in available else (-1 if arg == "next" else 0)
+        voice = available[(i + (1 if arg == "next" else -1)) % len(available)]
+    else:
+        if arg not in available:
+            raise Bad("no voice named %s; try speechctl voices" % arg)
+        voice = arg
+    save_setting("voice", voice)
+    print(voice)
+
+
+def cmd_voices():
+    cur = current_voice()
+    for v in voices():
+        count = speaker_count(v)
+        print(("* " if v == cur else "  ") + v + (" (%d speakers)" % count if count and count > 1 else ""))
+
+
+def speech_setting(sid):
+    # a session with both markers is read aloud, so it reports on
+    if os.path.exists(path(sid + ".replies")):
+        return "on"
+    return "off" if os.path.exists(path(sid + ".muted")) else "alerts"
+
+
+def is_managed(sid):
+    return os.path.exists(path(sid + ".managed"))
+
+
+def set_marker(ref, mode, suffix, name):
+    """Turns a session's <suffix> marker on or off, for the command called name."""
+    if mode not in ("on", "off"):
+        raise Bad("%s takes on or off" % name)
+    try:
+        s = sessions_mod.find_session(sessions_mod.list_sessions(), ref)
+    except LookupError as e:
+        raise Bad(str(e))
+    if mode == "on":
+        os.makedirs(DIR, exist_ok=True)
+        open(path(s["id"] + suffix), "w").close()
+    else:
+        try:
+            os.remove(path(s["id"] + suffix))
+        except OSError:
+            pass
+    print("%s: %s %s" % (s["name"], name, mode))
+
+
+def cmd_managed(ref, mode):
+    set_marker(ref, mode, ".managed", "managed")
+
+
+def cmd_full_text(ref, mode):
+    set_marker(ref, mode, ".fulltext", "full-text")
+
+
+def cmd_sessions(as_json):
+    n = now_playing()
+    out = []
+    for s in sessions_mod.list_sessions():
+        s = dict(s, speech=speech_setting(s["id"]), managed=is_managed(s["id"]),
+                 queued=len(queue_lines(queue_of(s["id"]))),
+                 speaking=bool(n and n.get("session") == s["id"]))
+        out.append(s)
+    if as_json:
+        print(json.dumps(out))
+        return
+    for s in out:
+        flags = " ".join(f for f, on in (("managed", s["managed"]), ("busy", s["busy"]),
+                                         ("bg", s["background"]), ("speaking", s["speaking"]))
+                         if on)
+        print("%-8s %-24s %2d queued  %s" % (s["speech"], s["name"], s["queued"], flags))
+
+
+def find_transcript(sid):
+    found = glob.glob(os.path.expanduser("~/.claude/projects/*/%s.jsonl" % sid))
+    return found[0] if found else None
+
+
+def set_speech(sid, mode):
+    n = now_playing()
+    speaking = bool(n and n.get("session") == sid)
+    os.makedirs(DIR, exist_ok=True)
+    if mode == "on":
+        transcript = find_transcript(sid)
+        if not transcript:
+            raise RuntimeError("no transcript found for session " + sid)
+        try:
+            os.remove(path(sid + ".muted"))
+        except OSError:
+            pass
+        # the turn so far is marked read before speech turns on, under the lock the hook
+        # takes to queue, so what was already written is not read back
+        with Lock(sid + ".cursor.lock"):
+            subprocess.run([sys.executable, os.path.join(HERE, "speak_pending.py"), transcript,
+                            path(sid + ".cursor"), "seen"], stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, check=False)
+            open(path(sid + ".replies"), "w").close()
+        return
+    with Lock(sid + ".cursor.lock"):
+        for suffix in (".replies", ".queue", ".muted"):
+            try:
+                os.remove(path(sid + suffix))
+            except OSError:
+                pass
+        if mode == "off":
+            open(path(sid + ".muted"), "w").close()
+    if speaking:
+        end_clip(n)
+
+
+def cmd_speech(ref, mode):
+    if mode not in ("on", "alerts", "off", "cycle"):
+        raise Bad("speech takes on, alerts, off or cycle")
+    try:
+        s = sessions_mod.find_session(sessions_mod.list_sessions(), ref)
+    except LookupError as e:
+        raise Bad(str(e))
+    if mode == "cycle":
+        mode = {"on": "alerts", "alerts": "off", "off": "on"}[speech_setting(s["id"])]
+    set_speech(s["id"], mode)
+    print("%s: %s" % (s["name"], mode))
+
+
+def cmd_status(as_json):
+    n = now_playing()
+    queues = []
+    def mtime(q):
+        try:
+            return os.path.getmtime(q)
+        except OSError:  # dropped since the listing
+            return 0
+
+    for q in sorted(glob.glob(path("*.queue")), key=mtime):
+        lines = queue_lines(q)
+        if not lines:
+            continue
+        sid = os.path.basename(q)[: -len(".queue")]
+        try:
+            name = open(path(sid + ".name")).read()
+        except OSError:
+            name = ""
+        queues.append({"session": sid, "name": name, "lines": len(lines), "next": lines[0]})
+    st = settings()
+    status = {"playing": n, "paused": is_paused(), "queues": queues, "voice": current_voice(),
+              "volume": float(st.get("volume", DEFAULT_VOLUME)),
+              "pace": float(st.get("pace", os.environ.get("SPEAK_PIPER_LENGTH", 0.85)))}
+    # only the Piper options that are set; an unset one is the model's own default
+    for key in ("speaker", "noise", "noise_w", "silence"):
+        if key in st:
+            status[key] = st[key]
+    if as_json:
+        print(json.dumps(status))
+        return
+    print("paused" if is_paused() else "playing" if n else "idle")
+    if n:
+        print("now: %s: %s" % (n.get("name") or n.get("session"), n.get("text")))
+    for q in queues:
+        print("queued: %s: %d" % (q["name"] or q["session"], q["lines"]))
+    print("voice %s, volume %.1f" % (status["voice"], status["volume"]))
+
+
+def main(argv):
+    if not argv:
+        raise Bad(__doc__.split("\n\n")[1])
+    cmd, rest = argv[0], argv[1:]
+    if cmd == "status":
+        cmd_status("--json" in rest)
+    elif cmd == "sessions":
+        cmd_sessions("--json" in rest)
+    elif cmd in ("skip", "next", "clear", "pause", "resume", "toggle", "voices") and not rest:
+        globals()["cmd_" + cmd]()
+    elif cmd == "volume" and len(rest) == 1:
+        cmd_volume(rest[0])
+    elif cmd == "pace" and len(rest) == 1:
+        cmd_pace(rest[0])
+    elif cmd in PIPER_RANGES and len(rest) == 1:
+        cmd_piper_number(cmd, rest[0])
+    elif cmd == "speaker" and len(rest) == 1:
+        cmd_speaker(rest[0])
+    elif cmd == "voice" and len(rest) == 1:
+        cmd_voice(rest[0])
+    elif cmd == "speech" and len(rest) == 2:
+        cmd_speech(*rest)
+    elif cmd == "managed" and len(rest) == 2:
+        cmd_managed(*rest)
+    elif cmd == "full-text" and len(rest) == 2:
+        cmd_full_text(*rest)
+    else:
+        raise Bad("usage: speechctl status|skip|next|clear|pause|resume|toggle|volume|pace|voice(s)|speaker|noise|noise-w|silence|sessions|speech|managed|full-text")
+
+
+if __name__ == "__main__":
+    try:
+        main(sys.argv[1:])
+    except Bad as e:
+        print("speechctl:", e, file=sys.stderr)
+        sys.exit(2)
+    except RuntimeError as e:
+        print("speechctl:", e, file=sys.stderr)
+        sys.exit(1)

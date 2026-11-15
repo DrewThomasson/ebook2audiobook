@@ -1,0 +1,36 @@
+# Checks the waiting queue before the nightly run, changing nothing in it. It
+# runs the `check` input gates, with no model call, on every waiting issue row
+# and on every job the queue's sources would add tonight, and writes one line
+# per input to precheck.txt in the pipeline output folder. The lines are
+# content-free: job IDs, input names, present or missing, and reason codes. A
+# suite row is refused, since `check` takes issue jobs only.
+#
+# A run that holds the queue is waited for, up to an hour; after that the check
+# is skipped, and a run that takes the queue mid-check stops it. The unit fails
+# when the queue stayed held, a source could not be read, an input is missing
+# or a check failed, so
+# `systemctl --user status build-pack-check` shows a problem without opening
+# the file. Rows whose rules went unchecked (exit 3) do not fail it.
+#
+# The second command is the setup check: units, env file, pause units, model
+# server, the server's thinking budget and release command. A `warn` line, such
+# as a thinking budget that is not set, does not fail the unit. It runs after
+# the queue check, so a day the queue check fails skips it.
+#
+# Install beside build-pack.service, which owns the env file:
+#   cp build-pack-check.service build-pack-check.timer ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now build-pack-check.timer
+
+[Unit]
+Description=Check the test pack queue before the nightly run
+
+[Service]
+Type=oneshot
+EnvironmentFile=%h/.config/build-pack/env
+ExecStart=/usr/bin/node ${BUILD_PACK_SCRIPT} queue check --config ${BUILD_PACK_CONFIG}
+ExecStart=/usr/bin/node ${BUILD_PACK_SCRIPT} check --config ${BUILD_PACK_CONFIG}
+SuccessExitStatus=3
+# A rule export that never answers is stopped before the nightly run; the file
+# then still reads `precheck  running`.
+TimeoutStartSec=3h
+Nice=10

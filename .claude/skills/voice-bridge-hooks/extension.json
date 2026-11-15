@@ -1,0 +1,18 @@
+{
+  "base": "voice-bridge-hooks",
+  "reviewLabel": "Manual Review Needed",
+  "reviewAnnouncement": "ready for review",
+  "inProgressLabel": "In Progress",
+  "mainBranch": "main",
+  "startRequest": "/implement <N>",
+  "readyLine": "PULL REQUEST <N> IS READY FOR YOUR REVIEW",
+  "spokenTerms": {
+    "TTS": "T T S",
+    "XTTS": "X T T S",
+    "GPU": "G P U",
+    "CUDA": "cuda",
+    "ROCm": "rock M",
+    "E2A": "E 2 A",
+    "epub": "e pub"
+  }
+}

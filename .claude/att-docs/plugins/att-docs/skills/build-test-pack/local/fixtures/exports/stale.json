@@ -1,0 +1,11 @@
+{
+ "exports": [
+  {
+   "doc": "docs/OTHER/UC03-Lost-Cards.md",
+   "prefix": "BR-LIB.UC03",
+   "rules": [
+    { "rule_id": "BR-LIB.UC03-001", "name": "BR-LIB.UC03-001 - Block the old card", "status": "active", "path": "UC03 Lost Cards", "requirement_type": "Business Rule", "rule_category": "Security", "description": "The reported card is blocked at once.", "source_document": "UC03 Lost Cards", "source_page": "1", "rule_summary": "A reported lost card is blocked at once.", "risk_level": "High", "created": "2026-08-01" }
+   ]
+  }
+ ]
+}

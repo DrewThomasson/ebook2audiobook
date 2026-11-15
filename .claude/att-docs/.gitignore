@@ -1,0 +1,4 @@
+node_modules
+.claude/oversee/
+__pycache__/
+*.pyc
