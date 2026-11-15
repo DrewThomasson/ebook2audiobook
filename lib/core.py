@@ -4858,12 +4858,14 @@ def convert_ebook(args:dict)->tuple:
                         total_vram_gb = vram_dict.get('total_vram_gb', 0)
                         detected_free_vram_gb = vram_dict.get('free_vram_gb', 0)
                         session['free_vram_gb'] = detected_free_vram_gb
+                        # free_vram_gb is free system RAM on CPU: compared with the engine's RAM need there, not its VRAM one
+                        device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
                         if session['free_vram_gb'] == 0:
                             msg_extra += f"<br/>Memory capacity not detected! restrict to {session['free_vram_gb']}GB max"
                         else:
                             msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
-                            if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
-                                msg_extra += f"<br/>Free Memory {session['free_vram_gb']}GB is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
+                            if session['free_vram_gb'] < device_vram_required:
+                                msg_extra += f"<br/>Free Memory {session['free_vram_gb']}GB is lower than VRAM/RAM {device_vram_required}GB required!<br/>It will probably crash the conversion!"
                             if session['free_vram_gb'] > 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'
@@ -4876,7 +4878,6 @@ def convert_ebook(args:dict)->tuple:
                                 os.environ['SUNO_OFFLOAD_CPU'] = 'FALSE'
                                 os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'
                         msg_extra = f"Using {session['device'].upper()}" + msg_extra
-                        device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
                         # venv engines (gptsovits, ...) mirror python_env's torch into their own venv: stop
                         # here with an alert when it is too old or comes from a custom wheel URL
                         # (e.g. Windows ROCm, or a torch below the engine's torch_min), not later in TTSManager()

@@ -20,6 +20,8 @@ class BugReporter:
     # host RAM exhausted: torch's CPU allocator (Windows "not enough memory", Linux "can't allocate memory"), a C++
     # bad_alloc (MSVC words it "bad allocation"). python / numpy MemoryError is matched by type
     host_oom_re = re.compile(r'DefaultCPUAllocator|std::bad_alloc|\bbad allocation\b', re.IGNORECASE)
+    # note() lines in the native crash log, told apart from faulthandler's records by this prefix
+    note_prefix = 'e2a note: '
     dll_error_re = re.compile(r'Error loading "([^"]+?\.(?:dll|pyd))"', re.IGNORECASE)
     pyd_error_re = re.compile(r'DLL load failed while importing (\w+)')
     selftest_timeout = 45
@@ -146,15 +148,26 @@ print(json.dumps(out))
                 # faulthandler appends one record per exception it sees, on Windows first-chance ones the process
                 # survived too. The last record is what the process died on: Ctrl+C (0xC000013A) is the user quitting.
                 # 0xC0000139 (entry point not found) is raised and handled inside LoadLibrary, Python gets an OSError
-                # (a torchcodec built for another torch, caught by pyannote)
-                records = [r.strip() for r in re.split(r'(?m)^(?=Windows fatal exception:|Fatal Python error:)', dump) if r.strip()]
-                if records and '0xc000013a' in records[-1].splitlines()[0].lower():
+                # (a torchcodec built for another torch, caught by pyannote). note() lines: the last one before a record
+                # says what was running, one after it that the process went on (the window closed later, not a crash)
+                records, last_note = [], None
+                for line in dump.splitlines():
+                    if line.startswith(self.note_prefix):
+                        last_note = line[len(self.note_prefix):].strip()
+                        if records:
+                            records[-1]['survived'] = True
+                    elif re.match(r'Windows fatal exception:|Fatal Python error:', line):
+                        records.append(dict(lines=[line], note=last_note, survived=False))
+                    elif records:
+                        records[-1]['lines'].append(line)
+                if records and '0xc000013a' in records[-1]['lines'][0].lower():
                     records = []
-                records = [r for r in records if '0xc0000139' not in r.splitlines()[0].lower()]
-                if not records:
+                records = [r for r in records if '0xc0000139' not in r['lines'][0].lower()]
+                if not records or records[-1]['survived']:
                     os.remove(path)
                     continue
-                dump = records[-1]
+                dump = '\n'.join(records[-1]['lines']).strip()
+                note = records[-1]['note']
             except Exception:
                 continue
             title = dump.splitlines()[0].strip()
@@ -175,7 +188,7 @@ print(json.dumps(out))
             payload = dict(
                 app='ebook2audiobook', version=self.version, kind='native', created=created,
                 fingerprint=hashlib.sha1('|'.join([title] + sig).encode('utf-8')).hexdigest()[:16],
-                where=None, location=location,
+                where=note, location=location,
                 error_type=title.split(':')[-1].strip(), error_message=title, root_type=None, root_message=None,
                 traceback=dump[:self.max_traceback], session={}
             )
@@ -392,6 +405,22 @@ print(json.dumps(out))
         if device == 'mps' and getattr(torch, 'mps', None) is not None:
             grab('mps_alloc_driver_gb', lambda: [gb(torch.mps.current_allocated_memory()), gb(torch.mps.driver_allocated_memory())])
         return state
+
+    def note(self, text:str, ram:bool=False)->None:
+        # one line in the native crash log, read back only when the process dies: what was running (the engine loading)
+        # and with ram=True the memory left then, which faulthandler's dump does not say. A note written after one of
+        # its records means the process went on: that exception was a first-chance one it survived
+        if self.fault_file is None or self.fault_file.closed:
+            return
+        try:
+            if ram:
+                text = f"{text} | ram {json.dumps(self.ram_state(), separators=(',', ':'))}"
+            with self.lock:
+                # flushed at once: faulthandler writes to the same descriptor, past what is already there
+                self.fault_file.write(f"{self.note_prefix}{text.replace(chr(10), ' ')}\n")
+                self.fault_file.flush()
+        except Exception:
+            pass
 
     def ram_state(self)->dict:
         # host RAM at a failed CPU allocation: the system's, the commit limit (Windows refuses an allocation once RAM +
