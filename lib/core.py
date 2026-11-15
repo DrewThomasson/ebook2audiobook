@@ -3104,6 +3104,7 @@ def text_hash(text:str)->str:
 
 pronunciation_guides = {}
 spoken_sentences_file = 'spoken.json'
+spoken_combine_key = 'combine'
 
 def get_pronunciation_guide_path(session:dict)->str|None:
     # --pronunciations when given, else the guide named after the series, so every book of it reads the same file,
@@ -3139,13 +3140,14 @@ def load_pronunciation_guide(path:str)->tuple[dict|None, str]:
             skipped.append(str(i))
             continue
         # one spelling for both apostrophes, any run of whitespace between the words of a name.
-        # An entry read as written stays in the pattern, so a shorter entry cannot match inside it
+        # An entry read as written stays in the pattern, so a shorter entry cannot match inside it,
+        # and maps to nothing: what it matches is given to the engine as the book has it
         key = word.replace('’', "'")
         alternative = r'\s+'.join(re.escape(part) for part in key.split(' ')).replace("'", "['’]")
         if case_sensitive:
-            exact[key] = say
+            exact[key] = None if say == word else say
         else:
-            folded[key.casefold()] = say
+            folded[key.casefold()] = None if say == word else say
             alternative = f'(?i:{alternative})'
         alternatives.append((len(key), alternative))
     # longest entry first, so "King's Landing" wins over "King". The lookahead lets a plural or possessive s follow
@@ -3179,7 +3181,8 @@ def apply_pronunciations(text:str, guide:dict|None)->str:
         return text
     def _say(match:re.Match)->str:
         found = ' '.join(match.group(0).split()).replace('’', "'")
-        return guide['exact'].get(found) or guide['folded'].get(found.casefold()) or match.group(0)
+        say = guide['exact'][found] if found in guide['exact'] else guide['folded'].get(found.casefold())
+        return say or match.group(0)
     parts = []
     pos = 0
     for tag in SML_TAG_PATTERN.finditer(text):
@@ -3191,7 +3194,8 @@ def apply_pronunciations(text:str, guide:dict|None)->str:
 
 def load_spoken_sentences(block_dir:str)->dict:
     # {sentence index: text given to the engine} for the sentences of a block that were not read as written.
-    # A sentence with no entry was read as written, so a block converted without a guide has no file at all
+    # A sentence with no entry was read as written, so a block converted without a guide has no file at all.
+    # The "combine" key is there while sentences of the block are newer than its chapter file
     try:
         with open(os.path.join(block_dir, spoken_sentences_file), 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -3650,10 +3654,13 @@ def convert_chapters2audio(session_id:str)->bool:
                 start_sentence = 0
                 chapter_audio_file = os.path.join(chapters_dir, f'{block_id}.{default_audio_proc_format}')
                 block_dir = os.path.join(sentences_dir, block_id)
-                # a sentence is stale when the guide now gives the engine another text than the one its audio was made from
+                # a sentence is stale when the guide now gives the engine another text than the one its audio was made from.
+                # The record also says when the chapter file is older than the sentences it is made of
                 spoken_sentences = load_spoken_sentences(block_dir)
                 stale_sentences = {j for j in valid_idx if spoken_sentences.get(str(j), sentences[j].strip()) != apply_pronunciations(sentences[j].strip(), guide)}
+                recombine = bool(spoken_sentences.get(spoken_combine_key))
                 stale_only = False
+                guide_stale = False
                 # a [voice], [direct] or [emotion] passage can run over several sentences and the engine carries it from
                 # one sentence to the next: a stale sentence of such a block cannot be converted on its own
                 has_passages = any(TTS_SML.get(tag.group('tag'), {}).get('paired') for s in sentences for tag in SML_TAG_PATTERN.finditer(s))
@@ -3663,7 +3670,7 @@ def convert_chapters2audio(session_id:str)->bool:
                         _reset_chapter_file(block_id)
                     else:
                         missing_sentences = _check_block_sentences(block_id, sentences)
-                        if not missing_sentences and not stale_sentences:
+                        if not missing_sentences and not stale_sentences and not recombine:
                             print(f'Chapter {ch_num} (block {x}) — has all sentences')
                             cnt = len(valid_idx)
                             global_sent += cnt
@@ -3673,16 +3680,14 @@ def convert_chapters2audio(session_id:str)->bool:
                             show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_missing_files'].format(block=x, count=len(missing_sentences))})
                             _reset_chapter_file(block_id)
                         else:
-                            show_alert(session_id, {'type': 'info', 'msg': legends['msg_block_pronunciation_changed'].format(chapter=ch_num, block=x, count=len(stale_sentences))})
-                            if has_passages:
-                                _reset_chapter_file(block_id)
-                            else:
-                                # every other sentence keeps its audio and the resume point stays where it is. The chapter
-                                # file and the record are replaced once the sentences are done, so a run stopped before
-                                # that finds the same sentences stale again
-                                missing_sentences = stale_sentences
-                                start_sentence = block_len
-                                stale_only = True
+                            # the sentences that are not stale keep their audio (all are converted in a block with a
+                            # passage) and the resume point stays where it is
+                            if stale_sentences:
+                                show_alert(session_id, {'type': 'info', 'msg': legends['msg_block_pronunciation_changed'].format(chapter=ch_num, block=x, count=len(stale_sentences))})
+                            missing_sentences = set(valid_idx) if has_passages and stale_sentences else stale_sentences
+                            start_sentence = block_len
+                            stale_only = True
+                            guide_stale = True
                 elif block_changed and x <= block_resume:
                     show_alert(session_id, {'type': 'info', 'msg': legends['msg_chapter_changed'].format(chapter=ch_num, block=x)})
                     _reset_chapter_file(block_id)
@@ -3692,12 +3697,19 @@ def convert_chapters2audio(session_id:str)->bool:
                     if has_passages and missing_sentences:
                         start_sentence = 0
                         missing_sentences = set()
+                    guide_stale = bool(missing_sentences)
                     if start_sentence == 0 and os.path.isdir(block_dir):
                         shutil.rmtree(block_dir)
                 # the branches above may have removed the block's folder, and its record with it
                 spoken_sentences = load_spoken_sentences(block_dir)
+                recombine = bool(spoken_sentences.get(spoken_combine_key))
                 show_alert(session_id, {'type': 'info', 'msg': legends['msg_chapter_containing'].format(chapter=ch_num, block=x, count=block_len)})
                 os.makedirs(block_dir, exist_ok=True)
+                if guide_stale and not recombine:
+                    # from here until the chapter is combined, a stopped run leaves sentences newer than the chapter file
+                    spoken_sentences[spoken_combine_key] = True
+                    save_spoken_sentences(block_dir, spoken_sentences)
+                    recombine = True
                 if not stale_only:
                     blocks_current['block_resume'] = x
                     blocks_current['sentence_resume'] = start_sentence
@@ -3720,7 +3732,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             if not run:
                                 show_alert(session_id, {'type': 'warning', 'msg': error})
                                 return False
-                            if record_spoken_sentence(spoken_sentences, j, sentence, spoken) and not stale_only:
+                            if record_spoken_sentence(spoken_sentences, j, sentence, spoken):
                                 save_spoken_sentences(block_dir, spoken_sentences)
                             if spoken != sentence:
                                 print(legends['msg_pronunciation_spoken'].format(spoken=spoken))
@@ -3748,7 +3760,7 @@ def convert_chapters2audio(session_id:str)->bool:
                             progress_bar(progress=total_progress, desc=f'{ebook_name} - {sentence}')
                 sent_end = global_sent - 1
                 show_alert(session_id, {'type': 'info', 'msg': legends['msg_end_of_chapter'].format(chapter=ch_num, block=x)})
-                if converted or block_changed or missing_sentences:
+                if converted or block_changed or missing_sentences or recombine:
                     show_alert(session_id, {'type': 'info', 'msg': legends['msg_combining_chapter'].format(chapter=ch_num, block=x, start=sent_start, end=sent_end)})
                     session['blocks_current'] = blocks_current
                     save_db_stamp(session_id)
@@ -3756,7 +3768,7 @@ def convert_chapters2audio(session_id:str)->bool:
                     if not combine_audio_sentences(session_id, chapter_audio_file, block_id, block_len):
                         show_alert(session_id, {'type': 'warning', 'msg': 'combine_audio_sentences() failed!'})
                         return False
-                    if stale_only:
+                    if spoken_sentences.pop(spoken_combine_key, None):
                         save_spoken_sentences(block_dir, spoken_sentences)
             #blocks_current['block_resume'] = 0
             #blocks_current['sentence_resume'] = 0
