@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'Intel-GPU an {kmd} gebunden und für SYCL/OpenCL sichtbar, aber Level Zero meldet kein Gerät. intel-level-zero-gpu installieren oder aktualisieren und neu starten. Wechsel zur CPU.',
     'msg_intel_l0_no_device': 'Intel-GPU an {kmd} gebunden, aber Level Zero meldet kein Gerät ({status}). intel-level-zero-gpu und intel-opencl-icd installieren und neu starten. Wechsel zur CPU.',
     'msg_xpu_fallback': 'XPU über PyTorch-Fallback erkannt.',
+    'msg_xpu_unusable': 'Intel-GPU gefunden, aber Torch kann darauf nicht ausgeführt werden (GPU wird nicht unterstützt oder Treiber ist zu alt). XPU deaktiviert. Aktualisieren Sie den Intel-Grafiktreiber, um sie zu verwenden.',
     'msg_gpu_runtime_silent': 'Kein GPU-Backend passt. {gpus}-GPU am PCI-Bus, aber ihre Runtime antwortet nicht. Wechsel zur CPU.',
     'msg_no_gpu_pci': 'Keine GPU am PCI-Bus gefunden. Wechsel zur CPU.',
     'error_requirements_missing': 'Warnung: Datei {file} nicht gefunden. Paketprüfung wird übersprungen.',

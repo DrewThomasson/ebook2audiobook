@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'Intel GPU가 {kmd}에 바인딩되고 SYCL/OpenCL에서 보이지만 Level Zero가 장치를 보고하지 않습니다. intel-level-zero-gpu를 설치하거나 업데이트한 뒤 다시 실행하세요. CPU로 전환합니다.',
     'msg_intel_l0_no_device': 'Intel GPU가 {kmd}에 바인딩되었지만 Level Zero가 장치를 보고하지 않습니다({status}). intel-level-zero-gpu와 intel-opencl-icd를 설치한 뒤 다시 실행하세요. CPU로 전환합니다.',
     'msg_xpu_fallback': 'PyTorch 대체 경로로 XPU를 감지했습니다.',
+    'msg_xpu_unusable': 'Intel GPU가 발견되었지만 Torch를 실행할 수 없습니다(GPU가 지원되지 않거나 드라이버가 너무 오래됨). XPU가 비활성화되었습니다. 사용하려면 Intel 그래픽 드라이버를 업데이트하세요.',
     'msg_gpu_runtime_silent': '일치하는 GPU 백엔드가 없습니다. PCI에 {gpus} GPU가 있지만 런타임이 응답하지 않았습니다. CPU로 전환합니다.',
     'msg_no_gpu_pci': 'PCI 버스에서 GPU를 찾을 수 없습니다. CPU로 전환합니다.',
     'error_requirements_missing': '경고: {file} 파일을 찾을 수 없습니다. 패키지 확인을 건너뜁니다.',

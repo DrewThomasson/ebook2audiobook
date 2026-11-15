@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'GPU من Intel مرتبط بـ {kmd} ومرئي لـ SYCL/OpenCL لكن Level Zero لا يُبلغ عن أي جهاز. ثبّت أو حدّث intel-level-zero-gpu ثم أعد التشغيل. جارٍ التبديل إلى المعالج المركزي.',
     'msg_intel_l0_no_device': 'GPU من Intel مرتبط بـ {kmd} لكن Level Zero لا يُبلغ عن أي جهاز ({status}). ثبّت intel-level-zero-gpu وintel-opencl-icd ثم أعد التشغيل. جارٍ التبديل إلى المعالج المركزي.',
     'msg_xpu_fallback': 'تم اكتشاف XPU عبر المسار البديل لـ PyTorch.',
+    'msg_xpu_unusable': 'تم العثور على وحدة معالجة الرسومات من Intel ولكن لا يمكن تشغيل Torch عليها (وحدة معالجة الرسومات غير مدعومة أو برنامج التشغيل قديم جدًا). تم تعطيل XPU، قم بتحديث برنامج تشغيل رسومات Intel لاستخدامه.',
     'msg_gpu_runtime_silent': 'لا توجد واجهة GPU مطابقة. يوجد GPU من نوع {gpus} على ناقل PCI لكن بيئته لم تستجب. جارٍ التبديل إلى المعالج المركزي.',
     'msg_no_gpu_pci': 'لم يتم العثور على GPU على ناقل PCI. جارٍ التبديل إلى المعالج المركزي.',
     'error_requirements_missing': 'تحذير: لم يتم العثور على الملف {file}. تم تخطي فحص الحزم.',

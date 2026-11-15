@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'Intel GPU {kmd} sürücüsüne bağlı ve SYCL/OpenCL tarafından görülüyor ancak Level Zero cihaz bildirmiyor. intel-level-zero-gpu kurun veya güncelleyin, sonra yeniden çalıştırın. CPU\'ya geçiliyor.',
     'msg_intel_l0_no_device': 'Intel GPU {kmd} sürücüsüne bağlı ancak Level Zero cihaz bildirmiyor ({status}). intel-level-zero-gpu ve intel-opencl-icd kurup yeniden çalıştırın. CPU\'ya geçiliyor.',
     'msg_xpu_fallback': 'XPU, PyTorch yedek yöntemiyle algılandı.',
+    'msg_xpu_unusable': 'Intel GPU bulundu ancak torch bu GPU\'da çalışamıyor (GPU desteklenmiyor veya sürücü çok eski). XPU devre dışı bırakıldı, kullanmak için Intel grafik sürücüsünü güncelleyin.',
     'msg_gpu_runtime_silent': 'Hiçbir GPU arka ucu eşleşmedi. PCI üzerinde {gpus} GPU var ancak çalışma zamanı yanıt vermedi. CPU\'ya geçiliyor.',
     'msg_no_gpu_pci': 'PCI veri yolunda GPU bulunamadı. CPU\'ya geçiliyor.',
     'error_requirements_missing': 'Uyarı: {file} dosyası bulunamadı. Paket denetimi atlanıyor.',
