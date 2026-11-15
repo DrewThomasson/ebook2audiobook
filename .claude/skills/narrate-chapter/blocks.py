@@ -30,6 +30,9 @@ def load(path):
         data = json.load(f)
     if not isinstance(data, dict) or not isinstance(data.get('blocks'), list):
         sys.exit(f'{path}: not a blocks file, it has no "blocks" list')
+    for i, block in enumerate(data['blocks']):
+        if not isinstance(block, dict) or not isinstance(block.get('text'), str):
+            sys.exit(f'{path}: block {i} has no "text" string')
     return data
 
 def indexes(arg, count):
@@ -67,7 +70,8 @@ def added_tags(original, edited):
         if i < len(want) and token == want[i]:
             i += 1
         elif isinstance(token, tuple):
-            before = next((t for t in reversed(have[:j]) if isinstance(t, str)), None)
+            # a tag right after another tag is already at a cut, whatever the word before them
+            before = have[j - 1] if j and isinstance(have[j - 1], str) else None
             added.append((token, before, [t for t in have[j + 1:j + 60] if isinstance(t, str)]))
         else:
             expected = written(want[i]) if i < len(want) else 'the end of the block'
@@ -79,22 +83,26 @@ def added_tags(original, edited):
     return added
 
 def tag_errors(text):
-    errors, open_tags = [], []
+    # the app keeps the state of each paired tag on its own, so a [voice] and a [direct] passage may overlap
+    errors, open_tags = [], set()
     for token in tokens(text):
         if isinstance(token, str):
             continue
         _, close, name, value = token
         if name == 'pause':
-            if close or (value and not re.fullmatch(r'\d+(\.\d+)?', value)):
+            try:
+                seconds = float(value) if value else 0
+            except ValueError:
+                seconds = -1
+            if close or seconds < 0:
                 errors.append(f'{written(token)} is not [pause] or [pause:N] with N in seconds')
         elif name == 'break':
             if close or value:
                 errors.append(f'{written(token)} is not [break]')
         elif close:
-            if not open_tags or open_tags[-1] != name:
-                errors.append(f'[/{name}] closes nothing' if name not in open_tags else f'[/{name}] closes before [/{open_tags[-1]}]')
-            if name in open_tags:
-                del open_tags[len(open_tags) - 1 - open_tags[::-1].index(name):]
+            if name not in open_tags:
+                errors.append(f'[/{name}] closes nothing')
+            open_tags.discard(name)
         else:
             if name in open_tags:
                 errors.append(f'{written(token)} opens inside another [{name}] passage')
@@ -102,8 +110,8 @@ def tag_errors(text):
                 errors.append(f'[{name}] has no value')
             elif name == 'direct' and len(value.split()) > DIRECT_MAX_WORDS:
                 errors.append(f'{written(token)} is {len(value.split())} words, a direction is under ten')
-            open_tags.append(name)
-    errors.extend(f'[{name}:...] is never closed' for name in open_tags)
+            open_tags.add(name)
+    errors.extend(f'[{name}:...] is never closed' for name in sorted(open_tags))
     return errors
 
 def cmd_list(path):

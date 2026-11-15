@@ -37,7 +37,7 @@ the worktree. A session already on a branch of its own for this book stays on it
 
 ```bash
 mkdir -p W
-./ebook2audiobook.command --headless --ebook <ebook> --language <code> --export_blocks W/original.json
+./ebook2audiobook.command --headless --ebook <ebook> --language <code> --tts_engine <engine> --export_blocks W/original.json
 cp W/original.json W/marked.json
 python3 B list W/marked.json
 ```
@@ -45,7 +45,10 @@ python3 B list W/marked.json
 One block is one chapter. `original.json` is never edited: it is what step 4 checks
 `marked.json` against. Each export starts a new conversion session and gives the blocks new
 ids, so a book already exported keeps its `W` files, and a later chapter is marked in the same
-`marked.json`.
+`marked.json`. From then on `<indexes>` in steps 4 and 6 is every chapter marked so far: the
+session has one audiobook file, and each conversion rebuilds it from the chapters kept.
+Chapters already converted keep their audio. To keep an earlier pass's file as it was, copy
+it elsewhere before converting.
 
 Done when `list` shows the blocks and the chapters to work on are chosen.
 
@@ -63,10 +66,10 @@ existing tag stays as it is.
   plain narration: a line of dialogue by its speaker's mood, rising tension, humor, an ending
   that slows. A direction is under ten words and describes delivery ("whispering, frightened",
   "dry, amused", "slow, solemn"). It is never text to be spoken.
-- Build each direction on a word the engine's table maps, and put the dominant one first.
-  Zonos reads nothing but those keywords. Maya1 takes the first table entry the direction
-  hits as its delivery token, and the rest of the direction only as a tone description, which
-  changes little on its own.
+- Build each direction on a word the engine's table maps. Zonos reads nothing but those
+  keywords and adds up every entry the direction hits. Maya1 uses one delivery token, that of
+  the first entry in table order the direction hits, so give it one table word; the rest of
+  the direction reaches it only as a tone description, which changes little on its own.
 - Keep a passage short: a line of dialogue with its "she said", a few sentences, a paragraph.
   A `[direct]` passage does not go inside another one.
 - Open and close a passage, and place a pause, between sentences. The engine renders the text
@@ -75,10 +78,11 @@ existing tag stays as it is.
   sentence end near where the delivery changes.
 - Plain narration gets no tag. A chapter where every sentence is directed has no plain
   reading left to differ from.
-- `[pause:2]` at a scene break; `N` is seconds. The export already puts a `[pause]` at each
-  paragraph break, and those stay; the added pause goes beside the one at the scene break.
-- The export drops quotation marks, so dialogue is found by its "she said" and by sense. When
-  who speaks is unclear, read that part of the ebook itself.
+- `[pause:2]` at a scene break; `N` is seconds. The export may already carry a `[pause]` or
+  `[break]` at paragraph breaks, and those stay; the added pause goes beside the one at the
+  scene break.
+- The export drops double quotation marks, so dialogue is found by its "she said" and by
+  sense. When who speaks is unclear, read that part of the ebook itself.
 - `[voice:<path to voice file>]passage[/voice]` around a character's lines only when the user
   gave a voice file for that character. `[voice:...]` tags already in the text, such as those
   written by E2A-SML, stay where they are.
@@ -145,8 +149,9 @@ Add the options the user converts with, such as `--fine_tuned`, `--device` or `-
 conversion runs in the session that exported the file, and its audiobook lands in
 `audiobooks/cli/cli-<session>/`, where `<session>` is the `"session"` of the blocks file.
 
-For the unmarked render, export again to `W/plain.json`, which starts a second session, run
-`python3 B only W/plain.json <indexes>`, and convert it with the same options.
+For the unmarked render, export again to `W/plain.json` with the same command as step 1,
+which starts a second session, run `python3 B only W/plain.json <indexes>`, and convert it
+with the same options.
 
 Read the console output of each conversion:
 
