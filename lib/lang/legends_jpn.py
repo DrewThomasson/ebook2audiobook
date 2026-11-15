@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'Intel GPU は {kmd} にバインドされ SYCL/OpenCL からも見えますが、Level Zero はデバイスを報告しません。intel-level-zero-gpu をインストールまたは更新して再実行してください。CPU に切り替えます。',
     'msg_intel_l0_no_device': 'Intel GPU は {kmd} にバインドされていますが、Level Zero はデバイスを報告しません（{status}）。intel-level-zero-gpu と intel-opencl-icd をインストールして再実行してください。CPU に切り替えます。',
     'msg_xpu_fallback': 'PyTorch のフォールバックで XPU を検出しました。',
+    'msg_xpu_unusable': 'Intel GPUが見つかりましたが、Torchを実行できません（GPUがサポートされていないか、ドライバーが古すぎます）。XPUが無効になっています。使用するには、Intelグラフィックスドライバーを更新してください。',
     'msg_gpu_runtime_silent': '一致する GPU バックエンドがありません。PCI 上に {gpus} GPU がありますが、ランタイムが応答しませんでした。CPU に切り替えます。',
     'msg_no_gpu_pci': 'PCI バス上に GPU が見つかりません。CPU に切り替えます。',
     'error_requirements_missing': '警告: ファイル {file} が見つかりません。パッケージの確認をスキップします。',

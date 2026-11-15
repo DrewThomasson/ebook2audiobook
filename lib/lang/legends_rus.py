@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'GPU Intel привязан к {kmd} и виден SYCL/OpenCL, но Level Zero не сообщает об устройстве. Установите или обновите intel-level-zero-gpu и запустите снова. Переключение на CPU.',
     'msg_intel_l0_no_device': 'GPU Intel привязан к {kmd}, но Level Zero не сообщает об устройстве ({status}). Установите intel-level-zero-gpu и intel-opencl-icd и запустите снова. Переключение на CPU.',
     'msg_xpu_fallback': 'XPU обнаружен через резервный механизм PyTorch.',
+    'msg_xpu_unusable': 'Обнаружен графический процессор Intel, но Torch не может работать на нем (графический процессор не поддерживается или драйвер слишком старый). XPU отключен. Чтобы использовать его, обновите графический драйвер Intel.',
     'msg_gpu_runtime_silent': 'Ни один GPU-бэкенд не подошёл. GPU {gpus} на шине PCI, но его среда выполнения не ответила. Переключение на CPU.',
     'msg_no_gpu_pci': 'На шине PCI не найден GPU. Переключение на CPU.',
     'error_requirements_missing': 'Предупреждение: файл {file} не найден. Проверка пакетов пропущена.',

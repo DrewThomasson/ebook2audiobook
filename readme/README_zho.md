@@ -1,5 +1,5 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 电子书转有声书 (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/>
@@ -39,13 +39,13 @@ CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/
 
 <a id="gui-interface"></a>
 #### GUI界面
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>单击以查看Web GUI的图像</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -66,7 +66,7 @@ https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
-**Scarlett Voice**
+**Scarlett的声音**
 
 https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## 支持的语言
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -188,7 +189,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 2. **安装/运行ebook2audiobook** ：
 
-   - **Linux/MacOS**
+   - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.command
      ```
@@ -209,7 +210,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    
 1. **打开Web应用程序** ：单击终端中提供的URL以访问Web应用程序并转换电子书。`http://localhost:7860/`
 2. **对于公开链接** ：
-   `./ebook2audiobook.command --share` （ Linux/MacOS ）
+   `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share`（所有操作系统，仅安装一次，并使用其 python_env 文件夹中的 Python）
 
@@ -217,15 +218,73 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **如果脚本停止并再次运行，则需要刷新gradio GUI界面<br>
 让网页重新连接到新的连接套接字。**
 
+<a id="pip-install"></a>
+### 使用 pip/pipx 安装
+另一种安装和启动 ebook2audiobook 的方法，无需克隆仓库：使用 pip 安装 `ebook2audiobook` 命令<br>
+（所有操作系统，任何 Python 3.8+）。包含上述启动脚本的克隆仓库仍以相同的方式运行。
+
+1. 从PyPI **安装命令**
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   或带紫外线
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   或带胡椒
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>对于尚未发布的最新代码，请使用`git+https://github.com/DrewThomasson/ebook2audiobook.git`代替`ebook2audiobook`。</i>
+
+2. **安装/运行ebook2audiobook**，选项与启动脚本相同：
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   如果找不到该命令（pip 的脚本文件夹不在您的 PATH 中）：`python -m ebook2audiobook`
+
+- 首次启动时，ebook2audiobook 会被复制到`~/ebook2audiobook`（Windows 上为`%USERPROFILE%\ebook2audiobook`）并安装在那里<br>
+  使用其启动脚本，与`./ebook2audiobook.command`或`ebook2audiobook.cmd`的操作完全相同。
+- 要使用其他文件夹，请在首次启动前设置`E2A_HOME`，并在后续启动时保持该设置<br>
+  （即在 Linux/MacOS 上为`export E2A_HOME=/data/ebook2audiobook`，在 Windows 上为`setx E2A_HOME D:\ebook2audiobook`，然后是新终端）。
+- 该文件夹是一个普通的 ebook2audiobook 文件夹：`./ebook2audiobook.command`（`./e2a.sh`）和`ebook2audiobook.cmd`（`e2a.cmd`）也适用于它。
+- 如果该文件夹中已经有克隆或下载的ebook2audiobook，则会按原样启动，pip绝不会对其进行更改。
+- 提供给`--ebook`、`--ebooks_dir`、`--voice`、`--voice_map`、`--custom_model`和`--output_dir`<br>的相对路径
+  从您输入命令的文件夹中读取。
+- 无需停用您的 venv 或 conda 环境：ebook2audiobook 始终在其自己的`python_env`中运行。
+- **Docker**：`ebook2audiobook --script_mode build_docker`（可选搭配`--docker_mode compose`或`--docker_mode podman`）<br>
+  从该文件夹构建镜像。同样在该文件夹中运行它打印的`docker run` / `docker compose`命令：<br>
+  它们的`./ebooks`、`./audiobooks`……挂载和 Compose 文件都与其相关。该镜像采用相同的选项，<br>
+  使用容器内的路径（`/app/...`），请参阅[Docker](#docker)。
+- **更新**：`pipx upgrade ebook2audiobook`、`uv tool upgrade ebook2audiobook`或`pip install -U ebook2audiobook`。<br>
+  下次启动时将更新应用文件，并保留`python_env`、模型、语音、有声读物以及您添加到文件夹中的所有内容。
+- **卸载**：仅使用`pip uninstall`、`pipx uninstall`或`uv tool uninstall`只会删除命令：<br>
+  文件夹及其数 GB 的模型将保留。首先使用命令本身卸载 ebook2audiobook：
+  1. 将您的有声读物移出该文件夹的`audiobooks`子文件夹：文件夹中的所有内容都将被删除。
+  2. `ebook2audiobook --uninstall`<br>
+     它会运行该文件夹的卸载程序，该程序会要求您确认，然后删除快捷方式以及其安装的程序<br>
+     （列于`.installed`）和文件夹内容，然后删除该文件夹。
+  3. 运行它最后打印的命令以删除`ebook2audiobook`本身，具体取决于您的安装方式：<br>
+     `pipx uninstall ebook2audiobook`、`uv tool uninstall ebook2audiobook`或`pip uninstall ebook2audiobook`。
+  4. 如果您构建了 Docker 镜像：`docker rmi athomasson2/ebook2audiobook:<tag>`和`docker volume rm e2a_venvs`<br>
+     （使用 Podman：`podman rmi localhost/athomasson2/ebook2audiobook:<tag>` 和 `podman volume rm e2a_venvs`）。
+
 <a id="basic-usage"></a>
 ### 基本用法
-   - **Linux/MacOS** ：
+   - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install**（所有操作系统）
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]** ：电子书文件的路径
@@ -260,6 +319,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install**（所有操作系统）
+     ```bash
+     ebook2audiobook --help
      ```
    - **或适用于所有操作系统**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -676,22 +752,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] 至少为xttsv2、fairseq、vits、piper添加信德语语言模型（欢迎使用）
 
 #### TTS引擎
-- [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
+- [x] DramaBox（https://github.com/dramabox-ai/dramabox)[cite: 1]）
 - [x] FireRed Audio/FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
 - [x] 鱼语/鱼声(https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] Higgs Audio TTS（https://github.com/higgs-audio/higgs-audio)[cite: 1]）
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
-- [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
+- [x] VibeVoice（https://github.com/vibevoice-community/VibeVoice)[cite: 1]）
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
-- [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Voxtral TTS（https://github.com/voxtral/voxtral-tts)[cite: 1]
+- [x] 话痨（https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice/CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
 - [x] Index-tts/Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
-- [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
+- [x] Breeze TTS（https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]）
 - [x] 孔子4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] 点TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
@@ -703,9 +779,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] NewTTS/NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] 声子级(https://github.com/gradium-ai/xn-ptts)[cite: 1]
-- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1]
-- [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
-- [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
+- [x] 上主音（https://github.com/supertone-inc/supertonic)[cite: 1]）
+- [x] Irodori TTS（https://github.com/irodori-tts/irodori-tts)[cite: 1]）
+- [x] Piper（https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
 - [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
@@ -713,47 +789,47 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 乌龟(https://github.com/neonbjb/tortoise-tts)[cite: 1]
 - [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] BARK (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] 您的TTS（https://github.com/Edresson/YourTTS)[cite: 1]）
 - [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
-- [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
-- [x] ChatTTS (https://github.com/2noise/ChatTTS)
+- [x] OpenVoice（https://github.com/myshell-ai/OpenVoice)
+- [x] ChatTTS（https://github.com/2noise/ChatTTS)
 - [x] Spark-TTS (https://github.com/sparkaudio/spark-tts)
 - [x] MeloTTS (https://github.com/myshell-ai/MeloTTS)
 - [x] CSM https://github.com/SesameAILabs/csm)
 
 #### 自述文件翻译
 - [x] 阿拉伯语(ara)
-- [x] Chinese (zho)
-- [x] English (eng)
-- [x] Spanish (spa)
-- [x] French (fra)
+- [x] 中文（zho）
+- [x] 英语 (eng)
+- [x] 西班牙语（西班牙）
+- [x] 法语 (fra)
 - [x] 德语(deu)
-- [x] Italian (ita)
-- [x] Portuguese (por)
-- [x] Polish (pol)
+- [x] 意大利语 (ita)
+- [x] 葡萄牙语 (por)
+- [x] 波兰语 (pol)
 - [x] 土耳其语(TUR)
-- [x] Russian (rus)
-- [x] Dutch (nld)
+- [x] 俄语（rus）
+- [x] 荷兰语 (nld)
 - [x] 捷克语（ ces ）
-- [x] Japanese (jpn)
-- [x] Hindi (hin)
-- [x] Bengali (ben)
+- [x] 日语 (jpn)
+- [x] 印地语 (hin)
+- [x] 孟加拉语 (ben)
 - [x] 匈牙利语(HUN)
-- [x] Korean (kor)
+- [x] 韩语 (kor)
 - [x] 越南语（ VIE ）
-- [x] Swedish (swe)
+- [x] 瑞典语 (swe)
 - [x] 波斯语(fas)
 - [x] 约鲁巴语（ yor ）
 - [x] 斯瓦希里语(swa)
 - [x] 印尼语（印尼）
-- [x] Slovak (slk)
+- [x] 斯洛伐克语 (slk)
 - [x] 克罗地亚语(hrv)
 
 #### 💻 操作系统兼容性
 - [x] 🪟 Windows x86
-- [x] 🪟 ARM窗口
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac英特尔x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Apple 硅芯片 Mac
 - [x] 🐧 Linux x86
 - [x] 🐧 ARM Linux
 

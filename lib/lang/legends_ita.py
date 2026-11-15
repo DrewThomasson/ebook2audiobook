@@ -475,6 +475,7 @@ legends = {
     'msg_intel_sycl_no_l0': 'GPU Intel associata a {kmd} e visibile a SYCL/OpenCL, ma Level Zero non segnala alcun dispositivo. Installa o aggiorna intel-level-zero-gpu e riesegui. Passaggio alla CPU.',
     'msg_intel_l0_no_device': 'GPU Intel associata a {kmd} ma Level Zero non segnala alcun dispositivo ({status}). Installa intel-level-zero-gpu e intel-opencl-icd e riesegui. Passaggio alla CPU.',
     'msg_xpu_fallback': 'XPU rilevata tramite il fallback di PyTorch.',
+    'msg_xpu_unusable': 'GPU Intel rilevata, ma Torch non può essere eseguito su di essa (GPU non supportata o driver troppo vecchio). XPU disabilitata, aggiorna il driver della scheda grafica Intel per utilizzarla.',
     'msg_gpu_runtime_silent': 'Nessun backend GPU corrisponde. GPU {gpus} sul bus PCI ma il suo runtime non ha risposto. Passaggio alla CPU.',
     'msg_no_gpu_pci': 'Nessuna GPU trovata sul bus PCI. Passaggio alla CPU.',
     'error_requirements_missing': 'Attenzione: file {file} non trovato. Controllo dei pacchetti saltato.',

@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 Da e-book ad audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 Convertitore CPU/GPU da e-book ad audiolibro con capitoli e metadati<br/>
 utilizzando motori TTS avanzati e molto altro.<br/>
 Supporta la clonazione vocale e 1696 lingue!
-> [!IMPORTANT]
+> ATTENZIONE
 **Questo strumento è destinato all'uso esclusivamente con e-book privi di DRM e acquisiti legalmente.** <br>
 Gli autori non sono responsabili di alcun uso improprio di questo software né di eventuali conseguenze legali. <br>
 Utilizza questo strumento in modo responsabile e nel rispetto di tutte le leggi vigenti.
@@ -39,13 +39,13 @@ Utilizza questo strumento in modo responsabile e nel rispetto di tutte le leggi 
 
 <a id="gui-interface"></a>
 #### Interfaccia grafica (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Clicca per vedere le immagini della GUI web</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -123,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **Scansione OCR** per file con pagine di testo sotto forma di immagini
 - 🔊 **Sintesi vocale di alta qualità**, dal quasi tempo reale a una voce quasi reale
 - 🗣️ **Clonazione vocale opzionale** utilizzando il tuo file vocale
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Supporta 1696 lingue** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Adatto a risorse limitate** — funziona con **2 GB di RAM / 1 GB di VRAM (minimo)**
 - 🎵 **Formati di output dell'audiolibro**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Tag SML supportati** — controllo granulare di interruzioni, pause, cambio voce e altro ([see below](#sml-tags-available))
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Lingue supportate
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -169,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Dai un'occhiata al nostro altro repo dedicato all'aggiunta automatica di SML nel tuo e-book -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> ATTENZIONE
 **Prima di pubblicare un problema di installazione o un bug, cerca attentamente nella scheda dei problemi aperti e chiusi<br>
 per essere sicuro che il tuo problema non esista già.**
 
@@ -188,7 +189,7 @@ Quindi dovresti prima rimuovere manualmente qualsiasi testo che non vuoi convert
 
 2. **Installa / Esegui ebook2audiobook**:
 
-   - **Linux/MacOS**
+   - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.command
      ```
@@ -213,9 +214,63 @@ Quindi dovresti prima rimuovere manualmente qualsiasi testo che non vuoi convert
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (tutti i sistemi operativi, solo una volta installato e con il Python della sua cartella python_env)
 
-> [!IMPORTANT]
+> ATTENZIONE
 **Se lo script viene interrotto e rieseguito, devi aggiornare la tua interfaccia grafica Gradio<br>
 per consentire alla pagina web di riconnettersi al nuovo socket di connessione.**
+
+<a id="pip-install"></a>
+### Installazione con pip / pipx
+Un altro modo per installare e avviare ebook2audiobook, senza clonare il repository: pip installa il comando `ebook2audiobook`<br>
+(tutti i sistemi operativi, qualsiasi versione di Python 3.8+). Il repository clonato con i suoi script di avvio sopra continua a funzionare allo stesso modo.
+
+1. **Installa il comando** da PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   o con raggi UV
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   o con il pip
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>Per il codice più recente non ancora rilasciato, utilizzare `git+https://github.com/DrewThomasson/ebook2audiobook.git` al posto di `ebook2audiobook`.</i>
+
+2. **Installa / Esegui ebook2audiobook**, con le stesse opzioni degli script di avvio:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Se il comando non viene trovato (la cartella degli script di pip non è nel suo PATH): `python -m ebook2audiobook`
+
+- Al primo avvio, ebook2audiobook viene copiato in `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` su Windows) e installato lì<br>
+  con il suo script di avvio, esattamente come farebbero `./ebook2audiobook.command` o `ebook2audiobook.cmd`.
+- Per utilizzare un'altra cartella, imposta `E2A_HOME` prima del primo avvio e mantienila impostata per quelli successivi<br>
+  (ovvero `export E2A_HOME=/data/ebook2audiobook` su Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` quindi un nuovo terminale su Windows).
+- Questa cartella è una normale cartella ebook2audiobook: anche `./ebook2audiobook.command` (`./e2a.sh`) e `ebook2audiobook.cmd` (`e2a.cmd`) funzionano al suo interno.
+- Se quella cartella contiene già un ebook2audiobook clonato o scaricato, viene avviato così com'è e pip non lo modifica mai.
+- Percorsi relativi forniti a `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` e `--output_dir`<br>
+  vengono letti dalla cartella in cui si digita il comando.
+- Non è necessario disattivare il proprio ambiente virtuale o conda: ebook2audiobook viene sempre eseguito nel proprio `python_env`.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (facoltativamente con `--docker_mode compose` o `--docker_mode podman`)<br>
+  crea l'immagine da quella cartella. Esegui anche i comandi `docker run` / `docker compose` che stampa da quella cartella:<br>
+  i loro `./ebooks`, `./audiobooks`... mount e i file compose sono relativi ad esso. L'immagine accetta le stesse opzioni,<br>
+  con percorsi all'interno del container (`/app/...`), vedere [Docker](#docker).
+- **Aggiornamento**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` o `pip install -U ebook2audiobook`.<br>
+  Al successivo avvio, verranno aggiornati i file dell'app e verranno mantenuti `python_env`, modelli, voci, audiolibri e tutto ciò che hai aggiunto alla cartella.
+- **Disinstalla**: `pip uninstall`, `pipx uninstall` o `uv tool uninstall` da soli rimuovono solo il comando:<br>
+  la cartella e i suoi gigabyte di modelli rimangono. Disinstalla prima ebook2audiobook con il comando stesso:
+  1. Sposta i tuoi audiolibri dalla sottocartella `audiobooks` della cartella: tutto ciò che si trova nella cartella verrà eliminato.
+  2. `ebook2audiobook --uninstall`<br>
+     Esegue il programma di disinstallazione della cartella, che richiede di confermare e quindi rimuove i collegamenti e i programmi che ha installato<br>
+     (elencati in `.installed`) e il contenuto della cartella, quindi elimina la cartella.
+  3. Esegui l'ultimo comando visualizzato per rimuovere `ebook2audiobook` stesso, a seconda di come lo hai installato:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` o `pip uninstall ebook2audiobook`.
+  4. Se avete creato immagini Docker: `docker rmi athomasson2/ebook2audiobook:<tag>` e `docker volume rm e2a_venvs`<br>
+     (con Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` e `podman volume rm e2a_venvs`).
 
 <a id="basic-usage"></a>
 ### Uso di Base
@@ -226,6 +281,10 @@ per consentire alla pagina web di riconnettersi al nuovo socket di connessione.*
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (tutti i sistemi operativi)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Percorso del tuo file e-book
@@ -260,6 +319,10 @@ per consentire alla pagina web di riconnettersi al nuovo socket di connessione.*
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (tutti i sistemi operativi)
+     ```bash
+     ebook2audiobook --help
      ```
    - **O per tutti i sistemi operativi**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -639,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Problemi comuni:
 - La mia GPU NVIDIA/ROCm/XPU/MPS non viene rilevata?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  La CPU è lenta (meglio su una CPU SMP da server) mentre la GPU può ottenere una conversione quasi in tempo reale.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Non ha però la clonazione vocale zero-shot, e le voci sono di qualità Siri, ma è molto più veloce su CPU).
 - «Ho problemi di dipendenze» - Usa semplicemente Docker, è completamente autonomo e ha una modalità headless,
    aggiungi il parametro  alla fine del comando docker run per maggiori informazioni. `--help`
@@ -677,9 +753,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Motori TTS
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
-- [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
-- [x] Fish-speech / Fish Audio (https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1)
+- [x] Parlato dei pesci / Audio dei pesci (https://github.com/fishaudio/fish-speech)[cite: 1]
+- [x] TTS audio Higgs (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
@@ -687,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Chiacchierone (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
 - [x] Indice-tts / Indice TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
@@ -703,9 +779,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Tasca TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] Fonone al Gradio (https://github.com/gradium-ai/xn-ptts)[cite: 1]
-- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1]
+- [x] Supertonica (https://github.com/supertone-inc/supertonic)[cite: 1]
 - [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
-- [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
+- [x] Pifferaio (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
 - [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
@@ -753,9 +829,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 🪟 Windows x86
 - [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac con chip Apple
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 
@@ -777,7 +853,7 @@ Accettiamo qualsiasi tipo di hardware per testare il nostro sviluppo, come:
 -->
 
 ## Crediti
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Un toolkit di deep learning per la sintesi vocale, collaudato nella ricerca e nella produzione.
 - [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Motore di sintesi vocale neurale veloce e locale.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- codice di inferenza ggml per Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) - Un motore di inferenza C++ all-in-one e puro per modelli audio, alimentato da ggml.

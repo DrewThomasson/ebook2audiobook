@@ -39,13 +39,13 @@ Gunakan alat ini secara bertanggung jawab dan sesuai dengan semua hukum yang ber
 
 <a id="gui-interface"></a>
 #### Antarmuka GUI
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Klik untuk melihat gambar GUI Web</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Bahasa yang Didukung
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,60 @@ Jadi Anda harus terlebih dahulu menghapus secara manual teks apa pun yang tidak 
 **Jika skrip dihentikan dan dijalankan lagi, Anda perlu menyegarkan antarmuka GUI gradio Anda<br>
 agar halaman web dapat terhubung kembali ke soket koneksi yang baru.**
 
+<a id="pip-install"></a>
+### Instal dengan pip / pipx
+Cara lain untuk menginstal dan meluncurkan ebook2audiobook, tanpa mengkloning repo: pip menginstal perintah `ebook2audiobook`<br>
+(semua OS, Python 3.8+ apa pun). Repo yang dikloning dengan skrip peluncurannya di atas terus berfungsi dengan cara yang sama.
+
+1. **Instal perintah** dari PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   atau dengan uv
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   atau dengan pip
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>Untuk kode terbaru yang belum dirilis, gunakan `git+https://github.com/DrewThomasson/ebook2audiobook.git` menggantikan `ebook2audiobook`.</i>
+
+2. **Instal/Jalankan ebook2audiobook**, dengan opsi yang sama dengan skrip peluncuran:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Jika perintah tidak ditemukan (folder skrip pip tidak ada di PATH Anda): `python -m ebook2audiobook`
+
+- Saat pertama kali dijalankan, ebook2audiobook akan disalin ke `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` di Windows) dan diinstal di sana<br>
+  dengan skrip peluncurannya, persis seperti yang akan dilakukan `./ebook2audiobook.command` atau `ebook2audiobook.cmd`.
+- Untuk menggunakan folder lain, atur `E2A_HOME` sebelum memulai pertama kali dan pertahankan pengaturan tersebut untuk memulai berikutnya<br>
+  (yaitu `export E2A_HOME=/data/ebook2audiobook` di Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` lalu terminal baru di Windows).
+- Folder itu adalah folder ebook2audiobook biasa: `./ebook2audiobook.command` (`./e2a.sh`) dan `ebook2audiobook.cmd` (`e2a.cmd`) juga berfungsi di dalamnya.
+- Jika folder tersebut sudah berisi ebook2audiobook yang dikloning atau diunduh, folder tersebut akan dijalankan apa adanya dan pip tidak akan pernah mengubahnya.
+- Jalur relatif yang diberikan ke `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model`, dan `--output_dir`<br>
+  dibaca dari folder tempat Anda mengetikkan perintah.
+- Tidak perlu menonaktifkan venv atau conda env Anda: ebook2audiobook selalu berjalan di `python_env`-nya sendiri.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (opsional dengan `--docker_mode compose` atau `--docker_mode podman`)<br>
+  membuat image dari folder tersebut. Jalankan perintah `docker run` / `docker compose` yang dicetaknya dari folder tersebut juga:<br>
+  `./ebooks`, `./audiobooks`... mount mereka dan file compose terkait dengannya. Image menggunakan opsi yang sama,<br>
+  dengan jalur di dalam kontainer (`/app/...`), lihat [Docker](#docker).
+- **Info Terbaru**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook`, atau `pip install -U ebook2audiobook`.<br>
+  Saat berikutnya aplikasi dijalankan, file aplikasi akan diperbarui dan `python_env`, model, suara, buku audio, dan apa pun yang Anda tambahkan ke folder akan disimpan.
+- **Hapus instalasi**: `pip uninstall`, `pipx uninstall`, atau `uv tool uninstall` hanya menghapus perintah:<br>
+  folder dan gigabyte modelnya tetap ada. Hapus instalasi ebook2audiobook dengan perintah itu sendiri terlebih dahulu:
+  1. Pindahkan buku audio Anda dari subfolder `audiobooks` folder: semua yang ada di folder akan dihapus.
+  2. `ebook2audiobook --uninstall`<br>
+     Ini menjalankan uninstaller folder, yang meminta Anda untuk mengonfirmasi, lalu menghapus pintasan, program yang diinstal<br>
+     (tercantum di `.installed`) dan konten folder, lalu menghapus folder tersebut.
+  3. Jalankan perintah yang terakhir dicetak untuk menghapus `ebook2audiobook` itu sendiri, yang bergantung pada cara Anda menginstalnya:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook`, atau `pip uninstall ebook2audiobook`.
+  4. Jika Anda membuat image Docker: `docker rmi athomasson2/ebook2audiobook:<tag>` dan `docker volume rm e2a_venvs`<br>
+     (dengan Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` dan `podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### Penggunaan Dasar
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ agar halaman web dapat terhubung kembali ke soket koneksi yang baru.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (semua OS)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Jalur ke file eBook Anda
@@ -260,6 +319,10 @@ agar halaman web dapat terhubung kembali ke soket koneksi yang baru.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (semua OS)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Atau untuk semua OS**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)

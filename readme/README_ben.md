@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 ই-বুক থেকে অডিওবুক (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 অধ্যায় ও মেটাডেটা সহ ই-বুক থেকে অডিওবুকে রূপান্তরকারী CPU/GPU কনভার্টার<br/>
 উন্নত TTS ইঞ্জিন ইত্যাদি ব্যবহার করে।<br/>
 ভয়েস ক্লোনিং এবং 1696 টি ভাষা সমর্থন করে!
-> [!IMPORTANT]
+> গুরুত্বপূর্ণ
 **এই টুলটি কেবল DRM-মুক্ত, বৈধভাবে অর্জিত ই-বুকের সাথে ব্যবহারের জন্য তৈরি করা হয়েছে।** <br>
 লেখকগণ এই সফটওয়্যারের কোনো অপব্যবহার বা তা থেকে উদ্ভূত কোনো আইনি পরিণতির জন্য দায়ী নন। <br>
 এই টুলটি দায়িত্বের সাথে এবং সমস্ত প্রযোজ্য আইন মেনে ব্যবহার করুন।
@@ -39,13 +39,13 @@
 
 <a id="gui-interface"></a>
 #### গ্রাফিকাল ইন্টারফেস (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>ওয়েব GUI-এর ছবি দেখতে ক্লিক করুন</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## সমর্থিত ভাষা
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -165,11 +166,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — নীরবতা (এলোমেলো পরিসর **1.0–1.6 sec.**)
 - `[pause:N]` — নির্দিষ্ট বিরতি (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — ডিফল্ট বা GUI/CLI থেকে নির্বাচিত ভয়েস থেকে ভয়েস পরিবর্তন করুন
-- `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
+- `[emotion:sadness]...[/emotion]` — শুধুমাত্র Zonos: একটি অংশের জন্য আবেগ (আনন্দ, দুঃখ, ঘৃণা, ভয়, বিস্ময়, রাগ, অন্যান্য, নিরপেক্ষ) বা `[emotion:sadness=0.7,neutral=0.3]`-এর মতো একটি মিশ্রণ; অন্যান্য ইঞ্জিন এটি উপেক্ষা করে
 
 **আপনার ই-বুকে স্বয়ংক্রিয়ভাবে SML যোগ করার জন্য নিবেদিত আমাদের অন্য রেপোটি দেখুন -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> গুরুত্বপূর্ণ
 **ইনস্টলেশন বা বাগ সমস্যা পোস্ট করার আগে, খোলা ও বন্ধ সমস্যার ট্যাবে সাবধানে অনুসন্ধান করুন<br>
 এটা নিশ্চিত করতে যে আপনার সমস্যাটি ইতিমধ্যে নেই।**
 
@@ -209,13 +210,67 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    
 1. **ওয়েব অ্যাপ খুলুন**: ওয়েব অ্যাপে প্রবেশ করতে এবং ই-বুক রূপান্তর করতে টার্মিনালে প্রদত্ত URL-এ ক্লিক করুন। `http://localhost:7860/`
 2. **পাবলিক লিঙ্কের জন্য**:
-   `./ebook2audiobook.command --share` (লিনাক্স/ম্যাকওএস)
+   `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (সমস্ত OS, শুধুমাত্র একবার ইনস্টল করা হয়েছে এবং এর python_env ফোল্ডারের পাইথন সহ)
 
-> [!IMPORTANT]
+> গুরুত্বপূর্ণ
 **যদি স্ক্রিপ্ট বন্ধ করে আবার চালানো হয়, তাহলে আপনাকে আপনার Gradio GUI ইন্টারফেস রিফ্রেশ করতে হবে<br>
 যাতে ওয়েব পৃষ্ঠাটি নতুন কানেকশন সকেটে পুনরায় সংযুক্ত হতে পারে।**
+
+<a id="pip-install"></a>
+### pip / pipx দিয়ে ইনস্টল করুন
+রিপো ক্লোন না করে, ebook2audiobook ইনস্টল এবং চালু করার আরেকটি উপায়: pip `ebook2audiobook` কমান্ড ইনস্টল করে<br>
+(সমস্ত অপারেটিং সিস্টেম, যে কোনও python 3.8+)। উপরের লঞ্চ স্ক্রিপ্ট সহ ক্লোন করা রিপো একইভাবে কাজ করে চলেছে।
+
+1. PyPI থেকে **কমান্ডটি ইনস্টল করুন**
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   অথবা UV সহ
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   অথবা পিপ দিয়ে
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>যে কোডটি এখনও রিলিজ করা হয়নি তার জন্য, `ebook2audiobook`-এর বদলে `git+https://github.com/DrewThomasson/ebook2audiobook.git` ব্যবহার করুন।</i>
+
+2. **ebook2audiobook ইনস্টল করুন / চালান**, লঞ্চ স্ক্রিপ্টের মতো একই বিকল্পগুলি সহ:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   যদি কমান্ডটি না পাওয়া যায় (pip-এর স্ক্রিপ্ট ফোল্ডারটি আপনার PATH-এ না থাকে): `python -m ebook2audiobook`
+
+- প্রথমবার চালু করার সময় ebook2audiobook-কে `~/ebook2audiobook`-এ (Windows-এ `%USERPROFILE%\ebook2audiobook`-এ) কপি করা হয় এবং সেখানেই এটি ইনস্টল করা হয়<br>
+  তার লঞ্চ স্ক্রিপ্ট সহ, ঠিক যেমনটা `./ebook2audiobook.command` বা `ebook2audiobook.cmd` করবে।
+- অন্য কোনও ফোল্ডার ব্যবহার করতে, প্রথমবার চালু করার আগে `E2A_HOME` সেট করুন এবং পরবর্তী বারগুলির জন্য এটি সেট করা রাখুন<br>
+  (অর্থাৎ Linux/MacOS-এ `export E2A_HOME=/data/ebook2audiobook`, তারপর Windows-এ একটি নতুন টার্মিনাল `setx E2A_HOME D:\ebook2audiobook`)।
+- এই ফোল্ডারটি একটি সাধারণ ebook2audiobook ফোল্ডার: `./ebook2audiobook.command` (`./e2a.sh`) এবং `ebook2audiobook.cmd` (`e2a.cmd`) এটিতেও কাজ করে।
+- যদি সেই ফোল্ডারে ইতিমধ্যেই একটি ক্লোন করা বা ডাউনলোড করা ebook2audiobook থাকে, তাহলে এটি যেমন আছে তেমনই চালু করা হয় এবং pip এটি কখনও পরিবর্তন করে না।
+- `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` এবং `--output_dir`<br>-কে দেওয়া আপেক্ষিক পাথগুলি
+  যে ফোল্ডারে আপনি কমান্ডটি টাইপ করেন সেখান থেকে পড়া হয়।
+- আপনাকে আপনার venv বা conda env নিষ্ক্রিয় করতে হবে না: ebook2audiobook সবসময় তার নিজস্ব `python_env`-এ চলে।
+- **ডকার**: `ebook2audiobook --script_mode build_docker` (ঐচ্ছিকভাবে `--docker_mode compose` বা `--docker_mode podman` সহ)<br>
+  সেই ফোল্ডার থেকে ইমেজ তৈরি করে। এটি সেই ফোল্ডার থেকেও প্রিন্ট করে এমন `docker run` / `docker compose` কমান্ডগুলি চালান:<br>
+  তাদের `./ebooks`, `./audiobooks`... মাউন্ট এবং কম্পোজ ফাইলগুলি এটির সাপেক্ষে। ইমেজ একই বিকল্পগুলি গ্রহণ করে,<br>
+  কন্টেনারের (`/app/...`) ভেতরের পাথ সহ, [Docker](#docker) দেখুন।
+- **আপডেট**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` বা `pip install -U ebook2audiobook`.<br>
+  পরবর্তী শুরুতে অ্যাপ ফাইলগুলি আপডেট করা হয় এবং `python_env`, মডেল, ভয়েস, অডিওবুক এবং আপনি ফোল্ডারে যোগ করা যে কোনও কিছু সংরক্ষিত থাকে।
+- **আনইনস্টল করুন**: শুধুমাত্র `pip uninstall`, `pipx uninstall` বা `uv tool uninstall` কমান্ডটি সরিয়ে দেয়:<br>
+  ফোল্ডারটি এবং এর গিগাবাইট মডেলগুলি রয়ে যায়। প্রথমে কমান্ডটি ব্যবহার করে ebook2audiobook আনইনস্টল করুন:
+  1. আপনার অডিওবুকগুলিকে ফোল্ডারের `audiobooks` সাবফোল্ডার থেকে সরিয়ে আনুন: ফোল্ডারের সমস্ত কিছু মুছে ফেলা হবে।
+  2. `ebook2audiobook --uninstall`<br>
+     এটি ফোল্ডারের আনইনস্টলার চালায়, যা আপনাকে নিশ্চিত করতে বলে এবং তারপর শর্টকাটগুলি, এর দ্বারা ইনস্টল করা প্রোগ্রামগুলি সরিয়ে দেয়<br>
+     (`.installed`-এ তালিকাভুক্ত) এবং ফোল্ডারের বিষয়বস্তু, তারপর এটি ফোল্ডারটি মুছে ফেলে।
+  3. `ebook2audiobook` নিজেই সরানোর জন্য এটি যে কমান্ডটি সর্বশেষ প্রিন্ট করে সেটি চালান, যা আপনি কীভাবে এটি ইনস্টল করেছেন তার উপর নির্ভর করে:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` বা `pip uninstall ebook2audiobook`।
+  4. আপনি যদি Docker ইমেজ তৈরি করে থাকেন: `docker rmi athomasson2/ebook2audiobook:<tag>` এবং `docker volume rm e2a_venvs`<br>
+     (Podman-এর সাথে: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` এবং `podman volume rm e2a_venvs`)।
 
 <a id="basic-usage"></a>
 ### প্রাথমিক ব্যবহার
@@ -226,6 +281,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx ইনস্টল করুন** (সব অপারেটিং সিস্টেম)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: আপনার ই-বুক ফাইলের পথ
@@ -260,6 +319,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx ইনস্টল করুন** (সব অপারেটিং সিস্টেম)
+     ```bash
+     ebook2audiobook --help
      ```
    - **অথবা সব OS-এর জন্য**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -689,31 +765,31 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] ভক্সট্রাল টিটিএস (https://github.com/voxtral/voxtral-tts)[cite: 1]
 - [x] চ্যাটারবক্স (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
-- [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
+- [x] ইন্ডেক্স-TTS / ইন্ডেক্স TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
 - [x] কনফুসিয়াস 4 টিটিএস (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] বিন্দু TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] কোকোরো-টিটিএস (https://github.com/hexgrad/kokoro)[cite: 1]
-- [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
-- [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
+- [x] কুゲルঅডিও (https://github.com/kugel-audio/kugelaudio)[cite: 1]
+- [x] ম্যাগপাই TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
 - [x] মস টিটিএস স্থানীয় / ন্যানো (https://github.com/OpenBMB/MossTTS)[cite: 1]
 - [x] নিউটিটিএস / নিউটিএস (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] পকেট টিটিএস (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] গ্র্যাডিয়াম ফোনন (https://github.com/gradium-ai/xn-ptts)[cite: 1]
 - [x] সুপারটনিক (https://github.com/supertone-inc/supertonic)[cite: 1]
-- [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
+- [x] ইরোডরি TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
 - [x] পাইপার (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
 - [x] ফেয়ারসিক (https://github.com/facebookresearch/fairseq)[cite: 1]
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
-- [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
+- [x] ট্যাকোট্রন2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] কচ্ছপ (https://github.com/neonbjb/tortoise-tts)[cite: 1]
 - [x] জোনোস (https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] বার্ক (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] আপনারTTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] অর্ফিয়াস-টিটিএস (https://github.com/canopyai/Orpheus-TTS)
 - [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
 - [x] ChatTTS (https://github.com/2noise/ChatTTS)
@@ -743,7 +819,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] ভিয়েতনামী (vie)
 - [x] সুইডিশ (SWE)
 - [x] ফার্সি (FAS)
-- [x] Yoruba (yor)
+- [x] ইওরুবা (ইওরু)
 - [x] সোয়াহিলি (সোয়া)
 - [x] ইন্দোনেশীয় (ind)
 - [x] স্লোভাক (slk)
@@ -751,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### 💻 ওএস কম্প্যাটিবিলিটি
 - [x] 🪟 উইন্ডোজ x86
-- [x] 🪟 আর্ম উইন্ডোজ
+- [x] 🪟 ARM Windows
 - [x] 🍎 ম্যাক ইন্টেল x86
 - [x] 🍎 অ্যাপল সিলিকন ম্যাক
 - [x] 🐧 লিনাক্স x86
-- [x] 🐧 আর্ম লিনাক্স
+- [x] 🐧 ARM Linux
 
 **********
 

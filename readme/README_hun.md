@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 E-könyvből hangoskönyv (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU átalakító e-könyvből hangoskönyvvé fejezetekkel és metaadatokkal<br/>
 fejlett TTS-motorok használatával és még sok mással.<br/>
 Támogatja a hangklónozást és az 1696 nyelvet!
-> [!IMPORTANT]
+> FONTOS
 **Ez az eszköz kizárólag DRM-mentes, legálisan beszerzett e-könyvekhez használható.** <br>
 A szerzők nem felelősek a szoftver bárminemű visszaéléséért, sem az ebből eredő jogi következményekért. <br>
 Használd ezt az eszközt felelősségteljesen, az összes vonatkozó törvénnyel összhangban.
@@ -39,13 +39,13 @@ Használd ezt az eszközt felelősségteljesen, az összes vonatkozó törvénny
 
 <a id="gui-interface"></a>
 #### Grafikus felület (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Kattints a webes GUI képeinek megtekintéséhez</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -137,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 GB RAM min., 8 GB ajánlott.
 - 1 GB VRAM min., 4 GB ajánlott.
 - Engedélyezett virtualizáció, ha Windowson fut (csak Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - Cuda, ROCm, JETSON
 - MPS (Apple Silicon CPU)
 
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Támogatott nyelvek
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -169,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Nézd meg másik repónkat, amely az SML automatikus hozzáadásának szentelt az e-könyvedhez -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> FONTOS
 **Mielőtt telepítési vagy hibajegyet nyitnál, gondosan keress rá a nyitott és lezárt jegyek fülön<br>
 hogy biztos legyél benne, hogy a problémád még nem létezik.**
 
@@ -213,9 +214,63 @@ Ezért először manuálisan el kell távolítanod minden olyan szöveget, amely
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (minden operációs rendszer, csak egyszer telepítve és a python_env mappájában található Pythonnal)
 
-> [!IMPORTANT]
+> FONTOS
 **Ha a szkriptet leállítják és újra futtatják, frissítened kell a Gradio GUI felületedet<br>
 hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
+
+<a id="pip-install"></a>
+### Telepítés pip / pipx segítségével
+Az ebook2audiobook telepítésének és indításának másik módja az adattár klónozása nélkül: a pip telepíti a `ebook2audiobook` parancsot<br>
+(minden operációs rendszer, bármilyen Python 3.8 vagy újabb verzió). A klónozott adattár a fenti indítási szkriptekkel továbbra is ugyanúgy működik.
+
+1. **Telepítse a parancsot** a PyPI-ből
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   vagy UV-vel
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   vagy maggal
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>A még nem kiadott legújabb kód esetében használja a következőt: `git+https://github.com/DrewThomasson/ebook2audiobook.git` a következő helyett: `ebook2audiobook`.</i>
+
+2. **Telepítse/futtassa az ebook2audiobook eszközt** az indítóparancsfájlokkal megegyező beállításokkal:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Ha a parancs nem található (a pip parancsfájlok mappája nincs a PATH változóban): `python -m ebook2audiobook`
+
+- Az első indításkor az ebook2audiobook alkalmazást a rendszer a(z) `~/ebook2audiobook` mappába másolja (Windows rendszeren a(z) `%USERPROFILE%\ebook2audiobook` mappába), és ott telepíti<br>
+  az indítási parancsfájljával, pontosan úgy, ahogy a(z) `./ebook2audiobook.command` vagy a(z) `ebook2audiobook.cmd` tenné.
+- Másik mappa használatához állítsa be a(z) `E2A_HOME` értéket az első indítás előtt, és hagyja beállítva a következő indításokhoz<br>
+  (azaz `export E2A_HOME=/data/ebook2audiobook` Linux/MacOS rendszeren, `setx E2A_HOME D:\ebook2audiobook`, majd egy új terminál Windows rendszeren).
+- Ez egy szokásos ebook2audiobook mappa: a(z) `./ebook2audiobook.command` (`./e2a.sh`) és a(z) `ebook2audiobook.cmd` (`e2a.cmd`) is működik benne.
+- Ha ebben a mappában már van egy klónozott vagy letöltött ebook2audiobook, akkor az változatlanul elindul, és a pip soha nem módosítja.
+- A(z) `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` és `--output_dir`<br> számára megadott relatív elérési utak
+  abból a mappából kerülnek beolvasásra, ahová a parancsot beírja.
+- Nem kell kikapcsolnia a venv-et vagy a conda env-et: az ebook2audiobook mindig a saját `python_env`-jában fut.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (opcionálisan `--docker_mode compose` vagy `--docker_mode podman`)<br>
+  létrehozza a lemezképet ebből a mappából. Futtassa az `docker run` / `docker compose` parancsokat, amelyeket szintén ebből a mappából ír ki:<br>
+  a `./ebooks`, `./audiobooks`... csatolásaik és a compose-fájlok ehhez viszonyítva értendők. A kép ugyanazokat az opciókat veszi fel,<br>
+  a konténeren belüli útvonalakkal (`/app/...`), lásd: [Docker](#docker).
+- **Frissítés**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` vagy `pip install -U ebook2audiobook`.<br>
+  A következő indításkor frissülnek az alkalmazásfájlok, és megmaradnak a következők: `python_env`, modellek, hangok, hangoskönyvek és minden, amit a mappához adott.
+- **Eltávolítás**: A(z) `pip uninstall`, `pipx uninstall` vagy `uv tool uninstall` önmagában csak a parancsot távolítja el:<br>
+  a mappa és a benne lévő gigabájtnyi modell megmarad. Először távolítsa el az ebook2audiobook programot magával a paranccsal:
+  1. Helyezze át a hangoskönyveket a mappa `audiobooks` almappájából: a mappa teljes tartalma törlődik.
+  2. `ebook2audiobook --uninstall`<br>
+     Elindítja a mappa eltávolítóját, amely kéri a megerősítést, majd eltávolítja a parancsikonokat és az általa telepített programokat<br>
+     (a(z) `.installed` alatt felsorolva) és a mappa tartalmát, majd törli a mappát.
+  3. Futtassa azt a parancsot, amelyet utoljára ír ki, hogy eltávolítsa magát a(z) `ebook2audiobook` programot. Ez attól függ, hogyan telepítette:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` vagy `pip uninstall ebook2audiobook`.
+  4. Ha Docker-képeket hozott létre: `docker rmi athomasson2/ebook2audiobook:<tag>` és `docker volume rm e2a_venvs`<br>
+     (Podman használatával: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` és `podman volume rm e2a_venvs`).
 
 <a id="basic-usage"></a>
 ### Alapvető használat
@@ -226,6 +281,10 @@ hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx telepítése** (minden operációs rendszer)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Az e-könyv fájlod elérési útja
@@ -260,6 +319,10 @@ hogy a weboldal újra tudjon csatlakozni az új kapcsolati sockethez.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx telepítése** (minden operációs rendszer)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Vagy minden operációs rendszeren**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -639,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Gyakori problémák:
 - Az NVIDIA/ROCm/XPU/MPS GPU-mat nem érzékeli?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  A CPU lassú (jobb szerver SMP CPU-n), míg a GPU szinte valós idejű átalakítást tud nyújtani.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Nincs azonban zero-shot hangklónozása, és a hangok Siri minőségűek, de CPU-n sokkal gyorsabb).
 - „Függőségi problémáim vannak” - Egyszerűen használd a Dockert, teljesen önálló, és van headless módja,
    adj hozzá  paramétert a docker run parancs végéhez további információkért. `--help`
@@ -687,20 +763,20 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1)
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtrális TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Beszélőcske (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1)
 - [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
-- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] Konfuciusz4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] Pontok TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
 - [x] Szarka TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] Moss TTS helyi / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] ÚjTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1)
 - [x] Szupertonikus (https://github.com/supertone-inc/supertonic)[cite: 1]
@@ -734,28 +810,28 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Török (tur)
 - [x] Orosz (orosz)
 - [x] Holland (nld)
-- [x] Czech (ces)
+- [x] Cseh (ces)
 - [x] Japán (jpn)
-- [x] Hindi (hin)
+- [x] hindi (hin)
 - [x] Bengáli (ben)
-- [x] Hungarian (hun)
+- [x] magyar (hun)
 - [x] Koreai (kor)
 - [x] Vietnami (vie)
 - [x] Svéd (swe)
 - [x] Perzsa (fas)
-- [x] Yoruba (yor)
+- [x] joruba (yor)
 - [x] Szuahéli (swa)
 - [x] Indonéz (ind)
-- [x] Slovak (slk)
+- [x] Szlovák (slk)
 - [x] Horvát (hrv)
 
 #### Operációs rendszer kompatibilitás
 - [x] 🪟 Windows x86
-- [x] 🪟 Ablakok él
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
 - [x] 🍎 Apple Silicon Mac
 - [x] 🐧 Linux x86
-- [x] Linux 🐧 ÉLESÍTÉSE
+- [x] 🐧 ARM Linux
 
 **********
 
