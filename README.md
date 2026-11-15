@@ -96,6 +96,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Basic Headless Usage](#basic-usage)
     - [Edit Chapter Blocks in Headless Mode](#headless-edit-blocks)
     - [Pronunciation Guides](#pronunciation-guides)
+    - [Voice Casts](#voice-casts)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
   - [Run Remotely](#run-remotely)
@@ -168,6 +169,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — silence (random range **1.0–1.6 sec.**)
 - `[pause:N]` — fixed pause (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
+- `[voice:Name]...[/voice]` — switch to the voice a character has in the [voice cast](#voice-casts) of the series or the book
 - `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
 - `[direct:quiet, tense, slowing down]...[/direct]`: a reading direction for a passage, in free text, never spoken. Maya1 adds it to its voice description as the tone and, for keywords it knows (whispering, angry, sarcastic and the like), puts its own expression token before the text; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an `[emotion]` tag inside the passage keeps the emotion; other engines ignore it
 
@@ -333,6 +335,26 @@ Another way to install and launch ebook2audiobook, without cloning the repo: pip
   - A guide that is missing or not valid is left out and the conversion goes on.
   - The format and the matching rules are in [pronunciations/README.md](pronunciations/README.md).
 
+<a id="voice-casts"></a>
+### Voice Casts
+  A voice cast gives each character a voice file once. `[voice:Alice]...[/voice]` then reads the passage with Alice's voice<br>
+  in every chapter and in every book of a series, with no voice file path in the text.
+  - A cast is a JSON file in `casts/`, named after the series when the ebook has one (`casts/<series>.json`),<br>
+    else after the title (`casts/<title>.json`), with spaces as underscores like the audiobook file names.<br>
+    `--cast <path>` picks another file. The GUI shows the cast in use and its characters in the blocks editor and when the conversion starts.
+    ```json
+    {
+      "Alice": {"voice": "voices/eng/adult/female/AnaFlorence.wav", "aliases": ["Ally", "Miss Liddell"]},
+      "Bob": {"voice": "voices/eng/adult/male/AaronDreschner.wav", "note": "gruff, older"}
+    }
+    ```
+  - A name or an alias is matched whatever its case. A tag whose value is an existing file is still a voice file path.
+  - A name the cast does not have is reported in one line and its passage is read with the voice of its chapter.<br>
+    A cast that is missing or not valid is left out and the conversion goes on.
+  - Changing a character's voice file in the cast converts again only the sentences that character reads,<br>
+    on the next run of each book that uses the cast.
+  - The format, and how a cast voice works with each kind of engine, are in [casts/README.md](casts/README.md).
+
 
 <a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
@@ -474,6 +496,10 @@ optional parameters:
                         (optional) Pronunciation guide to read names with, a JSON list of {"word": "Qyburn", "say": "KWY-burn"} entries.
                             Default is ./pronunciations/<series>.json when the ebook has a series, else ./pronunciations/<title>.json.
                             A guide that is missing or not valid is left out and the conversion goes on.
+  --cast CAST_JSON      (optional) Voice cast that gives each character a voice file, a JSON object of {"Alice": {"voice": "voices/eng/adult/female/alice.wav"}} entries.
+                            A [voice:Alice]...[/voice] passage is read with that file.
+                            Default is ./casts/<series>.json when the ebook has a series, else ./casts/<title>.json.
+                            A cast that is missing or not valid is left out and the conversion goes on.
   --version             Show the version of the script and exit
 
 Example usage:
@@ -506,6 +532,7 @@ SML tags available:
 	[pause] — silence (random range **1.0–1.6 sec.**)
 	[pause:N] — fixed pause (**N sec.**)
 	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+	[voice:Name]...[/voice] — switch to the voice a character has in the voice cast of the series or the book (casts/README.md)
 	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
 	[direct:quiet, tense, slowing down]...[/direct]: a reading direction for a passage, in free text, never spoken. Maya1 adds it to its voice description as the tone and, for keywords it knows (whispering, angry, sarcastic and the like), puts its own expression token before the text; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an [emotion] tag inside the passage keeps the emotion; other engines ignore it
 

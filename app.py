@@ -270,6 +270,7 @@ SML tags available:
 [pause] — silence (random range 1.0–1.6 sec.)
 [pause:N] — fixed pause (N sec.)
 [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
+[voice:Name]...[/voice] — switch to the voice a character has in the voice cast of the series or the book (casts/README.md)
 [emotion:sad]...[/emotion] — Zonos only: emotion for a passage (happy, sad, angry, surprised, valence, arousal; also fear, disgust, neutral) or a mix like [emotion:sad=0.7,angry=0.2]; other engines ignore it
 [direct:quiet, tense, slowing down]...[/direct]: a reading direction for a passage, in free text, never spoken. Maya1 adds it to its voice description as the tone and, for keywords it knows (whispering, angry, sarcastic and the like), puts its own expression token before the text; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an [emotion] tag inside the passage keeps the emotion; other engines ignore it
 ''',
@@ -357,6 +358,10 @@ valence, arousal (-1 to 1).""")
     headless_optional_group.add_argument(cli_options[43], type=str, default=None, metavar='GUIDE_JSON', help='''(optional) Pronunciation guide to read names with, a JSON list of {"word": "Qyburn", "say": "KWY-burn"} entries.
                             Default is ./pronunciations/<series>.json when the ebook has a series, else ./pronunciations/<title>.json.
                             A guide that is missing or not valid is left out and the conversion goes on.''')
+    headless_optional_group.add_argument(cli_options[44], type=str, default=None, metavar='CAST_JSON', help='''(optional) Voice cast that gives each character a voice file, a JSON object of {"Alice": {"voice": "voices/eng/adult/female/alice.wav"}} entries.
+                            A [voice:Alice]...[/voice] passage is read with that file.
+                            Default is ./casts/<series>.json when the ebook has a series, else ./casts/<title>.json.
+                            A cast that is missing or not valid is left out and the conversion goes on.''')
     headless_optional_group.add_argument(cli_options[33], action='version', version=f'ebook2audiobook version {prog_version}', help='Show the version of the script and exit')
 
     internal_group = parser.add_argument_group(argparse.SUPPRESS)
@@ -471,6 +476,8 @@ valence, arousal (-1 to 1).""")
                     args['session'] = str(args['import_blocks_data']['session'])
             if args.get('pronunciations'):
                 args['pronunciations'] = os.path.abspath(args['pronunciations'])
+            if args.get('cast'):
+                args['cast'] = os.path.abspath(args['cast'])
             args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
             if args['id'] == workflow_id or not args['session']:
                 session = c.context.set_session(args['id'])

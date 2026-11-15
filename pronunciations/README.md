@@ -61,8 +61,8 @@ the GUI editor and `--export_blocks` keep the book's spelling.
 
 Each converted sentence remembers the text the engine was given. On the next run of a book, a sentence
 whose text would now be different is converted again and its chapter is put together again; every other
-sentence keeps its audio. A chapter block that holds a `[voice]`, `[direct]` or `[emotion]` passage is
-converted again as a whole instead, because a passage can run over several sentences.
+sentence keeps its audio. A chapter block that holds a `[direct]` or `[emotion]` passage is
+converted again as a whole instead, because such a passage can run over several sentences.
 This holds for each book of a series on its own next run.
 
 ## Limits
