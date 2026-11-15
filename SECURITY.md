@@ -100,6 +100,10 @@ There is no bug bounty.
 - E2A sends anonymized crash reports by default. On an unhandled exception, a JSON report (exception, traceback,
   E2A and package versions, OS and device information, non-identifying settings such as engine, language and device)
   is posted over HTTPS to `bug_report_url` in `lib/conf.py`.
+- To diagnose GPU and install problems remotely, the report also holds the GPU model and driver version, the GPU
+  library versions (cuDNN, cuBLAS…), GPU memory use at the time of the crash, the GPU selection environment variables
+  and `LD_LIBRARY_PATH`. For a GPU error it adds the result of a short GPU test run in a separate process, and for a
+  Windows DLL load error the names of the missing or truncated DLLs.
 - File paths, your user name, e-mail addresses, IP addresses, tokens and the Audiobookshelf URL and token are redacted
   before sending. Exception messages are truncated, but may still contain a fragment of the text being converted.
 - To disable it, set the environment variable `DO_NOT_TRACK=1`, or set `bug_report_enabled = False` in `lib/conf.py`.

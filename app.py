@@ -15,11 +15,23 @@ def init_multiprocessing():
     except RuntimeError:
         pass
 
+def check_uv()->bool:
+    # every script mode builds a DeviceInstaller, which needs uv: a missing uv stops here, not in its constructor
+    from lib.classes.device_installer import DeviceInstaller
+    if DeviceInstaller.find_uv():
+        return True
+    error=f'''***********
+{legends['error_uv_missing'].format(url=DeviceInstaller.uv_install_url)}
+{install_info}
+***********'''
+    print(error)
+    return False
+
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)
     search_python_env = str(os.path.basename(sys.prefix))
     if script_mode == FULL_DOCKER:
-        return True
+        return check_uv()
     if search_python_env == 'python_env':
         pyvenv_cfg = os.path.join(sys.prefix, 'pyvenv.cfg')
         conda_meta = os.path.join(sys.prefix, 'conda-meta')
@@ -56,26 +68,25 @@ def check_virtual_env(script_mode:str)->bool:
 ***********'''
             print(error)
             return False
-        uv_bin = shutil.which('uv')
-        if not uv_bin:
-            uv_candidates = [os.path.expanduser('~/.local/bin/uv'), os.path.expanduser('~/.cargo/bin/uv')]
-            if os.name == 'nt':
-                uv_candidates += [os.path.expanduser(r'~\.local\bin\uv.exe'), os.path.expanduser(r'~\.cargo\bin\uv.exe')]
-            else:
-                uv_candidates.append(os.path.expanduser('~/Library/Application Support/uv/bin/uv'))
-            uv_bin = next((c for c in uv_candidates if os.path.isfile(c)), None)
-        if not uv_bin:
+        # the launcher writes .provisioned once python_env is fully installed: before that, app.py cannot run on its own
+        if not os.path.isfile(os.path.join(sys.prefix, '.provisioned')):
             error=f'''***********
-{legends['error_uv_missing'].format(url='https://docs.astral.sh/uv/getting-started/installation/')}
+{legends['error_launcher_required']}
 {install_info}
 ***********'''
             print(error)
             return False
-        return True
+        return check_uv()
     if script_mode == NATIVE:
-        return True
+        # app.py started directly with a python outside python_env: e2a is not installed, or not run with its own python
+        error=f'''***********
+{legends['error_launcher_required']}
+{install_info}
+***********'''
+        print(error)
+        return False
     if current_version >= min_python_version and current_version <= max_python_version:
-        return True
+        return check_uv()
     error=f'''***********
 {legends['error_wrong_venv']}
 {install_info}
@@ -99,6 +110,29 @@ def check_python_version(script_mode:str)->bool:
 
 def is_running_in_container()->bool:
     return os.environ.get("IN_DOCKER") == "1"
+
+def check_data_dirs(script_mode:str)->bool:
+    # the folders e2a writes into, bind mounted from the host in Docker. One it cannot write to (SELinux label,
+    # owner, read-only mount) failed later at the first import writing there with a raw PermissionError.
+    # ebooks/ stays out: it is only read and may be mounted read-only on purpose
+    denied = []
+    for path in (models_dir, voices_dir, tmp_dir, os.path.abspath('audiobooks')):
+        try:
+            os.makedirs(path, exist_ok=True)
+            probe = os.path.join(path, f'.e2a_write_test_{os.getpid()}')
+            with open(probe, 'w', encoding='utf-8') as f:
+                f.write('')
+            os.remove(probe)
+        except OSError:
+            denied.append(path)
+    if not denied:
+        return True
+    legend_key = 'error_dirs_not_writable_docker' if script_mode == FULL_DOCKER else 'error_dirs_not_writable'
+    error = f'''***********
+{legends[legend_key].format(dirs=chr(10).join(denied))}
+***********'''
+    print(error)
+    return False
 
 def is_port_in_use(port:int)->bool:
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
@@ -134,8 +168,14 @@ def register_dlls()->str|bool:
     if found:
         candidates.append(Path(found).parent)
     for p in candidates:
-        if p and p.is_dir() and any(p.glob('avcodec-*.dll')):
-            os.add_dll_directory(str(p))
+        # os.add_dll_directory() takes absolute paths only (WinError 87): shutil.which() returns a bare 'ffmpeg.EXE'
+        # when it finds it in the current folder (parent '.'), and a missing LOCALAPPDATA leaves a relative path
+        p = p.resolve()
+        if p.is_dir() and any(p.glob('avcodec-*.dll')):
+            try:
+                os.add_dll_directory(str(p))
+            except OSError:
+                continue
             return str(p)
     return False
 
@@ -164,6 +204,19 @@ Gradio/GUI:
 ./ebook2audiobook.command
 Headless mode:
 ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+pipx install git+https://github.com/DrewThomasson/ebook2audiobook.git
+(or: pip install git+https://github.com/DrewThomasson/ebook2audiobook.git)
+Gradio/GUI:
+ebook2audiobook
+Headless mode:
+ebook2audiobook --headless --ebook '/path/to/file' --language eng
+Docker build image:
+ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+Run the docker commands printed after a build from that folder.
+Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 Docker build image:
 Windows:
 Docker:
@@ -250,7 +303,9 @@ Each entry overrides --voice for that specific ebook. Missing/null entries fall 
 Keys may be absolute paths or basenames. Example:
 {"book1.epub": "/voices/eng/adult/female/alice.wav", "/abs/path/book2.epub": null}''')
     headless_optional_group.add_argument(cli_options[12], type=str, default=default_device, choices=list(devices.keys())+[k.lower() for k in devices.keys()], help=f'''Processor unit type for the conversion.
-Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.''')
+Default is set in ./lib/conf.py if not present. The conversion stops if this machine does not have the device
+or the TTS engine cannot run on it (no fall back to CPU). With a voice other than the engine's built-in ones, its
+voice conversion takes the next GPU (Vulkan included) or CPU when it cannot run on the device, and goes on.''')
     headless_optional_group.add_argument(cli_options[13], type=str, default=TTS_ENGINES['XTTS'], choices=tts_engine_list_keys+tts_engine_list_values, help=f'''Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
 Default depends on the selected language. The tts engine should be compatible with the chosen language''')
     headless_optional_group.add_argument(cli_options[14], type=str, default=None, help='Path to the custom model zip file containing mandatory model files. Please refer to ./lib/models.py')
@@ -300,17 +355,27 @@ valence, arousal (-1 to 1).""")
     internal_group.add_argument(cli_options[35], type=str, default=None, help=argparse.SUPPRESS)
 
     for arg in sys.argv:
-         if arg.startswith('--') and arg not in cli_options:
-             error = legends['error_unrecognized_option'].format(arg=arg)
-             print(error)
-             sys.exit(1)
+        if arg.startswith('--') and arg not in cli_options:
+            error = legends['error_unrecognized_option'].format(arg=arg)
+            print(error)
+            sys.exit(1)
 
     args = vars(parser.parse_args())
 
     if not 'help' in args:
+        args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
+        # launch checks first, on stdlib only: a direct "python app.py" outside python_env has none of the
+        # third-party packages (cryptography, ...) and must get the launcher message, not a ModuleNotFoundError
+        if args['script_mode'] == FULL_DOCKER and not is_running_in_container():
+            error = legends['error_full_docker_internal'].format(full=FULL_DOCKER, build=BUILD_DOCKER)
+            print(error)
+            sys.exit(1)
+        elif (not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
+            sys.exit(1)
+        elif not check_data_dirs(args['script_mode']):
+            sys.exit(1)
         from cryptography.fernet import Fernet
         os.environ['HF_TOKEN'] = Fernet(fernet_key.encode('utf-8')).decrypt(fernet_data).decode('utf-8')
-        args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
         if args['script_mode'] in [NATIVE, FULL_DOCKER]:
             from lib.classes.bug_reporter import bug_reporter
             bug_reporter.install(bug_report_url, prog_version, args['script_mode'], bug_reports_dir, voices_dir, bug_report_enabled and not bug_report_env_opt_out)
@@ -318,13 +383,7 @@ valence, arousal (-1 to 1).""")
         args['ebook_mode'] = 'single'
         args['ebook_list'] = None
 
-        if args['script_mode'] == FULL_DOCKER and not is_running_in_container():
-            error = legends['error_full_docker_internal'].format(full=FULL_DOCKER, build=BUILD_DOCKER)
-            print(error)
-            sys.exit(1)
-        elif (not check_virtual_env(args['script_mode'])) or (not check_python_version(args['script_mode'])):
-            sys.exit(1)
-        elif args.get('headless', False) and args.get('share', False):
+        if args.get('headless', False) and args.get('share', False):
             error = legends['error_share_headless']
             print(error)
             sys.exit(1)
@@ -357,7 +416,18 @@ valence, arousal (-1 to 1).""")
             error = legends['error_download_voices']
             print(error)
             sys.exit(1)
-        import lib.core as c
+        try:
+            import lib.core as c
+        except ImportError as e:
+            # Windows Smart App Control / an App Control policy refusing an unsigned module (Python's, a package's)
+            from lib.classes.bug_reporter import bug_reporter as reporter
+            if not reporter.app_control_blocked(e):
+                raise
+            error = f'''***********
+{legends['error_app_control_blocked'].format(error=e)}
+***********'''
+            print(error)
+            sys.exit(1)
         c.context = c.SessionContext() if c.context is None else c.context
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
@@ -595,7 +665,12 @@ valence, arousal (-1 to 1).""")
                             "css_paths": header_css,
                             "footer_links": ["settings"]
                         }
-                        app.queue(default_concurrency_limit=interface_concurrency_limit).launch(**gr_blocks_kwargs)
+                        app.queue(default_concurrency_limit=interface_concurrency_limit)
+                        # gradio sends the latest progress of a running event every 10ms (100ms on Windows) and the browser
+                        # replays each one in order: a background tab (throttled or frozen by the browser) piled them up and
+                        # kept showing an old step long after the server had moved on. Set after queue(), which builds the queue
+                        app._queue.progress_update_sleep_when_free = interface_progress_interval
+                        app.launch(**gr_blocks_kwargs)
                 except OSError as e:
                     error = legends['error_connection'].format(e=e)
                     c.exception_alert(None, error)
@@ -611,7 +686,7 @@ valence, arousal (-1 to 1).""")
             else:
                 error = legends['error_gui_options']
         if error:
-            print(error)
+            print(c.alert_text(error))
             sys.exit(1)
 
 if __name__ == '__main__':

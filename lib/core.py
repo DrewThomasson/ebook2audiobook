@@ -7,7 +7,7 @@
 
 import argparse, asyncio, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
-import traceback, socket, unicodedata, urllib.request, uuid, zipfile, multiprocessing
+import traceback, socket, unicodedata, codecs, urllib.request, uuid, zipfile, multiprocessing
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
 
@@ -16,7 +16,7 @@ from PIL import Image, ImageSequence
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import Counter
-from collections.abc import Mapping, MutableMapping
+from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
 from ebooklib.epub import EpubBook
@@ -150,14 +150,33 @@ class DependencyError(Exception):
 class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
+        # session id -> number of running tasks (conversion, edit, extraction, deletion...) holding the session.
+        # Keyed by id, not by session dict: a page reload must not replace a session a task still works on
+        self.tasks:dict[str, int] = {}
         #self.blocks_autosave = AppAutosave()
         #self.blocks_autosave.start()
 
+    def begin_task(self, session_id:str)->None:
+        with self.lock:
+            self.tasks[session_id] = self.tasks.get(session_id, 0) + 1
+
+    def end_task(self, session_id:str)->None:
+        with self.lock:
+            count = self.tasks.get(session_id, 0) - 1
+            if count > 0:
+                self.tasks[session_id] = count
+            else:
+                self.tasks.pop(session_id, None)
+
+    def is_busy(self, session_id:str)->bool:
+        with self.lock:
+            return session_id in self.tasks
+
     def start_session(self, session_id:str)->bool:
         with self.lock:
-            if session_id not in context.sessions:
-                return False
             session = context.get_session(session_id)
+            if not session:
+                return False
             session['status'] = status_tags['READY']
             return True
 
@@ -231,7 +250,8 @@ class SessionContext:
             "voice_map": {},
             "ebook_selected": None,
             "custom_model": None,
-            "custom_model_dir": None,
+            # set from the start, never None: events of the same session can run while the GUI restores it
+            "custom_model_dir": os.path.join(models_dir, '__sessions', f"model-{session_id}"),
             "output_dir": None,
             "output_format": default_output_format,
             "output_channel": default_output_channel,
@@ -341,15 +361,20 @@ class SessionContext:
                 "relation": None,
                 "Source": None,
                 "Modified": None,
+                "series": None,
+                "series_index": None,
             }
         }, manager=self.manager)
         return self.sessions[session_id]
 
     def get_session(self, session_id:str)->Any:
-        if session_id in self.sessions:
-            ui_language.set(self.sessions[session_id].get('ui_language') or system_language)
-            return self.sessions[session_id]
-        return {}
+        # one manager call: an 'in' test then a read are two, and another thread can end the session in between
+        # (end_session() on a closed tab or a finished task): KeyError on the read
+        session = self.sessions.get(session_id)
+        if session is None:
+            return {}
+        ui_language.set(session.get('ui_language') or system_language)
+        return session
 
     def find_id_by_hash(self, socket_hash:str)->str|None:
         for session_id, session in list(self.sessions.items()):
@@ -595,24 +620,6 @@ def compare_checksums(session_id:str)->tuple[bool, str|None]:
     except Exception as e:
         error = f'compare_checksums() error: {e}'
         return False, error
-
-def compare_dict_keys(d1, d2):
-    if not isinstance(d1, Mapping) or not isinstance(d2, Mapping):
-        return d1 == d2
-    d1_keys = set(d1.keys())
-    d2_keys = set(d2.keys())
-    missing_in_d2 = d1_keys - d2_keys
-    missing_in_d1 = d2_keys - d1_keys
-    if missing_in_d2 or missing_in_d1:
-        return {
-            "missing_in_d2": missing_in_d2,
-            "missing_in_d1": missing_in_d1,
-        }
-    for key in d1_keys.intersection(d2_keys):
-        nested_result = compare_keys(d1[key], d2[key])
-        if nested_result:
-            return {key: nested_result}
-    return None
 
 def ocr2xhtml(img: Image.Image, lang:str)->tuple[str|bool, str|None]:
     try:
@@ -1051,6 +1058,31 @@ def normalize_epub_zip(session_id:str, file_input:str)->str|None:
         exception_alert(session_id, error)
     return None
 
+def read_text_file(path:str)->str:
+    # a .txt is not always UTF-8: Windows Notepad's "Unicode" writes UTF-16 with a BOM (FF FE), older files use a
+    # local code page. Decode by BOM (UTF-32 LE before UTF-16 LE, both start with FF FE), then UTF-8, then
+    # charset_normalizer's guess (a requests dependency), then cp1252 and latin-1, which never fails
+    with open(path, 'rb') as f:
+        raw = f.read()
+    for bom, codec in ((codecs.BOM_UTF32_LE, 'utf-32'), (codecs.BOM_UTF32_BE, 'utf-32'), (codecs.BOM_UTF8, 'utf-8-sig'), (codecs.BOM_UTF16_LE, 'utf-16'), (codecs.BOM_UTF16_BE, 'utf-16')):
+        if raw.startswith(bom):
+            return raw.decode(codec)
+    try:
+        return raw.decode('utf-8')
+    except UnicodeDecodeError:
+        pass
+    try:
+        from charset_normalizer import from_bytes
+        best = from_bytes(raw).best()
+        if best is not None:
+            return str(best)
+    except Exception:
+        pass
+    try:
+        return raw.decode('cp1252')
+    except UnicodeDecodeError:
+        return raw.decode('latin-1')
+
 def convert2epub(session_id:str)->bool:
     session = context.get_session(session_id)
     if session and session.get('id', False):
@@ -1080,8 +1112,8 @@ def convert2epub(session_id:str)->bool:
                     return False
                 file_ext = '.epub'
             if file_ext == '.txt':
-                with open(file_input, 'r', encoding='utf-8') as f:
-                    text = f.read()
+                # written back below as plain UTF-8 for ebook-convert, whatever the source encoding
+                text = read_text_file(file_input)
                 text = text.replace('\r\n', '\n')
                 text = re.sub(r'\n{2,}', f".{TTS_SML['pause']['static']}", text)
                 with open(file_input, 'w', encoding='utf-8') as f:
@@ -1381,11 +1413,56 @@ def get_ebook_title(epubBook:EpubBook, all_docs:list[Any])->str|None:
                 return alt
     return None
 
+def get_epub_series(epubBook:EpubBook)->tuple[str|None, str|None]:
+    # series lives in opf <meta>, not in DC: calibre/EPUB2 writes <meta name="calibre:series" content="..."/> and
+    # calibre:series_index, EPUB3 a <meta property="belongs-to-collection" id="x"> refined by collection-type
+    # and group-position. ebooklib files these under a prefix or a namespace depending on the opf nsmap, so scan all
+    def _index(value:Any)->str|None:
+        try:
+            num = float(str(value).strip())
+        except (TypeError, ValueError):
+            return None
+        if not math.isfinite(num) or num < 0:
+            return None
+        return str(int(num)) if num.is_integer() else f'{num:.2f}'.rstrip('0').rstrip('.')
+
+    try:
+        calibre_series = None
+        calibre_index = None
+        collections:dict = {}
+        refines:dict = {}
+        for names in (getattr(epubBook, 'metadata', None) or {}).values():
+            for items in names.values():
+                for value, attributes in items:
+                    attributes = attributes or {}
+                    text = ' '.join(str(attributes.get('content') or value or '').split())
+                    if attributes.get('name') == 'calibre:series':
+                        calibre_series = calibre_series or text or None
+                    elif attributes.get('name') == 'calibre:series_index':
+                        calibre_index = calibre_index or text or None
+                    elif attributes.get('property') == 'belongs-to-collection' and attributes.get('id'):
+                        collections[attributes['id']] = text
+                    elif attributes.get('refines') and attributes.get('property'):
+                        refines.setdefault(attributes['refines'].lstrip('#'), {})[attributes['property']] = text
+        # EPUB3 first, same order and collection types as calibre
+        for collection_id, name in collections.items():
+            props = refines.get(collection_id, {})
+            if name and props.get('collection-type') in ['series', 'set']:
+                return name, _index(props.get('group-position'))
+        if calibre_series:
+            return calibre_series, _index(calibre_index)
+    except Exception as e:
+        error = f'get_epub_series(): {e}'
+        print(error)
+    return None, None
+
 def get_cover(epubBook:EpubBook, session_id:str)->bool|str:
     try:
         session = context.get_session(session_id)
         if session and session.get('id', False):
             if session['cancellation_requested']:
+                return False
+            if not session['process_dir'] or not session['filename_noext']:
                 return False
             cover_image = None
             cover_path = os.path.join(session['process_dir'], session['filename_noext'] + '.jpg')
@@ -2125,7 +2202,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         assert not SML_TAG_PATTERN.search(text)
         if session['is_gui_process']:
             msg = legends['msg_segment'].format(n=1)
-            progress_bar(0, desc='')
+            progress_bar(0, desc=msg)
         # Tokenize into content and SML runs
         segments = []
         idx = 0
@@ -2372,7 +2449,7 @@ def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:
         if not math.isfinite(num) or abs(num) > max_single_value:
             return fallback
         if is_num2words_compat:
-            new_lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
+            new_lang_iso1 = (lang_iso1 or 'en').replace('zh', 'zh_CN')
             return num2words(num, lang=new_lang_iso1)
         else:
             return ' '.join(dec_word if ch == '.' else phoneme_map.get(ch, ch) for ch in clean)
@@ -2485,6 +2562,15 @@ def currency2words(text:str, lang:str, lang_iso1:str, is_num2words_compat:bool)-
 def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str:
     try:
         year = int(year_str)
+        first_two = int(year_str[:2])
+        last_two = int(year_str[2:])
+        lang_iso1 = ((lang_iso1 or 'en') if lang in language_math_phonemes.keys() else default_language_code).replace('zh', 'zh_CN')
+        lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
+        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
+            if is_num2words_compat:
+                return num2words(year, lang=lang_iso1)
+            else:
+                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
         if is_num2words_compat:
             lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
             try:
@@ -3301,6 +3387,17 @@ def convert_chapters2audio(session_id:str)->bool:
                     pass
             if disk_full:
                 session['tts_init_error'] = legends['error_disk_full_models'].format(dir=models_dir)
+            # out of memory while loading the model, in e2a or in a worker process (its error text comes back): the
+            # CUDA/ROCm/XPU allocators, cuDNN/cuBLAS workspaces, the CPU allocator. On a Jetson the GPU allocates from
+            # the RAM the CPU uses too (NvMap), so the advice is not the same
+            elif re.search(r'out of memory|OutOfMemoryError|MemoryError|can.t allocate memory|CUDNN_STATUS_ALLOC_FAILED|CUBLAS_STATUS_ALLOC_FAILED|hipErrorOutOfMemory|OUT_OF_DEVICE_MEMORY|NvMapMemAlloc', session['tts_init_error'], re.IGNORECASE):
+                if session['device'] == devices['JETSON']['proc']:
+                    legend = 'error_out_of_memory_jetson'
+                elif session['device'] == devices['CPU']['proc']:
+                    legend = 'error_out_of_memory_cpu'
+                else:
+                    legend = 'error_out_of_memory_gpu'
+                session['tts_init_error'] = legends[legend].format(engine=session['tts_engine'], device=session['device'])
             return False
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
@@ -3559,6 +3656,11 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
                     asin = session['metadata']['identifiers'].get('mobi-asin')
                     if asin:
                         ffmpeg_metadata += f"{tag('asin')}={asin}\n"
+            # series / series-part: the tag names Audiobookshelf and most audiobook players read
+            if session['metadata'].get('series'):
+                ffmpeg_metadata += f"{tag('series')}={session['metadata']['series']}\n"
+                if session['metadata'].get('series_index'):
+                    ffmpeg_metadata += f"{tag('series-part')}={session['metadata']['series_index']}\n"
             if interlude_durations is None:
                 interlude_durations = {}
             if chapter_global_indices is None:
@@ -3621,7 +3723,7 @@ def combine_audio_chapters(session_id:str)->list[str]|None:
             codec_info = probe.stdout.strip().splitlines()
             input_codec = codec_info[0] if len(codec_info) > 0 else None
             input_rate = codec_info[1] if len(codec_info) > 1 else None
-            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', combined_audio]
+            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-i', combined_audio]
             target_codec, target_rate = None, None
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
@@ -4347,12 +4449,53 @@ def delete_unused_tmp_dirs(session_id:str, output_dir:str, days:int)->None:
                                 error = legends['error_deleting'].format(path=full_dir_path, e=e)
                                 print(error)
 
+def cuda_arch_error()->str|None:
+    # the installed CUDA torch has kernels for this GPU: its own SASS (sm_XY runs on the same major, minor XY or above)
+    # or PTX (compute_XY, compiled on the fly for XY and above). cu128+ builds stop at Turing (7.5), so an older GPU
+    # with a recent driver (or a cu130 Docker image) failed at the first op with "no kernel image is available"
+    try:
+        import torch
+        if getattr(torch.version, 'hip', None) or not torch.cuda.is_available():
+            return None
+        major, minor = torch.cuda.get_device_capability(0)
+        arch_list = torch.cuda.get_arch_list()
+        for arch in arch_list:
+            # sm_75, sm_90a, sm_120, compute_120: the digits are major * 10 + minor
+            m = re.fullmatch(r'(sm|compute)_(\d+)[a-z]?', arch)
+            if not m:
+                continue
+            arch_major, arch_minor = divmod(int(m.group(2)), 10)
+            if m.group(1) == 'sm' and arch_major == major and arch_minor <= minor:
+                return None
+            if m.group(1) == 'compute' and (arch_major, arch_minor) <= (major, minor):
+                return None
+        if not arch_list:
+            return None
+        return legends['error_cuda_arch_unsupported'].format(gpu=torch.cuda.get_device_name(0), cc=f'{major}.{minor}', torch=torch.__version__, archs=', '.join(arch_list))
+    except Exception:
+        return None
+
 def get_compatible_tts_engines(language:str)->list[str]:
     return [
         engine
         for engine, cfg in default_engine_settings.items()
         if language in cfg.get('languages', {})
     ]
+
+def get_compatible_devices(tts_engine:str)->list[tuple]:
+    # the devices the engine runs on that this machine has, in the devices order, as (label, proc) dropdown choices
+    engine_devices = default_engine_settings[tts_engine]['devices']
+    return [
+        (name, device['proc'])
+        for name, device in devices.items()
+        if device['found'] and device['proc'] in engine_devices
+    ]
+
+def get_best_device(tts_engine:str)->str:
+    # the device gradio falls back on when the selected one is not offered for tts_engine: its first GPU found on this
+    # machine (devices order: the native backends before Vulkan), else default_device
+    gpus = [device for _, device in get_compatible_devices(tts_engine) if device != devices['CPU']['proc']]
+    return gpus[0] if gpus else default_device
 
 def translate_blocks(session_id:str, raw_blocks:list)->tuple:
     progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
@@ -4442,7 +4585,7 @@ def convert_ebook(args:dict)->tuple:
                     args['language_iso1'] = None
             except Exception as e:
                 pass
-            if args['language'] not in language_mapping.keys():
+            if args['language'] not in language_mapping.keys() or args['language'] == language_separator:
                 error = legends['error_language_not_supported']
                 return error, False
             translate_to = args.get('translate') if args.get('translate') != args.get('language') else False
@@ -4522,10 +4665,14 @@ def convert_ebook(args:dict)->tuple:
             session['interlude_enabled'] = bool(args.get('interlude_enabled', False))
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
-            session['language_iso1'] = str(args['language_iso1'])
+            session['language_iso1'] = args.get('language_iso1') or ''
             session['translate_enabled'] = bool(args.get('translate_enabled', False))
             session['translate'] = args.get('translate')
             session['translate_iso1'] = args.get('translate_iso1')
+            # str(None) would leave 'None' as the session's engine, and every presets load after it fails
+            if args.get('tts_engine') not in default_engine_settings:
+                error = legends['error_invalid_tts_engine'].format(engine=args.get('tts_engine'))
+                return error, False
             session['tts_engine'] = str(args['tts_engine'])
             session['custom_model'] =  args['custom_model']
             session['fine_tuned'] = str(args['fine_tuned'])
@@ -4647,32 +4794,36 @@ def convert_ebook(args:dict)->tuple:
                     session['ebook'] = os.path.join(session['process_dir'], ebook_file)
                     shutil.copy((session['ebook_textarea_src'] if session['ebook_mode'] == ebook_modes['TEXT'] else session['ebook_src']), session['ebook'])
                     session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
-                    msg = ''
-                    msg_extra = ''                      
-                    if session['device'] == devices['CUDA']['proc']:
+                    msg_extra = ''
+                    # the conversion runs on the device the user selected or not at all: when the installed Torch, the
+                    # system or the TTS engine cannot run on it, it stops here with an error instead of switching to
+                    # CPU (or another GPU) behind the user's back. The engine's own devices first (default_engine_settings
+                    # "devices", the same list gradio's device dropdown offers), then the machine
+                    device_error = None
+                    engine_devices = default_engine_settings[session['tts_engine']]['devices']
+                    if session['device'] not in engine_devices:
+                        device_error = legends['error_device_engine'].format(engine=session['tts_engine'], device=session['device'].upper(), devices=', '.join(d.upper() for d in engine_devices))
+                    elif session['device'] == devices['CUDA']['proc']:
                         if not devices['CUDA']['found']:
-                            # CUDA, then Vulkan (checked below), then CPU
-                            session['device'] = devices['VULKAN']['proc']
-                            msg += legends['msg_device_not_supported_try_vulkan'].format(device='CUDA', wiki=default_gpu_wiki)
-                    elif session['device'] == devices['JETSON']['proc'] or session['device'] == devices['JETSON']['proc']:
+                            device_error = legends['error_device_not_supported'].format(device='CUDA', wiki=default_gpu_wiki)
+                        else:
+                            device_error = cuda_arch_error()
+                    elif session['device'] == devices['JETSON']['proc']:
                         if not devices['JETSON']['found']:
-                            session['device'] = devices['CPU']['proc']
-                            msg += legends['msg_device_not_supported'].format(device='JETSON CUDA', wiki=default_gpu_wiki)
+                            device_error = legends['error_device_not_supported'].format(device='JETSON CUDA', wiki=default_gpu_wiki)
                     elif session['device'] == devices['MPS']['proc']:
                         if not devices['MPS']['found']:
-                            session['device'] = devices['CPU']['proc']
-                            msg += legends['msg_device_not_supported'].format(device='MPS', wiki=default_gpu_wiki)
+                            device_error = legends['error_device_not_supported'].format(device='MPS', wiki=default_gpu_wiki)
                     elif session['device'] == devices['ROCM']['proc']:
                         if not devices['ROCM']['found']:
-                            session['device'] = devices['CPU']['proc']
-                            msg += legends['msg_device_not_supported'].format(device='ROCM', wiki=default_gpu_wiki)
+                            device_error = legends['error_device_not_supported'].format(device='ROCM', wiki=default_gpu_wiki)
                     elif session['device'] == devices['XPU']['proc']:
                         # devices['XPU']['found'] is a static capability flag: on an
                         # image built for xpu it stays True even when no Intel GPU is
                         # visible at runtime (Level Zero driver absent, /dev/dri not
                         # passed to the container). Unlike CUDA that never trips the
                         # branch below, so the failure surfaces as a crash inside
-                        # TTSManager() instead of a switch to CPU. Ask torch directly.
+                        # TTSManager() instead of a clear error here. Ask torch directly.
                         xpu_error = None
                         if not devices['XPU']['found']:
                             xpu_error = 'XPU not supported by the Torch installed!'
@@ -4684,75 +4835,64 @@ def convert_ebook(args:dict)->tuple:
                             except Exception as e:
                                 xpu_error = f'XPU not available: runtime probe failed ({e!r})'
                         if xpu_error is not None:
-                            session['device'] = devices['CPU']['proc']
-                            msg += legends['msg_device_error_switch_cpu'].format(error=xpu_error, wiki=default_gpu_wiki)
-                    if session['device'] == devices['VULKAN']['proc']:
-                        # a separate if, not elif: a CUDA session that found no CUDA arrives here too.
-                        # torch has no Vulkan device: like Zonos' hybrid model, an engine that cannot run on it is
-                        # switched (to CPU) with an alert. Engines that can (native GPU builds) still need the
-                        # system Vulkan loader, e2a installs no system library. macOS has none: its packages run
-                        # Metal (arm64) or bring MoltenVK (x86_64), so no loader check there
-                        vulkan_engines = [k for k, v in default_engine_settings.items() if v.get('vulkan')]
-                        if session['tts_engine'] not in vulkan_engines:
-                            session['device'] = devices['CPU']['proc']
-                            msg += legends['msg_vulkan_engine_cpu'].format(engine=session['tts_engine'], engines=', '.join(vulkan_engines))
-                        elif sys.platform == systems['MACOS']:
+                            device_error = legends['error_device_unavailable'].format(error=xpu_error, wiki=default_gpu_wiki)
+                    elif session['device'] == devices['VULKAN']['proc']:
+                        # the engines running on Vulkan (native GPU builds) still need the system Vulkan loader, e2a
+                        # installs no system library. macOS has none: its packages run Metal (arm64) or bring MoltenVK
+                        # (x86_64), so no loader check there
+                        if sys.platform == systems['MACOS']:
                             devices['VULKAN']['found'] = True
                         else:
                             import ctypes
                             try:
-                                ctypes.CDLL('vulkan-1.dll' if sys.platform == systems['WINDOWS'] else 'libvulkan.so.1')
+                                ctypes.CDLL(vulkan_loader)
                                 devices['VULKAN']['found'] = True
                             except OSError:
                                 devices['VULKAN']['found'] = False
-                                session['device'] = devices['CPU']['proc']
-                                msg += legends['msg_device_not_supported_vulkan'].format(wiki=default_gpu_wiki)
-                    if session['device'] == devices['CPU']['proc']:
-                        os.environ['OMP_NUM_THREADS'] = '4'
-                    vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
-                    print(f'vram_dict: {vram_dict}')
-                    total_vram_gb = vram_dict.get('total_vram_gb', 0)
-                    detected_free_vram_gb = vram_dict.get('free_vram_gb', 0)
-                    session['free_vram_gb'] = detected_free_vram_gb
-                    if session['free_vram_gb'] == 0:
-                        msg_extra += f"<br/>Memory capacity not detected! restrict to {session['free_vram_gb']}GB max"
-                    else:
-                        msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
-                        if session['free_vram_gb'] < default_engine_settings[session['tts_engine']]['rating']['VRAM']:
-                            msg_extra += f"<br/>Free Memory {session['free_vram_gb']}GB is lower than VRAM/RAM {default_engine_settings[session['tts_engine']]['rating']['VRAM']}GB required!<br/>It will probably crash the conversion!"
-                        if session['free_vram_gb'] > 4.0:
-                            if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'  
-                    if session['tts_engine'] == TTS_ENGINES['BARK']:
-                        if session['free_vram_gb'] < 12.0:
-                            os.environ['SUNO_OFFLOAD_CPU'] = 'TRUE'
-                            os.environ['SUNO_USE_SMALL_MODELS'] = "TRUE"
-                            msg_extra += f'<br/>Switching BARK to SMALL models'
+                                device_error = legends['error_device_not_supported_vulkan'].format(wiki=default_gpu_wiki)
+                    if device_error is None:
+                        if session['device'] == devices['CPU']['proc']:
+                            os.environ['OMP_NUM_THREADS'] = '4'
+                        vram_dict = VRAMDetector().detect_vram(session['device'], session['script_mode'])
+                        print(f'vram_dict: {vram_dict}')
+                        total_vram_gb = vram_dict.get('total_vram_gb', 0)
+                        detected_free_vram_gb = vram_dict.get('free_vram_gb', 0)
+                        session['free_vram_gb'] = detected_free_vram_gb
+                        # free_vram_gb is free system RAM on CPU: compared with the engine's RAM need there, not its VRAM one
+                        device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
+                        if session['free_vram_gb'] == 0:
+                            msg_extra += f"<br/>Memory capacity not detected! restrict to {session['free_vram_gb']}GB max"
                         else:
-                            os.environ['SUNO_OFFLOAD_CPU'] = 'FALSE'
-                            os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'
-                    if msg == '':
+                            msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
+                            if session['free_vram_gb'] < device_vram_required:
+                                msg_extra += f"<br/>Free Memory {session['free_vram_gb']}GB is lower than VRAM/RAM {device_vram_required}GB required!<br/>It will probably crash the conversion!"
+                            if session['free_vram_gb'] > 4.0:
+                                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'
+                        if session['tts_engine'] == TTS_ENGINES['BARK']:
+                            if session['free_vram_gb'] < 12.0:
+                                os.environ['SUNO_OFFLOAD_CPU'] = 'TRUE'
+                                os.environ['SUNO_USE_SMALL_MODELS'] = "TRUE"
+                                msg_extra += f'<br/>Switching BARK to SMALL models'
+                            else:
+                                os.environ['SUNO_OFFLOAD_CPU'] = 'FALSE'
+                                os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'
                         msg_extra = f"Using {session['device'].upper()}" + msg_extra
-                    device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
-                    # venv engines (gptsovits, ...) mirror python_env's torch into their own venv: stop
-                    # here with an alert when it is too old or comes from a custom wheel URL
-                    # (e.g. Windows ROCm, or a torch below the engine's torch_min), not later in TTSManager()
-                    torch_error = None
-                    torch_min = default_engine_settings[session['tts_engine']].get('torch_min')
-                    if torch_min:
-                        import torch
-                        torch_base, _, torch_tag = torch.__version__.partition('+')
-                        torch_version = tuple(int(x) for x in re.findall(r'\d+', torch_base)[:3])
-                        torch_index_ok = torch_tag in ('', 'cpu', 'xpu') or bool(re.fullmatch(r'cu\d+', torch_tag)) or (bool(re.fullmatch(r'rocm[\d.]+', torch_tag)) and sys.platform == systems['LINUX']) or bool(re.fullmatch(r'jetson\d+', torch_tag))
-                        if torch_version < tuple(int(x) for x in torch_min.split('.')) or not torch_index_ok:
-                            torch_error = legends['error_venv_torch_unsupported'].format(engine=session['tts_engine'], min=torch_min, version=torch.__version__)
-                    if torch_error is not None:
-                        error = torch_error
+                        # venv engines (gptsovits, ...) mirror python_env's torch into their own venv: stop
+                        # here with an alert when it is too old or comes from a custom wheel URL
+                        # (e.g. Windows ROCm, or a torch below the engine's torch_min), not later in TTSManager()
+                        torch_min = default_engine_settings[session['tts_engine']].get('torch_min')
+                        if torch_min:
+                            import torch
+                            torch_base, _, torch_tag = torch.__version__.partition('+')
+                            torch_version = tuple(int(x) for x in re.findall(r'\d+', torch_base)[:3])
+                            torch_index_ok = torch_tag in ('', 'cpu', 'xpu') or bool(re.fullmatch(r'cu\d+', torch_tag)) or (bool(re.fullmatch(r'rocm[\d.]+', torch_tag)) and sys.platform == systems['LINUX']) or bool(re.fullmatch(r'jetson\d+', torch_tag))
+                            if torch_version < tuple(int(x) for x in torch_min.split('.')) or not torch_index_ok:
+                                device_error = legends['error_venv_torch_unsupported'].format(engine=session['tts_engine'], min=torch_min, version=torch.__version__)
+                    if device_error is not None:
+                        error = device_error
                     elif float(total_vram_gb) >= float(device_vram_required):
-                        if msg:
-                            show_alert(session_id, {"type": "warning", "msg": msg + msg_extra})
-                        else:
-                            show_alert(session_id, {"type": "info", "msg": msg_extra})
+                        show_alert(session_id, {"type": "info", "msg": msg_extra})
                         session['epub_path'] = os.path.join(session['process_dir'], f"__{session['filename_noext']}.epub")
                         session['blocks_orig_json'] = os.path.join(session['process_dir'], f"{file_prefixes['clone']}{session['filename_noext']}.json")
                         session['blocks_saved_json']   = os.path.join(session['process_dir'], f"{file_prefixes['saved']}{session['filename_noext']}.json")
@@ -4837,6 +4977,7 @@ def convert_ebook(args:dict)->tuple:
                                     if data:
                                         for value, attributes in data:
                                             metadata[key] = value
+                                metadata['series'], metadata['series_index'] = get_epub_series(epubBook)
                                 metadata['language'] = final_language
                                 metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_', ' ')
                                 metadata['creator'] = False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
@@ -5004,9 +5145,11 @@ def finalize_audiobook(session_id:str)->tuple:
                 if abs_libs:
                     abs_library_id = next((v for name, v in abs_libs if name == session['abs_library']), '')
                     if abs_library_id:
-                        a_title = os.path.basename(session['audiobook'])
+                        a_title = Path(session['audiobook']).stem
                         a_author = str(session.get('metadata', {}).get('creator') or '')
-                        ok, msg = upload_to_abs([session['audiobook']], a_title, a_author, session['abs_url'],  session['abs_api_token'], abs_library_id)
+                        a_series = str(session.get('metadata', {}).get('series') or '')
+                        a_series_index = str(session.get('metadata', {}).get('series_index') or '')
+                        ok, msg = upload_to_abs([session['audiobook']], a_title, a_author, session['abs_url'],  session['abs_api_token'], abs_library_id, series=a_series, series_index=a_series_index)
                         if ok:
                             msg = legends['msg_abs_upload'].format(msg=msg)
                             print(msg)
@@ -5067,7 +5210,11 @@ def on_unload(req:gr.Request)->None:
         session_id = context.find_id_by_hash(socket_hash)
         if session_id:
             session = context.get_session(session_id)
-            if session['status'] == status_tags['CONVERTING']:
+            if not session:
+                # ended meanwhile by another thread
+                return
+            # a running task (CONVERTING, or EDIT while a blocks preview is prepared) is cancelled, not ended under it
+            if session['status'] == status_tags['CONVERTING'] or context_tracker.is_busy(session_id):
                 session['cancellation_requested'] = True
                 session['status'] = status_tags['DISCONNECTED']
                 session['socket_hash'] = socket_hash
@@ -5137,6 +5284,8 @@ def reset_ebook_session(session_id:str, force:bool, filter_keys:bool)->None:
             "relation": None,
             "Source": None,
             "Modified": None,
+            "series": None,
+            "series_index": None,
         }
     }
     restore_session_from_data(data, session, force, filter_keys=filter_keys)
@@ -5245,10 +5394,15 @@ def cleanup_models_cache()->None:
         error = f"cleanup_models_cache() error: {e}"
         print(error)
 
+def alert_text(msg:str)->str:
+    # terminal form of an alert written for the GUI (headless mode, logs): <br/> as new lines, <a href="url">text</a>
+    # as "text (url)"
+    return re.sub(r'<a\s+href="([^"]*)"[^>]*>(.*?)</a>', r'\2 (\1)', msg).replace('<br/>', '\n')
+
 def show_alert(session_id:str|None, state:dict|None)->None:
     if state is not None:
         if state.get('msg'):
-            print(state['msg'].replace('<br/>', '\n'))
+            print(alert_text(state['msg']))
             if session_id is not None:
                 session = context.get_session(session_id)
                 if session.get('is_gui_process'):
@@ -5265,8 +5419,8 @@ def show_alert(session_id:str|None, state:dict|None)->None:
 
 def exception_alert(session_id:str|None, error:str|None)->None:
     if error is not None:
-        print(error.replace('<br/>', '\n'))
-        bug_reporter.report(error.replace('<br/>', '\n'), context.get_session(session_id) if session_id is not None and context is not None else None)
+        print(alert_text(error))
+        bug_reporter.report(alert_text(error), context.get_session(session_id) if session_id is not None and context is not None else None)
         if session_id is not None:
             session = context.get_session(session_id)
             if session and session.get('id', False):

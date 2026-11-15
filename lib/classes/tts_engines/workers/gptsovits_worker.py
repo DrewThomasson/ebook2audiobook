@@ -9,7 +9,27 @@
 #   stdout <- {"ok": true, "file": "...", "samplerate": n, "samples": n}
 #             {"ok": false, "error": "...", "oom": bool}
 #   EOF on stdin -> exit 0 (that is how e2a unloads the model and frees its VRAM)
-import os, sys, json, shutil, argparse, hashlib, subprocess, faulthandler
+import os, sys, stat, json, shutil, argparse, hashlib, subprocess, faulthandler
+
+def nltk_data_private(nltk_data:str|None)->bool:
+    # nltk >= 3.10 reads a data folder only when no other account can write to it: owner (or root) and no group or
+    # world write bit, on the folder and everything in it. e2a's models/ is 775 (launcher, docker groups) and a umask
+    # 002 makes new entries group writable: this worker creates them private from here on and the write bit is taken
+    # off what is there. True when an entry had to be fixed: nltk asks for its packages to be fetched again
+    os.umask(os.umask(0) | 0o022)
+    fixed = False
+    if os.name != 'posix' or not nltk_data or not os.path.isdir(nltk_data):
+        return fixed
+    for current, dirs, files in os.walk(nltk_data):
+        for path in [current] + [os.path.join(current, name) for name in dirs + files]:
+            try:
+                st = os.lstat(path)
+                if not stat.S_ISLNK(st.st_mode) and st.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+                    os.chmod(path, stat.S_IMODE(st.st_mode) & ~(stat.S_IWGRP | stat.S_IWOTH))
+                    fixed = True
+            except OSError:
+                pass
+    return fixed
 
 def main()->int:
     # the protocol owns a private copy of fd 1; fd 1 itself is pointed at stderr so
@@ -72,11 +92,15 @@ def main()->int:
             sys.modules['jieba_fast.posseg'] = jieba.posseg
         import nltk
         # the english frontend tags with nltk; fetched once into NLTK_DATA (set by e2a, in the venv)
+        # a package with an entry that had to be made private is fetched again, as nltk asks
+        refetch = nltk_data_private(os.environ.get('NLTK_DATA'))
         for resource, package in (('taggers/averaged_perceptron_tagger_eng', 'averaged_perceptron_tagger_eng'), ('taggers/averaged_perceptron_tagger', 'averaged_perceptron_tagger'), ('corpora/cmudict', 'cmudict')):
             try:
+                if refetch:
+                    raise LookupError(resource)
                 nltk.data.find(resource)
             except LookupError:
-                nltk.download(package, download_dir=os.environ.get('NLTK_DATA'), quiet=True)
+                nltk.download(package, download_dir=os.environ.get('NLTK_DATA'), quiet=True, force=refetch)
         from huggingface_hub import snapshot_download
         # only this version's files; the HF repo layout is the pretrained_models layout
         snapshot_download(args.repo, local_dir=os.path.join('GPT_SoVITS', 'pretrained_models'), allow_patterns=[w for w in args.weights.split(',') if w])

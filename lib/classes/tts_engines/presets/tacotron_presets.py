@@ -1,7 +1,7 @@
 from lib.conf_models import TTS_ENGINES, default_engine_settings
 
 models = {
-   "internal": {
+    "internal": {
         "lang": "multi",
         "repo": "tts_models/[lang_iso1]/[xxx]",
         "sub": {

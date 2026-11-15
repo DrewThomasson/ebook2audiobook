@@ -1,71 +1,16 @@
 Metadata-Version: 2.4
 Name: ebook2audiobook
-Version: 26.11.1
+Version: 26.11.11
 Summary: Convert eBooks to audiobooks with chapters and metadata
 Author: Drew Thomasson
 Project-URL: Homepage, https://github.com/DrewThomasson/ebook2audiobook
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: Apache Software License
 Classifier: Operating System :: OS Independent
-Requires-Python: <3.13,>3.9
+Requires-Python: >=3.8
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: gradio==6.30.0
-Requires-Dist: coqui-tts[languages]==0.28.0
-Requires-Dist: piper-tts==1.4.2
-Requires-Dist: argostranslate
-Requires-Dist: stanza
-Requires-Dist: cryptography
-Requires-Dist: requests
-Requires-Dist: py-cpuinfo
-Requires-Dist: tqdm
-Requires-Dist: regex
-Requires-Dist: docker
-Requires-Dist: ebooklib
-Requires-Dist: python-pptx
-Requires-Dist: python-docx
-Requires-Dist: lameenc
-Requires-Dist: museval
-Requires-Dist: openunmix
-Requires-Dist: submitit
-Requires-Dist: treetable
-Requires-Dist: dora-search
-Requires-Dist: fastapi
-Requires-Dist: hf_xet
-Requires-Dist: beautifulsoup4
-Requires-Dist: nagisa
-Requires-Dist: pymupdf-layout
-Requires-Dist: pymupdf
-Requires-Dist: hangul-romanize
-Requires-Dist: iso639-lang
-Requires-Dist: soynlp
-Requires-Dist: jieba
-Requires-Dist: uroman
-Requires-Dist: fugashi
-Requires-Dist: unidic-lite
-Requires-Dist: pycantonese
-Requires-Dist: pypinyin
-Requires-Dist: pythainlp
-Requires-Dist: pykakasi
-Requires-Dist: mutagen
-Requires-Dist: PyOpenGL
-Requires-Dist: phonemizer-fork
-Requires-Dist: num2words2
-Requires-Dist: pydub
-Requires-Dist: tinytag
-Requires-Dist: soundfile
-Requires-Dist: unidecode
-Requires-Dist: langdetect
-Requires-Dist: phonemizer
-Requires-Dist: indic-nlp-library
-Requires-Dist: pytesseract
-Requires-Dist: torchvggish
-Requires-Dist: pyannote-audio
-Requires-Dist: demucs-simple
-Requires-Dist: huggingface-hub
-Requires-Dist: ptts==0.4.1
 Dynamic: license-file
-Dynamic: requires-dist
 
 <a id="ebook2audiobook"></a>
 # 📚 ebook2audiobook (E2A)
@@ -108,13 +53,13 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 <a id="gui-interface"></a>
 #### GUI Interface
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Click to see images of Web GUI</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -161,6 +106,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -179,6 +125,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Output Formats](#output-and-process-formats)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
+- [Contributing](#contributing)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
 
@@ -213,7 +160,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Supported Languages
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -279,11 +226,61 @@ So you should first remove manually any text you don't want to be converted in a
 2. **For Public Link**:
    `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
-   `python app.py --share` (all OS)
+   `python app.py --share` (all OS, only once installed and with the python of its python_env folder)
 
 > [!IMPORTANT]
 **If the script is stopped and run again, you need to refresh your gradio GUI interface<br>
 to let the web page reconnect to the new connection socket.**
+
+<a id="pip-install"></a>
+### Install with pip / pipx
+Another way to install and launch ebook2audiobook, without cloning the repo: pip installs the `ebook2audiobook` command<br>
+(all OS, any python 3.8+). The cloned repo with its launchers above keeps working the same way.
+
+1. **Install the command**
+   ```bash
+   pipx install git+https://github.com/DrewThomasson/ebook2audiobook.git
+   ```
+   or with pip
+   ```bash
+   pip install git+https://github.com/DrewThomasson/ebook2audiobook.git
+   ```
+   <i>Without git installed, use `https://github.com/DrewThomasson/ebook2audiobook/archive/refs/heads/main.tar.gz` in place of the `git+https://...` URL.</i>
+
+2. **Install / Run ebook2audiobook**, with the same options as the launchers:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   If the command is not found (pip's scripts folder is not in your PATH): `python -m ebook2audiobook`
+
+- The first start copies ebook2audiobook to `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` on Windows) and installs it there<br>
+  with its launcher, exactly like `./ebook2audiobook.command` or `ebook2audiobook.cmd` would do.
+- To use another folder, set `E2A_HOME` before the first start and keep it set for the next ones<br>
+  (i.e. `export E2A_HOME=/data/ebook2audiobook` on Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` then a new terminal on Windows).
+- That folder is a regular ebook2audiobook folder: `./ebook2audiobook.command` (`./e2a.sh`) and `ebook2audiobook.cmd` (`e2a.cmd`) work in it too.
+- If that folder already holds a cloned or downloaded ebook2audiobook, it is started as it is and pip never changes it.
+- Relative paths given to `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` and `--output_dir`<br>
+  are read from the folder where you type the command.
+- No need to deactivate your venv or conda env: ebook2audiobook always runs in its own `python_env`.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (optionally with `--docker_mode compose` or `--docker_mode podman`)<br>
+  builds the image from that folder. Run the `docker run` / `docker compose` commands it prints from that folder too:<br>
+  their `./ebooks`, `./audiobooks`... mounts and the compose files are relative to it. The image takes the same options,<br>
+  with paths inside the container (`/app/...`), see [Docker](#docker).
+- **Update**: `pipx reinstall ebook2audiobook`, or `pip install --force-reinstall git+https://github.com/DrewThomasson/ebook2audiobook.git`.<br>
+  The next start updates the app files and keeps `python_env`, models, voices, audiobooks and anything you added to the folder.
+- **Uninstall**: `pip uninstall`, `pipx uninstall` or `uv tool uninstall` alone only remove the command:<br>
+  the folder and its gigabytes of models stay. Uninstall ebook2audiobook with the command itself first:
+  1. Move your audiobooks out of the folder's `audiobooks` subfolder: everything in the folder is deleted.
+  2. `ebook2audiobook --uninstall`<br>
+     It runs the uninstaller of the folder, which asks you to confirm then removes the shortcuts, the programs it installed<br>
+     (listed in `.installed`) and the folder content, then it deletes the folder.
+  3. Run the command it prints last to remove `ebook2audiobook` itself, which depends on how you installed it:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` or `pip uninstall ebook2audiobook`.
+  4. If you built Docker images: `docker rmi athomasson2/ebook2audiobook:<tag>` and `docker volume rm e2a_venvs`<br>
+     (with Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` and `podman volume rm e2a_venvs`).
 
 <a id="basic-usage"></a>
 ### Basic  Usage
@@ -294,6 +291,10 @@ to let the web page reconnect to the new connection socket.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (all OS)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Path to your eBook file
@@ -328,6 +329,10 @@ to let the web page reconnect to the new connection socket.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (all OS)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Or for all OS**
     ```python
@@ -441,6 +446,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install git+https://github.com/DrewThomasson/ebook2audiobook.git
+    (or: pip install git+https://github.com/DrewThomasson/ebook2audiobook.git)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -483,26 +501,26 @@ TIP: if it needs some more pause, add '[pause:3]' for 3 sec. etc.
 Docker run image:
     Gradio/GUI:
         CPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu
         CUDA:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..]
         ROCM:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc..]
         XPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu
         JETSON:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc...]
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc...]
     Headless mode:
         CPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         CUDA:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --gpus all --rm -it -p 7860:7860 athomasson2/ebook2audiobook:cu[118/122/124/126 etc..] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         ROCM:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/kfd --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:rocm[6.0/6.1/6.4 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         XPU:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --device=/dev/dri --rm -it -p 7860:7860 athomasson2/ebook2audiobook:xpu --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
         JETSON:
-          docker run -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
+          docker run --security-opt label=disable -v "./ebooks:/app/ebooks" -v "./audiobooks:/app/audiobooks" -v "./models:/app/models" -v "./voices:/app/voices" -v "./tmp:/app/tmp" -v "e2a_venvs:/app/lib/classes/tts_engines/venvs" -v "/my/real/ebooks/folder/absolute/path:/app/another_ebook_folder" --runtime nvidia --rm -it -p 7860:7860 athomasson2/ebook2audiobook:jetson[5/6/7 etc.] --headless --ebook "/app/another_ebook_folder/myfile.pdf" [--voice /app/my/voicepath/voice.mp3 etc..]
 Docker Compose (i.e. cuda 12.8:
         Run Gradio GUI:
                DEVICE_TAG=cu128 docker compose --profile cuda up --no-log-prefix
@@ -738,8 +756,6 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPU Device detection
 - [x] Denoise any background reference audio for voice cloning upload
 - [x] Custom fine-tuned model upload
-- [ ] IOS app
-- [ ] Android app
 
 #### User Requests
 - [ ] Add European Portuguese language model for xttsv2, fairseq, vits, piper at least (help welcome)
@@ -829,55 +845,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 **********
 
-## Extra Overkill for training models and such (All supported Coqui-tts models and piper-tts in one easy command) 
-- For info about this @DrewThomasson, he is currently working on the development of this, [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-- [x] Make a easy to use training gui for all coqui-tts models in the [ljspeech format training recipes](https://github.com/coqui-ai/TTS/tree/dev/recipes/ljspeech) Completed at [Universal TTS Finetune](https://github.com/DrewThomasson/Universal_TTS_Finetune)
-
-
-## Python Code normalization information for contributors
-- no blank line between code, unless between functions and classes.
-- single quote used for all key unless for dict() and json. dict['key'] always called with single quote
-- 4 spaces indentation, not tab at all
-- strict typing for all functions and its arguments declaration and return values
-- no space between the argument and its typing, no space between the function, the "->" and the return value
-
-Example:
-
-```python
-import json
-from typing import Optional
-
-def get_user(user_id:int, users:list[dict])->Optional[dict]:
-    for user in users:
-        if user['id'] == user_id:
-            return user
-    return None
-
-def summarize(user:dict)->str:
-    return f"User {user['name']} is {'active' if user['is_active'] else 'inactive'}."
-
-def to_json(user:dict)->str:
-    return json.dumps({"id": user['id'], "name": user['name'], "email": user['email']})
-
-users:list = [
-    dict(id=1, name="alice", email="alice@example.com", role="admin", is_active=True),
-    dict(id=2, name="bob", email="bob@example.com", role="editor", is_active=False),
-    dict(id=3, name="carol", email="carol@example.com", role="viewer", is_active=True),
-]
-config = {
-    "max_users": 100,
-    "default_role": "viewer",
-    "allow_signup": True,
-}
-roles = ['admin', 'editor', 'viewer']
-found = get_user(1, users)
-if found:
-    print(summarize(found))
-    print(found['email'])
-    print(to_json(found))
-if config['default_role'] in roles:
-    print(config['default_role'])
-```
+<a id="contributing"></a>
+## Contributing
+Before opening an issue or a pull request, read [CONTRIBUTING.md](https://github.com/DrewThomasson/ebook2audiobook/blob/main/CONTRIBUTING.md): Python code normalization rules,
+branch and pull request workflow, GUI legends and README translations, adding a TTS engine, testing.
 
 ## Hardware donation for beta tests wanted
 We accept any kind of hardware to test our development like:

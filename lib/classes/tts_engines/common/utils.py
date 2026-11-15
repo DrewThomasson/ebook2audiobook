@@ -1,12 +1,14 @@
-import os, sys, threading, gc, ctypes, tempfile, trainer.io, regex as re
+import os, sys, time, errno, shutil, threading, gc, ctypes, tempfile, trainer.io, regex as re
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, Iterator, TYPE_CHECKING
+from contextlib import contextmanager
 from pathlib import Path
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.bug_reporter import bug_reporter
 from lib.classes.tts_engines.common.audio import normalize_audio, get_audiolist_duration, is_audio_data_valid
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.tts_engines.common.voice_conversion import VoiceConversion
+from lib.classes.tts_engines.common.hf_download import hf_download
 from lib import *
 from lib.lang import legends
 
@@ -108,6 +110,32 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None, offs
         error = f'build_vtt_file(): {e}'
         return False, error
 
+def tqdm_progress(label:str)->Any:
+    # gr.Progress(track_tqdm=True) for a model load. The bars a library draws there (coqui's downloads: no desc, one update
+    # per KiB) showed as a bare percentage, and each update queued one more progress message that the browser replayed in
+    # order: a background tab kept crawling through the load long after the conversion had started. Bars with no desc
+    # show label instead, and reach gradio at most every interface_progress_interval seconds, or when one completes
+    import gradio as gr
+    class TqdmProgress(gr.Progress):
+        def __init__(self)->None:
+            super().__init__(track_tqdm=True)
+            self.pushed = 0.0
+        def tqdm(self, iterable:Any, desc:str|None=None, total:int|float|None=None, unit:str='steps', _tqdm:Any=None)->Any:
+            return super().tqdm(iterable, desc or label, total, unit, _tqdm)
+        def _progress_callback(self)->Any:
+            callback = gr.Progress._progress_callback()
+            if callback is None:
+                return None
+            def throttled(iterables:list)->None:
+                now = time.monotonic()
+                last = iterables[-1] if iterables else None
+                done = last is not None and bool(last.length) and last.index is not None and last.index >= last.length
+                if done or now - self.pushed >= interface_progress_interval:
+                    self.pushed = now
+                    callback(iterables)
+            return throttled
+    return TqdmProgress()
+
 class TTSUtils:
 
     # Engines without a voice-conversion stage (bark, tortoise, yourtts, xtts)
@@ -202,10 +230,12 @@ class TTSUtils:
     def _load_xtts_builtin_list(self)->dict:
         try:
             import torch
-            from huggingface_hub import hf_hub_download
             if len(xtts_builtin_speakers_list) > 0:
                 return xtts_builtin_speakers_list
-            speakers_path = hf_hub_download(repo_id=default_engine_settings[TTS_ENGINES['XTTS']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
+            # byte progress in the terminal and the GUI while it downloads (once, the GUI message only then)
+            progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
+            msg = legends['msg_zonos2_models'].format(engine=TTS_ENGINES['XTTS'], files='speakers_xtts.pth')
+            speakers_path = hf_download(progress_bar, msg, repo_id=default_engine_settings[TTS_ENGINES['XTTS']]['repo'], filename='speakers_xtts.pth', cache_dir=tts_dir)
             loaded = torch.load(speakers_path, weights_only=False)
             if not isinstance(loaded, dict):
                 error = legends['error_xtts_speakers_format'].format(type=type(loaded))
@@ -349,6 +379,64 @@ class TTSUtils:
             return torch.float32
         return amp_dtype
 
+    def _route_speaker_encoder_input(self, model:Any)->None:
+        # coqui builds TTS(model_path) with gpu=False, so SpeakerManager.use_cuda stays False while
+        # .to(device) moves the registered speaker encoder (YourTTS d-vector) onto the accelerator.
+        # compute_embedding_from_clip() then feeds the reference clip from CPU into a GPU encoder.
+        # use_cuda cannot express mps/xpu anyway, so send the input to wherever the encoder lives.
+        def _on_encoder_device(encoder:'Module')->Any:
+            compute_embedding = encoder.compute_embedding
+            def compute_embedding_on_device(x:'Tensor', *args:Any, **kwargs:Any)->'Tensor':
+                return compute_embedding(x.to(next(encoder.parameters()).device), *args, **kwargs)
+            return compute_embedding_on_device
+        for _, m in model.named_modules():
+            encoder = getattr(getattr(m, 'speaker_manager', None), 'encoder', None)
+            if encoder is None or getattr(encoder, '_input_device_routed', False):
+                continue
+            encoder.compute_embedding = _on_encoder_device(encoder)
+            encoder._input_device_routed = True
+
+    @contextmanager
+    def _fill_coqui_languages(self)->Iterator[None]:
+        from TTS.tts.utils.languages import LanguageManager
+        init_from_config = LanguageManager.init_from_config
+        engine_langs = default_engine_settings.get(self.session.get('tts_engine'), {}).get('languages', {})
+        language = next((code for code in (self.language_iso1, engine_langs.get(self.language)) if code and len(code) == 2), self.language)
+        def init_with_languages(config:'BaseTTSConfig')->'LanguageManager':
+            if not config.languages:
+                dataset_languages = sorted({dataset.get('language') for dataset in config.datasets if dataset.get('language')})
+                fallback = config.phoneme_language or language
+                config.languages = dataset_languages or ([fallback] if fallback else [])
+            return init_from_config(config)
+        LanguageManager.init_from_config = staticmethod(init_with_languages)
+        try:
+            yield
+        finally:
+            LanguageManager.init_from_config = staticmethod(init_from_config)
+
+    def _purge_partial_coqui_model(self, model_name:str)->None:
+        try:
+            from TTS.utils.manage import ModelManager
+            manager = ModelManager(progress_bar=False)
+            items = [(model_name, *manager._set_model_item(model_name))]
+            vocoder_name = items[0][1].get('default_vocoder')
+            if vocoder_name:
+                items.append((vocoder_name, *manager._set_model_item(vocoder_name)))
+        except Exception:
+            return
+        for name, model_item, model_full_name, model in items:
+            if 'repo_id' in model_item or model in ['tortoise-v2', 'bark', 'knnvc']:
+                continue
+            output_path = manager.output_prefix / model_full_name
+            if not output_path.is_dir():
+                continue
+            try:
+                manager._find_files(output_path)
+            except ValueError:
+                msg = legends['msg_partial_model_removed'].format(model=name, path=output_path)
+                print(msg)
+                shutil.rmtree(output_path, ignore_errors=True)
+
     def _load_api(self, key:str, model_path:str, device:str)->Any:
         try:
             with _lock:
@@ -357,19 +445,23 @@ class TTSUtils:
                 import torch.nn as nn
                 engine = loaded_tts.get(key)
                 target_dev = torch.device(device)
-                is_accel = target_dev.type != 'cpu'
+                is_cuda = target_dev.type == 'cuda'
                 progress_bar = None
                 if not engine:
                     progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
                     tqdm_token = None
                     if progress_bar is not None:
-                        import gradio as gr
                         from gradio.context import LocalContext
                         msg = legends['msg_loading_model'].format(model=key)
                         progress_bar((0, 3), desc=msg)
-                        tqdm_token = LocalContext.progress.set(gr.Progress(track_tqdm=True))
+                        tqdm_token = LocalContext.progress.set(tqdm_progress(msg))
+                    self._purge_partial_coqui_model(model_path)
                     try:
-                        engine = TTSEngine(model_path)
+                        with self._fill_coqui_languages():
+                            engine = TTSEngine(model_path)
+                    except BaseException:
+                        self._purge_partial_coqui_model(model_path)
+                        raise
                     finally:
                         if tqdm_token is not None:
                             LocalContext.progress.reset(tqdm_token)
@@ -394,7 +486,7 @@ class TTSUtils:
                     syn = getattr(engine, syn_attr, None)
                     if syn is None:
                         continue
-                    syn.use_cuda = is_accel
+                    syn.use_cuda = is_cuda
                     for _, m in syn.named_modules():
                         m.to(device)
                         m.eval()
@@ -407,6 +499,7 @@ class TTSUtils:
                             if b.device != target_dev:
                                 persistent = bname not in m._non_persistent_buffers_set
                                 m.register_buffer(bname, b.to(device), persistent=persistent)
+                    self._route_speaker_encoder_input(syn)
                 # --- UNIVERSAL XPU WORKAROUND ---
                 # Automatically finds and patches any Coqui HiFi-GAN vocoder 
                 # (XTTS, VITS, YourTTS, etc.) to run on CPU and bypass oneDNN JIT bugs.
@@ -464,7 +557,7 @@ class TTSUtils:
                     import torch.nn as nn
                     engine = loaded_tts.get(key, False)
                     target_dev = torch.device(device)
-                    is_accel = target_dev.type != 'cpu'
+                    is_cuda = target_dev.type == 'cuda'
                     if not engine:
                         if not checkpoint_path or not os.path.exists(checkpoint_path):
                             error = legends['error_missing_or_invalid'].format(name='checkpoint_path', path=checkpoint_path)
@@ -491,14 +584,15 @@ class TTSUtils:
                             )
                         elif engine_name == TTS_ENGINES['VITS']:
                             from TTS.api import TTS as TTSEngine
-                            engine = TTSEngine(model_path=checkpoint_path, config_path=config_path, progress_bar=False)
+                            with self._fill_coqui_languages():
+                                engine = TTSEngine(model_path=checkpoint_path, config_path=config_path, progress_bar=False)
                         elif engine_name == TTS_ENGINES['FAIRSEQ']:
                             from TTS.utils.synthesizer import Synthesizer
                             if not vocab_path or not os.path.exists(vocab_path):
                                 error = legends['error_missing_or_invalid'].format(name='vocab_path', path=vocab_path)
                                 raise FileNotFoundError(error)
-                            custom_dir = os.path.dirname(checkpoint_path)
-                            syn = Synthesizer(model_dir=custom_dir, use_cuda=is_accel)
+                            with self._fill_coqui_languages():
+                                syn = Synthesizer(tts_checkpoint=checkpoint_path, use_cuda=False)
                             class _FairseqEngine(nn.Module):
                                 def __init__(self, synthesizer:'Synthesizer'):
                                     super().__init__()
@@ -529,7 +623,7 @@ class TTSUtils:
                         walk_targets = []
                         syn = getattr(engine, 'synthesizer', None)
                         if syn is not None:
-                            syn.use_cuda = is_accel
+                            syn.use_cuda = is_cuda
                             walk_targets.append(syn)
                         else:
                             walk_targets.append(engine)
@@ -546,6 +640,7 @@ class TTSUtils:
                                     if b.device != target_dev:
                                         persistent = bname not in m._non_persistent_buffers_set
                                         m.register_buffer(bname, b.to(device), persistent=persistent)
+                            self._route_speaker_encoder_input(tgt)
                     # --- UNIVERSAL XPU WORKAROUND ---
                     # Automatically finds and patches any Coqui HiFi-GAN vocoder 
                     # (XTTS, VITS, YourTTS, etc.) to run on CPU and bypass oneDNN JIT bugs.
@@ -668,7 +763,6 @@ class TTSUtils:
             import torch
             import torchaudio
             import numpy as np
-            from huggingface_hub import hf_hub_download
             voice_parts = Path(current_voice).parts
             if (self.language in voice_parts or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'] or self.language == 'eng'):
                 if os.path.exists(current_voice):
@@ -698,9 +792,9 @@ class TTSUtils:
                             cached = None
                         hf_repo = default_engine_settings[xtts]['repo']
                         hf_sub = ''
-                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][0]}", cache_dir=self.cache_dir)
-                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][1]}", cache_dir=self.cache_dir)
-                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][2]}", cache_dir=self.cache_dir)
+                        config_path = hf_download(progress_bar, msg, repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][0]}", cache_dir=self.cache_dir)
+                        checkpoint_path = hf_download(progress_bar, msg, repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][1]}", cache_dir=self.cache_dir)
+                        vocab_path = hf_download(progress_bar, msg, repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][2]}", cache_dir=self.cache_dir)
                         engine = self._load_checkpoint(tts_engine=xtts, key=key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
                     if engine:
                         device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
@@ -851,26 +945,6 @@ class TTSUtils:
         sf.write(tmp_path, wav_numpy, expected_sr, subtype='PCM_16')
         return tmp_path
 
-    def _resample_audiodata(self, wav_data, source_sr:int, expected_sr:int)->Any:
-        import torch
-        import numpy as np
-        if isinstance(wav_data, list):
-            wav_data = np.asarray(wav_data, dtype=np.float32)
-        if isinstance(wav_data, np.ndarray):
-            waveform = torch.from_numpy(wav_data).float()
-        elif isinstance(wav_data, torch.Tensor):
-            waveform = wav_data.float()
-        else:
-            raise TypeError(f'unsupported wav_data type: {type(wav_data)}')
-        if waveform.ndim==1:
-            waveform = waveform.unsqueeze(0)
-        if waveform.size(0)>1:
-            waveform = waveform.mean(dim=0, keepdim=True)
-        if source_sr!=expected_sr:
-            resampler = self._get_resampler(source_sr, expected_sr, waveform.device)
-            waveform = resampler(waveform)
-        return waveform.squeeze(0).cpu().numpy()
-
     def _set_voice(self, voice:str|None)->tuple:
         current_voice = (voice if voice is not None else self.models[self.session['fine_tuned']]['voice'])
         if current_voice is None:
@@ -882,7 +956,7 @@ class TTSUtils:
             if(
                 (speaker not in {k for engine in default_engine_settings.values() for k in engine['voices']}) and 
                 (self.session['custom_model_dir'] not in current_voice)
-              ):
+            ):
                 current_voice = self._check_xtts_builtin_speakers(current_voice, speaker)
                 if not current_voice:
                     error = f"_set_voice() error: Could not create the builtin speaker selected voice in {self.language}"
@@ -1002,6 +1076,14 @@ class TTSUtils:
                     os.remove(path)
                 except OSError:
                     pass
+            # libsndfile reports a full disk as a bare "System error.": tell it by the space left on the target
+            # drive (a sentence file is a few MB at most, so below 100 MB the write failed for lack of space)
+            try:
+                disk_full = shutil.disk_usage(os.path.dirname(path)).free < 100 * 1024 ** 2
+            except OSError:
+                disk_full = False
+            if disk_full:
+                raise OSError(errno.ENOSPC, legends['error_disk_full_audio'].format(dir=os.path.dirname(path))) from e
             raise RuntimeError(f'audio_save({path}): {e}') from e
         return True
 

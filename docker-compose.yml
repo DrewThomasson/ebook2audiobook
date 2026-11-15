@@ -45,7 +45,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.11.1}
+        APP_VERSION: ${APP_VERSION:-26.11.11}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
         # A null value means "resolve from the environment at build time, and
         # if unset leave the Dockerfile default alone". These are exactly the
@@ -65,6 +65,10 @@ services:
     stdin_open: true
     ports:
       - "7860:7860"
+    # SELinux hosts (Fedora, RHEL...) refuse the container any write to the bind mounts below without it,
+    # as podman-compose.yml already does
+    security_opt:
+      - label=disable
     volumes:
       - ./ebooks:/app/ebooks:rw
       - ./audiobooks:/app/audiobooks:rw

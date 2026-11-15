@@ -1,0 +1,106 @@
+# .github/workflows/PyPI-Publish.yml
+# Publishes the pip/pipx package (the bootstrap in tools/pip_bootstrap plus the app files, see setup.py) to PyPI
+# when a release is published, or by hand (Actions > PyPI Publish > Run workflow, at the branch or tag to publish).
+# PyPI trusted publishing: no token is stored anywhere, the job trades its GitHub OIDC token for a PyPI token
+# valid 15 minutes. Set up once on pypi.org, project ebook2audiobook > Publishing > Add a new publisher > GitHub:
+#   owner DrewThomasson, repository ebook2audiobook, workflow PyPI-Publish.yml, environment pypi
+# Runs only in DrewThomasson/ebook2audiobook: in a fork it is skipped.
+# PyPI never accepts the same version twice: a VERSION.txt already published is skipped, bump it to publish again.
+# No marketplace actions used.
+
+name: PyPI Publish
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pypi-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'DrewThomasson/ebook2audiobook'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout (manual, no actions)
+        run: |
+          git init .
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --depth=1 origin "$GITHUB_SHA"
+          git checkout --force "$GITHUB_SHA"
+
+      - name: Check the version is not on PyPI yet
+        id: version
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION.txt)"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          STATUS="$(curl -s -o /dev/null -w '%{http_code}' "https://pypi.org/pypi/ebook2audiobook/${VERSION}/json")"
+          if [ "$STATUS" = "200" ]; then
+            echo "::notice::ebook2audiobook ${VERSION} is already on PyPI, nothing to publish. Bump VERSION.txt to publish a new one."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          elif [ "$STATUS" = "404" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::PyPI answered HTTP ${STATUS} for ebook2audiobook ${VERSION}"
+            exit 1
+          fi
+
+      - name: Build sdist and wheel
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/build-venv"
+          "$RUNNER_TEMP/build-venv/bin/pip" install --quiet build twine
+          # the wheel is built from the sdist, as pip does from PyPI: both carry the app tree
+          "$RUNNER_TEMP/build-venv/bin/python" -m build --outdir dist .
+          "$RUNNER_TEMP/build-venv/bin/twine" check --strict dist/*
+
+      - name: Test the wheel before publishing
+        if: steps.version.outputs.publish == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # the command must install the app folder and hand over to its launcher, which then works on its own too
+          python3 -m venv "$RUNNER_TEMP/test-venv"
+          "$RUNNER_TEMP/test-venv/bin/pip" install --quiet dist/*.whl
+          E2A_HOME="$RUNNER_TEMP/e2a" "$RUNNER_TEMP/test-venv/bin/ebook2audiobook" --version | tee "$RUNNER_TEMP/version.log"
+          grep -qx "v${VERSION}" "$RUNNER_TEMP/version.log"
+          "$RUNNER_TEMP/e2a/e2a.sh" --version | grep -qx "v${VERSION}"
+
+      - name: Publish to PyPI
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          trap 'rm -f "$RUNNER_TEMP/pypi_token"' EXIT
+          python3 - <<'EOF'
+          import json, os, sys, urllib.request, urllib.error
+
+          def fetch(req:urllib.request.Request)->dict:
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      return json.load(r)
+              except urllib.error.HTTPError as e:
+                  # PyPI explains here what does not match its trusted publisher (owner, workflow, environment)
+                  sys.exit(f"::error::{req.full_url.split('?')[0]} answered HTTP {e.code}: {e.read().decode('utf-8', 'replace')}")
+
+          audience = fetch(urllib.request.Request('https://pypi.org/_/oidc/audience'))['audience']
+          oidc_req = urllib.request.Request(f"{os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']}&audience={audience}", headers={'Authorization': f"bearer {os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']}"})
+          oidc_token = fetch(oidc_req)['value']
+          print(f"::add-mask::{oidc_token}")
+          mint_req = urllib.request.Request('https://pypi.org/_/oidc/mint-token', data=json.dumps({'token': oidc_token}).encode('utf-8'), headers={'Content-Type': 'application/json'}, method='POST')
+          pypi_token = fetch(mint_req)['token']
+          print(f"::add-mask::{pypi_token}")
+          with open(os.path.join(os.environ['RUNNER_TEMP'], 'pypi_token'), 'w', encoding='utf-8') as f:
+              f.write(pypi_token)
+          EOF
+          TWINE_USERNAME=__token__ TWINE_PASSWORD="$(cat "$RUNNER_TEMP/pypi_token")" "$RUNNER_TEMP/build-venv/bin/twine" upload --non-interactive dist/*

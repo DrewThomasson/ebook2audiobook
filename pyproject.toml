@@ -4,22 +4,29 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ebook2audiobook"
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
 description = "Convert eBooks to audiobooks with chapters and metadata"
 authors = [
     { name = "Drew Thomasson" }
 ]
 readme = "README.md"
-requires-python = ">3.9,<3.13"
+# the pip package is a bootstrap on the standard library only (tools/pip_bootstrap): e2a itself runs in the
+# python_env its launcher installs, with its own python from uv, whatever python ran pip
+requires-python = ">=3.8"
+dependencies = []
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
-scripts = { "ebook2audiobook" = "app:main" }
+scripts = { "ebook2audiobook" = "ebook2audiobook.bootstrap:main" }
 
 [project.urls]
 "Homepage" = "https://github.com/DrewThomasson/ebook2audiobook"
+
+[tool.setuptools]
+packages = ["ebook2audiobook"]
+package-dir = { "ebook2audiobook" = "tools/pip_bootstrap" }
 
 [tool.setuptools.dynamic]
 version = {file = "VERSION.txt"}

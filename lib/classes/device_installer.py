@@ -1,13 +1,17 @@
-import os, re, sys, platform, shutil, subprocess, importlib, json, tempfile
+import os, re, sys, csv, platform, shutil, subprocess, importlib, json, tempfile
 from functools import cached_property
 from typing import Union
 from glob import glob
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import version, distribution, distributions, PackageNotFoundError
 from lib.conf import *
 from lib.lang import legends
 
 class DeviceInstaller():
     device_pkgs = ['onnxruntime', 'transformers']
+    # 2.11 is the final torchaudio line: it works with torch 2.11 and every later torch,
+    # so above it torchaudio is clamped instead of tracking torch. its patch releases
+    # are not on every index (cu132: no 2.11.0 at all, only 2.11.1+cu132 on nightly),
+    # so the PyTorch index path accepts any 2.11.x >= this, see torchaudio_spec().
     torchaudio_max = '2.11.0'
     # installed torch below the key -> transformers must stay below the value.
     # 2.4: 5.1+ declares torch>=2.4 and silently disables PyTorch below it.
@@ -18,19 +22,37 @@ class DeviceInstaller():
     # add a row when a release raises the floor again, and test it: the declared
     # floor alone is not enough.
     transformers_caps = {'2.4': '5.1', '2.5': '5.8'}
+    # coqui-tts' own transformers floor (coqui-tts 0.28: transformers>=4.57). A bare 'transformers' keeps an older
+    # release installed by hand, which coqui-tts does not run with: 4.46 imports torch.distributed.fsdp in generate()
+    # and fails on torch builds without distributed (the +vulkan wheels)
+    transformers_min = '4.57'
     exclusive_pkgs = {
         'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }
+    # dependencies install_missing_dependencies() never pulls from PyPI: install_device_packages() puts them in from
+    # its own wheels/indexes (a PyPI torchvision would drag a CPU torch in), finalize_exclusive_packages() swaps the
+    # onnxruntime builds, demucs-simple replaces demucs, remove_obsolete_packages() takes unidic out on purpose
+    dependency_skip_re = re.compile(r'^(?:torch|torchaudio|torchcodec|torchvision|onnxruntime(?:-[a-z0-9]+)?|nvidia-.*|triton|pytorch-triton.*|rocm.*|intel-.*|demucs|unidic)$')
     pip_cache_dir = os.environ.get('E2A_PIP_CACHE_DIR') or os.path.join(tempfile.gettempdir(), 'e2a_pip_cache')
+    # seconds the GPU choice waits for an answer before taking the system's GPU 0, so an unattended install never hangs
+    gpu_choice_timeout = 60
+    # PCI vendor id -> the device its runtime serves, for the GPU choice
+    gpu_pci_vendors = {0x1002: devices['ROCM']['proc'], 0x10de: devices['CUDA']['proc'], 0x8086: devices['XPU']['proc']}
+
+    uv_install_url = 'https://docs.astral.sh/uv/getting-started/installation/'
 
     def __init__(self):
         self.system = sys.platform
         self.arch = self.check_arch
         self.python_version = sys.version_info[:2]
         self.python_version_tuple = sys.version_info
-        self.uv_bin = self._find_uv()
+        self.uv_bin = self.find_uv()
+        if not self.uv_bin:
+            # app.py checks uv first (check_uv) and the launchers install it before any DeviceInstaller: never reached by a normal run
+            raise FileNotFoundError(legends['error_uv_missing'].format(url=self.uv_install_url))
 
-    def _find_uv(self)->str:
+    @staticmethod
+    def find_uv()->Union[str, None]:
         p = shutil.which('uv')
         if p:
             return p
@@ -46,7 +68,7 @@ class DeviceInstaller():
         for c in candidates:
             if os.path.isfile(c):
                 return c
-        raise FileNotFoundError('uv binary not found. Install: https://docs.astral.sh/uv/getting-started/installation/')
+        return None
 
     def _uv_pip(self, subcommand:str, *args)->list:
         return [self.uv_bin, 'pip', subcommand, '--python', python_exec, *args]
@@ -150,18 +172,22 @@ class DeviceInstaller():
                         print(error, file=sys.stderr)
                 return json.dumps(device_info)
         elif mode == BUILD_DOCKER:
-            name, tag, msg = self.check_hardware
+            name, tag, msg = self.detect_device(BUILD_DOCKER)
             os_env = 'manylinux_2_28'
-            pyvenv = self.check_pyvenv(tag)
             arch = archs['AARCH64'] if name in [devices['JETSON']['proc'], devices['MPS']['proc']] or (self.system == systems['MACOS'] and self.arch == archs['ARM64']) else self.arch
-            # a macOS host's containers run in a VM without its GPU: no MPS, no Vulkan there
-            if name in [devices['JETSON']['proc'], devices['MPS']['proc']] or (self.system == systems['MACOS'] and name == devices['VULKAN']['proc']):
+            # Jetson and MPS get no image of their own: a container sees no Tegra nor Metal GPU
+            if name in [devices['JETSON']['proc'], devices['MPS']['proc']]:
                 name = tag = devices['CPU']['proc']
-            elif name in [devices['CPU']['proc'], devices['VULKAN']['proc']]:
-                # the image is Linux with python max_python_version, so Vulkan is decided for that, not for the host's
-                # python: a Vulkan GPU on the host (passed in with --device=/dev/dri) and the wheels for the image
+            # after the mapping above: the image is Linux with the python of its own tag, not the host's
+            pyvenv = self.check_pyvenv(tag)
+            if name in [devices['CPU']['proc'], devices['VULKAN']['proc']]:
+                # an image without a GPU torch is the +vulkan one whenever its wheels exist: it runs on the CPU like the cpu
+                # image, and a GPU passed in later (--device=/dev/dri, a VM GPU such as Podman's libkrun on macOS) is used
+                # once the device is set to vulkan. The launchers run it like the cpu image on a host without /dev/dri
                 linux_arch = archs['X86_64'] if arch == archs['AMD64'] else arch
-                if (name == devices['VULKAN']['proc'] or self.vulkan_gpus()) and self.vulkan_wheels_ok(tuple(pyvenv), f'{os_env}_{linux_arch}'):
+                if self.vulkan_wheels_ok(tuple(pyvenv), f'{os_env}_{linux_arch}'):
+                    if name == devices['CPU']['proc']:
+                        msg = legends['msg_vulkan_docker_image']
                     name = tag = devices['VULKAN']['proc']
                     arch = linux_arch
                 else:
@@ -201,11 +227,28 @@ class DeviceInstaller():
             return False
 
     def vulkan_gpus(self)->list:
-        # names of the real Vulkan GPUs the system loader sees: integrated, discrete or virtual.
-        # Software renderers (lavapipe/llvmpipe, SwiftShader: VK_PHYSICAL_DEVICE_TYPE_CPU) don't count
+        # names of the real Vulkan GPUs the system loader sees
+        return [name for _, name, _ in self.vulkan_devices()]
+
+    @cached_property
+    def vulkan_torch_ok(self)->bool:
+        # the +vulkan torch applies here: this OS / arch in torch_matrix and its wheels on py-pkg for this venv's Python.
+        # Already installed: no network, so an offline start keeps the Vulkan torch
+        entry = torch_matrix.get(devices['VULKAN']['proc'])
+        arch_tag = self.detect_arch_tag()
+        if not entry or self.system not in entry['os'] or arch_tag not in entry['arch']:
+            return False
+        if self.get_package_version('torch') == f"{entry['last']}+{devices['VULKAN']['proc']}":
+            return True
+        return self.vulkan_wheels_ok(self.python_version, f'{self.detect_platform_tag()}_{arch_tag}')
+
+    def vulkan_devices(self)->list:
+        # (PCI vendor id, name, deviceType) of the real Vulkan GPUs the system loader sees, in its order: integrated (1),
+        # discrete (2) or virtual (3). Software renderers (lavapipe/llvmpipe, SwiftShader: VK_PHYSICAL_DEVICE_TYPE_CPU)
+        # don't count
         import ctypes
         try:
-            vk = ctypes.CDLL('vulkan-1.dll' if self.system == systems['WINDOWS'] else 'libvulkan.so.1')
+            vk = ctypes.CDLL(vulkan_loader)
         except OSError:
             return []
         class AppInfo(ctypes.Structure):
@@ -223,7 +266,7 @@ class DeviceInstaller():
         inst = ctypes.c_void_p()
         if vk.vkCreateInstance(ctypes.byref(info), None, ctypes.byref(inst)) != 0:
             return []
-        names = []
+        found = []
         try:
             count = ctypes.c_uint32(0)
             if vk.vkEnumeratePhysicalDevices(inst, ctypes.byref(count), None) == 0 and count.value:
@@ -232,11 +275,12 @@ class DeviceInstaller():
                 for dev in devs:
                     props = ctypes.create_string_buffer(1024)  # VkPhysicalDeviceProperties is 824 bytes
                     vk.vkGetPhysicalDeviceProperties(dev, props)
-                    if int.from_bytes(props.raw[16:20], 'little') in (1, 2, 3):  # deviceType: integrated, discrete, virtual
-                        names.append(props.raw[20:276].split(b'\0')[0].decode(errors='replace'))
+                    device_type = int.from_bytes(props.raw[16:20], 'little')
+                    if device_type in (1, 2, 3):  # integrated, discrete, virtual
+                        found.append((int.from_bytes(props.raw[8:12], 'little'), props.raw[20:276].split(b'\0')[0].decode(errors='replace'), device_type))  # vendorID, deviceName
         finally:
             vk.vkDestroyInstance(inst, None)
-        return names
+        return found
 
     def vulkan_wheels_ok(self, py:tuple, plat:str)->bool:
         # the +vulkan torch / torchaudio (and torchcodec on macOS) wheels exist on py-pkg for this Python and platform
@@ -267,6 +311,171 @@ class DeviceInstaller():
                 return False
         return True
 
+    def ask_tty(self, prompt:str, timeout:int)->Union[str, bool, None]:
+        # one line typed on the terminal, read past the launchers' redirections (their capture of stdout, bash feeding the
+        # script on stdin). None when there is no terminal (Docker build, GUI, CI), False without Enter within timeout
+        import time
+        deadline = time.monotonic() + timeout
+        try:
+            if self.system == systems['WINDOWS']:
+                import msvcrt
+                with open('CONOUT$', 'w', encoding='utf-8') as out:
+                    out.write(prompt)
+                    out.flush()
+                    chars = []
+                    while time.monotonic() < deadline:
+                        if not msvcrt.kbhit():
+                            time.sleep(0.05)
+                            continue
+                        char = msvcrt.getwch()
+                        if char in ('\r', '\n'):
+                            out.write('\n')
+                            return ''.join(chars).strip()
+                        if char == '\x03':
+                            raise KeyboardInterrupt
+                        if char in ('\x00', '\xe0'):
+                            msvcrt.getwch()  # second half of an arrow / function key
+                        elif char == '\b':
+                            if chars:
+                                chars.pop()
+                                out.write('\b \b')
+                        elif char.isprintable():
+                            chars.append(char)
+                            out.write(char)
+                        out.flush()
+                    out.write('\n')
+                    return False
+            import select
+            # one handle each way: 'r+' would need a seekable file, a terminal is not
+            with open('/dev/tty', 'w', encoding='utf-8') as tty_out, open('/dev/tty', 'r', encoding='utf-8') as tty_in:
+                tty_out.write(prompt)
+                tty_out.flush()
+                if select.select([tty_in], [], [], timeout)[0]:
+                    return tty_in.readline().strip()
+                tty_out.write('\n')
+                return False
+        except OSError:
+            return None
+
+    def system_gpus(self, vk_devices:list)->list:
+        # the GPUs in the OS's own numbering, GPU 0 first, as (PCI vendor id, model, add-in card). Windows: adapter order,
+        # which the Vulkan loader enumerates in (DXGI order), WMI without a loader. Linux: PCI bus order. Model and card
+        # come from the Vulkan device of the same vendor (deviceType discrete); without one the card is guessed: Intel's
+        # integrated GPU is 00:02.0 on the PCI bus (on Windows: any Intel), NVIDIA and AMD count as cards
+        if self.system == systems['WINDOWS'] and vk_devices:
+            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices]
+        pci = []  # (vendor id, PCI address)
+        if self.system == systems['WINDOWS']:
+            try:
+                out = subprocess.run(['powershell', '-NoProfile', '-Command', 'Get-CimInstance Win32_VideoController | ForEach-Object { $_.PNPDeviceID }'], capture_output=True, text=True, errors='replace', timeout=20).stdout
+            except (OSError, subprocess.TimeoutExpired):
+                out = ''
+            pci = [(int(vendor_id, 16), '') for vendor_id in re.findall(r'VEN_([0-9A-F]{4})', out, re.IGNORECASE)]
+        else:
+            sysfs = '/sys/bus/pci/devices'
+            if os.path.isdir(sysfs):
+                for dev in sorted(os.listdir(sysfs)):  # 'dddd:bb:dd.f', fixed width hex: sorted is bus order
+                    try:
+                        with open(os.path.join(sysfs, dev, 'class')) as f:
+                            if not f.read().strip().startswith(('0x0300', '0x0302')):
+                                continue
+                        with open(os.path.join(sysfs, dev, 'vendor')) as f:
+                            pci.append((int(f.read().strip(), 16), dev))
+                    except (OSError, ValueError):
+                        continue
+            if not pci and shutil.which('lspci'):
+                try:
+                    out = subprocess.run(['lspci', '-nn'], capture_output=True, text=True, errors='replace', timeout=20).stdout
+                except (OSError, subprocess.TimeoutExpired):
+                    out = ''
+                for address, vendor_id in re.findall(r'^(\S+) .*\[030[02]\].*\[([0-9a-f]{4}):[0-9a-f]{4}\]', out, re.IGNORECASE | re.MULTILINE):
+                    pci.append((int(vendor_id, 16), address if address.count(':') == 2 else f'0000:{address}'))
+        if not pci:
+            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices]
+        unmatched = list(vk_devices)
+        gpus = []
+        for vendor_id, address in pci:
+            card = vendor_id != 0x8086 or (bool(address) and not address.endswith(':00:02.0'))
+            same = [device for device in unmatched if device[0] == vendor_id]
+            device = next((device for device in same if (device[2] == 2) == card), same[0] if same else None)
+            if device:
+                unmatched.remove(device)
+                gpus.append((vendor_id, device[1], device[2] == 2))
+            else:
+                gpus.append((vendor_id, '', card))
+        # Vulkan GPUs not on the PCI list (virtual GPUs) come last
+        return gpus + [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in unmatched]
+
+    def gpu_candidates(self, gpu_results:dict)->list:
+        # each way e2a can run a GPU here, as (name, tag, msg, models): a vendor runtime detect_device() found (cuda,
+        # rocm, xpu) and one +vulkan torch for the GPUs whose vendor runtime is missing, when Vulkan sees them and the
+        # +vulkan torch applies. Add-in cards first, then the OS's GPU order: entry 0, the default, is the card in a slot
+        vk_devices = self.vulkan_devices()
+        gpus = self.system_gpus(vk_devices)
+        vk_vendors = {vendor_id for vendor_id, _, _ in vk_devices}
+        ranked = {}
+        for index, (vendor_id, model, card) in enumerate(gpus):
+            result = gpu_results.get(self.gpu_pci_vendors.get(vendor_id))
+            if result and result[1]:
+                key, msg = (result[0], result[1]), result[2]
+            elif vendor_id in vk_vendors and self.vulkan_torch_ok:
+                key, msg = (devices['VULKAN']['proc'], devices['VULKAN']['proc']), None
+            else:
+                continue
+            entry = ranked.setdefault(key, {'rank': (0 if card else 1, index), 'msg': msg, 'models': []})
+            entry['rank'] = min(entry['rank'], (0 if card else 1, index))
+            if model and model not in entry['models']:
+                entry['models'].append(model)
+        # a runtime that answered for a GPU missing from the listing (WSL2's CUDA: no PCI device) still counts, as a card
+        for name, tag, msg in gpu_results.values():
+            if tag and (name, tag) not in ranked:
+                ranked[(name, tag)] = {'rank': (0, len(gpus)), 'msg': msg, 'models': []}
+        candidates = []
+        for (name, tag), entry in sorted(ranked.items(), key=lambda item: item[1]['rank']):
+            models = ', '.join(entry['models'])
+            msg = entry['msg'] if entry['msg'] is not None else legends['msg_vulkan_selected'].format(gpu=models or devices['VULKAN']['proc'])
+            candidates.append((name, tag, msg, models))
+        return candidates
+
+    def choose_gpu(self, candidates:list)->tuple:
+        # several ways to run a GPU here and one torch serves one of them. The user's pick saved in gpu_choice_file wins
+        # while it stays possible; else asked on the terminal, the answer or no answer (entry 0) being saved; else, no
+        # terminal, entry 0 unsaved. Returns (name, tag, msg)
+        names = [candidate[0] for candidate in candidates]
+        try:
+            with open(gpu_choice_file, 'r', encoding='utf-8') as f:
+                saved = f.read().strip()
+        except OSError:
+            saved = ''
+        if saved in names:
+            return candidates[names.index(saved)][:3]
+        options = [f'  {index}) {models} - {name} ({tag})' if models else f'  {index}) {name} ({tag})' for index, (name, tag, _, models) in enumerate(candidates)]
+        prompt = '\n'.join([legends['msg_gpu_choice_header'], *options, legends['msg_gpu_choice_prompt'].format(last=len(candidates) - 1, seconds=self.gpu_choice_timeout)])
+        choice = None
+        while choice is None:
+            answer = self.ask_tty(prompt, self.gpu_choice_timeout)
+            if answer is None or answer is False or answer == '':
+                choice = 0
+            elif answer.isdigit() and int(answer) < len(candidates):
+                choice = int(answer)
+            else:
+                prompt = legends['msg_gpu_choice_invalid'].format(last=len(candidates) - 1)
+        name, tag = candidates[choice][:2]
+        if answer is not None:
+            try:
+                with open(gpu_choice_file, 'w', encoding='utf-8') as f:
+                    f.write(name)
+            except OSError as e:
+                error = legends['msg_device_info_write_failed'].format(e=e)
+                print(error, file=sys.stderr)
+        # stderr: the launchers read the device info from stdout
+        if isinstance(answer, str):
+            msg = legends['msg_gpu_choice_done'].format(device=name, tag=tag, file=gpu_choice_file)
+        else:
+            msg = legends['msg_gpu_choice_default'].format(devices=', '.join(names), device=name, tag=tag, file=gpu_choice_file)
+        print(msg, file=sys.stderr)
+        return candidates[choice][:3]
+
     def detect_platform_tag(self)->str:
         if self.system == systems['WINDOWS']:
             return 'win'
@@ -280,7 +489,7 @@ class DeviceInstaller():
         m = platform.machine().upper()
         return archs.get(m, 'unknown')
 
-    def detect_device(self)->str:
+    def detect_device(self, mode:str=NATIVE)->tuple:
         def has_cmd(cmd:str)->bool:
             return shutil.which(cmd) is not None
 
@@ -328,6 +537,40 @@ class DeviceInstaller():
             if m:
                 return m.group(3)
             return None
+
+        cuda_arch = {}
+        def cuda_min_compute_cap()->Union[tuple, None]:
+            # the lowest compute capability of the NVIDIA GPUs, from nvidia-smi (no torch), read once
+            if 'cap' not in cuda_arch:
+                caps = []
+                if has_cmd('nvidia-smi'):
+                    for line in try_cmd('nvidia-smi --query-gpu=compute_cap --format=csv,noheader').splitlines():
+                        m = re.match(r'\s*(\d+)\.(\d+)', line)
+                        if m:
+                            caps.append((int(m.group(1)), int(m.group(2))))
+                cuda_arch['cap'] = min(caps) if caps else None
+            return cuda_arch['cap']
+
+        def cuda_tag(version_str:str)->str:
+            # the torch_matrix CUDA row for this CUDA version: the newest one at or below it among the rows built for the
+            # target OS and arch (a Docker image is Linux whatever the host), e.g. 13.1 -> cu130, 12.8 on Windows ->
+            # win-cu128, 12.8 on Linux -> cu128. '' when no row fits
+            target = systems['LINUX'] if mode == BUILD_DOCKER else self.system
+            machine = self.detect_arch_tag()
+            if target == systems['LINUX'] and machine == archs['AMD64']:
+                machine = archs['X86_64']
+            current = _normalize_version(version_str)[:2]
+            # torch's cu128 and later builds carry no kernels below Turing (compute capability 7.5: Maxwell, Pascal,
+            # Volta), "no kernel image is available" at the first op: those GPUs keep the cu126 row, whatever the driver
+            cap = cuda_min_compute_cap()
+            if cap is not None and cap < (7, 5):
+                current = min(current, (12, 6))
+            rows = []
+            for key, entry in torch_matrix.items():
+                m = re.fullmatch(r'(?:win-)?cu(\d+)(\d)', key)
+                if m and target in entry['os'] and machine in entry['arch'] and (int(m.group(1)), int(m.group(2))) <= current:
+                    rows.append(((int(m.group(1)), int(m.group(2))), key))
+            return max(rows)[1] if rows else ''
 
         def version_classify(version_str:Union[str, None], version_range:dict)->tuple:
             # Returns (cmp, current_tuple, min_tuple, max_tuple)
@@ -550,24 +793,12 @@ class DeviceInstaller():
             return False
 
         def vulkan_ok()->str:
-            # the Vulkan GPU name when the +vulkan torch applies here, else ''. Needs this OS / arch in torch_matrix,
-            # a real Vulkan GPU (macOS: every Mac on 11+ has a Metal GPU, the wheel brings MoltenVK), and the wheels for
-            # this venv's Python on py-pkg. Already installed: no network, so an offline start keeps the Vulkan torch
-            entry = torch_matrix.get(devices['VULKAN']['proc'])
-            arch_tag = self.detect_arch_tag()
-            if not entry or self.system not in entry['os'] or arch_tag not in entry['arch']:
-                return ''
+            # the Vulkan GPU name when the +vulkan torch applies here (vulkan_torch_ok), else ''. macOS: every Mac on 11+
+            # has a Metal GPU, the wheel brings MoltenVK. Elsewhere the first real Vulkan GPU
             if self.system == systems['MACOS']:
-                gpu = 'Metal (MoltenVK)'
-            else:
-                gpus = self.vulkan_gpus()
-                if not gpus:
-                    return ''
-                gpu = gpus[0]
-            torch_ver = entry['last']
-            if self.get_package_version('torch') == f"{torch_ver}+{devices['VULKAN']['proc']}":
-                return gpu
-            return gpu if self.vulkan_wheels_ok(self.python_version, f'{self.detect_platform_tag()}_{arch_tag}') else ''
+                return 'Metal (MoltenVK)' if self.vulkan_torch_ok else ''
+            gpus = self.vulkan_gpus()
+            return gpus[0] if gpus and self.vulkan_torch_ok else ''
 
         def _normalize_version(v:str)->tuple:
             '''Parse version string into (major, minor, patch). Patch defaults to 0.'''
@@ -597,10 +828,13 @@ class DeviceInstaller():
             else:
                 msg = legends['msg_device_tag_invalid']
         else:
+            tegra = arch in (archs['AARCH64'],archs['ARM64']) and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible'))
+            # vendor -> (name, tag, msg) of each GPU vendor below: they all answer, a machine can have several (GPU CHOICE)
+            gpu_results = {}
             # ============================================================
             # JETSON
             # ============================================================
-            if arch in (archs['AARCH64'],archs['ARM64']) and (os.path.exists('/etc/nv_tegra_release') or 'tegra' in try_cmd('cat /proc/device-tree/compatible')):
+            if tegra:
                 raw = tegra_version()
                 jp_code, msg = jetpack_version(raw)
                 if jp_code not in ('unsupported', 'unknown'):
@@ -625,9 +859,8 @@ class DeviceInstaller():
             # ============================================================
             # ROCm
             # ============================================================
-            elif has_rocm() and has_amd_gpu_pci():
-                os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
-                os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
+            if not tegra and has_rocm() and has_amd_gpu_pci():
+                name, tag, msg = None, None, ''
                 # HSA_OVERRIDE_GFX_VERSION is read once, when this process first initializes the HSA runtime:
                 # the ctypes hipGetDeviceCount() below does it, and torch later reuses that loaded libhsa-runtime64.so.1,
                 # so the override must be in os.environ before it. detect_gpu.py inherits it and reports it back unchanged.
@@ -736,15 +969,7 @@ class DeviceInstaller():
                                 m = re.search(r'HIP version:\s*([\d.]+)', out, re.IGNORECASE)
                                 if m:
                                     version = _normalize_version(m.group(1))
-                # 3) torch.version.hip fallback
-                if not version:
-                    try:
-                        import torch
-                        if getattr(torch.version, 'hip', None):
-                            version = _normalize_version(torch.version.hip)
-                    except Exception:
-                        pass
-                # 4) ROCm install dir fallback
+                # 3) ROCm install dir fallback
                 if not version:
                     if os.name == 'posix':
                         for p in sorted(glob('/opt/rocm-*'), reverse=True):
@@ -823,44 +1048,12 @@ class DeviceInstaller():
                             msg = legends['msg_rocm_no_torch_build'].format(version=version_str)
                 else:
                     msg = legends['msg_rocm_runtime_missing']
-                # 5) Last-resort torch fallback
-                if not devices['ROCM']['found']:
-                    try:
-                        import torch
-                        if torch.cuda.is_available() and hasattr(torch.version, 'hip') and torch.version.hip:
-                            devices['ROCM']['found'] = True
-                            version = _normalize_version(torch.version.hip)
-                            if version:
-                                if self.system == systems['WINDOWS'] and version < tuple(rocm_version_range['max']):
-                                    devices['ROCM']['found'] = False
-                                    max_ver = f"{rocm_version_range['max'][0]}.{rocm_version_range['max'][1]}"
-                                    msg = legends['msg_rocm_windows_upgrade'].format(version='.'.join(str(p) for p in version), max=max_ver)
-                                else:
-                                    compat_versions = []
-                                for t, entry in torch_matrix.items():
-                                    if self.system not in entry['os'] or not t.startswith('rocm'):
-                                        continue
-                                    ver_str = t[len('win-rocm'):] if t.startswith('win-rocm') else t[len('rocm'):]
-                                    tag_ver = _normalize_version(ver_str)
-                                    if not tag_ver:
-                                        continue
-                                    compat_versions.append(tag_ver)
-                                tag = None
-                                if compat_versions:
-                                    le_versions = [v for v in compat_versions if v <= version]
-                                    if le_versions:
-                                        matched = max(le_versions)
-                                        if self.system == systems['WINDOWS']:
-                                            tag = f'win-rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'win-rocm{matched[0]}.{matched[1]}'
-                                        else:
-                                            tag = f'rocm{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'rocm{matched[0]}.{matched[1]}'
-                            msg = ''
-                    except Exception:
-                        pass
+                gpu_results[devices['ROCM']['proc']] = (name, tag, msg)
             # ============================================================
             # CUDA
             # ============================================================
-            elif has_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
+            if not tegra and has_cuda() and (has_nvidia_gpu_pci() or is_wsl2()):
+                name, tag, msg = None, None, ''
                 version = ''
                 msg = ''
                 # 1) CUDA runtime detection via ctypes (primary)
@@ -960,77 +1153,20 @@ class DeviceInstaller():
                     elif cmp is None:
                         msg = legends['msg_cuda_unparseable'].format(version=version)
                     else:
-                        devices['CUDA']['found'] = True
-                        name = devices['CUDA']['proc']
-                        compat_versions = []
-                        for t, entry in torch_matrix.items():
-                            if self.system not in entry['os'] or not t.startswith('cu'):
-                                continue
-                            ver_str = t[len('win-cu'):] if t.startswith('win-cu') else t[len('cu'):]
-                            tag_ver = _normalize_version(ver_str)
-                            if not tag_ver:
-                                continue
-                            compat_versions.append(tag_ver)
-                        tag = None
-                        if compat_versions:
-                            le_versions = [v for v in compat_versions if v <= version]
-                            if le_versions:
-                                matched = max(le_versions)
-                                if self.system == systems['WINDOWS']:
-                                    tag = f'win-cu{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'win-cu{matched[0]}.{matched[1]}'
-                                else:
-                                    tag = f'cu{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'cu{matched[0]}.{matched[1]}'
-                        if cmp == 1:
-                            tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                            msg = legends['msg_cuda_tested_max'].format(version=version, max=max_ver, tag=f'cu{max_tuple[0]}{max_tuple[1]}')
+                        tag = cuda_tag(max_ver if cmp == 1 else version)
+                        if tag:
+                            devices['CUDA']['found'] = True
+                            name = devices['CUDA']['proc']
+                            if cmp == 1:
+                                msg = legends['msg_cuda_tested_max'].format(version=version, max=max_ver, tag=tag)
                         else:
-                            tag = f'cu{current[0]}{current[1]}'  # still index 0/1, ignore patch
+                            msg = legends['msg_cuda_no_torch_build'].format(version=version)
                 else:
                     msg = legends['msg_cuda_missing']
-                # 4) PyTorch fallback (only helps if a CUDA-enabled torch is already installed)
-                if not devices['CUDA']['found']:
-                    try:
-                        import torch
-                        if torch.cuda.is_available():
-                            devices['CUDA']['found'] = True
-                            torch_cuda_ver = torch.version.cuda
-                            if torch_cuda_ver:
-                                cmp, current, min_tuple, max_tuple = version_classify(torch_cuda_ver, cuda_version_range)
-                                if cmp == 1:
-                                    tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                                elif cmp == 0 and current is not None:
-                                    tag = f'cu{current[0]}{current[1]}'
-                                else:
-                                    tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                            name = devices['CUDA']['proc']
-                            compat_versions = []
-                            for t, entry in torch_matrix.items():
-                                if self.system not in entry['os'] or not t.startswith('cu'):
-                                    continue
-                                ver_str = t[len('win-cu'):] if t.startswith('win-cu') else t[len('cu'):]
-                                tag_ver = _normalize_version(ver_str)
-                                if not tag_ver:
-                                    continue
-                                compat_versions.append(tag_ver)
-                            tag = None
-                            if compat_versions:
-                                le_versions = [v for v in compat_versions if v <= version]
-                                if le_versions:
-                                    matched = max(le_versions)
-                                    if self.system == systems['WINDOWS']:
-                                        tag = f'win-cu{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'win-cu{matched[0]}.{matched[1]}'
-                                    else:
-                                        tag = f'cu{matched[0]}.{matched[1]}.{matched[2]}' if matched[2] else f'cu{matched[0]}.{matched[1]}'
-                            if cmp == 1:
-                                tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                                msg = legends['msg_cuda_tested_max'].format(version=version, max=max_ver, tag=f'cu{max_tuple[0]}{max_tuple[1]}')
-                            else:
-                                tag = f'cu{current[0]}{current[1]}'  # still index 0/1, ignore patch
-                    except Exception:
-                        pass
-                # 5) nvidia-smi header parsing — last-resort rescue
-                # Works driver-only; useful on fresh installs with no toolkit
-                # and CPU-only torch (where step 4 can't help).
+                # 4) nvidia-smi header parsing: the driver alone is enough. The cu torch wheels bring their own CUDA
+                # runtime, natively as in a Docker image (Linux: the nvidia-* packages, Windows: cudart/cublas/cudnn in
+                # torch/lib), so most NVIDIA users have no toolkit for steps 1-2 to find. It reads the driver, not the
+                # torch installed by an earlier run. Without it an NVIDIA GPU fell to the +vulkan torch below
                 if not devices['CUDA']['found'] and has_cmd('nvidia-smi'):
                     out = try_cmd('nvidia-smi')
                     # Header line: '| NVIDIA-SMI ...  Driver Version: ...  CUDA Version: 12.4 |'
@@ -1042,14 +1178,17 @@ class DeviceInstaller():
                         if cmp == -1:
                             msg = legends['msg_cuda_smi_too_old'].format(version=smi_version)
                         elif cmp is not None:
-                            devices['CUDA']['found'] = True
-                            name = devices['CUDA']['proc']
-                            if cmp == 1:
-                                tag = f'cu{max_tuple[0]}{max_tuple[1]}'
-                                msg = legends['msg_cuda_tested_max'].format(version=smi_version, max=max_ver, tag=f'cu{max_tuple[0]}{max_tuple[1]}')
+                            tag = cuda_tag(max_ver if cmp == 1 else smi_version)
+                            if tag:
+                                devices['CUDA']['found'] = True
+                                name = devices['CUDA']['proc']
+                                if cmp == 1:
+                                    msg = legends['msg_cuda_tested_max'].format(version=smi_version, max=max_ver, tag=tag)
+                                else:
+                                    msg = legends['msg_cuda_smi_driver_only'].format(version=smi_version)
                             else:
-                                tag = f'cu{current[0]}{current[1]}'
-                                msg = legends['msg_cuda_smi_driver_only'].format(version=smi_version)
+                                msg = legends['msg_cuda_no_torch_build'].format(version=smi_version)
+                gpu_results[devices['CUDA']['proc']] = (name, tag, msg)
             # ============================================================
             # INTEL XPU
             # ============================================================
@@ -1058,7 +1197,8 @@ class DeviceInstaller():
             # SYCL runtime and need none of it, so gating on them dropped real XPU
             # hosts to cpu with an empty note. The decision now happens inside the
             # branch, where a missing user-mode driver produces a message that says so.
-            elif has_intel_gpu_pci():
+            if not tegra and has_intel_gpu_pci():
+                name, tag, msg = None, None, ''
                 version = ''
                 msg = ''
                 xpu_device_count = 0
@@ -1261,32 +1401,40 @@ class DeviceInstaller():
                         msg = legends['msg_intel_sycl_no_l0'].format(kmd=kmd)
                     else:
                         msg = legends['msg_intel_l0_no_device'].format(kmd=kmd, status=ze_status)
-                # 4) PyTorch last-resort fallback
-                if not devices['XPU']['found']:
-                    try:
-                        import torch
-                        if hasattr(torch, 'xpu') and torch.xpu.is_available():
-                            devices['XPU']['found'] = True
-                            xpu_device_count = torch.xpu.device_count()
-                            name = devices['XPU']['proc']
-                            tag = devices['XPU']['proc']
-                            msg = legends['msg_xpu_fallback']
-                    except Exception:
-                        pass
+                gpu_results[devices['XPU']['proc']] = (name, tag, msg)
+            # ============================================================
+            # GPU CHOICE
+            # ============================================================
+            # one torch serves one way of running a GPU: its vendor runtime found above, or the +vulkan torch for a GPU
+            # without one (gpu_candidates). Several go to choose_gpu(). None: the vendors' notes stay for the CPU fallback
+            if not tegra and self.system != systems['MACOS']:
+                candidates = self.gpu_candidates(gpu_results)
+                if len(candidates) > 1:
+                    name, tag, msg = self.choose_gpu(candidates)
+                elif candidates:
+                    name, tag, msg = candidates[0][:3]
+                else:
+                    name, tag = None, None
+                    msg = ' '.join(result[2] for result in gpu_results.values() if result[2])
+                for key in ('ROCM', 'CUDA', 'XPU', 'VULKAN'):
+                    devices[key]['found'] = bool(tag) and name == devices[key]['proc']
+                if devices['ROCM']['found']:
+                    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:False'
+                    os.environ['PYTORCH_HIP_ALLOC_CONF'] = 'expandable_segments:False'
             # ============================================================
             # APPLE MPS
             # ============================================================
-            elif self.system == systems['MACOS'] and arch in (archs['ARM64'], archs['AARCH64']):
+            if tag is None and self.system == systems['MACOS'] and arch in (archs['ARM64'], archs['AARCH64']):
                 devices['MPS']['found'] = True
                 name = devices['MPS']['proc']
                 tag = devices['MPS']['proc']
             # ============================================================
             # VULKAN
             # ============================================================
-            # CUDA, ROCm, XPU and Jetson keep their torch. Otherwise (MPS, or nothing usable found, including a GPU
-            # whose CUDA/ROCm runtime did not answer) the +vulkan torch is used when vulkan_ok(), ahead of MPS: the
-            # +vulkan wheels keep MPS on Apple Silicon, so MPS stays found and selectable. Intel macOS always takes it
-            if tag in (None, devices['MPS']['proc']):
+            # Linux / Windows decided Vulkan in GPU CHOICE above. macOS (MPS or nothing found) and a Jetson whose JetPack
+            # has no torch build take the +vulkan torch when vulkan_ok(), ahead of MPS: the +vulkan wheels keep MPS on
+            # Apple Silicon, so MPS stays found and selectable. Intel macOS always takes it
+            if tag in (None, devices['MPS']['proc']) and (tegra or self.system == systems['MACOS']):
                 vulkan_gpu = vulkan_ok()
                 if not vulkan_gpu and self.system == systems['MACOS'] and self.detect_arch_tag() == archs['X86_64']:
                     # PyTorch has no Intel macOS wheel after 2.2.2: the +vulkan build is the only current torch there
@@ -1352,6 +1500,23 @@ class DeviceInstaller():
         if self.version_tuple(torch_version, 3) > self.version_tuple(self.torchaudio_max, 3):
             return self.torchaudio_max
         return torch_version
+
+    def torchaudio_spec(self, torch_version:str)->str:
+        # requirement for the PyTorch index path (CUDA, CPU, XPU, ROCm linux). from the
+        # ceiling on, any 2.11.x patch is valid and uv takes the highest one the stable or
+        # nightly index carries for this tag. explicit wheel URLs (jetson, vulkan, windows
+        # rocm) keep torchaudio_version(): their filenames are exact.
+        if self.version_tuple(torch_version, 3) >= self.version_tuple(self.torchaudio_max, 3):
+            return f'torchaudio~={self.torchaudio_max}'
+        return f'torchaudio=={torch_version}'
+
+    def torchaudio_ok(self, installed_version:str, torch_version:str)->bool:
+        # does the installed torchaudio base version satisfy torchaudio_spec(torch_version)
+        if self.version_tuple(torch_version, 3) >= self.version_tuple(self.torchaudio_max, 3):
+            installed = self.version_tuple(installed_version, 3)
+            ceiling = self.version_tuple(self.torchaudio_max, 3)
+            return installed[:2] == ceiling[:2] and installed >= ceiling
+        return installed_version == torch_version
 
     def eval_marker(self, marker_part:str)->tuple|bool:
         env = {
@@ -1604,11 +1769,149 @@ class DeviceInstaller():
                             return 1
                 msg = legends['msg_all_packages_ok']
                 print(msg)
+            self.remove_unusable_torchcodec()
+            if self.install_missing_dependencies() == 1:
+                return 1
+            if self.repair_incomplete_packages() == 1:
+                return 1
+            # a requirement depending on the plain build (piper-tts, minisbd -> onnxruntime) installs it next to the
+            # device build picked above, and both unpack into site-packages/onnxruntime/: keep onnx_pkg only.
+            # last step: install_missing_dependencies() brings the plain build back with the dependency it installs
+            # (argostranslate -> minisbd -> onnxruntime), and the two builds mixed in one folder fail at the first
+            # import ("cannot import name 'set_default_logger_callback' from 'onnxruntime.capi._pybind_state'").
+            # runs on every pass, not only after an install, to also repair envs that already hold both
+            self.finalize_exclusive_packages({'onnxruntime': onnx_pkg})
         except Exception as e:
             error = f'install_python_packages() error: {e}'
             print(error)
             self.drop_pip_cache()
             return 1
+
+    def remove_unusable_torchcodec(self)->None:
+        # pyannote-audio 4 depends on torchcodec, so on torch < 2.9 (cu118/121/124, rocm <= 6.2.4, jetson5/6: no
+        # torchcodec matches them, see has_torchcodec_stack()) PyPI's newest one comes along, built for the newest
+        # torch: its library fails to load at every pyannote import (Windows: 0xC0000139 entry point not found).
+        # pyannote runs without it (soundfile, background_detector.pyannote_patch()), e2a never imports it, and
+        # install_missing_dependencies() skips torchcodec, so it stays out
+        try:
+            torchcodec_version = self.get_package_version('torchcodec')
+            if not torchcodec_version or self.has_torchcodec_stack() or not self.get_package_version('torch'):
+                return
+            msg = legends['msg_removing_unusable_torchcodec'].format(version=torchcodec_version, torch=self.get_package_version('torch'))
+            print(msg)
+            subprocess.call(self._uv_pip('uninstall', 'torchcodec'))
+        except Exception as e:
+            error = f'remove_unusable_torchcodec(): {e}'
+            print(error)
+
+    def repair_incomplete_packages(self)->int:
+        # an install cut short (closed terminal, antivirus, full disk) can leave a package with its metadata but not
+        # all its files: the version checks and uv pip check pass and the import fails (gradio without
+        # gradio/history.py: "cannot import name 'history' from partially initialized module 'gradio'"). RECORD lists
+        # each package's files: the same version is reinstalled when code files are missing. Left out: the device
+        # step's packages (dependency_skip_re) and packages installed from a URL or a local path (direct_url.json)
+        code_suffixes = ('.py', '.so', '.pyd', '.dll', '.dylib')
+        incomplete = {}
+        try:
+            for dist in distributions():
+                name = self.pkg_head(dist.metadata['Name'] or '')
+                if not name or name in incomplete or self.dependency_skip_re.match(name) or dist.read_text('direct_url.json'):
+                    continue
+                # RECORD itself: Distribution.files leaves out the entries whose file is gone (python >= 3.12)
+                for row in csv.reader((dist.read_text('RECORD') or '').splitlines()):
+                    if row and row[0].endswith(code_suffixes) and not os.path.exists(dist.locate_file(row[0])):
+                        incomplete[name] = dist.version
+                        break
+        except Exception as e:
+            error = f'repair_incomplete_packages(): {e}'
+            print(error)
+            return 0
+        if not incomplete:
+            return 0
+        msg = legends['msg_reinstalling_incomplete'].format(pkgs=', '.join(incomplete))
+        print(msg)
+        # --no-deps: the same version only gets its files back, its dependencies are install_missing_dependencies()'
+        # job. Resolving them again puts the plain onnxruntime back next to onnxruntime-gpu (piper-tts -> onnxruntime)
+        cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir, '--no-deps')
+        for name in incomplete:
+            cmd += ['--reinstall-package', name]
+        try:
+            subprocess.check_call(cmd + [f'{name}=={ver}' for name, ver in incomplete.items()])
+        except subprocess.CalledProcessError as e:
+            msg = legends['msg_install_pkg_failed'].format(pkg=', '.join(incomplete), e=e)
+            print(msg)
+            return 1
+        importlib.invalidate_caches()
+        return 0
+
+    def pinned_heads(self)->set:
+        # the packages requirements.txt pins or caps (==, <, ~=): their version is e2a's choice, never raised for another
+        heads = set()
+        try:
+            with open(requirements_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    pkg = line.split('#', 1)[0].strip()
+                    if pkg and re.search(r'==|<|~=', pkg):
+                        heads.add(self.pkg_head(pkg))
+        except OSError:
+            pass
+        return heads
+
+    def install_missing_dependencies(self)->int:
+        # requirements.txt only lists the top packages: a dependency of theirs removed afterwards (uninstalled by
+        # hand, interrupted install, antivirus) is never put back, and every start then fails at import (gradio
+        # without uvicorn). uv pip check lists them. Of the version conflicts only a floor is raised (below), the others
+        # are left alone (some are intended, see transformers_caps and sitecustomize.py), and so are the packages the
+        # device step installs from its own
+        # wheels or swaps (torch family, GPU runtimes, onnxruntime builds: onnxruntime-gpu stands for onnxruntime)
+        try:
+            result = subprocess.run(self._uv_pip('check'), capture_output=True, text=True, encoding='utf-8', errors='replace')
+        except OSError:
+            return 0
+        output = f'{result.stdout}\n{result.stderr}'
+        missing = []
+        for req in re.findall(r"requires `([^`]+)`, but it's not installed", output):
+            if not self.dependency_skip_re.match(self.pkg_head(req)) and req not in missing:
+                missing.append(req)
+        # a dependency below a floor another package declares (anyio 4.16 needs typing_extensions>=4.16, an older one
+        # installed since fails at import): raised when only a floor is asked for and e2a neither pins it
+        # (requirements.txt), installs it per device (device_pkgs) nor leaves it to the device step. Upper bounds stay
+        outdated = []
+        pinned = self.pinned_heads()
+        for req, installed in re.findall(r"requires `([^`]+)`, but `([^`]+)` is installed", output):
+            # without its environment marker (" ; python_full_version < '3.15'"): uv only reports the ones that apply
+            spec = req.split(';', 1)[0].strip()
+            head = self.pkg_head(spec)
+            ops = set(re.findall(r'===|==|!=|~=|>=|<=|>|<', spec))
+            if ops and ops <= {'>=', '>'} and head not in pinned and head not in self.device_pkgs and not self.dependency_skip_re.match(head) and spec not in outdated:
+                outdated.append(spec)
+        if not missing and not outdated:
+            return 0
+        if missing:
+            msg = legends['msg_installing_missing_deps'].format(pkgs=', '.join(missing))
+            print(msg)
+        if outdated:
+            msg = legends['msg_upgrading_outdated_deps'].format(pkgs=', '.join(outdated))
+            print(msg)
+        missing = missing + outdated
+        # a missing device package (transformers) comes back with its cap; the other pins stay out, they are not missing
+        heads = {self.pkg_head(req) for req in missing}
+        pins = []
+        for dpkg in self.device_pkgs:
+            try:
+                pin = self.select_pkg(dpkg)
+                if self.pkg_head(pin) in heads:
+                    pins.append(pin)
+            except Exception:
+                pass
+        try:
+            subprocess.check_call(self._uv_pip('install', '--cache-dir', self.pip_cache_dir, *self.apply_pins(missing, pins)))
+        except subprocess.CalledProcessError as e:
+            msg = legends['msg_install_pkg_failed'].format(pkg=', '.join(missing), e=e)
+            print(msg)
+            return 1
+        importlib.invalidate_caches()
+        return 0
 
     def remove_obsolete_packages(self)->int:
         # packages removed from requirements.txt that must also be uninstalled
@@ -1792,8 +2095,8 @@ class DeviceInstaller():
                 if torch_version:
                     for torch_floor, transformers_cap in self.transformers_caps.items():
                         if self.version_tuple(torch_version, 2) < self.version_tuple(torch_floor, 2):
-                            return f'transformers<{transformers_cap}'
-                return 'transformers'
+                            return f'transformers>={self.transformers_min},<{transformers_cap}'
+                return f'transformers>={self.transformers_min}'
             case _:
                 raise ValueError(f'select_pkg(): no rule for {pkg}')
 
@@ -1838,10 +2141,11 @@ class DeviceInstaller():
             error = f'drop_pip_cache(): {e}'
             print(error)
 
-    def finalize_exclusive_packages(self)->int:
+    def finalize_exclusive_packages(self, specs:dict|None=None)->int:
+        # specs: {pkg: requirement} already chosen by the caller (skips a second select_pkg probe)
         try:
             for pkg, choices in self.exclusive_pkgs.items():
-                spec = self.select_pkg(pkg)
+                spec = (specs or {}).get(pkg) or self.select_pkg(pkg)
                 keep = re.split(r'[<>=!\[;]', spec, 1)[0].strip()
                 installed = [choice for choice in choices if self.get_package_version(choice)]
                 losers = [choice for choice in installed if choice != keep]
@@ -1861,6 +2165,53 @@ class DeviceInstaller():
             error = f'finalize_exclusive_packages() error: {e}'
             print(error)
             return 0
+
+    vulkan_libomp_marker = os.path.join(sys.prefix, '.e2a_vulkan_torch_libomp')
+
+    def vulkan_torch_lacks_libomp(self, torch_url:str)->bool:
+        # the Windows +vulkan torch links MSVC's LLVM OpenMP runtime (libomp140.x86_64.dll), which no VC++
+        # redistributable installs: a wheel published without it in torch/lib does not import ("Error loading shm.dll or
+        # one of its dependencies"). The repacked wheel keeps the same version, so the missing file tells them apart. It
+        # is reinstalled only when the published wheel changed since the last install (ETag or size and date from a HEAD
+        # request, kept in python_env): an unfixed wheel is not downloaded again at every start
+        self.vulkan_libomp_signature = None
+        try:
+            torch_dist = distribution('torch')
+            lib_dir = str(torch_dist.locate_file(os.path.join('torch', 'lib')))
+            torch_cpu = os.path.join(lib_dir, 'torch_cpu.dll')
+            if not os.path.isfile(torch_cpu) or os.path.isfile(os.path.join(lib_dir, 'libomp140.x86_64.dll')):
+                return False
+            import mmap
+            with open(torch_cpu, 'rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as data:
+                if data.find(b'libomp140.x86_64.dll') < 0:
+                    return False
+            import urllib.request
+            with urllib.request.urlopen(urllib.request.Request(torch_url, method='HEAD'), timeout=15) as response:
+                headers = response.headers
+            signature = headers.get('ETag') or f"{headers.get('Content-Length')}|{headers.get('Last-Modified')}"
+            previous = ''
+            if os.path.isfile(self.vulkan_libomp_marker):
+                with open(self.vulkan_libomp_marker, 'r', encoding='utf-8') as f:
+                    previous = f.read().strip()
+            if signature == previous:
+                return False
+            msg = legends['msg_vulkan_torch_libomp'].format(dll='libomp140.x86_64.dll')
+            print(msg)
+            self.vulkan_libomp_signature = signature
+            return True
+        except Exception:
+            # no torch, unreadable file, offline: nothing to decide on, the normal checks stand
+            return False
+
+    def save_vulkan_libomp_try(self)->None:
+        signature = getattr(self, 'vulkan_libomp_signature', None)
+        if not signature:
+            return
+        try:
+            with open(self.vulkan_libomp_marker, 'w', encoding='utf-8') as f:
+                f.write(signature)
+        except OSError:
+            pass
 
     def install_device_packages(self, device_info_str:str)->int:
         def _tag_ok(installed_tag):
@@ -1892,14 +2243,15 @@ class DeviceInstaller():
             if not _tag_ok(current_tag):
                 return True
             # torchaudio: base version + local tag must match what we'd install for this device.
-            # Compare against the CAPPED version, not torch_version_matrix — above the
-            # ceiling the two differ by design, and comparing to torch would report
-            # "needs reinstall" on every single run and reinstall torch with it.
+            # Compare against torchaudio_spec, not torch_version_matrix — above the
+            # ceiling the two differ by design, and any 2.11.x patch is accepted there:
+            # an exact compare would report "needs reinstall" on every single run and
+            # reinstall torch with it.
             torchaudio_full = self.get_package_version('torchaudio')
             if not torchaudio_full:
                 return True
             torchaudio_base = torchaudio_full.split('+', 1)[0]
-            if torchaudio_base != self.torchaudio_version(torch_version_matrix):
+            if not self.torchaudio_ok(torchaudio_base, torch_version_matrix):
                 return True
             m_ta = re.search(r'\+(.+)$', torchaudio_full)
             torchaudio_tag = m_ta.group(1) if m_ta else None
@@ -1908,6 +2260,12 @@ class DeviceInstaller():
             # torchcodec: presence only (when torch >= 2.9 needs it)
             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and not self.get_package_version('torchcodec'):
                 return True
+            # Windows +vulkan torch published without the OpenMP runtime it links: same version as the fixed wheel
+            if device_info['name'] == devices['VULKAN']['proc'] and self.system == systems['WINDOWS']:
+                py_major, py_minor = device_info['pyvenv']
+                vulkan_torch_url = f"{default_jetson_url}/torch/torch-{torch_version_matrix}%2B{tag}-cp{py_major}{py_minor}-cp{py_major}{py_minor}-{device_info['os']}_{device_info['arch']}.whl"
+                if self.vulkan_torch_lacks_libomp(vulkan_torch_url):
+                    return True
             return False
 
         def _probe_gpus()->dict:
@@ -1977,6 +2335,7 @@ class DeviceInstaller():
                                 torch_pkg = f"{url}/torch/torch-{torch_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
                                 torchaudio_pkg = f"{url}/torchaudio/torchaudio-{torchaudio_version_matrix}%2B{tag}-{tag_py}-{tag_py}-{os_env}_{arch}.whl"
                                 subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torch_pkg, torchaudio_pkg))
+                                self.save_vulkan_libomp_try()
                             elif device_info['name'] == devices['ROCM']['proc'] and self.system == systems['WINDOWS']:
                                 url = default_pytorch_amd_url
                                 real_tag = tag.replace('win-', '')
@@ -2003,12 +2362,11 @@ class DeviceInstaller():
                                 # uv gives --extra-index-url priority over --index-url and by default stops at the
                                 # first index that has the package: without unsafe-best-match a stable pin that the
                                 # nightly index lacks (e.g. torch==2.2.2 on intel macOS) finds no version at all
-                                torch_url_tag = tag_dir
-                                torchaudio_url_tag = tag_dir
-                                if self.system == systems['WINDOWS'] and tag.startswith('win-cu'):
-                                    torch_url_tag = tag.replace('win-', '')
+                                # 'win-cuXYZ' rows keep the Windows torch apart, their wheels are on the plain cuXYZ index
+                                torch_url_tag = tag_dir.replace('win-', '') if tag_dir.startswith('win-cu') else tag_dir
+                                torchaudio_url_tag = torch_url_tag
                                 subprocess.check_call(self._uv_pip('install', '--reinstall-package', 'torch', '--no-cache', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}', '--extra-index-url', f'{url_nightly}/{torch_url_tag}', '--index-strategy', 'unsafe-best-match'))
-                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchaudio=={torchaudio_version_matrix}', '--index-url', f'{url}/{torchaudio_url_tag}', '--extra-index-url', f'{url_nightly}/{torchaudio_url_tag}', '--index-strategy', 'unsafe-best-match'))
+                                subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', self.torchaudio_spec(torch_version_matrix), '--index-url', f'{url}/{torchaudio_url_tag}', '--extra-index-url', f'{url_nightly}/{torchaudio_url_tag}', '--index-strategy', 'unsafe-best-match'))
                             if not self.check_numpy():
                                 return 1
                             #### torchcodec installation
@@ -2025,11 +2383,23 @@ class DeviceInstaller():
                                     rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torchcodec_wheel_url))
                                 else:
                                     if device_info['name'] == devices['XPU']['proc']:
-                                        msg = legends['msg_installing_torchcodec_xpu']
+                                        # all from PyPI: the xpu index only mirrors torchcodec's Linux CPU build, and under uv's
+                                        # first-index rule it hid PyPI's Windows wheel. Intel's plugin (torchcodec-xpu, with
+                                        # torchlib-xpu) is Linux only and follows torchcodec's versions, so it takes the same pin
+                                        torchcodec_pkgs = [f'torchcodec=={torchcodec_version_matrix}']
+                                        if self.system == systems['LINUX']:
+                                            torchcodec_pkgs += [f'torchcodec-xpu=={torchcodec_version_matrix}', 'torchlib-xpu']
+                                            msg = legends['msg_installing_torchcodec_xpu']
+                                        else:
+                                            msg = legends['msg_installing_torchcodec_xpu_no_plugin']
                                         print(msg)
-                                        rc = subprocess.call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', f'torchcodec-xpu', 'torchlib-xpu', '--extra-index-url', f'{default_pytorch_url}/xpu'))
+                                        rc = subprocess.call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', *torchcodec_pkgs))
                                     else:
-                                        torchcodec_index_url = f'{default_pytorch_url}/cpu' if device_info['name'] in [devices['ROCM']['proc'], devices['VULKAN']['proc']] else f'{default_pytorch_url}/{tag_dir}'
+                                        # the CPU build where the device's index has none: e2a only decodes audio with it
+                                        # (torchaudio.load). ROCm and Vulkan, and CUDA on Windows (cu128 / cu129 carry no
+                                        # Windows torchcodec, and since 0.12 one build serves every torch >= 2.11)
+                                        cpu_torchcodec = device_info['name'] in [devices['ROCM']['proc'], devices['VULKAN']['proc']] or (device_info['name'] == devices['CUDA']['proc'] and self.system == systems['WINDOWS'])
+                                        torchcodec_index_url = f'{default_pytorch_url}/cpu' if cpu_torchcodec else f"{default_pytorch_url}/{tag_dir.replace('win-', '')}"
                                         rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url))
                                 if rc == 0:
                                     try:

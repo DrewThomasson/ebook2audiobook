@@ -1,4 +1,4 @@
-import os, tempfile, sys, re
+import os, ssl, tempfile, sys, re
 from pathlib import Path
 
 debug_mode = False
@@ -69,12 +69,18 @@ devices = {
     "XPU": {"proc": "xpu", "found": False},
     "JETSON": {"proc": "jetson", "found": False},
     # Vulkan: torch is installed from the +vulkan wheels (py-pkg) when no CUDA/ROCm/XPU/Jetson torch applies, ahead of
-    # MPS (they keep MPS on Apple Silicon). At run time only engines with "vulkan": True in default_engine_settings
-    # (native GPU builds) run on it, the others switch to CPU with an alert (lib/core.py)
+    # MPS (they keep MPS on Apple Silicon). At run time only engines listing it in their default_engine_settings
+    # "devices" (native GPU builds) run on it: gradio offers it to them only, lib/core.py stops the others
     "VULKAN": {"proc": "vulkan", "found": False}
 }
+# the system Vulkan loader, the one the GPU driver installs. Windows takes it by absolute path: a bare 'vulkan-1.dll'
+# returns any copy already loaded in the process, and once torch is imported that is the +vulkan wheel's own
+# torch/lib/vulkan-1.dll (Vulkan Loader 1.0.61, 2017), too old to find current drivers
+vulkan_loader = os.path.join(os.environ.get('SystemRoot', r'C:\Windows'), 'System32', 'vulkan-1.dll') if DEVICE_SYSTEM == systems['WINDOWS'] else 'libvulkan.so.1'
 
 device_info_json = '.device_info.json'
+# the GPU the user picked when several can run e2a (DeviceInstaller.choose_gpu)
+gpu_choice_file = '.gpu_choice'
 device_info_dict = {"gpu_count": 0, "gpu_backend": None}
 
 default_device = devices['CPU']['proc']
@@ -94,10 +100,10 @@ torch_matrix = {
     "cu118":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "last": "2.7.1",  "codec": ""},
     "cu121":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "last": "2.5.1",  "codec": ""},
     "cu124":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "last": "2.6.0",  "codec": ""},
-    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.11.1"},
+    "cu126":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"},
     "cu128":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "last": "2.11.0", "codec": "0.11.1"},
     "win-cu128":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "last": "2.9.1", "codec": "0.9.0"},
-    "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "last": "2.13.0", "codec": "0.17.0"},
+    "cu129":     {"os": [systems['LINUX']], "arch": [archs['X86_64'], archs['AARCH64']], "last": "2.13.0", "codec": "0.16.0"},
     "win-cu129":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "last": "2.8.0", "codec": "0.8.0"},
     "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"},
     "cu132":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"},
@@ -117,7 +123,7 @@ torch_matrix = {
     # MPS
     "mps":       {"os": [systems['MACOS']], "arch": [archs['ARM64']], "last": "2.14.1", "codec": "0.17.0"},
     # XPU
-    "xpu":       {"os": [systems['LINUX'], systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "last": "2.14.1", "codec": "0.16.0"},
+    "xpu":       {"os": [systems['LINUX'], systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64']], "last": "2.14.1", "codec": "0.17.0"},
     # JETSON
     "jetson5":   {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "last": "2.3.1", "codec": ""},
     "jetson6":   {"os": [systems['LINUX']], "arch": [archs['AARCH64']], "last": "2.8.0", "codec": ""},
@@ -150,6 +156,27 @@ voices_url = 'https://huggingface.co/datasets/ebook2audiobook/E2A-Voices/resolve
 tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
 tempfile.tempdir = run_dir
+
+# components/sitecustomize.py, copied into python_env by the launchers, routes torchaudio.load to soundfile (torchcodec
+# cannot load everywhere: FFmpeg 8 on Windows, ROCm builds) and allowlists coqui's config for torch.load. When this
+# interpreter did not run it (copy missing, app.py started another way), it runs here, before torch/torchaudio import
+def sitecustomize_patch()->None:
+    if any(type(hook).__name__ == 'LazyPatchHook' for hook in sys.meta_path):
+        return
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('e2a_sitecustomize', os.path.join(os.path.dirname(root_dir), 'components', 'sitecustomize.py'))
+        if spec is None or spec.loader is None:
+            return
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # an import made before this point is patched right away
+        if 'torchaudio' in sys.modules and hasattr(module, 'patch_torchaudio'):
+            module.patch_torchaudio(sys.modules['torchaudio'])
+    except Exception as e:
+        error = f'sitecustomize_patch(): {e}'
+        print(error)
+sitecustomize_patch()
 detect_gpu_script = os.path.join(components_dir, './detect_gpu.py')
 
 # ---------------------------------------------------------------------
@@ -167,6 +194,10 @@ os.environ['TMPDIR'] = run_dir
 os.environ['GRADIO_DEBUG'] = '0'
 bug_report_env_opt_out = os.environ.get('DO_NOT_TRACK', '0').strip().lower() in ('1', 'true', 'yes') # the user's own opt-out, read before DO_NOT_TRACK is forced for third-party telemetry
 os.environ['DO_NOT_TRACK'] = 'TRUE'
+# third-party telemetry that ignores DO_NOT_TRACK: pyannote.audio 4 (OpenTelemetry traces to otel.pyannote.ai, on by
+# default) and gradio analytics (api.gradio.app)
+os.environ['PYANNOTE_METRICS_ENABLED'] = 'false'
+os.environ['GRADIO_ANALYTICS_ENABLED'] = 'False'
 os.environ['HF_HUB_CACHE'] = tts_dir
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
 os.environ['HF_HOME'] = tts_dir
@@ -207,13 +238,44 @@ os.environ['MIOPEN_DEBUG_CONV_IMPLICIT_GEMM'] = '0'
 os.environ['HSA_NO_SCRATCH_RECLAIM'] = '0'
 os.environ['HSA_ENABLE_SDMA'] = '0'
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE' 
-os.environ['OMP_NUM_THREADS'] = '2'
+os.environ['OMP_NUM_THREADS'] = '1'
 os.environ['SYCL_IN_MEM_CACHE_EVICTION_THRESHOLD'] = str(512 * 1024 * 1024)
 if DEVICE_SYSTEM == systems['WINDOWS']:
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\espeak-ng-data")
 if not any(_v in os.environ for _v in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES', 'CUDA_VISIBLE_DEVICES')):
     os.environ['ROCR_VISIBLE_DEVICES'] = '0'
     os.environ['HIP_VISIBLE_DEVICES'] = '0'
+
+# ---------------------------------------------------------------------
+# TLS trust
+# ---------------------------------------------------------------------
+def ssl_patch()->None:
+    # stdlib urllib (torch.hub -> demucs/pyannote checkpoints, urllib.request.urlopen) trusts only the python build's
+    # own OpenSSL store, stale or empty on some hosts (uv/python.org builds on macOS: "certificate has expired",
+    # "unable to get local issuer certificate") while requests/huggingface_hub already trust certifi.
+    # Give urllib the certifi roots on top of the system store: SSL_CERT_FILE/SSL_CERT_DIR and corporate CAs
+    # stay honored, OpenSSL picks the time-valid issuer when both stores hold one, verification stays on.
+    # Idempotent: safe on every lib.conf import (spawn children re-import it)
+    if getattr(ssl._create_default_https_context, 'e2a_certifi', False):
+        return
+    try:
+        import certifi
+        cafile = certifi.where()
+    except Exception:
+        return
+    if not os.path.isfile(cafile):
+        return
+    def _create_https_context(*args, **kwargs)->ssl.SSLContext:
+        ctx = ssl.create_default_context(*args, **kwargs)
+        try:
+            ctx.load_verify_locations(cafile=cafile)
+        except Exception:
+            pass
+        return ctx
+    _create_https_context.e2a_certifi = True
+    ssl._create_default_https_context = _create_https_context
+
+ssl_patch()
 
 # ---------------------------------------------------------------------
 # Global settings
@@ -233,6 +295,7 @@ interface_host = '0.0.0.0'
 interface_port = 7860
 interface_shared_tmp_expire = 3 # in days
 interface_concurrency_limit = 1 # or None for unlimited multiple parallele user conversion
+interface_progress_interval = 0.2 # in seconds, min delay between two progress bar updates sent to the browser
 
 interface_component_options = {
     "gr_tab_xtts_params": True,

@@ -117,14 +117,15 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                     if SML_TAG_PATTERN.fullmatch(part):
                         success, error = self._convert_sml(part)
                         if success:
-                             self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
-                             use_zs = self.params['current_voice'] is not None
+                            self.speaker = Path(self.params['current_voice']).stem if self.params['current_voice'] is not None else None
+                            use_zs = self.params['current_voice'] is not None
                         else:
                             return False, error
                         continue
                     if not any(c.isalnum() for c in part):
                         continue
                     else:
+                        trim_audio_buffer = 0.002
                         if part.endswith("'"):
                             part = part[:-1]
                         #part = re.sub(not_supported_punc_pattern, ' ', part).strip()
@@ -202,7 +203,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                     os.remove(tmp_out_wav)
                                 if not reply.get('ok'):
                                     # no retry: core.py unloads the engine, which stops the VC worker. A GPU server that died counts
-                                    # against its package (dropped on the second death, CPU last)
+                                    # against its package (dropped on the second death, next GPU package, CPU last)
                                     if reply.get('server_exited') and self.engine_zs.backend != 'cpu':
                                         self.engine_zs.gpu_crashes[self.engine_zs.package_name] = self.engine_zs.gpu_crashes.get(self.engine_zs.package_name, 0) + 1
                                     if os.path.exists(vc_wav):
@@ -214,7 +215,7 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 os.remove(vc_wav)
                                 if audio_part.ndim > 1:
                                     audio_part = audio_part.mean(axis=1)
-                                audio_part = self._resample_audiodata(audio_part, int(samplerate), self.params['samplerate'])
+                                self.params['samplerate'] = int(samplerate)
                             else:
                                 with torch.inference_mode():
                                     with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
@@ -231,6 +232,8 @@ class GlowTTS(TTSUtils, TTSRegistry, name='glowtts'):
                                 if part_tensor.numel() == 0:
                                     error = 'part_tensor not valid'
                                     return False, error
+                                if part[-1].isalnum() or part[-1] == '—':
+                                    part_tensor = trim_audio(part_tensor.squeeze(0), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
                             else:
                                 error = 'audio_part not valid'

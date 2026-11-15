@@ -1,5 +1,6 @@
 import threading, warnings
 
+from typing import Any
 from lib.conf import DEVICE_SYSTEM, systems, tts_dir, devices
 from lib.conf_models import default_voice_detection_model
 
@@ -131,15 +132,62 @@ class BackgroundDetector:
                         "min_duration_on": 0.0,
                         "min_duration_off": 0.0
                     })
-                    pipeline.to(self.torch_device)
                     _pipeline_cache[key] = pipeline
         if pipeline:
+            # detect() parks cached pipelines on CPU when done: move back on every retrieval
+            pipeline.to(self.torch_device)
             y, sr = librosa.load(self.wav_file, sr=16000, mono=True)
             waveform = torch.from_numpy(y).float().unsqueeze(0)
             return pipeline, waveform, sr
         return None, None, None
 
-    def detect(self, vad_ratio_thresh:float=0.05)->tuple[bool, dict[str, float|bool]]:
+    @staticmethod
+    def _measure_levels(y:Any, sr:int, annotation:Any)->dict[str, float|None]:
+        '''VAD tells when someone speaks, not whether something else plays
+        under the voice: a music bed under continuous speech is one long
+        speech segment, and a pause filled with music has the same duration
+        as a silent one. So background is measured as level, not duration:
+          gap_db    median level of the non-speech frames (pauses, intro,
+                    outro) relative to the speech level. Silent pauses sit
+                    at the room tone, a bed keeps them filled.
+          floor_db  spectral floor under the speech frames: per-bin 10th
+                    percentile over per-bin mean power, 60-7000 Hz. Speech
+                    is sparse in time-frequency so its floor stays low, a
+                    continuous bed lifts it even when VAD finds no pause.
+        Digital silence (padding, fades to zero) is left out so it neither
+        hides a bed nor counts as a pause.
+        '''
+        import numpy as np, librosa
+        n_fft = 512
+        hop = int(sr * 0.010)
+        min_frames = int(0.5 * sr / hop)
+        levels = dict(speech_db=None, gap_db=None, floor_db=None)
+        spec = np.abs(librosa.stft(y, n_fft=n_fft, hop_length=hop, win_length=int(sr * 0.025))) ** 2
+        frame_db = 10 * np.log10(spec.mean(axis=0) + 1e-12)
+        times = librosa.frames_to_time(np.arange(frame_db.shape[0]), sr=sr, hop_length=hop)
+        speech = np.zeros(frame_db.shape[0], dtype=bool)
+        for segment in annotation.itersegments():
+            speech |= (times >= segment.start) & (times < segment.end)
+        live = frame_db > -90.0
+        voiced = speech & live
+        if voiced.sum() < min_frames:
+            return levels
+        speech_db = float(np.percentile(frame_db[voiced], 95))
+        levels['speech_db'] = speech_db
+        pauses = ~speech & live
+        if pauses.sum() >= min_frames:
+            levels['gap_db'] = float(np.median(frame_db[pauses])) - speech_db
+        freqs = librosa.fft_frequencies(sr=sr, n_fft=n_fft)
+        band = (freqs >= 60.0) & (freqs < 7000.0)
+        voiced_spec = spec[band][:, voiced]
+        floor = np.percentile(voiced_spec, 10, axis=1).sum()
+        mean = voiced_spec.mean(axis=1).sum()
+        levels['floor_db'] = float(10 * np.log10(floor / (mean + 1e-20) + 1e-12))
+        return levels
+
+    def detect(self, gap_thresh_db:float=-27.0, floor_thresh_db:float=-28.0)->tuple[bool, dict[str, float|bool|None]]:
+        # thresholds: no false positive on clean LibriSpeech read speech, music bed
+        # caught down to ~-18 dB under the voice, pink noise down to ~-20 dB
         import gc, torch
         pipeline, waveform, sr = self._get_props()
         try:
@@ -163,9 +211,19 @@ class BackgroundDetector:
                 non_speech_ratio = 1.0 - (
                     speech_time / self.total_duration if self.total_duration > 0 else 0.0
                 )
-                background_detected = non_speech_ratio > vad_ratio_thresh
+                levels = self._measure_levels(waveform.squeeze(0).cpu().numpy(), sr, annotation)
+                if levels['speech_db'] is None:
+                    # no usable speech found: let the separator try, as the old ratio (~1.0) did
+                    background_detected = True
+                else:
+                    background_detected = bool(
+                        (levels['gap_db'] is not None and levels['gap_db'] > gap_thresh_db)
+                        or (levels['floor_db'] is not None and levels['floor_db'] > floor_thresh_db)
+                    )
                 return background_detected, {
                     "non_speech_ratio": non_speech_ratio,
+                    "gap_db": levels['gap_db'],
+                    "floor_db": levels['floor_db'],
                     "background_detected": background_detected
                 }
             return False, {}

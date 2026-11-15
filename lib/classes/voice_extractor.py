@@ -6,9 +6,10 @@ from pydub.silence import detect_nonsilent
 from pathlib import Path
             
 from lib.classes.tts_engines.common.audio import get_audio_duration
+from lib.classes.tts_engines.common.hf_download import hf_download
 from lib.classes.subprocess_pipe import SubprocessPipe
-from lib.conf import systems, devices, voice_formats, default_audio_proc_samplerate
-from lib.conf_models import TTS_ENGINES
+from lib.conf import systems, devices, voice_formats, default_audio_proc_samplerate, tts_dir
+from lib.conf_models import TTS_ENGINES, default_voice_separation_model
 from lib.lang import legends
 
 class VoiceExtractor:
@@ -22,7 +23,10 @@ class VoiceExtractor:
         session_device = str(session.get('device', 'CPU')).upper()
         resolved_device_name = 'CUDA' if session_device in {'CUDA', 'ROCM', 'JETSON'} else session_device
         resolved_device = devices.get(resolved_device_name, devices['CPU'])
-        self.device = resolved_device['proc'] if resolved_device.get('found') else devices['CPU']['proc']
+        # demucs and pyannote are torch models and torch has no Vulkan device: moving one there segfaults in Module.to()
+        # (+vulkan wheel, macOS MoltenVK). Only torch devices pass, as in InterludeGenerator; anything else runs on CPU
+        is_torch_device = resolved_device_name in {'CUDA', 'MPS', 'XPU'}
+        self.device = resolved_device['proc'] if is_torch_device and resolved_device.get('found') else devices['CPU']['proc']
         self.output_dir = self.session['voice_dir']
         self.final_voice_file = final_voice_file if final_voice_file is not None else os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
         self.silence_threshold = -60
@@ -91,7 +95,7 @@ class VoiceExtractor:
             if self.is_gui_process:
                 self.progress_bar(1, desc=msg)
             detector = BackgroundDetector(wav_file=self.wav_file, device=self.device)
-            status, report = detector.detect(vad_ratio_thresh=0.27)
+            status, report = detector.detect()
             if report:
                 print(report)
                 if status:
@@ -107,8 +111,26 @@ class VoiceExtractor:
             print(error)
         return False, False, error
 
+    def _load_demucs(self)->Any:
+        import torch
+        from demucs.pretrained import get_model, REMOTE_ROOT, LocalRepo, BagOnlyRepo, AnyModelRepo
+        name = default_voice_separation_model['name']
+        file = default_voice_separation_model['file']
+        repo_id = default_voice_separation_model['repo']
+        # already in torch.hub's cache from an earlier run on the official host: no download at all
+        if os.path.isfile(os.path.join(torch.hub.get_dir(), 'checkpoints', file)):
+            return get_model(name=name)
+        try:
+            model_path = hf_download(self.progress_bar if self.is_gui_process else None, legends['msg_extracting_voice'], repo_id=repo_id, filename=file, cache_dir=tts_dir)
+            # LocalRepo checks the sha256 prefix carried by the file name, the bag yaml (signatures, weights, segment)
+            # ships with demucs itself: same model as get_model(name), only the checkpoint comes from the HF mirror
+            model_repo = LocalRepo(Path(model_path).parent)
+            return AnyModelRepo(model_repo, BagOnlyRepo(REMOTE_ROOT, model_repo)).get_model(name)
+        except Exception as e:
+            print(f'_load_demucs() {repo_id} error: {e}, trying the official demucs host')
+        return get_model(name=name)
+
     def _demucs_voice(self)->tuple[bool, str]:
-        from demucs.pretrained import get_model
         from demucs.apply import apply_model
         from demucs.audio import AudioFile
 
@@ -131,7 +153,7 @@ class VoiceExtractor:
             msg = legends['msg_extracting_voice']
             if self.is_gui_process:
                 self.progress_bar(0.0, desc=msg)
-            model = get_model(name="htdemucs")
+            model = self._load_demucs()
             model.to(self.device)
             model.eval()
             audio_result = AudioFile(self.wav_file).read(
@@ -204,6 +226,85 @@ class VoiceExtractor:
                 self.progress_bar(percent, desc=msg)
         final_audio.export(self.voice_track, format = "wav")
         return final_audio
+
+    def _sentence_bounds(self, audio:AudioSegment, silence_threshold:int, start:int, end:int, reach:int, min_pause_len:int=150, sentence_pause_len:int=600, break_ratio:float=0.75, edge_pad:int=200)->tuple[int, int]:
+        # moves [start, end] onto sentence breaks so the clip never starts or ends inside a sentence: start up to
+        # 2 * reach earlier or reach later, end up to reach earlier or 2 * reach later, the clip never shorter than
+        # end - start nor longer by more than 2 * reach. There is no text here, so a sentence break is a long pause:
+        # at least break_ratio of the longest pause around, or of sentence_pause_len when that is shorter
+        # (_remove_silences keeps at most 2 * 300 ms of any silence, so those are the pauses it shortened).
+        # Each edge is ranked: sentence break or audio edge 2, shorter pause 1, quietest 50 ms (a gap between words) 0.
+        # The pair ranked best wins, the end first on a tie, then the pair moved the least
+        import numpy as np
+        window = end - start
+        total_duration = len(audio)
+        samples = np.array(audio.get_array_of_samples()).astype(np.float32)
+        if audio.channels > 1:
+            samples = samples.reshape((-1, audio.channels)).mean(axis=1)
+        frame_len = max(1, audio.frame_rate // 100)
+        frame_ms = frame_len * 1000.0 / audio.frame_rate
+        total_frames = len(samples) // frame_len
+        if total_frames == 0 or reach <= 0:
+            return start, end
+        frames = samples[:total_frames * frame_len].reshape(total_frames, frame_len)
+        full_scale = float(1 << (8 * audio.sample_width - 1))
+        rms = np.sqrt(np.mean(np.square(frames), axis=1)) / full_scale
+        # floored at -100 dBFS: digital silence (demucs vocals) would drag the noise floor percentile down to -inf
+        frames_db = 20.0 * np.log10(np.maximum(rms, 1e-5))
+        floor_db = float(np.percentile(frames_db, 10))
+        peak_db = float(np.percentile(frames_db, 95))
+        # a quarter of the way from the noise floor to the speech peaks, never under silence_threshold: a voice that
+        # did not go through demucs keeps its room noise, often above silence_threshold, between its sentences
+        pause_db = max(float(silence_threshold), floor_db + (peak_db - floor_db) * 0.25)
+        is_pause = np.concatenate(([False], frames_db < pause_db, [False]))
+        edges = np.flatnonzero(np.diff(is_pause.astype(np.int8)))
+        min_frames = int(np.ceil(min_pause_len / frame_ms))
+        search_lo = max(0, start - 2 * reach)
+        search_hi = min(total_duration, end + 2 * reach)
+        pauses = []
+        for first, last in zip(edges[0::2], edges[1::2]):
+            pause_start = int(first * frame_ms)
+            pause_end = int(last * frame_ms)
+            if last - first >= min_frames and pause_end >= search_lo and pause_start <= search_hi:
+                pauses.append((pause_start, pause_end))
+        break_len = break_ratio * min(max((pause_end - pause_start for pause_start, pause_end in pauses), default=0), sentence_pause_len)
+
+        def quietest(lo:int, hi:int, default:int)->int:
+            lo_frame = max(0, int(lo / frame_ms))
+            hi_frame = min(total_frames, int(hi / frame_ms) + 1)
+            if hi_frame - lo_frame < 5:
+                return default
+            smoothed = np.convolve(frames_db[lo_frame:hi_frame], np.ones(5) / 5, mode='valid')
+            return min(max(int((lo_frame + int(np.argmin(smoothed)) + 2.5) * frame_ms), lo), hi)
+
+        def cuts(lo:int, hi:int, is_start:bool)->list[tuple[int, int]]:
+            # (position, rank) in [lo, hi]. A clip starting in a pause keeps edge_pad ms of it before its first word,
+            # a clip ending in one edge_pad ms after its last word. The quietest 50 ms within reach of the window, on
+            # its outer side, always makes a valid pair with the other edge's
+            if is_start:
+                result = [(quietest(max(0, start - reach), start, start), 0)]
+                if lo == 0:
+                    result.append((0, 2))
+            else:
+                result = [(quietest(end, min(total_duration, end + reach), end), 0)]
+                if hi == total_duration:
+                    result.append((total_duration, 2))
+            for pause_start, pause_end in pauses:
+                if pause_end >= lo and pause_start <= hi:
+                    pos = max(pause_start, pause_end - edge_pad) if is_start else min(pause_end, pause_start + edge_pad)
+                    result.append((min(max(pos, lo), hi), 2 if pause_end - pause_start >= break_len else 1))
+            return result
+
+        start_cuts = cuts(search_lo, min(total_duration, start + reach), True)
+        end_cuts = cuts(max(0, end - reach), search_hi, False)
+        best = (-1, -1, 0), start, end
+        for new_start, start_rank in start_cuts:
+            for new_end, end_rank in end_cuts:
+                if window <= new_end - new_start <= window + 2 * reach:
+                    key = (start_rank + end_rank, end_rank, -abs(new_start - start) - abs(new_end - end))
+                    if key > best[0]:
+                        best = key, new_start, new_end
+        return best[1], best[2]
     
     def _trim_and_clean(self, silence_threshold:int, min_silence_len:int=200, chunk_size:int=100)->tuple[bool, str]:
         try:
@@ -247,6 +348,8 @@ class VoiceExtractor:
                         percent = int(i / max(1, total_steps - 1))
                         self.progress_bar(percent, desc=msg)
                 best_end = best_start + window
+                # the window is cut at fixed hops, often inside a word: both edges move to the nearest sentence break
+                best_start, best_end = self._sentence_bounds(audio, silence_threshold, best_start, best_end, hop)
                 nonsilent = detect_nonsilent(
                     audio,
                     min_silence_len = min_silence_len,

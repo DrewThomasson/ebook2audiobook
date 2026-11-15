@@ -54,9 +54,29 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             self.engine = self.load_engine()
+            self.model_vocab = self._load_model_vocab()
         except Exception as e:
             error = f'__init__() error: {e}'
             raise ValueError(error)
+
+    def _load_model_vocab(self)->set|None:
+        tokenizer = getattr(getattr(getattr(self.engine, 'synthesizer', None), 'tts_model', None), 'tokenizer', None)
+        if tokenizer is None or getattr(tokenizer.text_cleaner, '__name__', '') == 'uroman_cleaners':
+            return None
+        return set(tokenizer.characters.vocab)
+
+    def _fold_to_model_vocab(self, text:str)->str:
+        if not self.model_vocab:
+            return text
+        import unicodedata
+        folded = []
+        for char in unicodedata.normalize('NFC', text).lower():
+            if char not in self.model_vocab:
+                base = ''.join(c for c in unicodedata.normalize('NFKD', char) if not unicodedata.combining(c))
+                if base and all(c in self.model_vocab for c in base):
+                    char = base
+            folded.append(char)
+        return ''.join(folded)
 
     def load_engine(self)->Any:
         try:
@@ -135,9 +155,11 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                     if not any(c.isalnum() for c in part):
                         continue
                     else:
+                        trim_audio_buffer = 0.002
                         if part.endswith("'"):
                             part = part[:-1]
                         part = re.sub(not_supported_punc_pattern, ' ', part).strip()
+                        part = self._fold_to_model_vocab(part)
                         try:
                             if use_zs:
                                 if not self.engine_zs:
@@ -154,37 +176,6 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                                 text=part,
                                                 file_path=tmp_in_wav
                                             )
-                                # gender pitch pre-shift (sox), off: the voice conversion takes the pitch from the target voice
-                                #if self.params['current_voice'] in self.params['semitones'].keys():
-                                #    semitones = self.params['semitones'][self.params['current_voice']]
-                                #else:
-                                #    current_voice_gender = detect_gender(self.params['current_voice'])
-                                #    voice_builtin_gender = detect_gender(tmp_in_wav)
-                                #    if voice_builtin_gender != current_voice_gender:
-                                #        semitones = -4 if current_voice_gender == 'male' else 4
-                                #        msg = legends['msg_voice_gender_adapt'].format(cloned=current_voice_gender, builtin=voice_builtin_gender)
-                                #        print(msg)
-                                #    else:
-                                #        semitones = 0
-                                #    self.params['semitones'][self.params['current_voice']] = semitones
-                                #if semitones > 0:
-                                #    try:
-                                #        cmd = [
-                                #            shutil.which('sox'), tmp_in_wav,
-                                #            '-r', str(self.params['samplerate']), tmp_out_wav,
-                                #            'pitch', str(semitones * 100)
-                                #        ]
-                                #        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                #    except subprocess.CalledProcessError as e:
-                                #        error = legends['error_subprocess'].format(e=e.stderr)
-                                #        DependencyError(error)
-                                #        return False, error
-                                #    except FileNotFoundError as e:
-                                #        error = legends['error_file_not_found_detail'].format(e=e)
-                                #        DependencyError(error)
-                                #        return False, error
-                                #else:
-                                #    tmp_out_wav = tmp_in_wav
                                 tmp_out_wav = tmp_in_wav
                                 # voice conversion worker (VoiceConversion, default_vc_model): only paths and the text cross the pipe, the
                                 # worker cuts and keeps one reference clip per voice file and the server resamples both sides itself
@@ -203,7 +194,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                     os.remove(tmp_out_wav)
                                 if not reply.get('ok'):
                                     # no retry: core.py unloads the engine, which stops the VC worker. A GPU server that died counts
-                                    # against its package (dropped on the second death, CPU last)
+                                    # against its package (dropped on the second death, next GPU package, CPU last)
                                     if reply.get('server_exited') and self.engine_zs.backend != 'cpu':
                                         self.engine_zs.gpu_crashes[self.engine_zs.package_name] = self.engine_zs.gpu_crashes.get(self.engine_zs.package_name, 0) + 1
                                     if os.path.exists(vc_wav):
@@ -215,7 +206,7 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 os.remove(vc_wav)
                                 if audio_part.ndim > 1:
                                     audio_part = audio_part.mean(axis=1)
-                                audio_part = self._resample_audiodata(audio_part, int(samplerate), self.params['samplerate'])
+                                self.params['samplerate'] = int(samplerate)
                             else:
                                 with torch.inference_mode():
                                     with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
@@ -232,6 +223,8 @@ class Fairseq(TTSUtils, TTSRegistry, name='fairseq'):
                                 if part_tensor.numel() == 0:
                                     error = 'part_tensor not valid'
                                     return False, error
+                                if part[-1].isalnum() or part[-1] == '—':
+                                    part_tensor = trim_audio(part_tensor.squeeze(0), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                                 self.audio_segments.append(part_tensor)
                             else:
                                 error = 'audio_part not valid'

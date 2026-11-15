@@ -53,8 +53,8 @@ def patch_torchaudio(mod: ModuleType)->None:
         return
 
     def _load_via_soundfile(uri, frame_offset:int=0, num_frames:int=-1,
-                           normalize:bool=True, channels_first:bool=True,
-                           **_ignored):
+                            normalize:bool=True, channels_first:bool=True,
+                            **_ignored):
         start = int(frame_offset) if frame_offset else 0
         frames = -1 if (num_frames is None or num_frames<0) else int(num_frames)
         dtype = 'float32' if normalize else 'int16'

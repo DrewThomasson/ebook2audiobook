@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from pathlib import Path
 from lib.lang import legends
@@ -76,6 +77,8 @@ def upload_to_abs(
     library_id:str,
     folder_id:str = "",
     timeout:int = 1800,
+    series:str = "",
+    series_index:str = "",
 )->tuple[bool, str]:
     if isinstance(file_path, str):
         file_path = [file_path]
@@ -104,6 +107,12 @@ def upload_to_abs(
     }
     if author:
         form_data["author"] = author
+    if series:
+        # ABS stores the upload under <author>/<series>/<title>. /api/upload has no sequence field, the scanner
+        # reads it from a "Book N - " title folder prefix (1-3 digits, 2 decimals max) when a series folder exists
+        form_data["series"] = series
+        if series_index and re.fullmatch(r'\d{1,3}(?:\.\d{1,2})?', str(series_index)):
+            form_data["title"] = f'Book {series_index} - {form_data["title"]}'
     files_dict:dict = {}
     handles:list = []
     try:

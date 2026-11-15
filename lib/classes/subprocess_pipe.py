@@ -4,6 +4,8 @@ from collections.abc import Callable
 from lib.lang import legends
 
 class SubprocessPipe:
+    # seconds between the lines send() prints while a worker reply is still due
+    busy_notice_seconds = 60
 
     def __init__(self, cmd:list[str], is_gui_process:bool, total_duration:float, msg:str=legends['msg_processing'], on_progress:Callable[[float], None]|None=None, keep_alive:bool=False, env:dict|None=None)->None:
         self.cmd = cmd
@@ -259,6 +261,28 @@ class SubprocessPipe:
                             pass
         return False
 
+    def _busy_notices(self, done:threading.Event)->None:
+        # a reply can take minutes (a long sentence on CPU): every busy_notice_seconds tell the user the worker is still
+        # on it and how many cores it keeps busy, so a slow worker (cores busy) and a stuck one (idle) read apart in a log
+        import time
+        try:
+            import psutil
+            worker = psutil.Process(self.process.pid)
+            worker.cpu_percent(None)
+            total = psutil.cpu_count() or '?'
+        except Exception:
+            worker, total = None, '?'
+        start = time.monotonic()
+        while not done.wait(self.busy_notice_seconds):
+            cores = '?'
+            if worker is not None:
+                try:
+                    cores = f'{worker.cpu_percent(None) / 100:.1f}'
+                except Exception:
+                    worker = None
+            msg = legends['msg_worker_busy'].format(seconds=int(time.monotonic() - start), cores=cores, total=total)
+            print(msg)
+
     def send(self, request:dict)->dict:
         # one request line out, one reply line back. The lock serializes callers
         # (one worker = one model in memory), so threads take turns.
@@ -268,7 +292,12 @@ class SubprocessPipe:
                     return {'ok': False, 'error': legends['error_worker_exited'].format(code=self.process.poll() if self.process else None)}
                 self.process.stdin.write((json.dumps(request) + '\n').encode('utf-8'))
                 self.process.stdin.flush()
-                line = self.process.stdout.readline()
+                done = threading.Event()
+                threading.Thread(target=self._busy_notices, args=(done,), daemon=True).start()
+                try:
+                    line = self.process.stdout.readline()
+                finally:
+                    done.set()
                 if not line:
                     try:
                         self.process.wait(timeout=10)

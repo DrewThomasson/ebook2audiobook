@@ -1,5 +1,6 @@
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
+from lib.classes.tts_engines.common.hf_download import hf_download
 from lib.conf import systems
 from lib.lang import legends
 
@@ -59,7 +60,7 @@ class Phonon(TTSUtils, TTSRegistry, name='phonon'):
             self.model_dir = os.path.join(self.cache_dir, tts_engine, self.checkpoint['repo'].replace('/', '--'))
             self.voices_dir = os.path.join(self.cache_dir, tts_engine, settings['voices_repo'].replace('/', '--'))
             self.xtts_speakers = self._load_xtts_builtin_list()
-            # ptts' PyPI wheels build no GPU backend: Phonon runs on CPU, the voice conversion keeps the session device
+            # ptts' PyPI wheels build no GPU backend: CPU is Phonon's only device (default_engine_settings "devices")
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
             if self.device != devices['CPU']['proc']:
                 msg = legends['msg_phonon_cpu'].format(engine=tts_engine, device=self.device)
@@ -101,10 +102,12 @@ class Phonon(TTSUtils, TTSRegistry, name='phonon'):
                 # one): ptts gets a local path, so it never touches the network
                 marker_file = os.path.join(self.model_dir, '.e2a_complete')
                 if not os.path.exists(marker_file):
-                    from huggingface_hub import snapshot_download
                     from huggingface_hub.errors import GatedRepoError
                     try:
-                        snapshot_download(self.checkpoint['repo'], local_dir=self.model_dir, allow_patterns=settings['checkpoint_files'])
+                        # one file at a time (every Phonon repo has all of them): byte progress in the terminal and the GUI, which
+                        # snapshot_download's aggregated bars (8 download threads, totals growing from 0) cannot give
+                        for f in settings['checkpoint_files']:
+                            hf_download(progress_bar, msg, repo_id=self.checkpoint['repo'], filename=f, local_dir=self.model_dir)
                     except GatedRepoError:
                         # Phonon 40m: the account of e2a's HF_TOKEN has to accept its (auto-approved) conditions
                         error = legends['error_orpheus_gated'].format(repo=self.checkpoint['repo'])
@@ -136,7 +139,7 @@ class Phonon(TTSUtils, TTSRegistry, name='phonon'):
             import torch
             import numpy as np
             import soundfile as sf
-            from lib.classes.tts_engines.common.audio import is_audio_data_valid, detect_gender
+            from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid, detect_gender
             if self.engine:
                 settings = default_engine_settings[self.session['tts_engine']]
                 sentence_parts = self._split_sentence_on_sml(sentence)
@@ -163,6 +166,7 @@ class Phonon(TTSUtils, TTSRegistry, name='phonon'):
                         # re-read per part: an inline [voice:…] tag can switch the voice in the middle of the sentence.
                         # No voice file: the preset's voice. A voice file: a built-in voice converted to it
                         # (default_vc_model), the same-gender catalog voice for the internal preset
+                        trim_audio_buffer = 0.01
                         current_voice = self.params['current_voice']
                         use_zs = current_voice is not None
                         speaker = self.speaker
@@ -203,7 +207,7 @@ class Phonon(TTSUtils, TTSRegistry, name='phonon'):
                             })
                             if not reply.get('ok'):
                                 # no retry: core.py unloads the engine, which stops the VC worker. A GPU server that died counts
-                                # against its package (dropped on the second death, CPU last)
+                                # against its package (dropped on the second death, next GPU package, CPU last)
                                 if reply.get('server_exited') and self.engine_zs.backend != 'cpu':
                                     self.engine_zs.gpu_crashes[self.engine_zs.package_name] = self.engine_zs.gpu_crashes.get(self.engine_zs.package_name, 0) + 1
                                 if os.path.exists(vc_file):
@@ -215,7 +219,7 @@ class Phonon(TTSUtils, TTSRegistry, name='phonon'):
                             os.unlink(vc_file)
                             if audio_part.ndim > 1:
                                 audio_part = audio_part.mean(axis=1)
-                            audio_part = self._resample_audiodata(audio_part, int(zs_samplerate), samplerate)
+                            samplerate = zs_samplerate
                         else:
                             # copied: the array comes from the Rust side, torch.from_numpy wants a writable one
                             audio_part = np.array(self.engine.synth(part, voice=speaker), dtype=np.float32)
@@ -229,6 +233,8 @@ class Phonon(TTSUtils, TTSRegistry, name='phonon'):
                         if part_tensor.numel() == 0:
                             error = 'part_tensor not valid'
                             return False, error
+                        if part[-1].isalnum() or part[-1] == '—':
+                            part_tensor = trim_audio(part_tensor.squeeze(), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         self.audio_segments.append(part_tensor)
                         if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
                             silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
