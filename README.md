@@ -251,10 +251,19 @@ Another way to install and launch ebook2audiobook, without cloning the repo: pip
 - Relative paths given to `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` and `--output_dir`<br>
   are read from the folder where you type the command.
 - No need to deactivate your venv or conda env: ebook2audiobook always runs in its own `python_env`.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (optionally with `--docker_mode compose` or `--docker_mode podman`)<br>
+  builds the image from that folder. Run the `docker run` / `docker compose` commands it prints from that folder too:<br>
+  their `./ebooks`, `./audiobooks`... mounts and the compose files are relative to it. The image takes the same options,<br>
+  with paths inside the container (`/app/...`), see [Docker](#docker).
 - **Update**: `pipx reinstall ebook2audiobook`, or `pip install --force-reinstall git+https://github.com/DrewThomasson/ebook2audiobook.git`.<br>
   The next start updates the app files and keeps `python_env`, models, voices, audiobooks and anything you added to the folder.
-- **Uninstall**: run the uninstaller of the folder (`./uninstall.sh` or `uninstall.cmd`),<br>
-  then `pipx uninstall ebook2audiobook` (or `pip uninstall ebook2audiobook`).
+- **Uninstall**: `pip uninstall ebook2audiobook` alone only removes the command, the folder and its gigabytes of models stay.
+  1. Move your audiobooks out of the folder's `audiobooks` subfolder: the uninstaller deletes everything in the folder.
+  2. Run the uninstaller of the folder, `./uninstall.sh` (Linux/MacOS) or `uninstall.cmd` (Windows):<br>
+     it removes the shortcuts, the programs it installed (listed in `.installed`) and the folder content.
+  3. `pipx uninstall ebook2audiobook` (or `pip uninstall ebook2audiobook`), then delete the folder, where only the uninstaller is left.
+  4. If you built Docker images: `docker rmi athomasson2/ebook2audiobook:<tag>` and `docker volume rm e2a_venvs`<br>
+     (with Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` and `podman volume rm e2a_venvs`).
 
 <a id="basic-usage"></a>
 ### Basic  Usage
@@ -427,8 +436,12 @@ pip/pipx install (all OS, python 3.8+, no clone needed):
     ebook2audiobook
     Headless mode:
     ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
     The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
     where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: its uninstall.sh or uninstall.cmd (it deletes the audiobooks folder too), then pip uninstall ebook2audiobook.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
