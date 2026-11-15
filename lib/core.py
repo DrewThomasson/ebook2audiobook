@@ -998,6 +998,7 @@ def export_blocks(session_id:str, path:str)->str|None:
         session = context.get_session(session_id)
         data = copy.deepcopy(session['blocks_current'])
         data['session'] = session_id
+        data['ebook'] = os.path.basename(session['ebook_src'])
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         print(legends['msg_blocks_exported'].format(path=path, count=len(data.get('blocks', []))))
@@ -4800,11 +4801,17 @@ def convert_ebook(args:dict)->tuple:
                     if voice_note:
                         msg += voice_note
                     print(msg)
-                    while True:
-                        choice = input("[s]kip / [r]esume / [d]elete and convert again: ").strip().lower()
-                        if choice in ('s', 'r', 'd'):
-                            break
-                        print("Please enter 's', 'r' or 'd'.")
+                    if args.get('import_blocks_data'):
+                        # an import resumes: delete would parse the ebook again with new block ids, which the file
+                        # no longer matches, and the caller is often a script with no one to answer the prompt
+                        choice = 'r'
+                        print(legends['msg_import_blocks_resume'])
+                    else:
+                        while True:
+                            choice = input("[s]kip / [r]esume / [d]elete and convert again: ").strip().lower()
+                            if choice in ('s', 'r', 'd'):
+                                break
+                            print("Please enter 's', 'r' or 'd'.")
                     if choice == 'r':
                         if audio_pre_final_exist:
                             os.unlink(audio_pre_final_file)

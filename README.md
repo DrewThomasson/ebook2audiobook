@@ -308,9 +308,8 @@ Another way to install and launch ebook2audiobook, without cloning the repo: pip
      ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --language <language_code> --import_blocks blocks.json
      ```
   - The conversion runs in the session that exported the file (its `"session"`), unless `--session` is given.<br>
-    Running the same import again and answering `[r]esume` continues an interrupted conversion, and converts again only the blocks whose text changed.<br>
-    `[d]elete` parses the ebook again with new block ids, so export the blocks again after it.
-  - A file exported from another ebook, or whose block ids or count no longer match, is refused.
+    Running the same import again continues an interrupted conversion without asking, and converts again only the blocks whose text changed.
+  - A file exported from another ebook, or whose block ids or count no longer match (i.e. after another `--language` or `--translate`), is refused.
 
 
 <a id="example-of-custom-model-zip-upload"></a>

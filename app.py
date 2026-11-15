@@ -457,6 +457,10 @@ valence, arousal (-1 to 1).""")
                 if error:
                     print(error)
                     sys.exit(1)
+                exported_ebook = args['import_blocks_data'].get('ebook')
+                if exported_ebook and exported_ebook != os.path.basename(args['ebook']):
+                    print(legends['error_import_blocks_mismatch'].format(path=args['import_blocks'], reason=f'exported from {exported_ebook}'))
+                    sys.exit(1)
                 # block ids are generated at parse time and live in the process dir of the session that parsed the
                 # ebook: converting in that session finds the same ids, plus any audio a previous import already made
                 if not args['session'] and args['import_blocks_data'].get('session'):
