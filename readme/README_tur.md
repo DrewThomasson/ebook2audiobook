@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 e-kitaptan sesli kitaba (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 E-Kitaptan bölümler ve meta verilerle sesli kitaba CPU/GPU dönüştürücü<br/>
 gelişmiş TTS motorları ve çok daha fazlasını kullanarak.<br/>
 Ses klonlamayı ve 1696 dili destekler!
-> [!IMPORTANT]
+> ÖNEMLİ
 **Bu araç yalnızca DRM içermeyen, yasal olarak edinilmiş e-kitaplarla kullanılmak üzere tasarlanmıştır.** <br>
 Yazarlar, bu yazılımın herhangi bir şekilde kötüye kullanılmasından veya bundan kaynaklanan yasal sonuçlardan sorumlu değildir. <br>
 Bu aracı sorumlu bir şekilde ve geçerli tüm yasalara uygun olarak kullanın.
@@ -166,11 +166,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — sessizlik (rastgele aralık **1.0–1.6 sec.**)
 - `[pause:N]` — sabit duraklama (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — varsayılan sesten veya GUI/CLI'den seçilen sesten ses değiştirme
-- `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
+- `[emotion:sadness]...[/emotion]` — Yalnızca Zonos: Bir pasaj için duygu (mutluluk, üzüntü, tiksinme, korku, şaşkınlık, öfke, diğer, nötr) veya `[emotion:sadness=0.7,neutral=0.3]` gibi bir karışım; diğer motorlar bunu dikkate almaz
 
 **E-kitabınıza otomatik olarak SML eklemeye adanmış diğer deposumuza göz atın -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> ÖNEMLİ
 **Bir kurulum veya hata sorunu göndermeden önce, açık ve kapalı sorunlar sekmesini dikkatlice arayın<br>
 sorununuzun zaten var olmadığından emin olmak için.**
 
@@ -214,7 +214,7 @@ Bu yüzden önce sese dönüştürmek istemediğiniz her metni manuel olarak kal
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (tüm işletim sistemleri, yalnızca bir kez kurulmuş ve python_env klasöründeki python ile)
 
-> [!IMPORTANT]
+> ÖNEMLİ
 **Komut dosyası durdurulup tekrar çalıştırılırsa, Gradio GUI arayüzünüzü yenilemeniz gerekir<br>
 web sayfasının yeni bağlantı soketine yeniden bağlanmasına izin vermek için.**
 
@@ -763,7 +763,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Geveze (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1)
 - [x] Dizin - tts/ Dizin TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
@@ -778,8 +778,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Yosun TTS Yerel / nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
 - [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Cep TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
-- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
-- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1]
+- [x] Gradium Fononu (https://github.com/gradium-ai/xn-ptts)[cite: 1]
+- [x] Süpertonik (https://github.com/supertone-inc/supertonic)[cite: 1]
 - [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
 - [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
@@ -819,7 +819,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Vietnamca (VIe)
 - [x] İsveççe (Swe)
 - [x] Farsça (fas)
-- [x] Yoruba (yor)
+- [x] Yorubaca (yor)
 - [x] Svahili dili (swa)
 - [x] Endonezce (ind)
 - [x] Slovakça (slk)
@@ -827,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### 💻 İşletim Sistemi Uyumluluğu
 - [x] 🪟 Windows x86
-- [x] 🪟 ARM PENCERELER
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
 - [x] 🍎 Apple Silicon Mac
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LİNUX
+- [x] 🐧 ARM Linux
 
 **********
 
@@ -853,8 +853,8 @@ Geliştirmemizi test etmek için her türlü donanımı kabul ediyoruz, örneği
 -->
 
 ## Kredi
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Araştırma ve üretimde kendini kanıtlamış, metinden konuşmaya yönelik bir derin öğrenme araç seti.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Hızlı ve yerel sinir ağı tabanlı metinden konuşmaya dönüştürme motoru.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2 için ggml çıkarım kodu.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Ggml ile çalışan, ses modelleri için hepsi bir arada, saf C++ çıkarım motoru.
 

@@ -1,5 +1,5 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 Из электронной книги в аудиокнигу (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU конвертер из электронной книги в аудиокнигу с главами и метаданными<br/>
@@ -124,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **Сканирование OCR** для файлов с текстовыми страницами в виде изображений
 - 🔊 **Высококачественное преобразование текста в речь**, от почти реального времени до почти настоящего голоса
 - 🗣️ **Необязательное клонирование голоса** с использованием вашего собственного голосового файла
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Поддерживает 1696 языков** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Дружелюбен к слабым ресурсам** — работает на **2 ГБ ОЗУ / 1 ГБ VRAM (минимум)**
 - 🎵 **Форматы вывода аудиокниги**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Поддержка тегов SML** — точный контроль над прерываниями, паузами, сменой голоса и многим другим ([see below](#sml-tags-available))
@@ -138,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 ГБ ОЗУ мин., 8 ГБ рекомендуется.
 - 1 ГБ VRAM мин., 4 ГБ рекомендуется.
 - Виртуализация включена при запуске в Windows (только Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- ЦП, XPU (Intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
 - MPS (CPU Apple Silicon)
 
@@ -715,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Распространённые проблемы:
 - Мой графический процессор NVIDIA/ROCm/XPU/MPS не обнаружен?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU медленный (лучше на серверном SMP CPU), тогда как GPU может обеспечить почти преобразование в реальном времени.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Однако у него нет клонирования голоса zero-shot, и это голоса качества Siri, но он намного быстрее на cpu).
 - «У меня проблемы с зависимостями» - Просто используйте docker, он полностью автономен и имеет режим headless,
    добавьте параметр  в конец команды docker run для получения дополнительной информации. `--help`
@@ -753,35 +753,35 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Двигатели TTS
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
-- [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
-- [x] Fish-speech / Fish Audio (https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
-- [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
+- [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1)
+- [x] Голос рыбы / Звук рыбы (https://github.com/fishaudio/fish-speech)[cite: 1]
+- [x] TTS Higgs Audio (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] Майя1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
-- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
-- [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
+- [x] Болтун (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1)
+- [x] Индекс-tts / Индекс TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
-- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
-- [x] Dots TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
+- [x] Конфуций4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] Точки TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
 - [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
-- [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
-- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
-- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1]
+- [x] Moss TTS локальный / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1)
+- [x] Карманный TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
+- [x] Фонон градиума (https://github.com/gradium-ai/xn-ptts)[cite: 1]
+- [x] Супертоника (https://github.com/supertone-inc/supertonic)[cite: 1]
 - [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
-- [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
+- [x] Волынщик (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
 - [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
@@ -808,7 +808,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Португальский (por)
 - [x] Польский (pol)
 - [x] Турецкий (tur)
-- [x] Russian (rus)
+- [x] Русский (rus)
 - [x] Голландский (nld)
 - [x] Чешский (ces)
 - [x] Японский (jpn)
@@ -827,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Совместимость с ОС:
 - [x] 🪟 Windows x86
-- [x] Окна 🪟 РЫЧАГА
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
 - [x] Apple silicon
 - [x] Linux (rpm-based) x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 

@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 E-book na audiobook (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 Konwerter CPU/GPU z e-booka na audiobook z rozdziałami i metadanymi<br/>
 z wykorzystaniem zaawansowanych silników TTS i nie tylko.<br/>
 Obsługuje klonowanie głosu i 1696 języków!
-> [!IMPORTANT]
+> WAŻNE
 **To narzędzie jest przeznaczone wyłącznie do użytku z e-bookami bez DRM, nabytymi legalnie.** <br>
 Autorzy nie ponoszą odpowiedzialności za jakiekolwiek niewłaściwe użycie tego oprogramowania ani za wynikające z tego konsekwencje prawne. <br>
 Korzystaj z tego narzędzia odpowiedzialnie i zgodnie ze wszystkimi obowiązującymi przepisami.
@@ -124,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **Skanowanie OCR** dla plików ze stronami tekstu w postaci obrazów
 - 🔊 **Wysokiej jakości zamiana tekstu na mowę**, od niemal czasu rzeczywistego po niemal naturalny głos
 - 🗣️ **Opcjonalne klonowanie głosu** przy użyciu własnego pliku głosowego
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Obsługuje 1696 języków** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Przyjazny dla ograniczonych zasobów** — działa na **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Formaty wyjściowe audiobooka**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Obsługa znaczników SML** — precyzyjna kontrola przerw, pauz, zmiany głosu i nie tylko ([see below](#sml-tags-available))
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Sprawdź nasze inne repozytorium poświęcone automatycznemu dodawaniu SML w Twoim e-booku -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> WAŻNE
 **Zanim zgłosisz problem z instalacją lub błąd, przeszukaj dokładnie zakładkę z otwartymi i zamkniętymi zgłoszeniami<br>
 aby upewnić się, że Twój problem jeszcze nie istnieje.**
 
@@ -189,7 +189,7 @@ Dlatego najpierw należy ręcznie usunąć wszelki tekst, którego nie chcesz ko
 
 2. **Zainstaluj / Uruchom ebook2audiobook**:
 
-   - **Linux/MacOS**
+   - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.command
      ```
@@ -214,7 +214,7 @@ Dlatego najpierw należy ręcznie usunąć wszelki tekst, którego nie chcesz ko
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (wszystkie systemy operacyjne, tylko po zainstalowaniu i z Pythonem z folderu python_env)
 
-> [!IMPORTANT]
+> WAŻNE
 **Jeśli skrypt zostanie zatrzymany i uruchomiony ponownie, musisz odświeżyć swój interfejs graficzny Gradio<br>
 aby strona internetowa mogła ponownie połączyć się z nowym gniazdem połączenia.**
 
@@ -715,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Częste problemy:
 - Moja karta GPU NVIDIA/ROCm/XPU/MPS nie jest wykrywana?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU jest wolne (lepsze na serwerowym CPU SMP), podczas gdy GPU może zapewnić konwersję niemal w czasie rzeczywistym.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Nie ma jednak klonowania głosu zero-shot, a głosy są jakości Siri, ale jest znacznie szybsze na CPU).
 - „Mam problemy z zależnościami” - Po prostu użyj Dockera, jest w pełni samodzielny i ma tryb headless,
    dodaj parametr  na końcu polecenia docker run, aby uzyskać więcej informacji. `--help`
@@ -753,9 +753,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Silniki TTS
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
-- [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
-- [x] Fish-speech / Fish Audio (https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
+- [x] Mowa ryb / Dźwięk ryb (https://github.com/fishaudio/fish-speech)[cite: 1]
+- [x] TTS Higgs Audio (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
@@ -763,23 +763,23 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
-- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
+- [x] Gaduła (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
 - [x] Indeks-tts / Indeks TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
-- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] Konfucjusz4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] Kropki TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
 - [x] Sroka TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] Moss TTS lokalny / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Kieszeń TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
-- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
-- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1]
+- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1)
+- [x] Dźwięk supertoniczny (https://github.com/supertone-inc/supertonic)[cite: 1]
 - [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
 - [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
@@ -812,7 +812,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Holenderski (nld)
 - [x] Czeski (ces)
 - [x] Japoński (jpn)
-- [x] Hindi (hin)
+- [x] hindi (hin)
 - [x] Bengalski (ben)
 - [x] Węgierski (hun)
 - [x] Koreański (kor)
@@ -831,7 +831,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 🍎 Mac Intel x86
 - [x] Apple silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 UZBRÓJ LINUXA
+- [x] 🐧 ARM Linux
 
 **********
 

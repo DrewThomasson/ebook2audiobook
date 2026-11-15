@@ -39,13 +39,13 @@ Používejte tento nástroj zodpovědně a v souladu se všemi platnými zákony
 
 <a id="gui-interface"></a>
 #### Grafické rozhraní (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Klikněte pro zobrazení obrázků webového GUI</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Podporované jazyky
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,60 @@ Proto byste měli nejprve ručně odstranit veškerý text, který nechcete pře
 **Pokud je skript zastaven a znovu spuštěn, musíte obnovit své grafické rozhraní Gradio<br>
 aby se webová stránka mohla znovu připojit k novému připojovacímu socketu.**
 
+<a id="pip-install"></a>
+### Instalace pomocí pip / pipx
+Další způsob instalace a spuštění nástroje ebook2audiobook bez klonování repozitáře: pip nainstaluje příkaz `ebook2audiobook`<br>
+(všechny operační systémy, jakákoli verze Pythonu 3.8+). Naklonovaný repozitář s výše uvedenými spouštěcími skripty funguje i nadále stejným způsobem.
+
+1. **Nainstaluj příkaz** z PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   nebo s UV zářením
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   nebo s peckou
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>Pro nejnovější kód, který ještě nebyl vydán, použijte `git+https://github.com/DrewThomasson/ebook2audiobook.git` namísto `ebook2audiobook`.</i>
+
+2. **Nainstalujte / spusťte ebook2audiobook** se stejnými možnostmi jako spouštěcí skripty:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Pokud příkaz nebyl nalezen (složka se skripty pipu není ve vaší proměnné PATH): `python -m ebook2audiobook`
+
+- Při prvním spuštění se ebook2audiobook zkopíruje do složky `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` v systému Windows) a zde se nainstaluje<br>
+  se svým spouštěcím skriptem, přesně jako by to udělal `./ebook2audiobook.command` nebo `ebook2audiobook.cmd`.
+- Chcete-li použít jinou složku, nastavte `E2A_HOME` před prvním spuštěním a ponechte toto nastavení i pro další spuštění<br>
+  (tj. `export E2A_HOME=/data/ebook2audiobook` v systému Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` a poté nový terminál v systému Windows).
+- Tato složka je běžná složka ebook2audiobook: `./ebook2audiobook.command` (`./e2a.sh`) a `ebook2audiobook.cmd` (`e2a.cmd`) v ní také fungují.
+- Pokud tato složka již obsahuje naklonovanou nebo staženou knihu ebook2audiobook, spustí se tak, jak je, a pip ji nikdy nezmění.
+- Relativní cesty zadané pro `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` a `--output_dir`<br>
+  se načítají ze složky, do které zadáte příkaz.
+- Není třeba deaktivovat prostředí venv nebo conda env: ebook2audiobook vždy běží ve vlastním prostředí `python_env`.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (volitelně s `--docker_mode compose` nebo `--docker_mode podman`)<br>
+  vytvoří image z této složky. Spusťte příkazy `docker run` / `docker compose`, které také vytiskne z této složky:<br>
+  jejich `./ebooks`, `./audiobooks`… připojení a soubory compose jsou k nim relativní. Obrázek má stejné možnosti,<br>
+  s cestami uvnitř kontejneru (`/app/...`), viz [Docker](#docker).
+- **Aktualizace**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` nebo `pip install -U ebook2audiobook`.<br>
+  Při příštím spuštění se aktualizují soubory aplikace a zachovají se `python_env`, modely, hlasy, audioknihy a vše, co jste do složky přidali.
+- **Odinstalovat**: `pip uninstall`, `pipx uninstall` nebo `uv tool uninstall` odstraní pouze příkaz:<br>
+  Složka a její gigabajty modelů zůstávají. Nejprve odinstalujte ebook2audiobook pomocí samotného příkazu:
+  1. Přesuňte své audioknihy z podsložky `audiobooks` složky: veškerý obsah složky bude smazán.
+  2. `ebook2audiobook --uninstall`<br>
+     Spustí odinstalační program složky, který vás požádá o potvrzení a poté odstraní zástupce a programy, které nainstaloval<br>
+     (uvedeno v `.installed`) a obsah složky, poté složku smaže.
+  3. Spusťte příkaz, který se zobrazí jako poslední, abyste odstranili samotný nástroj `ebook2audiobook`. Postup závisí na způsobu instalace:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` nebo `pip uninstall ebook2audiobook`.
+  4. Pokud jste vytvořili obrazy Dockeru: `docker rmi athomasson2/ebook2audiobook:<tag>` a `docker volume rm e2a_venvs`<br>
+     (s Podmanem: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` a `podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### Základní použití
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ aby se webová stránka mohla znovu připojit k novému připojovacímu socketu.
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (všechny operační systémy)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Cesta k souboru vaší e-knihy
@@ -260,6 +319,10 @@ aby se webová stránka mohla znovu připojit k novému připojovacímu socketu.
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (všechny operační systémy)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Nebo pro všechny OS**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
