@@ -3781,14 +3781,7 @@ def convert_chapters2audio(session_id:str)->bool:
                 # audio was made from. The record also says when the chapter file is older than the sentences it is made of
                 spoken_sentences = load_spoken_sentences(block_dir)
                 engine_sentences = get_engine_sentences(sentences, guide, cast)
-                # audio made before sentences carried the voice of their passage has a record without those tags.
-                # It is the same audio as long as no cast gives the sentence another voice
-                uncast_sentences = get_engine_sentences(sentences, guide, None) if cast else engine_sentences
-                stale_sentences = set()
-                for j in valid_idx:
-                    recorded = spoken_sentences.get(str(j), sentences[j].strip())
-                    if recorded != engine_sentences[j] and not (recorded == apply_pronunciations(sentences[j].strip(), guide) and engine_sentences[j] == uncast_sentences[j]):
-                        stale_sentences.add(j)
+                stale_sentences = {j for j in valid_idx if spoken_sentences.get(str(j), sentences[j].strip()) != engine_sentences[j]}
                 recombine = bool(spoken_sentences.get(spoken_combine_key))
                 stale_only = False
                 guide_stale = False
