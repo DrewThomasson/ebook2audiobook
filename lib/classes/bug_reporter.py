@@ -17,6 +17,9 @@ class BugReporter:
     env_keys = ['CUDA_VISIBLE_DEVICES', 'NVIDIA_VISIBLE_DEVICES', 'NVIDIA_DRIVER_CAPABILITIES', 'HIP_VISIBLE_DEVICES', 'ROCR_VISIBLE_DEVICES', 'HSA_OVERRIDE_GFX_VERSION', 'ZE_AFFINITY_MASK', 'ONEAPI_DEVICE_SELECTOR', 'LD_LIBRARY_PATH', 'LD_PRELOAD']
     # GPU stack errors worth a self-test in a fresh process (plain "CUDA out of memory" is not: VRAM state says it all)
     gpu_error_re = re.compile(r'CUDNN_STATUS|CUBLAS_STATUS|CUFFT_|CUSOLVER_STATUS|CUDA error|CUDA driver|cuda runtime error|no kernel image|HIP error|hipError|MIOpen|miopenStatus|UR_RESULT_ERROR|PI_ERROR', re.IGNORECASE)
+    # host RAM exhausted: torch's CPU allocator (Windows "not enough memory", Linux "can't allocate memory"), a C++
+    # bad_alloc (MSVC words it "bad allocation"). python / numpy MemoryError is matched by type
+    host_oom_re = re.compile(r'DefaultCPUAllocator|std::bad_alloc|\bbad allocation\b', re.IGNORECASE)
     dll_error_re = re.compile(r'Error loading "([^"]+?\.(?:dll|pyd))"', re.IGNORECASE)
     pyd_error_re = re.compile(r'DLL load failed while importing (\w+)')
     selftest_timeout = 45
@@ -268,6 +271,9 @@ print(json.dumps(out))
                 runtime = self.gpu_state(info.get('device'))
             except Exception as e:
                 runtime = dict(error=f'{type(e).__name__}: {str(e)[:200]}')
+            # here too, not in send(): the caller unloads the engine right after, which stops its workers
+            if any(isinstance(e, MemoryError) or self.host_oom_re.search(str(e)) for e in chain):
+                runtime['ram'] = self.ram_state()
             if runtime:
                 payload['runtime'] = runtime
             if wait:
@@ -385,6 +391,49 @@ print(json.dumps(out))
             grab('torch_alloc_reserved_peak_gb', lambda: [gb(xpu.memory_allocated()), gb(xpu.memory_reserved()), gb(xpu.max_memory_allocated())])
         if device == 'mps' and getattr(torch, 'mps', None) is not None:
             grab('mps_alloc_driver_gb', lambda: [gb(torch.mps.current_allocated_memory()), gb(torch.mps.driver_allocated_memory())])
+        return state
+
+    def ram_state(self)->dict:
+        # host RAM at a failed CPU allocation: the system's, the commit limit (Windows refuses an allocation once RAM +
+        # pagefile are committed, even with RAM shown free) and e2a's share with its workers (voice conversion server,
+        # engine venv workers), to tell a leak in e2a from a machine short of RAM. Other programs are not named
+        state = {}
+        def gb(n:int)->float:
+            return round(n / 1024**3, 2)
+        try:
+            import psutil
+            vm = psutil.virtual_memory()
+            state['available_total_gb'] = [gb(vm.available), gb(vm.total)]
+            if sys.platform == 'win32':
+                import ctypes
+                class MemoryStatusEx(ctypes.Structure):
+                    _fields_ = [('dwLength', ctypes.c_ulong), ('dwMemoryLoad', ctypes.c_ulong)] + [(name, ctypes.c_ulonglong) for name in ('ullTotalPhys', 'ullAvailPhys', 'ullTotalPageFile', 'ullAvailPageFile', 'ullTotalVirtual', 'ullAvailVirtual', 'ullAvailExtendedVirtual')]
+                status = MemoryStatusEx()
+                status.dwLength = ctypes.sizeof(MemoryStatusEx)
+                if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+                    state['commit_available_limit_gb'] = [gb(status.ullAvailPageFile), gb(status.ullTotalPageFile)]
+            else:
+                swap = psutil.swap_memory()
+                state['swap_free_total_gb'] = [gb(swap.free), gb(swap.total)]
+            def usage(proc:Any)->int:
+                mem = proc.memory_info()
+                # Windows: private bytes are what the commit limit counts
+                return getattr(mem, 'private', 0) or mem.rss
+            proc = psutil.Process()
+            own = usage(proc)
+            workers = []
+            for child in proc.children(recursive=True):
+                try:
+                    script = next((os.path.basename(arg) for arg in child.cmdline()[1:] if arg.endswith('.py')), '')
+                    workers.append((usage(child), f'{child.name()} {script}'.strip()))
+                except psutil.Error:
+                    pass
+            workers.sort(reverse=True)
+            state['e2a_gb'] = gb(own)
+            state['workers_gb'] = [f'{name}: {gb(n)}' for n, name in workers[:8]]
+            state['e2a_total_gb'] = gb(own + sum(n for n, _ in workers))
+        except Exception as e:
+            state['error'] = f'{type(e).__name__}: {str(e)[:200]}'
         return state
 
     def runtime_info(self, payload:dict)->dict:
