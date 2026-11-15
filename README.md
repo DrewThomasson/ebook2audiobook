@@ -95,6 +95,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Edit Chapter Blocks in Headless Mode](#headless-edit-blocks)
+    - [Pronunciation Guides](#pronunciation-guides)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
   - [Run Remotely](#run-remotely)
@@ -313,6 +314,25 @@ Another way to install and launch ebook2audiobook, without cloning the repo: pip
     except the blocks whose text changed, which are converted again, and the last block converted, which restarts from its last saved sentence as on any resume.
   - A file exported from another ebook, or whose block ids or count no longer match (i.e. exported with another `--translate`), is refused.
 
+<a id="pronunciation-guides"></a>
+### Pronunciation Guides
+  A pronunciation guide makes every engine read a name the same way each time it occurs: in every chapter,<br>
+  in every book of a series, and again after a new conversion.
+  - A guide is a JSON file in `pronunciations/`, named after the series when the ebook has one (`pronunciations/<series>.json`),<br>
+    else after the title (`pronunciations/<title>.json`), with spaces as underscores like the audiobook file names.<br>
+    `--pronunciations <path>` picks another file. The GUI shows the guide in use in the blocks editor and when the conversion starts.
+    ```json
+    [
+      {"word": "Qyburn", "say": "KWY-burn"},
+      {"word": "Hermione", "say": "her-MY-oh-nee", "note": "author's website"},
+      {"word": "Arya", "say": "Arya"}
+    ]
+    ```
+  - `say` is the text the engine reads instead of `word`. The ebook, the blocks editor and `--export_blocks` keep the book's spelling.
+  - Changing an entry converts again only the sentences it changes, on the next run of each book that uses the guide.
+  - A guide that is missing or not valid is left out and the conversion goes on.
+  - The format and the matching rules are in [pronunciations/README.md](pronunciations/README.md).
+
 
 <a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
@@ -450,6 +470,10 @@ optional parameters:
                         (--ebook only, optional) Convert from a blocks file written by --export_blocks for the same ebook: block text is used as written
                             and blocks with "keep": false are skipped. The conversion runs in the session that exported the file unless --session is given.
                             A file whose block ids or count do not match the ebook is refused.
+  --pronunciations GUIDE_JSON
+                        (optional) Pronunciation guide to read names with, a JSON list of {"word": "Qyburn", "say": "KWY-burn"} entries.
+                            Default is ./pronunciations/<series>.json when the ebook has a series, else ./pronunciations/<title>.json.
+                            A guide that is missing or not valid is left out and the conversion goes on.
   --version             Show the version of the script and exit
 
 Example usage:
