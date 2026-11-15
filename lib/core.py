@@ -5,7 +5,7 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, atexit, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
+import argparse, asyncio, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
 import traceback, socket, unicodedata, codecs, urllib.request, uuid, zipfile, multiprocessing
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
@@ -27,6 +27,7 @@ from markdown import markdown
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy, SyncManager
+from multiprocessing.util import Finalize
 from stanza.pipeline.core import Pipeline, DownloadMethod
 from num2words2 import num2words
 from pathlib import Path
@@ -200,7 +201,8 @@ class SessionContext:
         if os.name == 'nt' or len(os.fsencode(tempfile.gettempdir())) + len('/pymp-XXXXXXXX/listener-XXXXXXXX') <= 103:
             return Manager()
         socket_dir = tempfile.mkdtemp(prefix='e2a-', dir='/tmp')
-        atexit.register(shutil.rmtree, socket_dir, ignore_errors=True)
+        # Removed after the manager's own exit finalizer (priority 0), which still needs the socket to shut down.
+        Finalize(None, shutil.rmtree, args=(socket_dir,), kwargs={'ignore_errors': True}, exitpriority=-100)
         manager = SyncManager(address=os.path.join(socket_dir, 'manager'), ctx=multiprocessing.get_context())
         manager.start()
         return manager
