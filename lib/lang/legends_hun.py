@@ -495,6 +495,7 @@ legends = {
     'msg_upgrading_outdated_deps': 'A másik csomagnál régebbi függőségek frissítéséhez a következőkre van szükség: {pkgs}',
     'msg_vulkan_torch_libomp': 'A telepített Vulkan Torchből hiányzik a(z) {dll}, és nem lehet betölteni: telepítse újra a közzétett wheelből.',
     'msg_reinstalling_incomplete': 'Hiányzó fájlokat tartalmazó csomagok újratelepítése: {pkgs}',
+    'msg_install_lock_wait': 'Egy másik ebook2audiobook csomagokat telepít ide: {env}, várakozás a befejezésére…',
     'msg_removing_unusable_torchcodec': 'A(z) {version} torchcodec eltávolítása: a torchcodec nem működik a(z) {torch} torch-csal (2.9 alatt), a pyannote nélküle működik.',
     'msg_removing_obsolete': 'Az elavult {pkg} csomag eltávolítása…',
     'msg_remove_obsolete_failed': 'Az elavult {pkg} csomag eltávolítása sikertelen (nem kritikus): {e}',

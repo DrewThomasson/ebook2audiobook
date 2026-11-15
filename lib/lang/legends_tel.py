@@ -495,6 +495,7 @@ legends = {
     'msg_upgrading_outdated_deps': 'మరొక ప్యాకేజీ కంటే పాతవి అయిన డిపెండెన్సీలను అప్‌గ్రేడ్ చేయడానికి అవసరమైనవి: {pkgs}',
     'msg_vulkan_torch_libomp': 'ఇన్‌స్టాల్ చేసిన వల్కన్ టార్చ్‌లో {dll} లేదు మరియు లోడ్ చేయలేం: ప్రచురించిన వీల్ నుండి దానిని మళ్లీ ఇన్‌స్టాల్ చేయడం.',
     'msg_reinstalling_incomplete': 'ఫైల్‌లు లేని ప్యాకేజీలను మళ్లీ ఇన్‌స్టాల్ చేస్తోంది: {pkgs}',
+    'msg_install_lock_wait': 'మరొక ebook2audiobook {env}లో ప్యాకేజీలను ఇన్\u200cస్టాల్ చేస్తోంది, అది పూర్తయ్యే వరకు వేచి ఉంది…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version}ను తీసివేస్తోంది: torch {torch} (2.9 కంటే తక్కువ)తో torchcodec అమలు కావడం లేదు, pyannote దాని లేకుండా పనిచేస్తుంది.',
     'msg_removing_obsolete': 'పాత ప్యాకేజీ {pkg} తొలగించబడుతోంది…',
     'msg_remove_obsolete_failed': 'పాత ప్యాకేజీ {pkg}ను తొలగించలేకపోయాం (తీవ్రం కాదు): {e}',
