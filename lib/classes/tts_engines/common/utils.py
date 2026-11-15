@@ -973,7 +973,15 @@ class TTSUtils:
         
     def _split_sentence_on_sml(self, sentence:str)->list[str]:
         if not self.reads_direction:
-            sentence = re.sub(r' {2,}', ' ', SML_TAG_PATTERN.sub(lambda m: '' if m.group('tag') == 'direct' else m.group(0), sentence))
+            # one space where each [direct] tag and the spaces around it were; the rest of the sentence, the values
+            # of the other tags included, stays as written
+            kept:list[str] = []
+            last = 0
+            for m in SML_TAG_PATTERN.finditer(sentence):
+                if m.group('tag') == 'direct':
+                    kept.append(sentence[last:m.start()].rstrip(' ') + ' ')
+                    last = m.end() + len(sentence[m.end():]) - len(sentence[m.end():].lstrip(' '))
+            sentence = ''.join(kept) + sentence[last:]
         parts:list[str] = []
         last = 0
         for m in SML_TAG_PATTERN.finditer(sentence):
