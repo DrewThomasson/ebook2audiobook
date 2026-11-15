@@ -495,6 +495,7 @@ legends = {
     'msg_upgrading_outdated_deps': 'A atualização de dependências mais antigas do que outro pacote requer: {pkgs}',
     'msg_vulkan_torch_libomp': 'A Vulkan Torch instalada não tem {dll} e não pode ser carregada: reinstalando-a a partir do wheel publicado.',
     'msg_reinstalling_incomplete': 'Reinstalando pacotes com arquivos ausentes: {pkgs}',
+    'msg_install_lock_wait': 'Outro ebook2audiobook está instalando pacotes em {env}, aguardando a conclusão…',
     'msg_removing_unusable_torchcodec': 'Removendo o torchcodec {version}: nenhum torchcodec é executado com o torch {torch} (abaixo de 2.9), o pyannote funciona sem ele.',
     'msg_removing_obsolete': 'Removendo o pacote obsoleto {pkg}…',
     'msg_remove_obsolete_failed': 'Falha ao remover o pacote obsoleto {pkg} (não crítico): {e}',

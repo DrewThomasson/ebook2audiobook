@@ -495,6 +495,7 @@ legends = {
     'msg_upgrading_outdated_deps': 'Das Upgrade von Abhängigkeiten, die älter als ein anderes Paket sind, erfordert: {pkgs}',
     'msg_vulkan_torch_libomp': 'Dem installierten Vulkan-Brenner fehlt {dll} und er kann nicht geladen werden: Neuinstallation aus dem veröffentlichten Wheel.',
     'msg_reinstalling_incomplete': 'Pakete mit fehlenden Dateien werden neu installiert: {pkgs}',
+    'msg_install_lock_wait': 'Ein anderes ebook2audiobook installiert Pakete in {env}, warte auf dessen Abschluss…',
     'msg_removing_unusable_torchcodec': 'Entfernen von Torchcodec {version}: Kein Torchcodec wird mit Torch {torch} (unter 2.9) ausgeführt, Pyannote funktioniert ohne ihn.',
     'msg_removing_obsolete': 'Veraltetes Paket {pkg} wird entfernt…',
     'msg_remove_obsolete_failed': 'Entfernen des veralteten Pakets {pkg} fehlgeschlagen (nicht kritisch): {e}',
