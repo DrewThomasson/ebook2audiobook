@@ -48,9 +48,13 @@ echo.
 :: ========================================================
 :: TERMINATE APP PROCESS ONLY
 :: ========================================================
-tasklist | find /i "%APP_NAME%.exe" >nul && (
-	echo Terminating %APP_NAME%.exe
-	taskkill /IM "%APP_NAME%.exe" /F >nul 2>&1
+:: started by "ebook2audiobook --uninstall", ebook2audiobook.exe is that pip command waiting for this script
+:: (it already checked nothing runs from this folder): killing it would stop the uninstall halfway
+if not defined E2A_PIP_UNINSTALL (
+	tasklist | find /i "%APP_NAME%.exe" >nul && (
+		echo Terminating %APP_NAME%.exe
+		taskkill /IM "%APP_NAME%.exe" /F >nul 2>&1
+	)
 )
 
 :: ========================================================
@@ -178,12 +182,15 @@ echo ========================================================
 echo   Uninstallation completed.
 echo.
 echo   The application content has been removed.
-echo   Please remove the empty repository folder manually:
-echo.
-echo     %REAL_INSTALL_DIR%
+:: started by "ebook2audiobook --uninstall" (pip command): it removes the folder itself right after.
+:: One line ifs, no block: a ")" in the install path would close a block early
+if not defined E2A_PIP_UNINSTALL echo   Please remove the empty repository folder manually:
+if not defined E2A_PIP_UNINSTALL echo.
+if not defined E2A_PIP_UNINSTALL echo     %REAL_INSTALL_DIR%
 echo.
 echo ========================================================
 echo.
+if defined E2A_PIP_UNINSTALL exit /b 0
 echo Press a key to continue . . .
 pause >nul
 

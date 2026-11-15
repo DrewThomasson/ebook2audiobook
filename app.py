@@ -216,7 +216,7 @@ ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
 The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
 where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
 Run the docker commands printed after a build from that folder.
-Uninstall: its uninstall.sh or uninstall.cmd (it deletes the audiobooks folder too), then pip uninstall ebook2audiobook.
+Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 Docker build image:
 Windows:
 Docker:

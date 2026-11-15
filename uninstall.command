@@ -266,14 +266,17 @@ echo "================================================"
 echo "  Uninstallation completed."
 echo
 echo "  The application content has been removed."
-echo "  Please remove the empty repository folder manually:"
-echo
-echo "	$SCRIPT_DIR"
+# started by "ebook2audiobook --uninstall" (pip command): it removes the folder itself right after
+if [[ -z "${E2A_PIP_UNINSTALL:-}" ]]; then
+	echo "  Please remove the empty repository folder manually:"
+	echo
+	echo "	$SCRIPT_DIR"
+fi
 echo
 echo "================================================"
 echo
 
-if [[ -t 0 ]]; then
+if [[ -t 0 && -z "${E2A_PIP_UNINSTALL:-}" ]]; then
 	printf "Press Enter to continue..."
 	read -r _ || true
 fi

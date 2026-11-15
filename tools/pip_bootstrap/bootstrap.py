@@ -4,7 +4,7 @@
 # them to a user folder (~/ebook2audiobook, or E2A_HOME) then hands over to the launcher of that folder, exactly as
 # if the user ran ./e2a.sh or e2a.cmd there. Standard library only, and python 3.8 syntax: it runs on whatever
 # python ran pip, e2a itself runs in the python_env the launcher installs.
-import os, sys, json, shutil, signal, hashlib, subprocess
+import os, sys, json, shlex, shutil, signal, hashlib, subprocess
 
 from typing import Optional
 
@@ -22,6 +22,9 @@ path_options = ['--ebook', '--ebooks_dir', '--voice', '--voice_map', '--custom_m
 foreign_env_vars = ['VIRTUAL_ENV', 'CONDA_PREFIX', 'PYTHONHOME', 'PYTHONPATH', '__PYVENV_LAUNCHER__']
 # what uninstall.sh/.command/.cmd leaves in the folder it empties: the script it runs, which it cannot delete
 uninstall_leftovers = ['uninstall.sh', 'uninstall.command', 'uninstall.cmd']
+# pip and uv run no package code when they uninstall: this option of the command itself runs the folder's
+# uninstaller then removes the folder, and tells how to remove the command last. Never passed to the launcher
+uninstall_option = '--uninstall'
 
 def print_error(msg:str)->None:
     # flushed: exec replaces this process right after, and python < 3.9 block-buffers a piped stderr
@@ -181,7 +184,107 @@ def run_launcher(app_dir:str, args:list)->None:
     # the launcher replaces this process: terminal, sudo prompts, signals and exit code are its own
     os.execvpe('bash', ['bash', launcher] + args, env)
 
+def get_remove_command()->str:
+    # how this command was installed decides how it is removed: uv tool and pipx leave a receipt in their venv
+    if os.path.isfile(os.path.join(sys.prefix, 'uv-receipt.toml')):
+        return f"uv tool uninstall {app_name}"
+    if os.path.isfile(os.path.join(sys.prefix, 'pipx_metadata.json')):
+        return f"pipx uninstall {app_name}"
+    python = subprocess.list2cmdline([sys.executable]) if os.name == 'nt' else shlex.quote(sys.executable)
+    installer = ''
+    try:
+        from importlib import metadata
+        installer = (metadata.distribution(app_name).read_text('INSTALLER') or '').strip()
+    except Exception:
+        pass
+    if installer == 'uv':
+        return f"uv pip uninstall --python {python} {app_name}"
+    return f"{python} -m pip uninstall {app_name}"
+
+def read_installed(home:str)->list:
+    entries = []
+    for line in read_text(os.path.join(home, '.installed')).splitlines():
+        line = line.strip()
+        if line and not line.startswith('#'):
+            entries.append(line)
+    return entries
+
+def count_audiobooks(home:str)->int:
+    count = 0
+    for dir_path, dir_names, file_names in os.walk(os.path.join(home, 'audiobooks')):
+        count += sum(1 for name in file_names if name != '.gitkeep')
+    return count
+
+def run_uninstaller(uninstaller:str, home:str)->int:
+    env = get_launch_env()
+    # uninstall.cmd kills every ebook2audiobook.exe, which on Windows is this pip command too
+    env['E2A_PIP_UNINSTALL'] = '1'
+    if os.name == 'nt':
+        cmd_line = subprocess.list2cmdline([uninstaller])
+        comspec = os.environ.get('COMSPEC', 'cmd.exe')
+        proc = subprocess.Popen(f'"{comspec}" /d /s /c "{cmd_line}"', env=env, cwd=home)
+    else:
+        proc = subprocess.Popen(['bash', uninstaller], env=env, cwd=home)
+    # Ctrl+C reaches the uninstaller too, which decides: wait for its exit code whatever happens here
+    while True:
+        try:
+            return proc.wait()
+        except KeyboardInterrupt:
+            continue
+
+def uninstall()->None:
+    remove_msg = f"Last step, remove the {app_name} command itself: {get_remove_command()}"
+    if get_source_dir() is None:
+        print_error('this is an editable install: it runs its checkout, which it never uninstalls.')
+        print(remove_msg)
+        sys.exit(1)
+    home = get_home()
+    marker = read_marker(home)
+    if not os.path.isdir(home) or (marker is None and is_empty_dir(home)):
+        # never started, or only the uninstaller left by a previous uninstall
+        if os.path.isdir(home):
+            shutil.rmtree(home, ignore_errors=True)
+        print(f"No ebook2audiobook folder to remove in {home}.")
+        print(remove_msg)
+        return
+    if marker is None:
+        print_error(f"{home} was not installed by pip, so it is left as is: remove it with its own uninstaller.")
+        print(remove_msg)
+        sys.exit(1)
+    if is_running(home):
+        print_error(f"ebook2audiobook is still running from {home}. Quit it first, then run {app_name} {uninstall_option} again.")
+        sys.exit(1)
+    uninstaller = os.path.join(home, 'uninstall.cmd' if os.name == 'nt' else 'uninstall.command')
+    if not os.path.isfile(uninstaller):
+        print_error(f"{uninstaller} is missing: start {app_name} once to restore the folder, then run {app_name} {uninstall_option} again.")
+        sys.exit(1)
+    installed = read_installed(home)
+    audiobooks = count_audiobooks(home)
+    print(f"Uninstalling ebook2audiobook from {home}, all of it is deleted:")
+    print('  python_env, models, voices and the tts engines venvs')
+    if installed:
+        print(f"  the programs it installed (listed in .installed): {', '.join(installed)}")
+    if audiobooks:
+        print(f"  your {audiobooks} file(s) in {os.path.join(home, 'audiobooks')}: move the ones to keep out first")
+    print(flush=True)
+    rc = run_uninstaller(uninstaller, home)
+    if rc != 0 or not is_empty_dir(home):
+        print_error(f"the uninstaller stopped before the end (exit code {rc}): {home} is kept. Run {app_name} {uninstall_option} again to finish.")
+        sys.exit(1)
+    try:
+        shutil.rmtree(home)
+        print(f"ebook2audiobook and {home} are removed.")
+    except OSError as e:
+        print_error(f"ebook2audiobook is uninstalled but {home} could not be removed ({e}): delete it by hand.")
+    print(remove_msg)
+
 def main()->None:
+    if uninstall_option in sys.argv[1:]:
+        if len(sys.argv) != 2:
+            print_error(f"{uninstall_option} takes no other option.")
+            sys.exit(1)
+        uninstall()
+        return
     args = resolve_path_args(sys.argv[1:], os.getcwd())
     source = get_source_dir()
     if source is None:
