@@ -309,7 +309,7 @@ Another way to install and launch ebook2audiobook, without cloning the repo: pip
      ```
   - The conversion runs in the session that exported the file (its `"session"`), unless `--session` is given.<br>
     Running the same import again continues an interrupted conversion without asking, and converts again only the blocks whose text changed.
-  - A file exported from another ebook, or whose block ids or count no longer match (i.e. after another `--language` or `--translate`), is refused.
+  - A file exported from another ebook, or whose block ids or count no longer match (i.e. exported with another `--translate`), is refused.
 
 
 <a id="example-of-custom-model-zip-upload"></a>
