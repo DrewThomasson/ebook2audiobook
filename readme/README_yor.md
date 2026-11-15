@@ -39,13 +39,13 @@ Lo ọ̀pá-ìṣẹ́ yìí pẹ̀lú ojúṣe àti ní ìbámu pẹ̀lú gbogb
 
 <a id="gui-interface"></a>
 #### Wíwo GUI
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Tẹ̀ láti rí àwọn àwòrán GUI Wẹ́ẹ̀bù</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Àwọn Èdè Tí A Ṣe Àtìlẹ́yìn Fún
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,60 @@ Nítorí náà o gbọ́dọ̀ kọ́kọ́ yọ ọ̀rọ̀ èyíkéyìí tí o
 **Tí a bá dúró kọ̀ǹpútà-ìtọ́ni tí a sì tún ṣe é, o nílò láti tún wíwo GUI gradio rẹ ṣe<br>
 láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket ìsopọ̀ tuntun.**
 
+<a id="pip-install"></a>
+### Fi sii pẹ̀lú pip / pipx
+Ọ̀nà mìíràn láti fi sílẹ̀ kí o sì ṣe ìlànà ebook2audiobook, láì ṣe ìdá àkójọpọ̀: pip ń fi àṣẹ `ebook2audiobook` sílẹ̀<br>
+(gbogbo OS, eyikeyi python 3.8+). Repo tí a ṣe ẹ̀dà pẹ̀lú àwọn ìwé àkọsílẹ̀ ìlọlẹ̀ rẹ̀ tó wà lókè ń bá a lọ láti máa ṣiṣẹ́ bákan náà.
+
+1. **Fi àṣẹ náà síi** láti PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   tabi pẹlu uv
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   tàbí pẹ̀lú pip
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>Fún koodu tuntun tí kò tíì jáde, lo `git+https://github.com/DrewThomasson/ebook2audiobook.git` dípò `ebook2audiobook`.</i>
+
+2. **Fi sii / Ṣiṣẹ ebook2audiobook**, pẹlu awọn aṣayan kanna bi awọn iwe afọwọkọ ifilole:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Tí a kò bá rí àṣẹ náà (fóòlà àwọn ìwé àkọsílẹ̀ pip kò sí nínú PATH rẹ): `python -m ebook2audiobook`
+
+- Ìbẹ̀rẹ̀ àkọ́kọ́ gbé ebook2audiobook lọ sí `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` lórí Windows) ó sì fi síbẹ̀<br>
+  pẹ̀lú ìwé àtòjọ́ ìbẹ̀rẹ̀ rẹ̀, gẹ́gẹ́ bí `./ebook2audiobook.command` tàbí `ebook2audiobook.cmd` yóò ṣe.
+- Láti lo fọ́ọ̀dà mìíràn, ṣètò `E2A_HOME` ṣáájú ìbẹ̀rẹ̀ àkọ́kọ́ kí o sì jẹ́ kí ó wà bẹ́ẹ̀ fún àwọn tí ó kàn<br>
+  (ìyẹn ni `export E2A_HOME=/data/ebook2audiobook` lórí Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` lẹ́yìn náà tẹ́rmínàlì tuntun lórí Windows).
+- Fóòlà náà jẹ́ fóòlà ebook2audiobook déédéé: `./ebook2audiobook.command` (`./e2a.sh`) àti `ebook2audiobook.cmd` (`e2a.cmd`) sì ń ṣiṣẹ́ nínú rẹ̀ pẹ̀lú.
+- Tí fóldà yẹn bá ti ní ìwé-kọ̀m̀pútà tí a ti ṣe àdàkọ tàbí tí a ti ṣe ìgbàsílẹ̀ sí ìwé-ohùn, a óò bẹ̀rẹ̀ bí ó ṣe rí bẹ́ẹ̀, pip kò sì ní yí i padà láéláé.
+- Àwọn ọ̀nà ìbátan tí a fún `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` àti `--output_dir`<br>
+  a kà wọ́n láti inú fọ́ọ̀dà tí o ti kọ àṣẹ náà.
+- Kò sílò láti pa venv rẹ tàbí conda env rẹ dá: ebook2audiobook máa ń ṣiṣẹ́ nígbà gbogbo nínú `python_env` tirẹ̀.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (tí ó bá ṣeéṣe pẹ̀lú `--docker_mode compose` tàbí `--docker_mode podman`)<br>
+  kọ àwòrán náà láti inú fọ́́lídà yẹn. Ṣiṣẹ awọn `docker run` / `docker compose` àwọn àṣẹ tí ó tẹ̀ jáde láti inú fọ́ọ̀dà yẹn náà:<br>
+  `./ebooks`, `./audiobooks`... àwọn ohun tí wọ́n gbé sókè wọn àti àwọn fáìlì ìṣàjọpọ̀ wọn jẹ́ ti ìbátan sí i. Àwòrán náà gba àwọn àṣàyàn kan náà,<br>
+  pẹ̀lú àwọn ọ̀nà inú apoti náà (`/app/...`), wo [Docker](#docker).
+- **Ìmúdójú-ìwọ̀n**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` tàbí `pip install -U ebook2audiobook`.<br>
+  Ìbẹ̀rẹ̀ tó kàn yóò ṣe ìlọsíwájú àwọn fáìlì apilikéṣànnì yóò sì tọ́jú `python_env`, àwọn awoṣe, àwọn ohùn, àwọn ìwé tí wọ́n kà sílẹ̀ àti ohunkóhun tí o fi kún àtupá náà.
+- **Yọ kúrò**: `pip uninstall`, `pipx uninstall` tàbí `uv tool uninstall` nìkan yọ àṣẹ náà kúrò:<br>
+  fóòdà náà àti àwọn gíìgábáàtì àwọn àpẹẹrẹ rẹ̀ wà. Yọ ebook2audiobook kúrò pẹ̀lú àṣẹ náà fúnra rẹ̀ ní àkọ́kọ́:
+  1. Gbé àwọn ìwé-ohùn rẹ jáde kúrò nínú `audiobooks` fódà aláfoludà: gbogbo ohun tí ó wà nínú fódà náà ni a yóò pa rẹ́.
+  2. `ebook2audiobook --uninstall`<br>
+     Ó ń ṣiṣẹ́ ohun tí ó ń yọ àwọn ohun tí ó wà nínú fọ́ọ̀dà náà kúrò, èyí tí ó ń bèèrè lọ́wọ́ rẹ láti jẹ́rìí sí i kí ó tó yọ àwọn ọ̀nà abùjá, àwọn ètò tí ó fi síbẹ̀<br>
+     (tí a ṣe àkójọ rẹ̀ ní `.installed`) àti ohun tí ó wà nínú fọ́ọ̀dà náà, lẹ́yìn náà ó ń pa fọ́ọ̀dà náà rẹ́.
+  3. Ṣiṣẹ àṣẹ tí ó tẹ jáde gbẹ̀yìn láti yọ `ebook2audiobook` fúnra rẹ̀ kúrò, èyí tí ó dá lórí bí o ṣe fi sí:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` tàbí `pip uninstall ebook2audiobook`.
+  4. Tí o bá kọ́ àwọn àwòrán Docker: `docker rmi athomasson2/ebook2audiobook:<tag>` àti `docker volume rm e2a_venvs`<br>
+     (pẹ̀lú Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` àti `podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### Ìlò Ìpìlẹ̀
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket �
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (gbogbo OS)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Ọ̀nà sí fáìlì eBook rẹ
@@ -260,6 +319,10 @@ láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket �
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (gbogbo OS)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Tàbí fún gbogbo OS**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)

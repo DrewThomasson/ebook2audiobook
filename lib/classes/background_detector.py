@@ -99,19 +99,10 @@ class BackgroundDetector:
         from pyannote.audio.pipelines import VoiceActivityDetection
         from pyannote.audio.utils.reproducibility import ReproducibilityWarning
         warnings.filterwarnings('ignore', category=ReproducibilityWarning)
-        # MIOpen on Windows ROCm fails to JIT pyannote's dropout kernel
-        # (miopenStatusUnknownError). On ROCm builds, torch.backends.cudnn
-        # maps to MIOpen; disabling it routes ops to native ATen kernels.
-        # Cost is negligible for VAD-sized models.
-        if getattr(torch.version, 'hip', None) is not None:
-            if DEVICE_SYSTEM == systems['WINDOWS']:
-                torch.backends.cudnn.enabled = False
-        self.torch_device = torch.device(
-            devices['CUDA']['proc'] if (self.device == devices['CUDA']['proc'] and getattr(torch.version, 'hip', None) is None) or (getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM != systems['WINDOWS'])
-            else devices['XPU']['proc'] if hasattr(torch, devices['XPU']['proc']) and torch.xpu.is_available()
-            else devices['MPS']['proc'] if torch.backends.mps.is_available()
-            else devices['CPU']['proc']
-        )
+        # the device the user selected, as VoiceExtractor named it for torch: nothing is probed nor picked here. Probing
+        # torch.xpu.is_available() starts the SYCL runtime, and on an Intel GPU torch xpu cannot run on (UHD 770 iGPU,
+        # old driver) that is a Windows access violation in device_count(): a CPU session died on every voice upload
+        self.torch_device = torch.device(self.device)
         key = self.torch_device.type
         pipeline = _pipeline_cache.get(key)
         if pipeline is None:
@@ -202,8 +193,17 @@ class BackgroundDetector:
                     "waveform": waveform,
                     "sample_rate": sr
                 }
-                with torch.inference_mode():
-                    annotation = pipeline(file)
+                # MIOpen on Windows ROCm fails to JIT pyannote's dropout kernel (miopenStatusUnknownError). On ROCm
+                # builds torch.backends.cudnn is MIOpen: off routes ops to native ATen kernels, a negligible cost for a
+                # VAD-sized model. For this call only, so MIOpen stays on for the TTS that runs after
+                cudnn_enabled = torch.backends.cudnn.enabled
+                if self.torch_device.type == devices['CUDA']['proc'] and getattr(torch.version, 'hip', None) is not None and DEVICE_SYSTEM == systems['WINDOWS']:
+                    torch.backends.cudnn.enabled = False
+                try:
+                    with torch.inference_mode():
+                        annotation = pipeline(file)
+                finally:
+                    torch.backends.cudnn.enabled = cudnn_enabled
                 speech_time = sum(
                     segment.end - segment.start
                     for segment in annotation.itersegments()
@@ -242,13 +242,15 @@ class BackgroundDetector:
             # Drop local refs to free any short-lived tensors / annotations
             pipeline = waveform = sr = None
             gc.collect()
-            if torch.cuda.is_available():
+            # is_initialized(), not is_available(): only a runtime this process already started has a cache to empty,
+            # and the probe would start (and on XPU crash) the runtime of a backend the session never used
+            if torch.cuda.is_initialized():
                 try:
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
                 except Exception:
                     pass
-            if hasattr(torch, 'xpu') and torch.xpu.is_available():
+            if hasattr(torch, 'xpu') and torch.xpu.is_initialized():
                 try:
                     torch.xpu.empty_cache()
                 except Exception:

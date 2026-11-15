@@ -1,5 +1,5 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 ई-बुक से ऑडियोबुक (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 अध्यायों और मेटाडेटा के साथ ई-बुक से ऑडियोबुक में बदलने वाला CPU/GPU कन्वर्टर<br/>
@@ -39,13 +39,13 @@
 
 <a id="gui-interface"></a>
 #### ग्राफ़िकल इंटरफ़ेस (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>वेब GUI की छवियां देखने के लिए क्लिक करें</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## समर्थित भाषाएं
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -165,7 +166,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — मौन (यादृच्छिक सीमा **1.0–1.6 sec.**)
 - `[pause:N]` — निश्चित विराम (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — डिफ़ॉल्ट या GUI/CLI से चुनी गई आवाज़ से आवाज़ बदलें
-- `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
+- `[emotion:sadness]...[/emotion]` — सिर्फ़ Zonos: किसी अंश के लिए भावना (खुशी, उदासी, घृणा, डर, हैरानी, गुस्सा, अन्य, तटस्थ) या `[emotion:sadness=0.7,neutral=0.3]` जैसा कोई मिश्रण; अन्य इंजन इसे नज़रअंदाज़ करते हैं
 
 **आपकी ई-बुक में स्वचालित रूप से SML जोड़ने के लिए समर्पित हमारे दूसरे रेपो को देखें -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -217,6 +218,60 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **यदि स्क्रिप्ट को रोककर फिर से चलाया जाता है, तो आपको अपने Gradio GUI इंटरफ़ेस को रिफ़्रेश करना होगा<br>
 ताकि वेब पेज नए कनेक्शन सॉकेट से फिर से जुड़ सके।**
 
+<a id="pip-install"></a>
+### pip / pipx के साथ इंस्टॉल करें
+रिपो को क्लोन किए बिना ebook2audiobook को इंस्टॉल करने और लॉन्च करने का एक और तरीका: pip `ebook2audiobook` कमांड<br> इंस्टॉल करता है
+(सभी OS, कोई भी python 3.8+)। ऊपर दिए गए लॉन्च स्क्रिप्ट वाले क्लोन किए गए रेपो का काम करने का तरीका पहले जैसा ही बना रहता है।
+
+1. PyPI से **कमांड इंस्टॉल करें**
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   या यूवी के साथ
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   या पिप के साथ
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>अभी तक रिलीज़ नहीं किया गया नवीनतम कोड के लिए, `ebook2audiobook` के स्थान पर `git+https://github.com/DrewThomasson/ebook2audiobook.git` का उपयोग करें।</i>
+
+2. **ebook2audiobook इंस्टॉल करें / चलाएँ**, लॉन्च स्क्रिप्ट के समान विकल्पों के साथ:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   अगर कमांड नहीं मिला (pip का स्क्रिप्ट फ़ोल्डर आपके PATH में नहीं है): `python -m ebook2audiobook`
+
+- पहला स्टार्ट ebook2audiobook को `~/ebook2audiobook` (Windows पर `%USERPROFILE%\ebook2audiobook`) पर कॉपी करता है और उसे वहीं इंस्टॉल करता है<br>
+  अपने लॉन्च स्क्रिप्ट के साथ, बिल्कुल वैसे ही जैसे `./ebook2audiobook.command` या `ebook2audiobook.cmd` करते।
+- कोई दूसरा फ़ोल्डर इस्तेमाल करने के लिए, पहली बार शुरू करने से पहले `E2A_HOME` सेट करें और इसे अगले बार शुरू करने के लिए भी सेट रखें<br>
+  (यानी Linux/MacOS पर `export E2A_HOME=/data/ebook2audiobook`, फिर Windows पर `setx E2A_HOME D:\ebook2audiobook` और एक नया टर्मिनल)।
+- वह फ़ोल्डर एक सामान्य ebook2audiobook फ़ोल्डर है: `./ebook2audiobook.command` (`./e2a.sh`) और `ebook2audiobook.cmd` (`e2a.cmd`) भी उसमें काम करते हैं।
+- अगर उस फ़ोल्डर में पहले से ही कोई क्लोन की गई या डाउनलोड की गई ebook2audiobook मौजूद है, तो उसे वैसे ही शुरू किया जाता है और pip उसे कभी नहीं बदलता।
+- `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` और `--output_dir`<br> को दिए गए रिलेटिव पाथ
+  उसी फ़ोल्डर से पढ़े जाते हैं, जहाँ आप कमांड टाइप करते हैं।
+- आपको अपने venv या conda env को डिऐक्टिवेट करने की ज़रूरत नहीं है: ebook2audiobook हमेशा अपने खुद के `python_env` में चलता है।
+- **Docker**: `ebook2audiobook --script_mode build_docker` (वैकल्पिक रूप से `--docker_mode compose` या `--docker_mode podman` के साथ)<br>
+  उस फ़ोल्डर से इमेज बनाता है। इसके द्वारा उस फ़ोल्डर से प्रिंट किए जाने वाले `docker run` / `docker compose` कमांड भी चलाएँ:<br>
+  उनके `./ebooks`, `./audiobooks`... माउंट और कंपोज़ फ़ाइलें इनसे संबंधित हैं। इमेज में वही विकल्प होते हैं,<br>
+  कंटेनर के अंदर के पाथ के साथ (`/app/...`), [Docker](#docker) देखें।
+- **अपडेट**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` या `pip install -U ebook2audiobook`.<br>
+  अगली बार ऐप शुरू होने पर ऐप फ़ाइलें अपडेट हो जाएँगी और `python_env`, मॉडल, आवाज़ें, ऑडियोबुक और फ़ोल्डर में आपके द्वारा जोड़ी गई कोई भी चीज़ बनी रहेगी।
+- **अनइंस्टॉल करें**: सिर्फ़ `pip uninstall`, `pipx uninstall` या `uv tool uninstall` से केवल कमांड हट जाती है:<br>
+  फ़ोल्डर और उसमें मौजूद मॉडल की कई जीबी फ़ाइलें बनी रहेंगी। पहले कमांड का इस्तेमाल करके ही ebook2audiobook को अनइंस्टॉल करें:
+  1. अपनी ऑडियोबुक्स को फ़ोल्डर के `audiobooks` सबफ़ोल्डर से बाहर निकालें: फ़ोल्डर में मौजूद हर चीज़ डिलीट कर दी जाएगी।
+  2. `ebook2audiobook --uninstall`<br>
+     यह फ़ोल्डर के अनइंस्टॉलर को चलाता है, जो आपसे पुष्टि करने के लिए कहता है और फिर शॉर्टकट, इसके द्वारा इंस्टॉल किए गए प्रोग्राम हटा देता है<br>
+     (`.installed` में लिस्ट किया गया है) और फ़ोल्डर की सामग्री, फिर यह फ़ोल्डर को डिलीट कर देता है।
+  3. वह कमांड चलाएँ, जो `ebook2audiobook` को हटाने के लिए सबसे आखिर में प्रिंट होती है, यह इस बात पर निर्भर करता है कि आपने इसे कैसे इंस्टॉल किया है:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` या `pip uninstall ebook2audiobook`।
+  4. अगर आपने Docker इमेज बनाई हैं: `docker rmi athomasson2/ebook2audiobook:<tag>` और `docker volume rm e2a_venvs`<br>
+     (Podman के साथ: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` और `podman volume rm e2a_venvs`)।
+
 <a id="basic-usage"></a>
 ### बुनियादी उपयोग
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx इंस्टॉल करें** (सभी ऑपरेटिंग सिस्टम)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: आपकी ई-बुक फ़ाइल का पथ
@@ -260,6 +319,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx इंस्टॉल करें** (सभी ऑपरेटिंग सिस्टम)
+     ```bash
+     ebook2audiobook --help
      ```
    - **या सभी OS के लिए**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -700,7 +776,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] मैग्पी टीटीएस (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
 - [x] मॉस टीटीएस लोकल / नैनो (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] NewTTS / न्यूTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] पॉकेट टीटीएस (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] ग्रैडियम फोनॉन (https://github.com/gradium-ai/xn-ptts)[cite: 1]
 - [x] सुपरटोनिक (https://github.com/supertone-inc/supertonic)[cite: 1]
@@ -713,7 +789,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] कछुआ (https://github.com/neonbjb/tortoise-tts)[cite: 1]
 - [x] ज़ोनोस (https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] छाल (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] आपका TTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] ऑर्फ़ियस - टीटीएस (https://github.com/canopyai/Orpheus-TTS)
 - [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
 - [x] ChatTTS (https://github.com/2noise/ChatTTS)
@@ -751,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### 💻 OS संगतता
 - [x] 🪟 Windows x86
-- [x] 🪟 आर्म विंडो
+- [x] 🪟 ARM Windows
 - [x] 🍎 मैक इंटेल x86
 - [x] 🍎 एप्पल सिलिकॉन मैक
 - [x] 🐧 Linux x86
-- [x] 🐧 आर्म लिनक्स
+- [x] 🐧 ARM Linux
 
 **********
 
@@ -777,8 +853,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 -->
 
 ## क्रेडिट
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- टेक्स्ट-टू-स्पीच के लिए एक डीप लर्निंग टूलकिट, जिसका रिसर्च और प्रोडक्शन में खूब परीक्षण किया गया है।
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- तेज़ और लोकल न्यूरल टेक्स्ट-टू-स्पीच इंजन।
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2 के लिए ggml अनुमान कोड।
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- ggml द्वारा संचालित, ऑडियो मॉडल के लिए एक ऑल - इन - वन, शुद्ध C++ अनुमान इंजन।
 

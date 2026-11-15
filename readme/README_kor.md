@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 전자책을 오디오북으로(E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 전자책을 챕터 및 메타데이터가 포함된 오디오북으로 변환하는 CPU/GPU 변환기<br/>
 고급 TTS 엔진 등을 사용합니다.<br/>
 음성 복제 및 1696개 언어 지원!
-> [!IMPORTANT]
+> 중 요
 **이 도구는 DRM이 없고 합법적으로 취득한 전자책에만 사용하도록 만들어졌습니다.** <br>
 저작자는 이 소프트웨어의 어떠한 오용이나 그로 인한 법적 결과에 대해 책임지지 않습니다. <br>
 이 도구를 책임감 있게, 그리고 적용 가능한 모든 법률을 준수하여 사용하십시오.
@@ -39,13 +39,13 @@
 
 <a id="gui-interface"></a>
 #### 그래픽 인터페이스(GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>웹 GUI 이미지를 보려면 클릭하세요</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -123,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 이미지로 된 텍스트 페이지가 있는 파일을 위한 **OCR 스캔**
 - 🔊 **고품질 텍스트 음성 변환**, 거의 실시간부터 거의 실제 음성까지
 - 🗣️ 자신의 음성 파일을 사용한 **선택적 음성 복제**
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **1,696개 언어 지원** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **저사양 친화적** — **2 GB RAM / 1 GB VRAM**(최소)에서 실행
 - 🎵 **오디오북 출력 형식**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **SML 태그 지원** — 중단, 멈춤, 음성 전환 등의 세밀한 제어 ([see below](#sml-tags-available))
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## 지원 언어
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -165,11 +166,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — 무음(무작위 범위 **1.0–1.6 sec.**)
 - `[pause:N]` — 고정 멈춤(**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — 기본 음성 또는 GUI/CLI에서 선택한 음성에서 음성 전환
-- `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
+- `[emotion:sadness]...[/emotion]` — Zonos 전용: 구절에 대한 감정(기쁨, 슬픔, 혐오, 두려움, 놀람, 분노, 기타, 중립) 또는 `[emotion:sadness=0.7,neutral=0.3]`과 같은 혼합 감정. 다른 엔진은 이를 무시합니다.
 
 **전자책에 SML을 자동으로 추가하는 데 전념하는 다른 저장소를 확인하세요 -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> 중 요
 **설치 또는 버그 문제를 게시하기 전에, 열린 문제와 닫힌 문제 탭을 주의 깊게 검색하여<br>
 귀하의 문제가 아직 존재하지 않는지 확인하십시오.**
 
@@ -213,9 +214,63 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (모든 OS, 한 번만 설치하고 python_env 폴더의 Python 사용)
 
-> [!IMPORTANT]
+> 중 요
 **스크립트를 중지하고 다시 실행하면 Gradio GUI 인터페이스를 새로 고쳐야 합니다<br>
 웹 페이지가 새로운 연결 소켓에 다시 연결될 수 있도록 하기 위해서입니다.**
+
+<a id="pip-install"></a>
+### pip/pipx로 설치
+리포지토리를 복제하지 않고 ebook2audiobook을 설치하고 실행하는 또 다른 방법: pip가 `ebook2audiobook` 명령을 설치합니다<br>
+(모든 OS, Python 3.8 이상). 위의 실행 스크립트가 포함된 복제된 리포지토리는 계속해서 동일한 방식으로 작동합니다.
+
+1. PyPI에서 **명령어 설치**
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   또는 자외선(UV)
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   또는 pip를 사용하여 설치
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>아직 출시되지 않은 최신 코드의 경우, `ebook2audiobook` 대신 `git+https://github.com/DrewThomasson/ebook2audiobook.git`을(를) 사용하세요.</i>
+
+2. **ebook2audiobook 설치/실행** (실행 스크립트와 동일한 옵션 사용):
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   명령어를 찾을 수 없는 경우(pip의 스크립트 폴더가 PATH에 없는 경우): `python -m ebook2audiobook`
+
+- 첫 번째 시작 시 ebook2audiobook을 `~/ebook2audiobook`(Windows의 경우 `%USERPROFILE%\ebook2audiobook`)에 복사하고 해당 위치에 설치합니다.<br>
+  `./ebook2audiobook.command` 또는 `ebook2audiobook.cmd`과 정확히 동일한 방식으로 실행 스크립트를 사용하여 실행합니다.
+- 다른 폴더를 사용하려면 첫 번째 시작 전에 `E2A_HOME`을(를) 설정하고 다음 시작을 위해 계속 설정된 상태로 유지하세요.<br>
+  (즉, Linux/MacOS에서는 `export E2A_HOME=/data/ebook2audiobook`, Windows에서는 `setx E2A_HOME D:\ebook2audiobook` 다음 새 터미널).
+- 이 폴더는 일반적인 ebook2audiobook 폴더입니다. `./ebook2audiobook.command`(`./e2a.sh`) 및 `ebook2audiobook.cmd`(`e2a.cmd`)도 이 폴더에서 작동합니다.
+- 해당 폴더에 이미 복제되거나 다운로드된 ebook2audiobook이 있는 경우, 그대로 시작되며 pip는 이를 변경하지 않습니다.
+- `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` 및 `--output_dir`<br>에 지정된 상대 경로
+  명령을 입력하는 폴더에서 읽습니다.
+- venv 또는 conda env를 비활성화할 필요가 없습니다. ebook2audiobook은 항상 자체 `python_env`에서 실행됩니다.
+- **Docker**: `ebook2audiobook --script_mode build_docker`(선택적으로 `--docker_mode compose` 또는 `--docker_mode podman` 포함)<br>
+  해당 폴더에서 이미지를 빌드합니다. 해당 폴더에서 출력되는 `docker run` / `docker compose` 명령어도 실행하세요.<br>
+  해당 `./ebooks`, `./audiobooks`... 마운트 및 Compose 파일은 이를 기준으로 합니다. 이미지는 동일한 옵션을 사용합니다.<br>
+  컨테이너(`/app/...`) 내부의 경로와 함께, [Docker](#docker)을(를) 참조하세요.
+- **업데이트**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` 또는 `pip install -U ebook2audiobook`.<br>
+  다음 시작 시 앱 파일이 업데이트되며 `python_env`, 모델, 음성, 오디오북 및 폴더에 추가한 모든 항목이 유지됩니다.
+- **제거**: `pip uninstall`, `pipx uninstall` 또는 `uv tool uninstall`만으로는 명령만 제거됩니다.<br>
+  폴더와 수 기가바이트의 모델은 그대로 유지됩니다. 먼저 ebook2audiobook 자체를 명령어로 제거합니다.
+  1. 오디오북을 폴더의 `audiobooks` 하위 폴더에서 다른 곳으로 옮기세요. 폴더에 있는 모든 항목이 삭제됩니다.
+  2. `ebook2audiobook --uninstall`<br>
+     폴더의 제거 프로그램을 실행하며, 제거 프로그램을 통해 확인을 요청한 다음 바로 가기와 설치된 프로그램을 제거합니다.<br>
+     (`.installed`에 나열됨) 및 폴더 콘텐츠를 삭제한 다음 폴더를 삭제합니다.
+  3. `ebook2audiobook` 자체를 제거하기 위해 마지막으로 출력되는 명령을 실행하세요. 이 작업은 을 어떻게 설치했는지에 따라 달라집니다.<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` 또는 `pip uninstall ebook2audiobook`.
+  4. Docker 이미지를 빌드한 경우: `docker rmi athomasson2/ebook2audiobook:<tag>` 및 `docker volume rm e2a_venvs`<br>
+     (Podman 사용 시: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` 및 `podman volume rm e2a_venvs`).
 
 <a id="basic-usage"></a>
 ### 기본 사용법
@@ -226,6 +281,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx 설치** (모든 OS)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: 전자책 파일의 경로
@@ -260,6 +319,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx 설치** (모든 OS)
+     ```bash
+     ebook2audiobook --help
      ```
    - **또는 모든 OS 공통**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -681,18 +757,18 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 피쉬 스피치/피쉬 오디오 (https://github.com/fishaudio/fish-speech)[cite: 1)
 - [x] 힉스 오디오 TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
-- [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
+- [x] OmniVoice(https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1)
-- [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
-- [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
+- [x] Qwen3-TTS(https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
+- [x] VibeVoice(https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
-- [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
+- [x] Voxtral TTS(https://github.com/voxtral/voxtral-tts)[cite: 1]
 - [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1)
 - [x] CosyVoice/CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1)
 - [x] Index-tts/Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
-- [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
+- [x] XTTSv2(https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] 브리즈 TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
-- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] 공자4 TTS(https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] 점 TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1)
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
@@ -707,26 +783,26 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 이로도리 TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
 - [x] 파이퍼 (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1)
-- [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
+- [x] Fairseq(https://github.com/facebookresearch/fairseq)[cite: 1]
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
-- [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
+- [x] Tacotron2(https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] 거북이 (https://github.com/neonbjb/tortoise-tts)[cite: 1]
-- [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
+- [x] Zonos(https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] 껍질 (https://github.com/suno-ai/bark)[cite: 1]
 - [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1)
-- [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
-- [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
-- [x] ChatTTS (https://github.com/2noise/ChatTTS)
-- [x] Spark-TTS (https://github.com/sparkaudio/spark-tts)
-- [x] MeloTTS (https://github.com/myshell-ai/MeloTTS)
-- [x] CSM (https://github.com/SesameAILabs/csm)
+- [x] Orpheus-TTS(https://github.com/canopyai/Orpheus-TTS)
+- [x] OpenVoice(https://github.com/myshell-ai/OpenVoice)
+- [x] ChatTTS(https://github.com/2noise/ChatTTS)
+- [x] Spark-TTS(https://github.com/sparkaudio/spark-tts)
+- [x] MeloTTS(https://github.com/myshell-ai/MeloTTS)
+- [x] CSM(https://github.com/SesameAILabs/csm)
 
 #### Readme 번역
 - [x] 아랍어 (ara)
 - [x] 중국어 (zho)
-- [x] English (eng)
+- [x] 영어(eng)
 - [x] 스페인어 (스파)
-- [x] French (fra)
+- [x] 프랑스어(fra)
 - [x] 독일어 (deu)
 - [x] 이탈리아어 (ita)
 - [x] 포르투갈어 (por)
@@ -777,10 +853,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 -->
 
 ## 크레디트
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
-- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml inference code for Zonos2.
-- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- An all-in-one, pure C++ inference engine for audio models, powered by ggml.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- 연구 및 실제 제작 과정에서 검증된 TTS(텍스트-음성 변환)용 딥러닝 툴킷.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- 빠르고 로컬 기반의 신경망 TTS(텍스트-음성 변환) 엔진.
+- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2용 ggml 추론 코드.
+- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- ggml 기반의 오디오 모델용 올인원 순수 C++ 추론 엔진.
 
 <a id="special-thanks"></a>
 ## 특별히 감사드립니다

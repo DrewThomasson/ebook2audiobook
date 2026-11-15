@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 Sách điện tử thành sách nói (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 Bộ chuyển đổi CPU/GPU từ sách điện tử sang sách nói với các chương và siêu dữ liệu<br/>
 sử dụng các engine TTS tiên tiến và nhiều hơn nữa.<br/>
 Hỗ trợ nhân bản giọng nói và 1696 ngôn ngữ!
-> [!IMPORTANT]
+> LƯU Ý QUAN TRỌNG
 **Công cụ này chỉ dành để sử dụng với các sách điện tử không có DRM và được mua hợp pháp.** <br>
 Các tác giả không chịu trách nhiệm cho bất kỳ việc lạm dụng phần mềm này hay bất kỳ hậu quả pháp lý nào phát sinh. <br>
 Hãy sử dụng công cụ này một cách có trách nhiệm và tuân thủ mọi luật hiện hành.
@@ -39,13 +39,13 @@ Hãy sử dụng công cụ này một cách có trách nhiệm và tuân thủ 
 
 <a id="gui-interface"></a>
 #### Giao diện đồ họa (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Nhấp để xem hình ảnh của GUI web</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -123,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **Quét OCR** cho các tệp có trang văn bản dưới dạng hình ảnh
 - 🔊 **Chuyển văn bản thành giọng nói chất lượng cao**, từ gần thời gian thực đến giọng gần như thật
 - 🗣️ **Nhân bản giọng nói tùy chọn** bằng tệp giọng nói của riêng bạn
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Hỗ trợ 1.696 ngôn ngữ** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Thân thiện với tài nguyên thấp** — chạy trên **2 GB RAM / 1 GB VRAM (tối thiểu)**
 - 🎵 **Định dạng đầu ra sách nói**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Hỗ trợ thẻ SML** — kiểm soát chi tiết các điểm ngắt, khoảng dừng, chuyển giọng và hơn thế nữa ([see below](#sml-tags-available))
@@ -137,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 GB RAM tối thiểu, 8 GB khuyến nghị.
 - 1 GB VRAM tối thiểu, 4 GB khuyến nghị.
 - Bật ảo hóa nếu chạy trên Windows (chỉ Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
 - MPS (CPU Apple Silicon)
 
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Ngôn ngữ được hỗ trợ
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -169,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Hãy xem repo khác của chúng tôi dành riêng cho việc thêm SML tự động vào sách điện tử của bạn -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> LƯU Ý QUAN TRỌNG
 **Trước khi đăng vấn đề cài đặt hoặc lỗi, hãy tìm kiếm cẩn thận trong tab các vấn đề đang mở và đã đóng<br>
 để chắc chắn rằng vấn đề của bạn chưa tồn tại.**
 
@@ -213,9 +214,63 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (tất cả các hệ điều hành, chỉ cài đặt một lần và với python trong thư mục python_env của nó)
 
-> [!IMPORTANT]
+> LƯU Ý QUAN TRỌNG
 **Nếu tập lệnh bị dừng và chạy lại, bạn cần làm mới giao diện GUI Gradio của mình<br>
 để trang web kết nối lại với socket kết nối mới.**
+
+<a id="pip-install"></a>
+### Cài đặt bằng pip / pipx
+Một cách khác để cài đặt và khởi chạy ebook2audiobook, mà không cần sao chép kho lưu trữ: pip cài đặt lệnh `ebook2audiobook`<br>
+(tất cả các hệ điều hành, bất kỳ phiên bản Python 3.8+ nào). Kho lưu trữ được sao chép cùng với các tập lệnh khởi chạy ở trên vẫn hoạt động theo cách tương tự.
+
+1. **Cài đặt lệnh** từ PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   hoặc có tia UV
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   hoặc với pip
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>Đối với mã mới nhất chưa được phát hành, hãy sử dụng `git+https://github.com/DrewThomasson/ebook2audiobook.git` thay cho `ebook2audiobook`.</i>
+
+2. **Cài đặt / Chạy ebook2audiobook**, với các tùy chọn giống như các tập lệnh khởi chạy:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Nếu không tìm thấy lệnh (thư mục tập lệnh của pip không nằm trong PATH của bạn): `python -m ebook2audiobook`
+
+- Lần khởi chạy đầu tiên sẽ sao chép ebook2audiobook vào `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` trên Windows) và cài đặt ứng dụng tại đó<br>
+  với tập lệnh khởi chạy của nó, giống hệt như `./ebook2audiobook.command` hoặc `ebook2audiobook.cmd` sẽ làm.
+- Để sử dụng một thư mục khác, hãy đặt `E2A_HOME` trước lần khởi chạy đầu tiên và giữ nguyên cài đặt đó cho các lần tiếp theo<br>
+  (tức là `export E2A_HOME=/data/ebook2audiobook` trên Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` sau đó là một cửa sổ dòng lệnh mới trên Windows).
+- Thư mục đó là một thư mục ebook2audiobook thông thường: `./ebook2audiobook.command` (`./e2a.sh`) và `ebook2audiobook.cmd` (`e2a.cmd`) cũng hoạt động trong thư mục đó.
+- Nếu thư mục đó đã chứa một ebook2audiobook được sao chép hoặc tải xuống, tệp đó sẽ được khởi chạy nguyên trạng và pip sẽ không bao giờ thay đổi tệp đó.
+- Đường dẫn tương đối được cung cấp cho `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` và `--output_dir`<br>
+  được đọc từ thư mục nơi bạn nhập lệnh.
+- Bạn không cần phải hủy kích hoạt venv hoặc conda env: ebook2audiobook luôn chạy trong `python_env` riêng của nó.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (tùy chọn với `--docker_mode compose` hoặc `--docker_mode podman`)<br>
+  xây dựng hình ảnh từ thư mục đó. Chạy các lệnh `docker run` / `docker compose` mà nó in ra từ thư mục đó luôn:<br>
+  các điểm gắn kết `./ebooks`, `./audiobooks`... của chúng và các tệp compose có liên quan đến điểm gắn kết đó. Hình ảnh sử dụng các tùy chọn tương tự,<br>
+  với các đường dẫn bên trong container (`/app/...`), xem [Docker](#docker).
+- **Cập nhật**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` hoặc `pip install -U ebook2audiobook`.<br>
+  Lần khởi chạy tiếp theo sẽ cập nhật các tệp của ứng dụng và giữ lại `python_env`, các mô hình, giọng nói, sách nói và mọi nội dung bạn đã thêm vào thư mục.
+- **Gỡ cài đặt**: Chỉ `pip uninstall`, `pipx uninstall` hoặc `uv tool uninstall` mới xóa lệnh:<br>
+  thư mục và hàng gigabyte mô hình trong đó vẫn được giữ lại. Trước tiên, hãy gỡ cài đặt ebook2audiobook bằng chính lệnh này:
+  1. Di chuyển sách nói của bạn ra khỏi thư mục con `audiobooks` của thư mục: mọi nội dung trong thư mục sẽ bị xóa.
+  2. `ebook2audiobook --uninstall`<br>
+     Nó chạy trình gỡ cài đặt của thư mục, yêu cầu bạn xác nhận rồi xóa các lối tắt, các chương trình mà nó đã cài đặt<br>
+     (được liệt kê trong `.installed`) và nội dung thư mục, sau đó xóa thư mục.
+  3. Chạy lệnh mà nó in ra cuối cùng để gỡ bỏ chính `ebook2audiobook`, tùy thuộc vào cách bạn đã cài đặt nó:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` hoặc `pip uninstall ebook2audiobook`.
+  4. Nếu bạn đã dựng ảnh Docker: `docker rmi athomasson2/ebook2audiobook:<tag>` và `docker volume rm e2a_venvs`<br>
+     (với Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` và `podman volume rm e2a_venvs`).
 
 <a id="basic-usage"></a>
 ### Cách dùng cơ bản
@@ -226,6 +281,10 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **cài đặt pip / pipx** (tất cả các hệ điều hành)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Đường dẫn đến tệp sách điện tử của bạn
@@ -260,6 +319,10 @@ Vì vậy, trước tiên bạn nên xóa thủ công bất kỳ văn bản nào
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **cài đặt pip / pipx** (tất cả các hệ điều hành)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Hoặc cho mọi hệ điều hành**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -639,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Các vấn đề thường gặp:
 - GPU NVIDIA/ROCm/XPU/MPS của tôi không được phát hiện?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU chậm (tốt hơn trên CPU smp máy chủ) trong khi GPU có thể chuyển đổi gần như thời gian thực.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Tuy nhiên nó không có nhân bản giọng nói zero-shot, và là giọng chất lượng Siri, nhưng nhanh hơn nhiều trên cpu).
 - "Tôi gặp vấn đề về phụ thuộc" - Chỉ cần dùng docker, nó hoàn toàn độc lập và có chế độ headless,
    thêm tham số  ở cuối lệnh docker run để biết thêm thông tin. `--help`
@@ -679,7 +755,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
 - [x] Âm thanh FireRed/ FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
 - [x] Âm thanh Fish-speech/ Fish (https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] TTS âm thanh Higgs (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
@@ -689,17 +765,17 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
 - [x] Hộp trò chuyện (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
-- [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
+- [x] Chỉ mục-tts / Chỉ mục TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
-- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] TTS Khổng Tử4 (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] Chấm TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
 - [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] Moss TTS cục bộ / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
 - [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] Gradi Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1)
@@ -738,12 +814,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Tiếng Nhật (jpn)
 - [x] Tiếng Hindi (hin)
 - [x] Tiếng Bengali (ben)
-- [x] Hungarian (hun)
+- [x] Tiếng Hungary (hun)
 - [x] Tiếng Hàn (kor)
 - [x] Vietnamese (VIE)
 - [x] Tiếng Thụy Điển (swe)
 - [x] Tiếng Ba Tư (FAS)
-- [x] Yoruba (yor)
+- [x] Tiếng Yoruba (yor)
 - [x] Tiếng Swahili (swa)
 - [x] Tiếng Indonesia (ind)
 - [x] Tiếng Slovak (slk)
@@ -751,11 +827,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Tương thích hệ điều hành
 - [x] 🪟 Windows x86
-- [x] 🪟 CỬA SỔ ARM
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Máy Mac dùng chip Apple Silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 
@@ -777,10 +853,10 @@ Chúng tôi chấp nhận bất kỳ loại phần cứng nào để thử nghi�
 -->
 
 ## Tín dụng
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Bộ công cụ học sâu dành cho công nghệ chuyển văn bản thành giọng nói, đã được kiểm nghiệm thực tế trong nghiên cứu và sản xuất.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Công cụ chuyển văn bản thành giọng nói bằng mạng nơ-ron nhanh và cục bộ.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- mã suy luận ggml cho Zonos2.
-- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- An all-in-one, pure C++ inference engine for audio models, powered by ggml.
+- [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Một công cụ suy luận C++ thuần túy, tất cả trong một, dành cho các mô hình âm thanh, được hỗ trợ bởi ggml.
 
 <a id="special-thanks"></a>
 ## Lời cảm ơn đặc biệt

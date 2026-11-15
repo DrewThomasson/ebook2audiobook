@@ -14,7 +14,10 @@ def patch_coqui_hifigan_for_xpu(engine):
     """
     if os.environ.get("E2A_XPU_HIFIGAN_CPU", "1") != "1":
         return engine
-    if not hasattr(torch, 'xpu') or not torch.xpu.is_available():
+    # is_initialized(), not is_available(): an engine moved to xpu has started the runtime already, a CPU one must not
+    # start it here. Both callers run on every Coqui load, and on an Intel GPU torch xpu cannot run on (UHD 770 iGPU,
+    # old driver) the is_available() probe is a Windows access violation
+    if not hasattr(torch, 'xpu') or not torch.xpu.is_initialized():
         return engine
 
     print("[XPU Workaround] Scanning engine for vocoders (HiFi-GAN / separate)...")
