@@ -3117,7 +3117,8 @@ def get_pronunciation_guide_path(session:dict)->str|None:
 
 def load_pronunciation_guide(path:str)->tuple[dict|None, str]:
     # returns the guide (None when there is nothing to apply) and the one line that says what happened to it.
-    # An entry is {"word": ..., "say": ...}; "say" equal to "word" records the name as read as written and changes nothing.
+    # An entry is {"word": ..., "say": ...}; "say" equal to "word", apart from apostrophe style or spacing, records
+    # the name as read as written and changes nothing.
     # a guide of this app is named from the app folder, as the documentation names it
     shown = os.path.relpath(path, os.path.dirname(pronunciations_dir)) if os.path.dirname(path) == pronunciations_dir else path
     try:

@@ -33,7 +33,7 @@ A JSON list of entries:
 | Key | Required | Meaning |
 | --- | --- | --- |
 | `word` | yes | The name as the book spells it. It can be several words (`King's Landing`). |
-| `say` | yes | The text the engine reads instead. `say` equal to `word` means the name is confirmed as written: it is on record and nothing is changed. |
+| `say` | yes | The text the engine reads instead. `say` equal to `word`, apart from its apostrophe style or spacing, means the name is confirmed as written: it is on record and nothing is changed. |
 | `case_sensitive` | no | `true` by default, so `Rose` the character is not `rose` the flower. `false` matches any case. |
 | `ipa` | no | Kept for engines that read phonemes. No engine uses it yet. |
 | `note` | no | Where the pronunciation comes from. |
