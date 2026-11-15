@@ -39,13 +39,13 @@
 
 <a id="gui-interface"></a>
 #### واجهة المستخدم الرسومية
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>انقر لمشاهدة صور واجهة المستخدم الرسومية للويب</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## اللغات المدعومة
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,60 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 **إذا تم إيقاف البرنامج النصي وتشغيله مرة أخرى، فستحتاج إلى تحديث واجهة Gradio GUI الخاصة بك<br>
 للسماح لصفحة الويب بإعادة الاتصال بمقبس الاتصال الجديد.**
 
+<a id="pip-install"></a>
+### التثبيت باستخدام pip / pipx
+هناك طريقة أخرى لتثبيت وتشغيل ebook2audiobook، دون استنساخ المستودع: يقوم pip بتثبيت الأمر `ebook2audiobook`<br>
+(جميع أنظمة التشغيل، أي إصدار من Python 3.8 أو أحدث). يستمر المستودع المستنسخ مع نصوص التشغيل الخاصة به أعلاه في العمل بنفس الطريقة.
+
+1. **ثبّت الأمر** من PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   أو بالأشعة فوق البنفسجية
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   أو مع بذور
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>بالنسبة لأحدث رمز لم يتم إصداره بعد، استخدم `git+https://github.com/DrewThomasson/ebook2audiobook.git` بدلاً من `ebook2audiobook`.</i>
+
+2. **تثبيت / تشغيل ebook2audiobook**، بنفس خيارات نصوص التشغيل:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   إذا لم يتم العثور على الأمر (مجلد البرامج النصية لـ pip غير موجود في PATH الخاص بك): `python -m ebook2audiobook`
+
+- المرة الأولى التي يتم فيها تشغيل التطبيق، يتم نسخ ebook2audiobook إلى `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` على نظام التشغيل Windows) وتثبيته هناك<br>
+  باستخدام برنامج التشغيل النصي الخاص به، تمامًا كما يفعل `./ebook2audiobook.command` أو `ebook2audiobook.cmd`.
+- لاستخدام مجلد آخر، عيّن `E2A_HOME` قبل التشغيل الأول واتركه معّينًا للتشغيلات التالية<br>
+  (أي `export E2A_HOME=/data/ebook2audiobook` على نظام التشغيل Linux/MacOS، `setx E2A_HOME D:\ebook2audiobook` ثم محطة طرفية جديدة على نظام التشغيل Windows).
+- هذا المجلد هو مجلد ebook2audiobook عادي: `./ebook2audiobook.command` (`./e2a.sh`) و`ebook2audiobook.cmd` (`e2a.cmd`) يعملان فيه أيضًا.
+- إذا كان هذا المجلد يحتوي بالفعل على كتاب إلكتروني تم استنساخه أو تنزيله إلى كتاب مسموع، فسيتم تشغيله كما هو ولن يغيره pip أبدًا.
+- المسارات النسبية المعطاة إلى `--ebook` و`--ebooks_dir` و`--voice` و`--voice_map` و`--custom_model` و`--output_dir`<br>
+  من المجلد الذي تكتب فيه الأمر.
+- لا حاجة إلى إلغاء تنشيط بيئة venv أو بيئة conda: يعمل ebook2audiobook دائمًا في `python_env` الخاص به.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (اختياريًا مع `--docker_mode compose` أو `--docker_mode podman`)<br>
+  ينشئ الصورة من هذا المجلد. نفّذ الأوامر `docker run` / `docker compose` التي تطبعها من هذا المجلد أيضًا:<br>
+  `./ebooks`، `./audiobooks`... الخاصة بها، وترتبط بها وحدات التخزين وملفات Compose. تأخذ الصورة الخيارات نفسها،<br>
+  مع المسارات داخل الحاوية (`/app/...`)، انظر [Docker](#docker).
+- **تحديث**: `pipx upgrade ebook2audiobook` أو `uv tool upgrade ebook2audiobook` أو `pip install -U ebook2audiobook`.<br>
+  سيؤدي التشغيل التالي إلى تحديث ملفات التطبيق والاحتفاظ بـ `python_env` والنماذج والأصوات والكتب الصوتية وأي شيء أضفته إلى المجلد.
+- **إلغاء التثبيت**: `pip uninstall` أو `pipx uninstall` أو `uv tool uninstall` وحدها تزيل الأمر فقط:<br>
+  يبقى المجلد وجيجابايت النماذج الخاصة به. قم بإلغاء تثبيت ebook2audiobook باستخدام الأمر نفسه أولاً:
+  1. انقل كتبك الصوتية من المجلد الفرعي `audiobooks` للمجلد: سيتم حذف كل شيء في المجلد.
+  2. `ebook2audiobook --uninstall`<br>
+     يقوم بتشغيل أداة إلغاء تثبيت المجلد، والتي تطلب منك التأكيد ثم تزيل الاختصارات والبرامج التي تم تثبيتها<br>
+     (المدرجة في `.installed`) ومحتوى المجلد، ثم يحذف المجلد.
+  3. نفّذ الأمر الذي يطبع الأخير لإزالة `ebook2audiobook` نفسه، والذي يعتمد على كيفية تثبيته:<br>
+     `pipx uninstall ebook2audiobook` أو `uv tool uninstall ebook2audiobook` أو `pip uninstall ebook2audiobook`.
+  4. إذا قمت بإنشاء صور Docker: `docker rmi athomasson2/ebook2audiobook:<tag>` و`docker volume rm e2a_venvs`<br>
+     (مع Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` و`podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### الاستخدام الأساسي
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (جميع أنظمة التشغيل)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[-- الكتاب الإلكتروني ]**: المسار إلى ملف الكتاب الإلكتروني الخاص بك
@@ -260,6 +319,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (جميع أنظمة التشغيل)
+     ```bash
+     ebook2audiobook --help
      ```
    - **أو لجميع أنظمة التشغيل**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)

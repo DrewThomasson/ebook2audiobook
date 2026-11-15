@@ -39,13 +39,13 @@ Utilice esta herramienta de manera responsable y de acuerdo con todas las leyes 
 
 <a id="gui-interface"></a>
 #### g id="i1"Interfaz GUI/g
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Haga clic para ver imágenes de Web GUI</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Idiomas admitidos
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,60 @@ Por lo tanto, primero debes eliminar manualmente cualquier texto que no quieras 
 **Si el script se detiene y se ejecuta de nuevo, debe actualizar la interfaz GUI de gradio<br>
 para permitir que la página web se vuelva a conectar al nuevo socket de conexión.**
 
+<a id="pip-install"></a>
+### Instalar con pip / pipx
+Otra forma de instalar y ejecutar ebook2audiobook, sin clonar el repositorio: pip instala el comando `ebook2audiobook`<br>
+(todos los sistemas operativos, cualquier versión de Python 3.8 o superior). El repositorio clonado con sus scripts de lanzamiento anteriores sigue funcionando de la misma manera.
+
+1. **Instale el comando** desde PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   o con UV
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   o con pip
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>Para el último código que aún no se ha publicado, usa `git+https://github.com/DrewThomasson/ebook2audiobook.git` en lugar de `ebook2audiobook`.</i>
+
+2. **Instalar / Ejecutar ebook2audiobook**, con las mismas opciones que los scripts de lanzamiento:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Si no se encuentra el comando (la carpeta de scripts de pip no está en su PATH): `python -m ebook2audiobook`
+
+- El primer inicio copia ebook2audiobook en `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` en Windows) y lo instala allí<br>
+  con su script de lanzamiento, exactamente como lo harían `./ebook2audiobook.command` o `ebook2audiobook.cmd`.
+- Para usar otra carpeta, configúrala `E2A_HOME` antes del primer inicio y mantenla configurada para los siguientes<br>
+  (es decir, `export E2A_HOME=/data/ebook2audiobook` en Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` y luego un nuevo terminal en Windows).
+- Esa carpeta es una carpeta ebook2audiobook normal: `./ebook2audiobook.command` (`./e2a.sh`) y `ebook2audiobook.cmd` (`e2a.cmd`) también funcionan en ella.
+- Si esa carpeta ya contiene un ebook2audiobook clonado o descargado, se inicia tal cual y pip nunca lo modifica.
+- Rutas relativas proporcionadas a `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` y `--output_dir`<br>
+  se leen desde la carpeta en la que se escribe el comando.
+- No es necesario desactivar tu entorno virtual o tu entorno conda: ebook2audiobook siempre se ejecuta en su propio `python_env`.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (opcionalmente con `--docker_mode compose` o `--docker_mode podman`)<br>
+  crea la imagen a partir de esa carpeta. Ejecute también los comandos `docker run` / `docker compose` que imprime desde esa carpeta:<br>
+  sus `./ebooks`, `./audiobooks`... montajes y los archivos compose son relativos a él. La imagen admite las mismas opciones,<br>
+  con rutas dentro del contenedor (`/app/...`), ver [Docker](#docker).
+- **Actualización**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` o `pip install -U ebook2audiobook`.<br>
+  El próximo inicio actualizará los archivos de la aplicación y conservará `python_env`, los modelos, las voces, los audiolibros y todo lo que hayas añadido a la carpeta.
+- **Desinstalar**: `pip uninstall`, `pipx uninstall` o `uv tool uninstall` por sí solos solo eliminan el comando:<br>
+  La carpeta y sus gigabytes de modelos se quedan. Primero, desinstala ebook2audiobook con el comando:
+  1. Saca tus audiolibros de la subcarpeta `audiobooks` de la carpeta: se eliminará todo lo que haya en la carpeta.
+  2. `ebook2audiobook --uninstall`<br>
+     Ejecuta el desinstalador de la carpeta, que le pide que confirme y luego elimina los accesos directos y los programas que instaló<br>.
+     (enumerados en `.installed`) y el contenido de la carpeta, y luego elimina la carpeta.
+  3. Ejecute el último comando que se muestre para eliminar `ebook2audiobook`, que depende de cómo lo haya instalado:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` o `pip uninstall ebook2audiobook`.
+  4. Si ha creado imágenes de Docker: `docker rmi athomasson2/ebook2audiobook:<tag>` y `docker volume rm e2a_venvs`<br>
+     (con Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` y `podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### Uso básico
    - **Linux/MacOS**:
@@ -226,6 +281,10 @@ para permitir que la página web se vuelva a conectar al nuevo socket de conexi�
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (todos los sistemas operativos)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Ruta a su archivo de libro electrónico
@@ -260,6 +319,10 @@ para permitir que la página web se vuelva a conectar al nuevo socket de conexi�
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (todos los sistemas operativos)
+     ```bash
+     ebook2audiobook --help
      ```
    - **O para todos los sistemas operativos**
     ```python
@@ -373,6 +436,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
