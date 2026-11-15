@@ -20,6 +20,8 @@ path_options = ['--ebook', '--ebooks_dir', '--voice', '--voice_map', '--custom_m
 # the launchers refuse to start inside another venv or conda env, and python_env's own python would read
 # PYTHONHOME/PYTHONPATH: none of them belongs to the python that ran pip any more once the launcher runs
 foreign_env_vars = ['VIRTUAL_ENV', 'CONDA_PREFIX', 'PYTHONHOME', 'PYTHONPATH', '__PYVENV_LAUNCHER__']
+# what uninstall.sh/.command/.cmd leaves in the folder it empties: the script it runs, which it cannot delete
+uninstall_leftovers = ['uninstall.sh', 'uninstall.command', 'uninstall.cmd']
 
 def print_error(msg:str)->None:
     # flushed: exec replaces this process right after, and python < 3.9 block-buffers a piped stderr
@@ -33,6 +35,10 @@ def get_launcher(app_dir:str)->str:
 
 def is_app_dir(path:str)->bool:
     return os.path.isfile(get_launcher(path)) and os.path.isfile(os.path.join(path, 'app.py'))
+
+def is_empty_dir(path:str)->bool:
+    # a folder holding only its uninstaller after an uninstall counts as empty: a reinstall starts afresh there
+    return os.path.isdir(path) and all(name in uninstall_leftovers for name in os.listdir(path))
 
 def get_source_dir()->Optional[str]:
     app_tree = os.path.join(get_package_dir(), 'app_tree')
@@ -190,7 +196,7 @@ def main()->None:
         print_error(f"{home} is a file. Set {home_env} to the folder ebook2audiobook must be installed in.")
         sys.exit(1)
     marker = read_marker(home)
-    if marker is None and os.path.isdir(home) and os.listdir(home):
+    if marker is None and os.path.isdir(home) and not is_empty_dir(home):
         if is_app_dir(home):
             # a git clone or a downloaded copy: the user's own, started as it is and never changed by pip
             home_version = read_text(os.path.join(home, 'VERSION.txt'))
