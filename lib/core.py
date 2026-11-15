@@ -3914,7 +3914,8 @@ def convert_chapters2audio(session_id:str)->bool:
                     if spoken_sentences.pop(spoken_combine_key, None):
                         save_spoken_sentences(block_dir, spoken_sentences)
             # a finished conversion leaves the resume point after the last block: on a resume every block is behind
-            # it, so a block is converted again only when its text changed or its audio is missing
+            # it, so a block is converted again only when it changed since it was converted, when the engine is now
+            # given another text for it, or when its audio is missing
             blocks_current['block_resume'] = len(blocks)
             blocks_current['sentence_resume'] = 0
             session['blocks_current'] = blocks_current
