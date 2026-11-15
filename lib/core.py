@@ -3438,8 +3438,11 @@ def align_blocks(old_blocks:list, new_blocks:list, old_current:list, old_saved:l
 def remap_resume(old_current:list, merged_current:list, equal_ids:set, block_resume:int, sentence_resume:int)->tuple:
     # pure function: block_resume/sentence_resume are positional, so they must follow the block
     # they pointed at into the new order. if that block was edited or deleted, sentence_resume resets.
+    # a finished conversion has its resume point after the last block, and it stays after the last block.
     if not old_current or not merged_current:
         return 0, 0
+    if block_resume >= len(old_current):
+        return len(merged_current), 0
     new_index = {b['id']: i for i, b in enumerate(merged_current)}
     pos = min(block_resume, len(old_current) - 1)
     while pos >= 0:
@@ -3910,8 +3913,11 @@ def convert_chapters2audio(session_id:str)->bool:
                         return False
                     if spoken_sentences.pop(spoken_combine_key, None):
                         save_spoken_sentences(block_dir, spoken_sentences)
-            #blocks_current['block_resume'] = 0
-            #blocks_current['sentence_resume'] = 0
+            # a finished conversion leaves the resume point after the last block: on a resume every block is behind
+            # it, so a block is converted again only when it changed since it was converted, when the engine is now
+            # given another text for it, or when its audio is missing
+            blocks_current['block_resume'] = len(blocks)
+            blocks_current['sentence_resume'] = 0
             session['blocks_current'] = blocks_current
             save_db_stamp(session_id)
             session['blocks_saved'] = copy.deepcopy(blocks_current)
@@ -4990,11 +4996,9 @@ def convert_ebook(args:dict)->tuple:
                     error = legends['error_ebook_textarea_empty']
                     return error, False
                 text = args['ebook_textarea']
-                text_name = get_sanitized(text[:64])
-                text_name_hash = hashlib.md5(f'{text_name}_{session_id}'.encode()).hexdigest()
-                text_filename = SML_TAG_PATTERN.sub('', text_name)
-                text_filename = get_sanitized(text_filename)
-                text_filename = f'{text_filename[:48]}_{session_id}.txt'
+                # the tags go before the name is sanitized: a sanitized tag is no longer one the pattern matches
+                text_name = get_sanitized(SML_TAG_PATTERN.sub('', text)[:64])
+                text_filename = f'{text_name[:48]}_{session_id}.txt'
                 text_filepath = os.path.join(tempfile.gettempdir(), text_filename)
                 with open(text_filepath, 'w', encoding='utf-8') as f:
                     f.write(text)
