@@ -92,8 +92,8 @@ TTS_SML = {
     # a free-text reading direction for a passage, never spoken: [direct:quiet, tense, slowing down]...[/direct].
     # The engines that read it turn it into their own controls through keyword tables: an entry applies once when one
     # of its keywords is a word of the direction or starts one ("whisper" matches whispering, whispered); a word ending
-    # in "less", "lessly" or "lessness" (joyless, fearlessly) only matches a keyword written in full, and a word starting with an "exclude"
-    # entry (happen, yellow) matches nothing. Negation is not read ("not angry" is angry).
+    # in "less", "lessly" or "lessness" (joyless, fearlessly) only matches a keyword written in full, and a word
+    # starting with an "exclude" entry (happen, yellow) matches nothing. Negation is not read ("not angry" is angry).
     # maya1: the direction joins the configured voice description as its tone, inside the same sentence (a second
     # sentence there makes the model speak the description), and the first "maya1" entry it hits puts that inline
     # token in front of each part of the passage. Only the model's delivery tokens are listed: its sound tokens

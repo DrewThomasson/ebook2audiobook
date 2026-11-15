@@ -979,7 +979,9 @@ class TTSUtils:
             last = 0
             for m in SML_TAG_PATTERN.finditer(sentence):
                 if m.group('tag') == 'direct':
-                    kept.append(sentence[last:m.start()].rstrip(' ') + ' ')
+                    before = sentence[last:m.start()].rstrip(' ')
+                    if before or not kept:
+                        kept.append(before + ' ')
                     last = m.end() + len(sentence[m.end():]) - len(sentence[m.end():].lstrip(' '))
             sentence = ''.join(kept) + sentence[last:]
         parts:list[str] = []
