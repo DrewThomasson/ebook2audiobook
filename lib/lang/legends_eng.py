@@ -387,7 +387,7 @@ legends = {
     'error_import_blocks_mismatch': 'Error: --import_blocks {path} does not match this ebook ({reason}). Export the blocks of this ebook with --export_blocks and edit that file.',
     'msg_blocks_exported': 'Blocks exported to {path} ({count} blocks). Edit their text, then convert with --import_blocks {path}.',
     'msg_blocks_imported': 'Blocks imported from {path}: {changed} with new text, {skipped} not kept.',
-    'msg_import_blocks_resume': 'Resuming with --import_blocks: only the blocks whose text changed are converted again.',
+    'msg_import_blocks_resume': 'Resuming with --import_blocks: the blocks whose text changed are converted again.',
     'error_no_ebooks_in_dir': 'Error: No supported ebook files found in --ebooks_dir.',
     'error_ebook_missing': 'Error: The provided --ebook {src} does not exist.',
     'error_text_empty': 'Error: The --text is empty.',
