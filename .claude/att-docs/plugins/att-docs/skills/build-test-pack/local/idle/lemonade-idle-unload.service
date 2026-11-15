@@ -1,0 +1,28 @@
+# Unloads the local model from Lemonade once it has been idle for IDLE_MINUTES
+# (default 15). The timer starts it every minute. It runs as a system unit
+# because Lemonade is the system unit lemonade-server.service. It only talks to
+# Lemonade's API and the model servers' slots endpoints on 127.0.0.1, so it needs no
+# privileges.
+#
+# idle-setup.sh installs this file with the absolute path of node written in,
+# copies idle-unload.mjs to /usr/local/lib/lemonade-idle-unload/, and enables
+# the timer. The timeout lives in /etc/default/lemonade-idle-unload as
+# IDLE_MINUTES=<n>; LEMONADE_URL=<url> there points at a different API base, and
+# LEMONADE_API_KEY=<key> there is sent to Lemonade as a bearer token.
+#
+# The journal holds one line per unload (the model name and the idle minutes), plus a
+# line for each model that was skipped, whose slots could not be read, or that turned
+# busy just before its unload.
+
+[Unit]
+Description=Unload the local model from Lemonade when it is idle
+After=lemonade-server.service
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+StateDirectory=lemonade-idle-unload
+EnvironmentFile=-/etc/default/lemonade-idle-unload
+ExecStart=/usr/bin/node /usr/local/lib/lemonade-idle-unload/idle-unload.mjs
+TimeoutStartSec=5min
+Nice=10

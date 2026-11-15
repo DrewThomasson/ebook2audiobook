@@ -1,0 +1,142 @@
+{
+ "exports": [
+  {
+   "doc": "docs/LIB/UC01-Card-Renewal.md",
+   "prefix": "BR-LIB.UC01",
+   "rules": [
+    {
+     "path": "UC01 Patron Card Renewal",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC01-001",
+     "name": "BR-LIB.UC01-001 - Renewal window",
+     "status": "active",
+     "description": "Renew is enabled from 30 days before expiry until 90 days after it.",
+     "source_document": "UC01 Patron Card Renewal",
+     "source_page": "2",
+     "rule_summary": "Renew is enabled from 30 days before expiry until 90 days after it.",
+     "risk_level": "Medium",
+     "rule_category": "Validation",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC01 Patron Card Renewal",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC01-002",
+     "name": "BR-LIB.UC01-002 - Window messages",
+     "status": "active",
+     "description": "Outside the window the page shows the not-yet or lapsed message.",
+     "source_document": "UC01 Patron Card Renewal",
+     "source_page": "2",
+     "rule_summary": "Outside the window the page shows the not-yet or lapsed message.",
+     "risk_level": "Low",
+     "rule_category": "Notification",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC01 Patron Card Renewal",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC01-003",
+     "name": "BR-LIB.UC01-003 - Fines block",
+     "status": "active",
+     "description": "A balance of 25.00 or more blocks renewal with a pay-fines message.",
+     "source_document": "UC01 Patron Card Renewal",
+     "source_page": "3",
+     "rule_summary": "A balance of 25.00 or more blocks renewal with a pay-fines message.",
+     "risk_level": "High",
+     "rule_category": "Validation",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC01 Patron Card Renewal",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC01-004",
+     "name": "BR-LIB.UC01-004 - New expiry date",
+     "status": "active",
+     "description": "The new expiry is three years after the old expiry date.",
+     "source_document": "UC01 Patron Card Renewal",
+     "source_page": "4",
+     "rule_summary": "The new expiry is three years after the old expiry date.",
+     "risk_level": "High",
+     "rule_category": "Calculation",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC01 Patron Card Renewal",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC01-005",
+     "name": "BR-LIB.UC01-005 - Renewal history",
+     "status": "active",
+     "description": "Each renewal writes a history row with both dates and the staff ID or ONLINE.",
+     "source_document": "UC01 Patron Card Renewal",
+     "source_page": "4",
+     "rule_summary": "Each renewal writes a history row with both dates and the staff ID or ONLINE.",
+     "risk_level": "Medium",
+     "rule_category": "Data Integrity",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC01 Patron Card Renewal",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC01-006",
+     "name": "BR-LIB.UC01-006 - Old rule",
+     "status": "retired",
+     "description": "Retired.",
+     "source_document": "UC01 Patron Card Renewal",
+     "source_page": "1",
+     "rule_summary": "Retired.",
+     "risk_level": "Low",
+     "rule_category": "Validation",
+     "created": "2026-01-15"
+    }
+   ]
+  },
+  {
+   "doc": "docs/LIB/UC02-Overdue-Fines.md",
+   "prefix": "BR-LIB.UC02",
+   "rules": [
+    {
+     "path": "UC02 Overdue Fines",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC02-001",
+     "name": "BR-LIB.UC02-001 - Daily accrual",
+     "status": "active",
+     "description": "A late loan accrues 0.25 a day, closed days excluded.",
+     "source_document": "UC02 Overdue Fines",
+     "source_page": "1",
+     "rule_summary": "A late loan accrues 0.25 a day, closed days excluded.",
+     "risk_level": "High",
+     "rule_category": "Calculation",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC02 Overdue Fines",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC02-002",
+     "name": "BR-LIB.UC02-002 - Fine cap",
+     "status": "active",
+     "description": "One loan's fine stops at 10.00; a lost item is charged its replacement cost instead.",
+     "source_document": "UC02 Overdue Fines",
+     "source_page": "2",
+     "rule_summary": "One loan's fine stops at 10.00; a lost item is charged its replacement cost instead.",
+     "risk_level": "Medium",
+     "rule_category": "Calculation",
+     "created": "2026-01-15"
+    },
+    {
+     "path": "UC02 Overdue Fines",
+     "requirement_type": "Business Rule",
+     "rule_id": "BR-LIB.UC02-003",
+     "name": "BR-LIB.UC02-003 - Supervisor waiver",
+     "status": "active",
+     "description": "Only a supervisor can waive, with a reason code, and each waiver is audited.",
+     "source_document": "UC02 Overdue Fines",
+     "source_page": "3",
+     "rule_summary": "Only a supervisor can waive, with a reason code, and each waiver is audited.",
+     "risk_level": "High",
+     "rule_category": "Security",
+     "created": "2026-01-15"
+    }
+   ]
+  }
+ ]
+}

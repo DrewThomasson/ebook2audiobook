@@ -1,0 +1,6 @@
+{
+  "name": "voice",
+  "description": "The voice session hooks that feed Baton and the skill that answers a relayed voice request",
+  "version": "0.31.36",
+  "license": "MIT"
+}

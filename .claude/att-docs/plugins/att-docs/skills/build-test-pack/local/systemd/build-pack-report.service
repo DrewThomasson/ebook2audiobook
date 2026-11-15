@@ -1,0 +1,18 @@
+# Writes the maintainer's report: a daily file, and on the configured weekday
+# (Monday by default) the weekly rollup too. The files land in the pipeline
+# output folder's reports/ directory, or in report.dir when the config sets one.
+# The report holds job IDs, reason codes, counts, confidence ratings and run
+# times, never what a job read or wrote.
+#
+# Install beside build-pack.service, which owns the env file:
+#   cp build-pack-report.service build-pack-report.timer ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now build-pack-report.timer
+
+[Unit]
+Description=Write the test pack report
+
+[Service]
+Type=oneshot
+EnvironmentFile=%h/.config/build-pack/env
+ExecStart=/usr/bin/node ${BUILD_PACK_SCRIPT} report --config ${BUILD_PACK_CONFIG}
+Nice=10

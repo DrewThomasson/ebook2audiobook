@@ -1,0 +1,8 @@
+{
+  "queue": {
+    "readyLabel": "ready-for-agent",
+    "requireLabels": [],
+    "excludeLabels": [],
+    "blockedLabels": []
+  }
+}

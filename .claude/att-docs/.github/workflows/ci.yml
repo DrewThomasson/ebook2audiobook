@@ -1,0 +1,79 @@
+name: CI
+
+# Runs every test and the static checks on each pull request and on each push to main.
+# The check name is the job name, test-all. scripts/test-all.sh keeps going after a
+# failing test file and exits non-zero if any file or any static check failed.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to a pull request makes its older run stale, so that run is cancelled.
+# Runs on main are left to finish, so every commit on main keeps its own result.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-all:
+    runs-on: [self-hosted, overmind, Linux]
+    timeout-minutes: 15
+    steps:
+      # The job runs the pull request's own code on a self-hosted runner, so it opens
+      # by failing a pull request from a fork before anything is checked out. A failed
+      # job reads red, where a skipped one would satisfy a required check. A push to
+      # main has no pull request, so the step is skipped there.
+      - name: Refuse a pull request from a fork
+        if: >-
+          github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::A pull request from a fork is not run on the overmind runners."
+          exit 1
+
+      - uses: actions/checkout@v7
+
+      # The runners reuse their workspace, and another workflow's sparse checkout turns on
+      # extensions.worktreeConfig. actions/checkout disables sparse checkout, then unsets
+      # that extension, hiding the core.sparseCheckout=false it wrote to config.worktree,
+      # so the old setting in .git/config applies again. Disabling here writes it to
+      # .git/config and restores the full tree; on a full checkout it does nothing.
+      - name: Clear a sparse checkout another workflow left behind
+        run: git sparse-checkout disable
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Advisory: compares scripts/bridge-tools/bridge-tools.json with Baton's tool list at
+      # the main branch of Code-Conductor and warns when they differ. It never fails the job.
+      # The token reads Code-Conductor and nothing else, and only the drift step receives it,
+      # so the tests never see it. A failed mint (no App key, no installation) shows as a
+      # failed step but leaves the job green, and drift.sh then prints a notice and skips.
+      # NODE_OPTIONS makes the Node action read the operating system's certificate store,
+      # which holds the inspecting proxy's root on some runners.
+      - name: Mint a token to read Code-Conductor
+        id: baton-token
+        continue-on-error: true
+        env:
+          NODE_OPTIONS: --use-system-ca
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          owner: merph518
+          repositories: Code-Conductor
+          permission-contents: read
+
+      - name: Warn when the Baton tool snapshot is behind Code Conductor
+        timeout-minutes: 5
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.baton-token.outputs.token }}
+        run: bash scripts/bridge-tools/drift.sh
+
+      - name: Run every test and the static checks
+        run: bash scripts/test-all.sh

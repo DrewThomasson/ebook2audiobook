@@ -1,0 +1,6 @@
+{
+  "name": "general",
+  "description": "Workflow skills that are not tied to one subject (implementing issues, working the backlog) and the repo hooks that read a repository's extension.json",
+  "version": "0.31.36",
+  "license": "MIT"
+}

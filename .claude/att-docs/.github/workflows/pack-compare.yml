@@ -1,0 +1,84 @@
+name: Pack comparison
+
+# Compares a built test pack with a reference pack on a desktop runner. The files are
+# copied onto the runner by hand into one folder, with fixed names (see
+# .github/scripts/pack-compare.mjs). The log shows the exit code and the counts the
+# command prints, nothing else. No report is uploaded, and the cleanup step deletes the
+# staged files and the report even when the run fails or is cancelled.
+#
+# Do not name the run after the input, add a step summary or an artifact upload, or
+# read the dispatch input in an expression: the comparison quotes cards, rule text and
+# document lines, and dispatch inputs are visible on the run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      folder:
+        description: Folder on the runner that holds the staged files (its name must hold no work content)
+        required: false
+        default: 'C:\pack-compare'
+
+permissions:
+  contents: read
+
+# One comparison at a time, so two runs never share the folder.
+concurrency:
+  group: pack-compare
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    runs-on: [self-hosted, overmind, Windows]
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      # The job runs repository code beside work content, so it only runs from main.
+      - name: Refuse a ref other than main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          Write-Host "::error::Run this workflow from main."
+          exit 1
+
+      - name: Check Node
+        run: |
+          $node = Get-Command node -ErrorAction SilentlyContinue
+          if (-not $node) {
+            Write-Host "::error::node is not on PATH for this runner's service account. Install Node 18 or later on the runner; this workflow does not install it."
+            exit 1
+          }
+          $version = (& node --version).Trim()
+          Write-Host "node $version"
+          if ([int]($version.TrimStart('v').Split('.')[0]) -lt 18) {
+            Write-Host "::error::Node 18 or later is needed."
+            exit 1
+          }
+
+      - uses: actions/checkout@v7
+        id: checkout
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github/scripts
+            plugins/att-docs/skills/build-test-pack/local
+          sparse-checkout-cone-mode: true
+
+      - name: Compare the staged packs
+        run: |
+          node .github/scripts/pack-compare.mjs run
+          exit $LASTEXITCODE
+
+      - name: Delete the staged files and the report
+        if: always()
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+        run: |
+          $script = '.github/scripts/pack-compare.mjs'
+          if ($env:CHECKOUT_OUTCOME -eq 'success' -and (Get-Command node -ErrorAction SilentlyContinue)) {
+            node $script cleanup
+            exit $LASTEXITCODE
+          }
+          Remove-Item -Recurse -Force -ErrorAction SilentlyContinue (Join-Path $env:RUNNER_TEMP "pack-compare-$env:GITHUB_RUN_ID")
+          Write-Host "::error::The cleanup script could not run (node or this run's checkout is missing), so only the report was removed. Delete the staged files by hand."
+          exit 1

@@ -1,0 +1,12 @@
+{
+ "exports": [
+  {
+   "doc": "docs/OTHER/UC05-Struck-Warning.md",
+   "prefix": "BR-LIB.UC05",
+   "rules": [
+    { "rule_id": "BR-LIB.UC05-001", "name": "BR-LIB.UC05-001 - Save", "status": "active", "path": "UC05 Struck Warning", "requirement_type": "Business Rule", "rule_category": "Validation", "description": "The page saves the loan with the Save button.", "source_document": "UC05 Struck Warning", "source_page": "1", "rule_summary": "The page saves the loan with the Save button.", "risk_level": "Low", "created": "2026-09-02" },
+    { "rule_id": "BR-LIB.UC05-002", "name": "BR-LIB.UC05-002 - Save at once", "status": "active", "path": "UC05 Struck Warning", "requirement_type": "Business Rule", "rule_category": "Validation", "description": "The loan is saved at once.", "source_document": "UC05 Struck Warning", "source_page": "2", "rule_summary": "The loan is saved at once.", "risk_level": "Medium", "created": "2026-09-02" }
+   ]
+  }
+ ]
+}

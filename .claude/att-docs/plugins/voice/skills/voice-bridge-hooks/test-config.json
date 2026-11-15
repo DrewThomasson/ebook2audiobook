@@ -1,0 +1,14 @@
+{
+  "base": "voice-bridge-hooks",
+  "reviewLabel": "Awaiting Final Review",
+  "reviewAnnouncement": "awaiting final review",
+  "readyLine": "PULL REQUEST <N> IS READY FOR YOUR REVIEW",
+  "spokenTerms": { "SQL": "sequel", "UI": "U I" },
+  "ledgerModule": "fixture_ledger",
+  "ledgerTool": "ledger.py",
+  "ledgerSubcommands": ["add-pr", "add-checks", "add", "wait", "check"],
+  "dispatchTool": "dispatch.sh",
+  "dispatchLedgerFlag": "--ledger",
+  "drivers": { "sweep.sh": 2, "watch.sh": 0 },
+  "driverLedger": "ledger.tsv"
+}

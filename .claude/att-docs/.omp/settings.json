@@ -1,0 +1,3 @@
+{
+  "extensions": ["scripts/omp-guard-hook.mjs"]
+}

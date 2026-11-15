@@ -1,0 +1,10 @@
+{
+  "consumers": [
+    "ATT-Test-Pack-Gen",
+    "Code-Conductor",
+    "Gnome-Widgets",
+    "Laundry-Bot",
+    "Playwright-Testing",
+    "personal"
+  ]
+}

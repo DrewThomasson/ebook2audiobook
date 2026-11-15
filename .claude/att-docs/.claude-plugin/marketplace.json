@@ -1,0 +1,21 @@
+{
+  "name": "att-docs",
+  "owner": { "name": "merph518" },
+  "plugins": [
+    {
+      "name": "att-docs",
+      "source": "./plugins/att-docs",
+      "description": "General documentation skills with a per-repository extension layer"
+    },
+    {
+      "name": "general",
+      "source": "./plugins/general",
+      "description": "Workflow skills that are not tied to one subject (implementing issues, working the backlog) and the repo hooks that read a repository's extension.json"
+    },
+    {
+      "name": "voice",
+      "source": "./plugins/voice",
+      "description": "The voice session hooks that feed Baton and the skill that answers a relayed voice request"
+    }
+  ]
+}

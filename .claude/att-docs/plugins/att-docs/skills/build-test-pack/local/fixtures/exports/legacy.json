@@ -1,0 +1,38 @@
+{
+ "exports": [
+  {
+   "doc": "docs/LIB/UC01-Card-Renewal.md",
+   "prefix": "BR-LIB.UC01",
+   "rules": [
+    {
+     "rule_id": "BR-LIB.UC01-001",
+     "name": "BR-LIB.UC01-001 - Renewal window",
+     "status": "active",
+     "path": "UC01 Patron Card Renewal",
+     "requirement_type": "Workflow",
+     "rule_category": "Data Entry",
+     "description": "Renew is enabled inside the window.",
+     "source_document": "UC01 Patron Card Renewal",
+     "source_page": "9",
+     "rule_summary": "Renew is enabled inside the window.",
+     "risk_level": "Medium",
+     "created": "2026-01-15"
+    },
+    {
+     "rule_id": "BR-LIB.UC01-002",
+     "name": "BR-LIB.UC01-002 - Window messages",
+     "status": "active",
+     "path": "UC01 Patron Card Renewal",
+     "requirement_type": "Business Rule",
+     "rule_category": "Validation",
+     "description": "Renew is enabled inside the window.",
+     "source_document": "UC01 Patron Card Renewal",
+     "source_page": "Page 2: Renewal window",
+     "rule_summary": "Renew is enabled inside the window.",
+     "risk_level": "Medium",
+     "created": "2026-01-15"
+    }
+   ]
+  }
+ ]
+}

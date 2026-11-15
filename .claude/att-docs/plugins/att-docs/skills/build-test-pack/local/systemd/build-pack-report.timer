@@ -1,0 +1,13 @@
+# Writes the report at 07:30, half an hour after the queue's default cutoff, so
+# it covers the night's jobs. A report the machine slept through is written when
+# it wakes. A job still running at 07:30 appears in the next day's report.
+
+[Unit]
+Description=Write the test pack report each morning
+
+[Timer]
+OnCalendar=*-*-* 07:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
