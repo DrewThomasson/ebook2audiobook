@@ -1,5 +1,5 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 电子书转有声书 (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU转换器从电子书转换为带有章节和元数据的有声读物<br/>
@@ -66,7 +66,7 @@ https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
-**Scarlett Voice**
+**Scarlett的声音**
 
 https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
@@ -189,7 +189,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 2. **安装/运行ebook2audiobook** ：
 
-   - **Linux/MacOS**
+   - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.command
      ```
@@ -210,7 +210,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    
 1. **打开Web应用程序** ：单击终端中提供的URL以访问Web应用程序并转换电子书。`http://localhost:7860/`
 2. **对于公开链接** ：
-   `./ebook2audiobook.command --share` （ Linux/MacOS ）
+   `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share`（所有操作系统，仅安装一次，并使用其 python_env 文件夹中的 Python）
 
@@ -752,22 +752,22 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [ ] 至少为xttsv2、fairseq、vits、piper添加信德语语言模型（欢迎使用）
 
 #### TTS引擎
-- [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
+- [x] DramaBox（https://github.com/dramabox-ai/dramabox)[cite: 1]）
 - [x] FireRed Audio/FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
 - [x] 鱼语/鱼声(https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] Higgs Audio TTS（https://github.com/higgs-audio/higgs-audio)[cite: 1]）
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
-- [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
+- [x] VibeVoice（https://github.com/vibevoice-community/VibeVoice)[cite: 1]）
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
-- [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Voxtral TTS（https://github.com/voxtral/voxtral-tts)[cite: 1]
+- [x] 话痨（https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice/CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
 - [x] Index-tts/Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
-- [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
+- [x] Breeze TTS（https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]）
 - [x] 孔子4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
 - [x] 点TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
@@ -779,9 +779,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] NewTTS/NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] 声子级(https://github.com/gradium-ai/xn-ptts)[cite: 1]
-- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1]
-- [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
-- [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
+- [x] 上主音（https://github.com/supertone-inc/supertonic)[cite: 1]）
+- [x] Irodori TTS（https://github.com/irodori-tts/irodori-tts)[cite: 1]）
+- [x] Piper（https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
 - [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
@@ -789,47 +789,47 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 乌龟(https://github.com/neonbjb/tortoise-tts)[cite: 1]
 - [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] BARK (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] 您的TTS（https://github.com/Edresson/YourTTS)[cite: 1]）
 - [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
-- [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
-- [x] ChatTTS (https://github.com/2noise/ChatTTS)
+- [x] OpenVoice（https://github.com/myshell-ai/OpenVoice)
+- [x] ChatTTS（https://github.com/2noise/ChatTTS)
 - [x] Spark-TTS (https://github.com/sparkaudio/spark-tts)
 - [x] MeloTTS (https://github.com/myshell-ai/MeloTTS)
 - [x] CSM https://github.com/SesameAILabs/csm)
 
 #### 自述文件翻译
 - [x] 阿拉伯语(ara)
-- [x] Chinese (zho)
-- [x] English (eng)
-- [x] Spanish (spa)
-- [x] French (fra)
+- [x] 中文（zho）
+- [x] 英语 (eng)
+- [x] 西班牙语（西班牙）
+- [x] 法语 (fra)
 - [x] 德语(deu)
-- [x] Italian (ita)
-- [x] Portuguese (por)
-- [x] Polish (pol)
+- [x] 意大利语 (ita)
+- [x] 葡萄牙语 (por)
+- [x] 波兰语 (pol)
 - [x] 土耳其语(TUR)
-- [x] Russian (rus)
-- [x] Dutch (nld)
+- [x] 俄语（rus）
+- [x] 荷兰语 (nld)
 - [x] 捷克语（ ces ）
-- [x] Japanese (jpn)
-- [x] Hindi (hin)
-- [x] Bengali (ben)
+- [x] 日语 (jpn)
+- [x] 印地语 (hin)
+- [x] 孟加拉语 (ben)
 - [x] 匈牙利语(HUN)
-- [x] Korean (kor)
+- [x] 韩语 (kor)
 - [x] 越南语（ VIE ）
-- [x] Swedish (swe)
+- [x] 瑞典语 (swe)
 - [x] 波斯语(fas)
 - [x] 约鲁巴语（ yor ）
 - [x] 斯瓦希里语(swa)
 - [x] 印尼语（印尼）
-- [x] Slovak (slk)
+- [x] 斯洛伐克语 (slk)
 - [x] 克罗地亚语(hrv)
 
 #### 💻 操作系统兼容性
 - [x] 🪟 Windows x86
-- [x] 🪟 ARM窗口
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac英特尔x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Apple 硅芯片 Mac
 - [x] 🐧 Linux x86
 - [x] 🐧 ARM Linux
 

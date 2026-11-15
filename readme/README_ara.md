@@ -1,5 +1,5 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 تحويل الكتاب الإلكتروني إلى كتاب مسموع (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 محول وحدة المعالجة المركزية/وحدة معالجة الرسومات من الكتاب الإلكتروني إلى الكتاب الصوتي مع الفصول والبيانات الوصفية<br/>
@@ -66,7 +66,7 @@ https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
-**Scarlett Voice**
+**صوت سكارليت**
 
 https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
@@ -189,7 +189,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 2. **تثبيت / تشغيلebook2audiobook**:
 
-   - **Linux/MacOS**
+   - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.command
      ```
@@ -211,7 +211,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 1. **افتح تطبيق الويب**: انقر فوق عنوان URL المقدم في الوحدة الطرفية للوصول إلى تطبيق الويب وتحويل الكتب الإلكترونية. `http://localhost:7860/`
 2. **للرابط العام**:
    `./ebook2audiobook.command --share` (Linux/MacOS)
-   ويندوز `ebook2audiobook.cmd --share`
+   `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (جميع أنظمة التشغيل، مرة واحدة فقط عند التثبيت ومع بايثون من مجلد python_env الخاص به)
 
 > هام:
@@ -463,7 +463,7 @@ SML tags available:
 نصيحة: إذا كان يحتاج إلى مزيد من التوقف، أضف "[pause:3]" لمدة 3 ثوانٍ وما إلى ذلك.
 
 <a id="docker"></a>
-### منصة لحاويات البرمجيات
+### Docker
 1. **استنساخ المستودع**:
 ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
@@ -797,29 +797,29 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] MeloTTS (https://github.com/myshell-ai/MeloTTS)
 - [x] شركة كونسولوم https://github.com/SesameAILabs/csm)
 
-#### Readme Translation
+#### ترجمة ملف Readme
 - [x] العربية (ARA)
 - [x] الصينية (zho)
-- [x] English (eng)
+- [x] الإنجليزية (eng)
 - [x] الإسبانية (SPA)
 - [x] الفرنسية (فرنك فرنسي)
 - [x] الألمانية (deu)
-- [x] Italian (ita)
+- [x] الإيطالية (ita)
 - [x] Portuguese (POR)
-- [x] Polish (pol)
-- [x] Turkish (tur)
-- [x] Russian (rus)
+- [x] البولندية (pol)
+- [x] التركية (tur)
+- [x] الروسية (rus)
 - [x] الهولندية (nld)
 - [x] التشيكية
-- [x] Japanese (jpn)
+- [x] اليابانية (jpn)
 - [x] الهندية (hin)
 - [x] البنغالية (بن)
 - [x] الهنغارية (HUN)
-- [x] Korean (kor)
+- [x] الكورية (kor)
 - [x] الفيتنامية (VIE)
-- [x] Swedish (swe)
+- [x] السويدية (swe)
 - [x] الفارسية (فاس)
-- [x] Yoruba (yor)
+- [x] اليوروبية (yor)
 - [x] السواحلية (SWA)
 - [x] الإندونيسية (الهند)
 - [x] السلوفاكية (slk)
@@ -827,9 +827,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### نظام التشغيل التوافقي:
 - [x] 🪟 ويندوز x86
-- [x] نوافذ 🪟 الذراع
+- [x] 🪟 ARM Windows
 - [x] 🍎 ماك إنتل إكس 86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 ماك برقاقة Apple Silicon
 - [x] 🐧 Linux x86
 - [x] 🐧 ARM Linux
 

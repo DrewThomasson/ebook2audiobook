@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 E-Book zu Hörbuch (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU-Konverter von E-Book zu Hörbuch mit Kapiteln und Metadaten<br/>
 unter Verwendung fortschrittlicher TTS-Engines und vielem mehr.<br/>
 Unterstützt Sprachklonen und 1696 Sprachen!
-> [!IMPORTANT]
+> Wichtig
 **Dieses Tool ist ausschließlich für die Verwendung mit DRM-freien, legal erworbenen E-Books bestimmt.** <br>
 Die Autoren übernehmen keine Verantwortung für jeglichen Missbrauch dieser Software oder daraus resultierende rechtliche Folgen. <br>
 Verwenden Sie dieses Tool verantwortungsvoll und in Übereinstimmung mit allen geltenden Gesetzen.
@@ -124,7 +124,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 🔍 **OCR-Erkennung** für Dateien mit Textseiten als Bilder
 - 🔊 **Hochwertige Sprachausgabe**, von nahezu Echtzeit bis zu nahezu echter Stimme
 - 🗣️ **Optionales Stimmenklonen** mit Ihrer eigenen Sprachdatei
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Unterstützt 1.696 Sprachen** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Ressourcenschonend** — läuft mit **2 GB RAM / 1 GB VRAM (Minimum)**
 - 🎵 **Hörbuch-Ausgabeformate**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **SML-Tags unterstützt** — feingranulare Steuerung von Unterbrechungen, Pausen, Stimmwechsel und mehr ([see below](#sml-tags-available))
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Sehen Sie sich unser anderes Repo an, das dem automatischen Hinzufügen von SML in Ihrem E-Book gewidmet ist -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> Wichtig
 **Bevor Sie ein Installations- oder Fehlerproblem melden, durchsuchen Sie sorgfältig den Tab mit offenen und geschlossenen Issues<br>
 um sicherzustellen, dass Ihr Problem nicht bereits existiert.**
 
@@ -189,7 +189,7 @@ Daher sollten Sie zunächst manuell jeglichen Text entfernen, den Sie nicht in A
 
 2. **ebook2audiobook installieren / ausführen**:
 
-   - **Linux/MacOS**
+   - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.command
      ```
@@ -214,7 +214,7 @@ Daher sollten Sie zunächst manuell jeglichen Text entfernen, den Sie nicht in A
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (alle Betriebssysteme, nur einmal installiert und mit dem Python des Ordners python_env)
 
-> [!IMPORTANT]
+> Wichtig
 **Wenn das Skript gestoppt und erneut ausgeführt wird, müssen Sie Ihre Gradio-GUI-Oberfläche aktualisieren<br>
 damit sich die Webseite mit dem neuen Verbindungs-Socket verbinden kann.**
 
@@ -715,7 +715,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Häufige Probleme:
 - Meine NVIDIA-/ROCm-/XPU-/MPS-GPU wird nicht erkannt?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  Die CPU ist langsam (besser auf einer Server-SMP-CPU), während die GPU eine nahezu Echtzeit-Konvertierung erreichen kann.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Es hat allerdings kein Zero-Shot-Stimmenklonen und bietet Stimmen in Siri-Qualität, ist aber auf der CPU deutlich schneller).
 - „Ich habe Abhängigkeitsprobleme“ - Verwenden Sie einfach Docker, es ist vollständig eigenständig und hat einen Headless-Modus,
    fügen Sie für weitere Informationen den Parameter  am Ende des docker-run-Befehls hinzu. `--help`
@@ -755,7 +755,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
 - [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
 - [x] Fisch-Sprache / Fisch-Audio (https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] Higgs-Audio-TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
@@ -763,33 +763,33 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
-- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
-- [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
+- [x] Geschwätziger (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] CosyVoice/CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
+- [x] Index-TTS / Index-TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
 - [x] Konfuzius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
-- [x] Dots TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
+- [x] Punkte TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
 - [x] Elster TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] Moss TTS Lokal / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] NewTTS/NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
-- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
-- [x] Supertonic (https://github.com/supertone-inc/supertonic)[cite: 1]
+- [x] Gradium-Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
+- [x] Überleitender Ton (https://github.com/supertone-inc/supertonic)[cite: 1]
 - [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
-- [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
+- [x] Pfeifer (https://github.com/rhasspy/piper)[cite: 1]
 - [x] VITS (https://github.com/jaywalnut330/vits)[cite: 1]
 - [x] Fairseq (https://github.com/facebookresearch/fairseq)[cite: 1]
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
 - [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] Schildkröte (https://github.com/neonbjb/tortoise-tts)[cite: 1]
-- [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
+- [x] Zonen (https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] Rinde (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] IhrTTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
 - [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
 - [x] ChatTTS (https://github.com/2noise/ChatTTS)
@@ -829,9 +829,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] 🪟 Windows x86
 - [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac mit Apple-Silicon-Prozessor
 - [x] Linux on IA-32 (for Intel x86)
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 

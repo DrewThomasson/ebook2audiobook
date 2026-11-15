@@ -1,5 +1,5 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 De libro electrónico a audiolibro (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 Convertidor de CPU/GPU de libro electrónico a audiolibro con capítulos y metadatos<br/>
@@ -66,7 +66,7 @@ https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
-**Scarlett Voice**
+**Voz de Scarlett**
 
 https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
@@ -140,7 +140,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - Virtualización habilitada si se ejecuta en Windows (solo Docker).
 - CPU, XPU (Intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
-- MPS (Apple Silicon CPU)
+- MPS (CPU Apple Silicon)
 
 *<i> Los motores TTS modernos son muy lentos en la CPU, así que use TTS de menor calidad como YourTTS, Tacotron2, etc.</i>
 
@@ -189,7 +189,7 @@ Por lo tanto, primero debes eliminar manualmente cualquier texto que no quieras 
 
 2. **Instalar / ejecutar ebook2audiobook**:
 
-   - **Linux/MacOS**
+   - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.command
      ```
@@ -753,9 +753,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Motores TTS
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
-- [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
+- [x] Audio FireRed / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
 - [x] Discurso de pez/Audio de pez (https://github.com/fishaudio/fish-speech)[cite: 1]
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] Audio TTS de Higgs (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
@@ -763,9 +763,9 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
-- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
-- [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
+- [x] Habla mucho (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1)
+- [x] Índice-TTS / Índice TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
 - [x] Confucio4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
@@ -773,10 +773,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
-- [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
+- [x] TTS de Magpie (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1)
+- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1)
 - [x] Bolsillo TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] Gradio Fonón (https://github.com/gradium-ai/xn-ptts)[cite: 1]
 - [x] Supertónica (https://github.com/supertone-inc/supertonic)[cite: 1]
@@ -797,7 +797,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] MeloTTS (https://github.com/myshell-ai/MeloTTS)
 - [x] MCS https://github.com/SesameAILabs/csm)
 
-#### Readme Translation
+#### Traducción del archivo Léame
 - [x] Árabe (ara)
 - [x] Chino (zho)
 - [x] English (ENG)
@@ -808,30 +808,30 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Portugués (por)
 - [x] Polaco (pol)
 - [x] Turco (tur)
-- [x] Russian (rus)
+- [x] Ruso (rus)
 - [x] Holandés (nld)
-- [x] Czech (ces)
+- [x] Checo (ces)
 - [x] Japonés (jpn)
 - [x] Hindi (hin)
 - [x] Bengalí (ben)
 - [x] Húngaro (HUN)
 - [x] Coreano (kor)
 - [x] Vietnamita (vie)
-- [x] Swedish (swe)
+- [x] Sueco (SWE)
 - [x] Persa (fas)
 - [x] Yoruba (yor)
-- [x] Swahili (swa)
+- [x] Suajili (swa)
 - [x] Indonesio (ind)
 - [x] Eslovaco (slk)
 - [x] Croata (hrv)
 
 #### Compatibilidad con sistemas operativos
 - [x] 🪟 Windows x86
-- [x] 🪟 ARM WINDOWS
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac con chip Apple
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 
