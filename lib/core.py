@@ -331,6 +331,7 @@ class SessionContext:
             "process_dir": None,
             "chapters_dir": None,
             "sentences_dir": None,
+            "pronunciations": None,
             "epub_path": None,
             "final_name": None,
             "filename_noext": None,
@@ -3100,6 +3101,119 @@ def text_hash(text:str)->str:
     # block_hash() cannot be used here since a fresh parse has empty sentences and default voice/engine.
     return hashlib.sha1(' '.join((text or '').split()).encode('utf-8')).hexdigest()
 
+pronunciation_guides = {}
+spoken_sentences_file = 'spoken.json'
+
+def get_pronunciation_guide_path(session:dict)->str|None:
+    # --pronunciations when given, else the guide named after the series, so every book of it reads the same file,
+    # else the guide named after the title
+    if session.get('pronunciations'):
+        return session['pronunciations']
+    metadata = session.get('metadata') or {}
+    name = get_sanitized(str(metadata.get('series') or metadata.get('title') or ''))
+    return os.path.join(pronunciations_dir, f'{name}.json') if name else None
+
+def load_pronunciation_guide(path:str)->tuple[dict|None, str]:
+    # returns the guide (None when there is nothing to apply) and the one line that says what happened to it.
+    # An entry is {"word": ..., "say": ...}; "say" equal to "word" records the name as read as written and changes nothing.
+    # a guide of this app is named from the app folder, as the documentation names it
+    shown = os.path.relpath(path, os.path.dirname(pronunciations_dir)) if os.path.dirname(path) == pronunciations_dir else path
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        return None, legends['msg_pronunciation_guide_none'].format(path=shown)
+    except (OSError, ValueError) as e:
+        return None, legends['msg_pronunciation_guide_invalid'].format(path=shown, reason=e)
+    if not isinstance(data, list):
+        return None, legends['msg_pronunciation_guide_invalid'].format(path=shown, reason='it must be a list of entries')
+    exact, folded, alternatives, skipped = {}, {}, [], []
+    for i, entry in enumerate(data, 1):
+        word = entry.get('word') if isinstance(entry, dict) else None
+        say = entry.get('say') if isinstance(entry, dict) else None
+        case_sensitive = entry.get('case_sensitive', True) if isinstance(entry, dict) else None
+        word = ' '.join(word.split()) if isinstance(word, str) else ''
+        say = say.strip() if isinstance(say, str) else ''
+        if not word or not say or not isinstance(case_sensitive, bool):
+            skipped.append(str(i))
+            continue
+        if say == word:
+            continue
+        # one spelling for both apostrophes, any run of whitespace between the words of a name
+        key = word.replace('’', "'")
+        alternative = r'\s+'.join(re.escape(part) for part in key.split(' ')).replace("'", "['’]")
+        if case_sensitive:
+            exact[key] = say
+        else:
+            folded[key.casefold()] = say
+            alternative = f'(?i:{alternative})'
+        alternatives.append((len(key), alternative))
+    # longest entry first, so "King's Landing" wins over "King". The lookahead lets a plural or possessive s follow
+    # the name ("the Lannisters", "Qyburn's") and nothing else: "Valyrian" is not "Valyria"
+    alternatives.sort(key=lambda a: -a[0])
+    pattern = re.compile(r'(?<!\w)(?:' + '|'.join(a for _, a in alternatives) + r')(?=s?(?!\w))') if alternatives else None
+    note = legends['msg_pronunciation_guide_skipped'].format(count=len(skipped), reason=f'entries {", ".join(skipped)} need a "word" and a "say" as text') if skipped else ''
+    guide = {'path': path, 'pattern': pattern, 'exact': exact, 'folded': folded}
+    return guide, legends['msg_pronunciation_guide_in_use'].format(path=shown, count=len(data) - len(skipped), skipped=note)
+
+def get_pronunciation_guide(session:dict)->tuple[dict|None, str|None]:
+    # the guide of this session's book and the line that describes it, read again only when the file changed
+    path = get_pronunciation_guide_path(session)
+    if path is None:
+        return None, None
+    try:
+        stat = os.stat(path)
+        stamp = (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        stamp = None
+    cached = pronunciation_guides.get(path)
+    if cached is None or cached[0] != stamp:
+        cached = (stamp, *load_pronunciation_guide(path))
+        pronunciation_guides[path] = cached
+    return cached[1], cached[2]
+
+def apply_pronunciations(text:str, guide:dict|None)->str:
+    # the text an engine is given for a sentence. Block text and sentences keep the book's spelling, and what is
+    # inside an SML tag (a [voice:...] path, a [direct:...] note) is left as written
+    if not guide or guide['pattern'] is None:
+        return text
+    def _say(match:re.Match)->str:
+        found = ' '.join(match.group(0).split()).replace('’', "'")
+        return guide['exact'].get(found) or guide['folded'].get(found.casefold()) or match.group(0)
+    parts = []
+    pos = 0
+    for tag in SML_TAG_PATTERN.finditer(text):
+        parts.append(guide['pattern'].sub(_say, text[pos:tag.start()]))
+        parts.append(tag.group(0))
+        pos = tag.end()
+    parts.append(guide['pattern'].sub(_say, text[pos:]))
+    return ''.join(parts)
+
+def load_spoken_sentences(block_dir:str)->dict:
+    # {sentence index: text given to the engine} for the sentences of a block that were not read as written.
+    # A sentence with no entry was read as written, so a block converted without a guide has no file at all
+    try:
+        with open(os.path.join(block_dir, spoken_sentences_file), 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+def save_spoken_sentence(block_dir:str, spoken_sentences:dict, idx:int, sentence:str, spoken:str)->None:
+    key = str(idx)
+    if spoken != sentence:
+        if spoken_sentences.get(key) == spoken:
+            return
+        spoken_sentences[key] = spoken
+    elif key in spoken_sentences:
+        del spoken_sentences[key]
+    else:
+        return
+    file = os.path.join(block_dir, spoken_sentences_file)
+    with open(f'{file}.tmp', 'w', encoding='utf-8') as f:
+        json.dump(spoken_sentences, f, ensure_ascii=False)
+    os.replace(f'{file}.tmp', file)
+
 def purge_block_audio(session:dict, block_id:str)->None:
     try:
         ch_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
@@ -3455,6 +3569,9 @@ def convert_chapters2audio(session_id:str)->bool:
                     legend = 'error_out_of_memory_gpu'
                 session['tts_init_error'] = legends[legend].format(engine=session['tts_engine'], device=session['device'])
             return False
+        guide, msg = get_pronunciation_guide(session)
+        if msg:
+            show_alert(session_id, {'type': 'info', 'msg': msg})
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
         block_resume = blocks_current['block_resume']
@@ -3529,20 +3646,32 @@ def convert_chapters2audio(session_id:str)->bool:
                 start_sentence = 0
                 chapter_audio_file = os.path.join(chapters_dir, f'{block_id}.{default_audio_proc_format}')
                 block_dir = os.path.join(sentences_dir, block_id)
+                # a sentence is stale when the guide now gives the engine another text than the one its audio was made from
+                spoken_sentences = load_spoken_sentences(block_dir)
+                stale_sentences = {j for j in valid_idx if spoken_sentences.get(str(j), sentences[j].strip()) != apply_pronunciations(sentences[j].strip(), guide)}
+                stale_only = False
                 if x < block_resume and not block_changed:
                     if not os.path.exists(chapter_audio_file):
                         show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_audio_missing'].format(block=x)})
                         _reset_chapter_file(block_id)
                     else:
                         missing_sentences = _check_block_sentences(block_id, sentences)
-                        if not missing_sentences:
+                        if not missing_sentences and not stale_sentences:
                             print(f'Chapter {ch_num} (block {x}) — has all sentences')
                             cnt = len(valid_idx)
                             global_sent += cnt
                             t.update(cnt)
                             continue
-                        show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_missing_files'].format(block=x, count=len(missing_sentences))})
-                        _reset_chapter_file(block_id)
+                        if missing_sentences:
+                            show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_missing_files'].format(block=x, count=len(missing_sentences))})
+                            _reset_chapter_file(block_id)
+                        else:
+                            # every other sentence keeps its audio and the resume point stays where it is
+                            show_alert(session_id, {'type': 'info', 'msg': legends['msg_block_pronunciation_changed'].format(chapter=ch_num, block=x, count=len(stale_sentences))})
+                            os.unlink(chapter_audio_file)
+                            missing_sentences = stale_sentences
+                            start_sentence = block_len
+                            stale_only = True
                 elif block_changed and x <= block_resume:
                     show_alert(session_id, {'type': 'info', 'msg': legends['msg_chapter_changed'].format(chapter=ch_num, block=x)})
                     _reset_chapter_file(block_id)
@@ -3550,12 +3679,16 @@ def convert_chapters2audio(session_id:str)->bool:
                     if sentence_resume == 0 and os.path.isdir(block_dir):
                         shutil.rmtree(block_dir)
                     start_sentence = sentence_resume
+                    missing_sentences = {j for j in stale_sentences if j < start_sentence}
+                # the branches above may have removed the block's folder, and its record with it
+                spoken_sentences = load_spoken_sentences(block_dir)
                 show_alert(session_id, {'type': 'info', 'msg': legends['msg_chapter_containing'].format(chapter=ch_num, block=x, count=block_len)})
                 os.makedirs(block_dir, exist_ok=True)
-                blocks_current['block_resume'] = x
-                blocks_current['sentence_resume'] = start_sentence
-                session['blocks_current'] = blocks_current
-                save_db_stamp(session_id)
+                if not stale_only:
+                    blocks_current['block_resume'] = x
+                    blocks_current['sentence_resume'] = start_sentence
+                    session['blocks_current'] = blocks_current
+                    save_db_stamp(session_id)
                 converted = False
                 block_voice = block.get('voice') or session.get('voice')
                 for j in range(block_len):
@@ -3568,12 +3701,17 @@ def convert_chapters2audio(session_id:str)->bool:
                             if j == start_sentence and start_sentence > 0:
                                 show_alert(session_id, {'type': 'info', 'msg': legends['msg_resuming_from'].format(sentence=global_sent)})
                             sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
-                            run, error = tts_manager.convert_sentence2audio(sentence_file, sentence, block_voice=block_voice)
+                            spoken = apply_pronunciations(sentence, guide)
+                            run, error = tts_manager.convert_sentence2audio(sentence_file, spoken, block_voice=block_voice)
                             if not run:
                                 show_alert(session_id, {'type': 'warning', 'msg': error})
                                 return False
+                            save_spoken_sentence(block_dir, spoken_sentences, j, sentence, spoken)
+                            if spoken != sentence:
+                                print(legends['msg_pronunciation_spoken'].format(spoken=spoken))
                             converted = True
-                            blocks_current['sentence_resume'] = j
+                            if j >= start_sentence:
+                                blocks_current['sentence_resume'] = j
                             now = time.monotonic()
                             if not baseline_initialized:
                                 session['blocks_current'] = blocks_current
@@ -4719,6 +4857,7 @@ def convert_ebook(args:dict)->tuple:
             session['is_gui_process'] = bool(args['is_gui_process'])
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['interlude_enabled'] = bool(args.get('interlude_enabled', False))
+            session['pronunciations'] = args.get('pronunciations') or None
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
             session['language_iso1'] = args.get('language_iso1') or ''

@@ -32,7 +32,7 @@ cli_options = [
     '--abs_url', '--abs_api_token', '--abs_library', '--enable_interlude',
     '--version', '--workflow', '--docker_device', '--help',
     '--speaking_rate', '--emotion_strength', '--emotion_cfg_scale', '--enable_emotion',
-    '--export_blocks', '--import_blocks'
+    '--export_blocks', '--import_blocks', '--pronunciations'
 ]
 
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'
@@ -153,6 +153,7 @@ gradio_cache_dir = os.path.normpath(os.path.join(run_dir, 'gradio'))
 models_dir = os.path.abspath('models')
 ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
+pronunciations_dir = os.path.abspath('pronunciations')
 voices_url = 'https://huggingface.co/datasets/ebook2audiobook/E2A-Voices/resolve/main/voices.zip?download=true'
 tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')

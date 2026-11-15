@@ -354,6 +354,9 @@ valence, arousal (-1 to 1).""")
     headless_optional_group.add_argument(cli_options[42], type=str, default=None, metavar='BLOCKS_JSON', help='''(--ebook only, optional) Convert from a blocks file written by --export_blocks for the same ebook: block text is used as written
                             and blocks with "keep": false are skipped. The conversion runs in the session that exported the file unless --session is given.
                             A file whose block ids or count do not match the ebook is refused.''')
+    headless_optional_group.add_argument(cli_options[43], type=str, default=None, metavar='GUIDE_JSON', help='''(optional) Pronunciation guide to read names with, a JSON list of {"word": "Qyburn", "say": "KWY-burn"} entries.
+                            Default is ./pronunciations/<series>.json when the ebook has a series, else ./pronunciations/<title>.json.
+                            A guide that is missing or not valid is left out and the conversion goes on.''')
     headless_optional_group.add_argument(cli_options[33], action='version', version=f'ebook2audiobook version {prog_version}', help='Show the version of the script and exit')
 
     internal_group = parser.add_argument_group(argparse.SUPPRESS)
@@ -466,6 +469,8 @@ valence, arousal (-1 to 1).""")
                 # ebook: converting in that session finds the same ids, plus any audio a previous import already made
                 if not args['session'] and args['import_blocks_data'].get('session'):
                     args['session'] = str(args['import_blocks_data']['session'])
+            if args.get('pronunciations'):
+                args['pronunciations'] = os.path.abspath(args['pronunciations'])
             args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
             if args['id'] == workflow_id or not args['session']:
                 session = c.context.set_session(args['id'])

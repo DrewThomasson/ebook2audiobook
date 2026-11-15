@@ -2027,7 +2027,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 progress_bar(0.0, desc=msg)
                                 tts_manager = TTSManager(session)
                                 block_voice = block.get('voice') or session.get('voice')
-                                converted, error = tts_manager.convert_sentence2audio(preview_file, text, block_voice=block_voice)
+                                converted, error = tts_manager.convert_sentence2audio(preview_file, apply_pronunciations(text, get_pronunciation_guide(session)[0]), block_voice=block_voice)
                                 if converted and not os.path.exists(preview_file):
                                     converted, error = False, f'{Path(preview_file).name} was not created!'
                                 if converted:
@@ -2168,6 +2168,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     session['blocks_current'] = blocks_current
                                     save_db_blocks(session_id)
                                     save_json_blocks(session_id, 'blocks_saved')
+                                    block_dir = os.path.dirname(sentence_file)
+                                    save_spoken_sentence(block_dir, load_spoken_sentences(block_dir), sentence_idx, text, apply_pronunciations(text, get_pronunciation_guide(session)[0]))
                                     os.unlink(backup_file)
                                 else:
                                     os.replace(backup_file, sentence_file)
@@ -3509,6 +3511,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 visible_main = False
                                 visible_blocks = True
                                 ebook_name = Path(session['ebook']).stem
+                                guide_msg = get_pronunciation_guide(session)[1]
                                 blocks_current = session['blocks_current']
                                 blocks = blocks_current['blocks']
                                 max_page = max((len(blocks) - 1) // page_size, 0)
@@ -3518,7 +3521,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     visible_main = True
                                     visible_blocks = False
                                 result = (
-                                    gr.update(value=ebook_name),
+                                    gr.update(value=f'{ebook_name}\n\n{guide_msg}' if guide_msg else ebook_name),
                                     gr.update(visible=visible_main), gr.update(visible=visible_blocks),
                                     blocks, page,
                                     gr.update(interactive=page > 0),
