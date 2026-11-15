@@ -348,6 +348,11 @@ valence, arousal (-1 to 1).""")
     headless_optional_group.add_argument(cli_options[30], type=str, default='', help='Audiobookshelf API token.')
     headless_optional_group.add_argument(cli_options[31], type=str, default='', help='Audiobookshelf library ID.')
     headless_optional_group.add_argument(cli_options[32], action='store_true', help='Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py')
+    headless_optional_group.add_argument(cli_options[41], type=str, default=None, metavar='BLOCKS_JSON', help='''(--ebook only, optional) Parse the ebook (and translate it with --translate), write its chapter blocks to this JSON file and exit
+                            without loading a TTS engine. Edit the "text" of any block (SML tags included) or set its "keep" to false, then convert with --import_blocks.''')
+    headless_optional_group.add_argument(cli_options[42], type=str, default=None, metavar='BLOCKS_JSON', help='''(--ebook only, optional) Convert from a blocks file written by --export_blocks for the same ebook: block text is used as written
+                            and blocks with "keep": false are skipped. The conversion runs in the session that exported the file unless --session is given.
+                            A file whose block ids or count do not match the ebook is refused.''')
     headless_optional_group.add_argument(cli_options[33], action='version', version=f'ebook2audiobook version {prog_version}', help='Show the version of the script and exit')
 
     internal_group = parser.add_argument_group(argparse.SUPPRESS)
@@ -434,6 +439,28 @@ valence, arousal (-1 to 1).""")
         error = ''
 
         if args.get('headless', False):
+            if args.get('export_blocks') and args.get('import_blocks'):
+                print(legends['error_blocks_export_and_import'])
+                sys.exit(1)
+            if (args.get('export_blocks') or args.get('import_blocks')) and args.get('ebook') is None:
+                print(legends['error_blocks_ebook_only'])
+                sys.exit(1)
+            if args.get('export_blocks'):
+                args['export_blocks'] = os.path.abspath(args['export_blocks'])
+                if not os.path.isdir(os.path.dirname(args['export_blocks'])):
+                    print(legends['error_export_blocks_dir_missing'].format(path=args['export_blocks']))
+                    sys.exit(1)
+            args['import_blocks_data'] = None
+            if args.get('import_blocks'):
+                args['import_blocks'] = os.path.abspath(args['import_blocks'])
+                args['import_blocks_data'], error = c.load_import_blocks(args['import_blocks'])
+                if error:
+                    print(error)
+                    sys.exit(1)
+                # block ids are generated at parse time and live in the process dir of the session that parsed the
+                # ebook: converting in that session finds the same ids, plus any audio a previous import already made
+                if not args['session'] and args['import_blocks_data'].get('session'):
+                    args['session'] = str(args['import_blocks_data']['session'])
             args['id'] = args['workflow'] if args['workflow'] else args['session'] if args['session'] else str(uuid.uuid4())
             if args['id'] == workflow_id or not args['session']:
                 session = c.context.set_session(args['id'])

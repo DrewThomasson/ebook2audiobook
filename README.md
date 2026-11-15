@@ -94,6 +94,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Launching Gradio Web Interface](#instructions)
     - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
+    - [Edit Chapter Blocks in Headless Mode](#headless-edit-blocks)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
   - [Run Remotely](#run-remotely)
@@ -293,6 +294,24 @@ Another way to install and launch ebook2audiobook, without cloning the repo: pip
     Default language is eng and --language is optional for default language set in ./lib/lang.py.<br>
     The ISO-639-1 2 letters codes are also supported.
 
+<a id="headless-edit-blocks"></a>
+### Edit Chapter Blocks in Headless Mode
+  A script or an AI session can edit the chapter blocks before the conversion, as the GUI editor does.
+  1. Export the blocks without loading a TTS engine:
+     ```bash
+     ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --language <language_code> --export_blocks blocks.json
+     ```
+  2. Edit `blocks.json`: change the `"text"` of any block, SML tags included (i.e. `[pause:2]`),<br>
+     or set its `"keep"` to `false` to skip it. Keep the blocks, their `"id"` and their order as they are.
+  3. Convert from the edited blocks:
+     ```bash
+     ./ebook2audiobook.command --headless --ebook <path_to_ebook_file> --language <language_code> --import_blocks blocks.json
+     ```
+  - The conversion runs in the session that exported the file (its `"session"`), unless `--session` is given.<br>
+    Running the same import again and answering `[r]esume` continues an interrupted conversion, and converts again only the blocks whose text changed.<br>
+    `[d]elete` parses the ebook again with new block ids, so export the blocks again after it.
+  - A file exported from another ebook, or whose block ids or count no longer match, is refused.
+
 
 <a id="example-of-custom-model-zip-upload"></a>
 ###  Example of Custom Model Zip Upload
@@ -423,6 +442,13 @@ optional parameters:
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
   --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
+  --export_blocks BLOCKS_JSON
+                        (--ebook only, optional) Parse the ebook (and translate it with --translate), write its chapter blocks to this JSON file and exit
+                            without loading a TTS engine. Edit the "text" of any block (SML tags included) or set its "keep" to false, then convert with --import_blocks.
+  --import_blocks BLOCKS_JSON
+                        (--ebook only, optional) Convert from a blocks file written by --export_blocks for the same ebook: block text is used as written
+                            and blocks with "keep": false are skipped. The conversion runs in the session that exported the file unless --session is given.
+                            A file whose block ids or count do not match the ebook is refused.
   --version             Show the version of the script and exit
 
 Example usage:
