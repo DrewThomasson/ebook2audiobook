@@ -104,7 +104,7 @@ TTS_SML = {
     # Every other engine ignores the tag.
     "direct": {
         "paired": True,
-        "exclude": ("happen", "gentlem", "grima", "grime", "yellow", "ragged"),
+        "exclude": ("happen", "gentlem", "grima", "grime", "yellow", "ragged", "terrific", "sadis", "fastid", "fasting", "fasten"),
         "maya1": [
             (("whisper", "hush", "murmur"), "whisper"),
             (("anger", "angr", "furi", "fury", "enrag", "rage", "raging", "outrage", "wrath", "hostil", "snarl"), "angry"),

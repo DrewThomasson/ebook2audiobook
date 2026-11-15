@@ -328,7 +328,8 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
             return cached[1]
         emotion = {}
         rate = 1.0
-        for effect in self._direction_matches(direction, TTS_SML['direct']['zonos']):
+        matches = self._direction_matches(direction, TTS_SML['direct']['zonos'])
+        for effect in matches:
             for name, v in effect.items():
                 if name == 'rate':
                     rate *= v
@@ -342,7 +343,8 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
         if rate != 1.0:
             # from the panel's rate, or 15 (the natural pace) when the panel leaves the pace to the model
             request['speaking_rate'] = round((self.fine_tuned_params['speaking_rate'] or 15.0) * rate, 2)
-        print(legends['msg_sml_direct' if request else 'msg_sml_direct_unmatched'].format(value=direction, engine=self.session['tts_engine'], params=request))
+        # an empty request with matches (slow and fast together) is still a direction that was read
+        print(legends['msg_sml_direct' if matches else 'msg_sml_direct_unmatched'].format(value=direction, engine=self.session['tts_engine'], params=request))
         self.params['direction_request'] = (direction, request)
         return request
 
