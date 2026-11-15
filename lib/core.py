@@ -991,6 +991,62 @@ def sync_globals_to_blocks(session_id:str)->None:
     except Exception as e:
         exception_alert(session_id, f'sync_globals_to_blocks(): {e}')
 
+def export_blocks(session_id:str, path:str)->str|None:
+    # the blocks the conversion would run on, in the shape the GUI editor works on, plus the session that parsed them:
+    # their ids exist only in that session's process dir, so --import_blocks converts in it
+    try:
+        session = context.get_session(session_id)
+        data = copy.deepcopy(session['blocks_current'])
+        data['session'] = session_id
+        data['ebook'] = os.path.basename(session['ebook_src'])
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(legends['msg_blocks_exported'].format(path=path, count=len(data.get('blocks', []))))
+        return None
+    except Exception as e:
+        return legends['error_export_blocks_write'].format(path=path, e=e)
+
+def load_import_blocks(path:str)->tuple[dict|None, str|None]:
+    if not os.path.exists(path):
+        return None, legends['error_import_blocks_missing'].format(path=path)
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception as e:
+        return None, legends['error_import_blocks_format'].format(path=path, reason=e)
+    if not isinstance(data, dict) or not isinstance(data.get('blocks'), list):
+        return None, legends['error_import_blocks_format'].format(path=path, reason='no "blocks" list')
+    for i, block in enumerate(data['blocks']):
+        if not (isinstance(block, dict) and isinstance(block.get('id'), str) and isinstance(block.get('text'), str) and isinstance(block.get('keep'), bool)):
+            return None, legends['error_import_blocks_format'].format(path=path, reason=f'block {i} needs a string "id", a string "text" and a true/false "keep"')
+    return data, None
+
+def apply_import_blocks(session_id:str, data:dict, path:str)->str|None:
+    # the whole file is checked before any block changes, so a file for another ebook converts nothing.
+    # Only text and keep are taken; a block whose text changed loses its sentences, so it is split again
+    # and its block_hash() no longer matches blocks_saved: convert_chapters2audio() renders that block again
+    session = context.get_session(session_id)
+    blocks_current = session['blocks_current']
+    blocks = blocks_current.get('blocks', [])
+    imported = data['blocks']
+    if len(imported) != len(blocks):
+        return legends['error_import_blocks_mismatch'].format(path=path, reason=f'{len(imported)} blocks, the ebook has {len(blocks)}')
+    for i, (block, new_block) in enumerate(zip(blocks, imported)):
+        if new_block['id'] != block['id']:
+            return legends['error_import_blocks_mismatch'].format(path=path, reason=f'block {i} has id {new_block["id"]}, the ebook has {block["id"]}')
+    changed = 0
+    for block, new_block in zip(blocks, imported):
+        if new_block['text'].strip() != block['text'].strip():
+            block['sentences'] = []
+            changed += 1
+        block['text'] = new_block['text']
+        block['keep'] = new_block['keep']
+    blocks_current['blocks'] = blocks
+    session['blocks_current'] = blocks_current
+    save_db_blocks(session_id)
+    print(legends['msg_blocks_imported'].format(path=path, changed=changed, skipped=sum(1 for b in blocks if not b['keep'])))
+    return None
+
 def normalize_epub_zip(session_id:str, file_input:str)->str|None:
     try:
         session = context.get_session(session_id)
@@ -4736,7 +4792,8 @@ def convert_ebook(args:dict)->tuple:
                 audio_pre_final_file = os.path.join(session['process_dir'], ebook_name + '.' + default_audio_proc_format)
                 audio_pre_final_exist = os.path.exists(audio_pre_final_file)
                 audio_sentences_exist = any(Path(session['sentences_dir']).rglob(f'*.{default_audio_proc_format}'))
-                if audio_pre_final_exist or audio_sentences_exist:
+                # an export makes no audio: the audio already there is not asked about and stays as it is
+                if (audio_pre_final_exist or audio_sentences_exist) and not args.get('export_blocks'):
                     msg = legends['msg_conversion_exists'].format(name=ebook_name)
                     # audio exists, so the previous global voice matters: warn before the prompt,
                     # since [r]esume with a different global voice reconverts the affected blocks.
@@ -4744,11 +4801,17 @@ def convert_ebook(args:dict)->tuple:
                     if voice_note:
                         msg += voice_note
                     print(msg)
-                    while True:
-                        choice = input("[s]kip / [r]esume / [d]elete and convert again: ").strip().lower()
-                        if choice in ('s', 'r', 'd'):
-                            break
-                        print("Please enter 's', 'r' or 'd'.")
+                    if args.get('import_blocks_data'):
+                        # an import resumes: delete would parse the ebook again with new block ids, which the file
+                        # no longer matches, and the caller is often a script with no one to answer the prompt
+                        choice = 'r'
+                        print(legends['msg_import_blocks_resume'])
+                    else:
+                        while True:
+                            choice = input("[s]kip / [r]esume / [d]elete and convert again: ").strip().lower()
+                            if choice in ('s', 'r', 'd'):
+                                break
+                            print("Please enter 's', 'r' or 'd'.")
                     if choice == 'r':
                         if audio_pre_final_exist:
                             os.unlink(audio_pre_final_file)
@@ -5051,7 +5114,15 @@ def convert_ebook(args:dict)->tuple:
                                                 msg = legends['msg_chapters_preview_select']
                                                 print(msg)
                                                 return '', True
+                                            elif args.get('export_blocks'):
+                                                error = export_blocks(session_id, args['export_blocks'])
+                                                if error is None:
+                                                    return '', True
                                             else:
+                                                if args.get('import_blocks_data'):
+                                                    error = apply_import_blocks(session_id, args['import_blocks_data'], args['import_blocks'])
+                                                    if error is not None:
+                                                        return error, False
                                                 progress_status, passed = finalize_audiobook(session_id)
                                                 return progress_status, passed
                                         else:
