@@ -51,6 +51,8 @@ class AudioCpp(TTSUtils):
                     raise ValueError(error)
             self.family_cfg = settings['audiocpp']
             self.family = self.family_cfg['family']
+            # only a family whose request takes a free-text "instruct" reads a [direct:...] direction
+            self.reads_direction = bool(self.family_cfg['request'].get('instruct'))
             # a preset may speak fewer languages than its engine (IndexTTS2 v2)
             languages = model_cfg.get('languages') or settings['languages']
             if self.language not in languages:
@@ -177,7 +179,11 @@ class AudioCpp(TTSUtils):
         if cached and cached[0] == direction:
             return cached[1], cached[2]
         # the description is sent wrapped in double quotes and must stay one sentence: no quote or sentence mark inside
-        direction_text = re.sub(r'\s+tone$', '', re.sub(r'[\s.!?;:"]+', ' ', direction).strip(' ,'), flags=re.IGNORECASE)
+        direction_text = re.sub(r'[\s,]*[.!?;:"]+[\s,]*', ', ', direction)
+        direction_text = re.sub(r'(^|[\s,]+)tone$', '', ' '.join(direction_text.split()).strip(' ,'), flags=re.IGNORECASE)
+        if not direction_text:
+            self.params['direction_request'] = (direction, {}, None)
+            return {}, None
         request = {'options': {'instruct': f"{instruct.rstrip().rstrip('.')}, {direction_text} tone at high intensity."}}
         token = next(iter(self._direction_matches(direction, TTS_SML['direct'].get(self.family, []))), None)
         print(legends['msg_sml_direct'].format(value=direction, engine=self.session['tts_engine'], params={**request['options'], 'token': token}))

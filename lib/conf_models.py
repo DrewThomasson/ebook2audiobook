@@ -104,7 +104,7 @@ TTS_SML = {
     # Every other engine ignores the tag.
     "direct": {
         "paired": True,
-        "exclude": ("happen", "gentlem", "grima", "grime", "yellow", "ragged", "gravel"),
+        "exclude": ("happen", "gentlem", "grima", "grime", "yellow", "ragged"),
         "maya1": [
             (("whisper", "hush", "murmur"), "whisper"),
             (("anger", "angr", "furi", "fury", "enrag", "rage", "raging", "outrage", "wrath", "hostil", "snarl"), "angry"),
@@ -113,7 +113,7 @@ TTS_SML = {
             (("mischie", "sly", "teasing", "playful"), "mischievous"),
             (("excit", "elat", "thrill", "triumph"), "excited"),
             (("disappoint", "deject"), "disappointed"),
-            (("curious", "curiosity", "wonder", "intrigu"), "curious")
+            (("curious", "curiosity", "wondering", "wonderment", "intrigu"), "curious")
         ],
         "zonos": [
             (("happ", "joy", "cheer", "delight", "glad", "bright", "playful", "amus"), {"happy": 0.6}),
@@ -126,7 +126,7 @@ TTS_SML = {
             (("fear", "afraid", "scared", "fright", "terrif", "terror", "panic", "dread", "horrif"), {"valence": -0.6, "arousal": 0.6}),
             (("tense", "tension", "anxi", "nervous", "uneas", "worr", "suspens", "ominous", "menac", "urgen", "restless", "sleepless"), {"valence": -0.3, "arousal": 0.5}),
             (("disgust", "revuls", "contempt", "sneer"), {"valence": -0.6, "arousal": 0.2}),
-            (("solemn", "grave", "somber", "sombre", "grim"), {"valence": -0.3, "arousal": -0.3}),
+            (("solemn", "gravely", "gravity", "somber", "sombre", "grim"), {"valence": -0.3, "arousal": -0.3}),
             (("calm", "sooth", "peace", "relax", "seren", "quiet", "soft", "hush", "whisper", "murmur", "subdued"), {"arousal": -0.4}),
             (("tired", "weary", "wearil", "exhaust", "sleep", "drows", "listless"), {"arousal": -0.6}),
             (("loud", "shout", "yell", "energetic", "intens", "forceful", "dramatic", "emphatic"), {"arousal": 0.6}),

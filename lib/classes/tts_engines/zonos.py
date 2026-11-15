@@ -11,6 +11,7 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
     # the same package (driver aborts can be rare), a second one drops it until e2a restarts (next GPU package, none
     # left stops the conversion)
     gpu_crashes = {}
+    reads_direction = True
 
     def __init__(self, session:DictProxy):
         # ZONOS2 (Zyphra zonos2.cpp): a native zonos2-server package per platform (default_engine_settings

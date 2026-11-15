@@ -138,6 +138,10 @@ def tqdm_progress(label:str)->Any:
 
 class TTSUtils:
 
+    # True on the engines that turn a [direct:...] reading direction into a request of their own. For the others the
+    # tag is taken out of the sentence before it is split, so the sentence is spoken in the same parts as without it
+    reads_direction = False
+
     # Engines without a voice-conversion stage (bark, tortoise, yourtts, xtts)
     # never assign these; shared helpers may still read them.
     engine_zs = None
@@ -968,6 +972,8 @@ class TTSUtils:
         return current_voice, None
         
     def _split_sentence_on_sml(self, sentence:str)->list[str]:
+        if not self.reads_direction:
+            sentence = re.sub(r' {2,}', ' ', SML_TAG_PATTERN.sub(lambda m: '' if m.group('tag') == 'direct' else m.group(0), sentence))
         parts:list[str] = []
         last = 0
         for m in SML_TAG_PATTERN.finditer(sentence):
@@ -987,7 +993,7 @@ class TTSUtils:
     def _direction_matches(self, direction:str, table:list)->list:
         # the values of the keyword table entries a [direct:...] direction hits, in table order (rules: TTS_SML['direct'])
         words = [word for word in re.findall(r'[^\W\d_]+', direction.lower()) if not word.startswith(TTS_SML['direct']['exclude'])]
-        return [value for keywords, value in table if any(word in keywords or (word.startswith(keywords) and not word.endswith('less')) for word in words)]
+        return [value for keywords, value in table if any(word in keywords or (word.startswith(keywords) and not re.search(r'less(ly|ness)?$', word)) for word in words)]
 
     def _convert_sml(self, sml:str)->tuple:
         import torch
