@@ -1013,12 +1013,14 @@ class TTSUtils:
 
     def _clause_break(self, sentence_parts:list[str], index:int, step:int, parts_before:list[str]|None=None)->bool:
         # True when the nearest part that adds audio after (step 1) or before (step -1) sentence_parts[index] is a
-        # [break] inside a sentence: the text spoken before that [break] ends in punctuation that does not end a
-        # sentence once closing quotes and brackets are set aside (a quote or italic passage that closes on a comma).
-        # A [break] after a sentence end can close a paragraph, which the text does not tell apart, and keeps its full
-        # pause, as does one next to a [pause]. Blank parts, parts with nothing to speak and tags that add no audio are
-        # passed over; parts_before, the parts of the sentence before this one, are read when step -1 runs past the start.
-        # A [break] that opens the next sentence is not seen from the end of this one (step 1 stops at the sentence end)
+        # [break], or a [pause] with a written length, inside a sentence: the text spoken before that tag ends in
+        # punctuation that does not end a sentence once closing quotes and brackets are set aside (a quote or italic
+        # passage that closes on a comma, a colon). The tag is then the whole gap. A [break] after a sentence end can
+        # close a paragraph, which the text does not tell apart, and keeps its full pause, as does one next to a
+        # [pause]; a [pause] with no length keeps its full gap everywhere. Blank parts, parts with nothing to speak and
+        # tags that add no audio are passed over; parts_before, the parts of the sentence before this one, are read when
+        # step -1 runs past the start. A tag that opens the next sentence is not seen from the end of this one (step 1
+        # stops at the sentence end)
         parts = (parts_before or []) + sentence_parts
 
         def _next_audio(pos:int, step:int)->int:
@@ -1034,9 +1036,9 @@ class TTSUtils:
         pos = len(parts) - len(sentence_parts) + index
         pos_break = _next_audio(pos, step)
         m = SML_TAG_PATTERN.fullmatch(parts[pos_break].strip()) if pos_break >= 0 else None
-        if m is None or m.group('tag') != 'break':
+        if m is None or not (m.group('tag') == 'break' or (m.group('tag') == 'pause' and m.group('value'))):
             return False
-        # the spoken part before the [break] and the part after it: a [pause] on either side keeps the full gap
+        # the spoken part before the tag and the part after it: a [pause] on either side keeps the full gap
         pos_text, pos_after = _next_audio(pos_break, -1), _next_audio(pos_break, 1)
         if pos_text < 0 or SML_TAG_PATTERN.fullmatch(parts[pos_text].strip()):
             return False

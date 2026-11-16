@@ -275,8 +275,8 @@ class AudioCpp(TTSUtils):
                         if part[-1].isalnum() or part[-1] == '—':
                             part_tensor = trim_audio(part_tensor.squeeze(0), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         else:
-                            # a [break] inside a sentence is the whole pause on its side of the part: the silence the model
-                            # left there goes, and none is added after the part, so the silences do not add up
+                            # a [break] or a [pause:N] inside a sentence is the whole pause on its side of the part: the
+                            # silence the model left there goes, and none is added after the part, so the silences do not add up
                             break_before = self._clause_break(sentence_parts, index, -1, parts_before)
                             break_after = self._clause_break(sentence_parts, index, 1)
                             if break_before or break_after:
