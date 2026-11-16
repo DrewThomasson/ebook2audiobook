@@ -182,7 +182,7 @@ punctuation_split_soft = [
     # Arabic–Persian
     '،',
     # CJK
-    '，', '、', '·',
+    '，', '、', '；', '：', '·',
     # Thai
     'ฯ',
     # Ethiopic
