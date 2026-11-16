@@ -41,7 +41,7 @@ def detect_gender(voice_path:str)->str|None:
         print(error)
         return None
 
-def trim_audio(audio_data: Union[list[float], 'Tensor'], samplerate: int, silence_threshold: float = 0.003, buffer_sec: float = 0.005)->'Tensor':
+def trim_audio(audio_data: Union[list[float], 'Tensor'], samplerate: int, silence_threshold: float = 0.003, buffer_sec: float = 0.005, trim_start: bool = True, trim_end: bool = True)->'Tensor':
     import torch
     # Ensure audio_data is a PyTorch tensor
     if isinstance(audio_data, list):
@@ -57,9 +57,9 @@ def trim_audio(audio_data: Union[list[float], 'Tensor'], samplerate: int, silenc
         non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
         if len(non_silent_indices) == 0:
             return torch.tensor([], dtype=audio_data.dtype)
-        # Calculate start and end trimming indices with buffer
-        start_index = max(non_silent_indices[0].item() - int(buffer_sec * samplerate), 0)
-        end_index = min(non_silent_indices[-1].item() + int(buffer_sec * samplerate), audio_data.size(0))
+        # Calculate start and end trimming indices with buffer (trim_start=False and trim_end=False keep the silence on that side)
+        start_index = max(non_silent_indices[0].item() - int(buffer_sec * samplerate), 0) if trim_start else 0
+        end_index = min(non_silent_indices[-1].item() + int(buffer_sec * samplerate), audio_data.size(0)) if trim_end else audio_data.size(0)
         return audio_data[start_index:end_index]
     error = 'audio_data must be a PyTorch tensor or a list of numerical values.'
     print(error)

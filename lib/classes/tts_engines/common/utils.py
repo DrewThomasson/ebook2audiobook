@@ -1000,6 +1000,39 @@ class TTSUtils:
                 parts.append(tail)
         return parts
 
+    def _clause_break(self, sentence_parts:list[str], index:int, step:int, parts_before:list[str]|None=None)->bool:
+        # True when the nearest part that adds audio after (step 1) or before (step -1) sentence_parts[index] is a
+        # [break] inside a sentence: the text spoken before that [break] ends in punctuation that does not end a
+        # sentence once closing quotes and brackets are set aside (a quote or italic passage that closes on a comma).
+        # A [break] after a sentence end can close a paragraph, which the text does not tell apart, and keeps its full
+        # pause, as does one next to a [pause]. Blank parts, parts with nothing to speak and tags that add no audio are
+        # passed over; parts_before, the parts of the sentence before this one, are read when step -1 runs past the start
+        parts = (parts_before or []) + sentence_parts
+
+        def _next_audio(pos:int, step:int)->int:
+            # the position of the nearest part from pos on (pos excluded) that adds audio, -1 when there is none
+            pos += step
+            while 0 <= pos < len(parts):
+                m = SML_TAG_PATTERN.fullmatch(parts[pos].strip())
+                if (m is None and any(c.isalnum() for c in parts[pos])) or (m is not None and m.group('tag') in ('break', 'pause')):
+                    return pos
+                pos += step
+            return -1
+
+        pos = len(parts) - len(sentence_parts) + index
+        pos_break = _next_audio(pos, step)
+        m = SML_TAG_PATTERN.fullmatch(parts[pos_break].strip()) if pos_break >= 0 else None
+        if m is None or m.group('tag') != 'break':
+            return False
+        pos_text = pos if step == 1 else _next_audio(pos_break, -1)
+        if pos_text < 0 or SML_TAG_PATTERN.fullmatch(parts[pos_text].strip()):
+            return False
+        text = parts[pos_text].strip()
+        if text[-1].isalnum():
+            return False
+        text = text.rstrip('"\')]}»”’›')
+        return bool(text) and text[-1] not in punctuation_split_hard_set
+
     def _direction_matches(self, direction:str, table:list)->list:
         # the values of the keyword table entries a [direct:...] direction hits, in table order (rules: TTS_SML['direct'])
         words = [word for word in re.findall(r'[^\W\d_]+', direction.lower()) if not word.startswith(TTS_SML['direct']['exclude'])]

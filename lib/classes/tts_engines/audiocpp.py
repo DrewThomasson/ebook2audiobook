@@ -207,7 +207,8 @@ class AudioCpp(TTSUtils):
                     if self.params['current_voice'] is None and error is not None:
                         return False, error
                 self.audio_segments = []
-                for part in sentence_parts:
+                parts_before = self._split_sentence_on_sml(kwargs.get('sentence_before', ''))
+                for index, part in enumerate(sentence_parts):
                     part = part.strip()
                     if not part:
                         continue
@@ -273,6 +274,16 @@ class AudioCpp(TTSUtils):
                             return False, error
                         if part[-1].isalnum() or part[-1] == '—':
                             part_tensor = trim_audio(part_tensor.squeeze(0), self.params['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                        else:
+                            # a [break] inside a sentence is the whole pause on its side of the part: the silence the model
+                            # left there goes, and none is added after the part, so the silences do not add up
+                            break_before = self._clause_break(sentence_parts, index, -1, parts_before)
+                            break_after = self._clause_break(sentence_parts, index, 1)
+                            if break_before or break_after:
+                                part_tensor = trim_audio(part_tensor.squeeze(0), self.params['samplerate'], 0.001, trim_audio_buffer, trim_start=break_before, trim_end=break_after).unsqueeze(0)
+                            if break_after:
+                                self.audio_segments.append(part_tensor)
+                                continue
                         self.audio_segments.append(part_tensor)
                         if not re.search(r'\w$', part, flags=re.UNICODE) and part[-1] != '—':
                             silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
