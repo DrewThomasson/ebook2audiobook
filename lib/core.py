@@ -4880,6 +4880,9 @@ def convert_ebook(args:dict)->tuple:
                             msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
                             if session['free_vram_gb'] < device_vram_required:
                                 msg_extra += f"<br/>Free Memory {session['free_vram_gb']}GB is lower than VRAM/RAM {device_vram_required}GB required!<br/>It will probably crash the conversion!"
+                                # why it is low when the detector knows (Windows commit limit reached with RAM shown free)
+                                if vram_dict.get('note'):
+                                    msg_extra += f"<br/>{vram_dict['note']}"
                             if session['free_vram_gb'] > 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'

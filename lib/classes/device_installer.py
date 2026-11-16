@@ -481,18 +481,22 @@ class DeviceInstaller():
                 key, msg = (devices['VULKAN']['proc'], devices['VULKAN']['proc']), None
             else:
                 continue
-            entry = ranked.setdefault(key, {'rank': (0 if card else 1, index), 'msg': msg, 'models': []})
+            entry = ranked.setdefault(key, {'rank': (0 if card else 1, index), 'msg': msg, 'models': [], 'notes': []})
             entry['rank'] = min(entry['rank'], (0 if card else 1, index))
             if model and model not in entry['models']:
                 entry['models'].append(model)
+            # Vulkan for a GPU whose vendor runtime answered without a torch tag: its note says why (an NVIDIA GPU on the
+            # +vulkan torch read only 'Vulkan Torch selected' in device_info, nothing told a missing runtime from a misread)
+            if msg is None and result and result[2] and result[2] not in entry['notes']:
+                entry['notes'].append(result[2])
         # a runtime that answered for a GPU missing from the listing (WSL2's CUDA: no PCI device) still counts, as a card
         for name, tag, msg in gpu_results.values():
             if tag and (name, tag) not in ranked:
-                ranked[(name, tag)] = {'rank': (0, len(gpus)), 'msg': msg, 'models': []}
+                ranked[(name, tag)] = {'rank': (0, len(gpus)), 'msg': msg, 'models': [], 'notes': []}
         candidates = []
         for (name, tag), entry in sorted(ranked.items(), key=lambda item: item[1]['rank']):
             models = ', '.join(entry['models'])
-            msg = entry['msg'] if entry['msg'] is not None else legends['msg_vulkan_selected'].format(gpu=models or devices['VULKAN']['proc'])
+            msg = entry['msg'] if entry['msg'] is not None else ' '.join(entry['notes'] + [legends['msg_vulkan_selected'].format(gpu=models or devices['VULKAN']['proc'])])
             candidates.append((name, tag, msg, models))
         return candidates
 
@@ -559,7 +563,10 @@ class DeviceInstaller():
                     shell = True,
                     stderr = subprocess.DEVNULL
                 )
-                return out.decode().lower()
+                # not strict UTF-8: Windows tools write the ANSI code page (GBK on a Chinese Windows), and nvidia-smi's
+                # table lists the processes using the GPU. One non-ASCII name raised UnicodeDecodeError, the whole output
+                # came back empty and step 4 lost the driver's CUDA version: the NVIDIA GPU fell to the +vulkan torch
+                return out.decode(errors='replace').lower()
             except Exception:
                 return ''
 
