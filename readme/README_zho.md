@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## 特点
-- 🔧 **支持的TTS引擎** ： `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **支持的 TTS 引擎**：`XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **转换多种文件格式** ： `.epub`、`.mobi`、`.azw3`、`.fb2`、`.lrf`、`.rb`、`.snb`、`.tcr`、`.pdf`、`.txt`、`.rtf`、`.doc`、`.docx`、`.html`、`.odt`、`.azw`、`.tiff`、`.tif`、`.png`、`.jpg`、`.jpeg`、`.bmp`、 `.zip`
 - 💻 **TextArea**直接转换音频中的短文本
 - 🔍 **OCR扫描**用于将文本页面作为图像的文件
@@ -249,7 +249,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 首次启动时，ebook2audiobook 会被复制到`~/ebook2audiobook`（Windows 上为`%USERPROFILE%\ebook2audiobook`）并安装在那里<br>
   使用其启动脚本，与`./ebook2audiobook.command`或`ebook2audiobook.cmd`的操作完全相同。
 - 要使用其他文件夹，请在首次启动前设置`E2A_HOME`，并在后续启动时保持该设置<br>
-  （即在 Linux/MacOS 上为`export E2A_HOME=/data/ebook2audiobook`，在 Windows 上为`setx E2A_HOME D:\ebook2audiobook`，然后是新终端）。
+  （即在 Linux/MacOS 上为`export E2A_HOME=/data/ebook2audiobook`，在 Windows 上为`setx E2A_HOME D:\ebook2audiobook`，然后是新终端）。<br>
+  保持路径简短：在 Linux/MacOS 上最多 98 个字符，在 Windows 上最多 179 个字符，请参阅[Common Issues](#common-issues)。
 - 该文件夹是一个普通的 ebook2audiobook 文件夹：`./ebook2audiobook.command`（`./e2a.sh`）和`ebook2audiobook.cmd`（`e2a.cmd`）也适用于它。
 - 如果该文件夹中已经有克隆或下载的ebook2audiobook，则会按原样启动，pip绝不会对其进行更改。
 - 提供给`--ebook`、`--ebooks_dir`、`--voice`、`--voice_map`、`--custom_model`和`--output_dir`<br>的相对路径
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - 注意：MPS 未在 Docker 中开放，因此必须使用 CPU
-- 注意：命名卷 `e2a_venvs` 会将 TTS 引擎保留在各自的 venv 中（GPT-SoVITS、Zonos、OmniVoice、F5-TTS、Orpheus、Spark-TTS、ChatTTS、OpenVoice、MeloTTS、CSM 等），
+- 注意：命名卷`e2a_venvs`将TTS引擎安装在其自己的虚拟环境中（GPT-SoVITS、Zonos、OmniVoice、F5-TTS、ZipVoice、Orpheus、Spark-TTS、ChatTTS、OpenVoice、MeloTTS、CSM等）。
   在多次运行容器之间保持不变，因此不会每次都重新安装。如需重置：`docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -721,6 +722,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    在docker run命令末尾添加`--help`参数以获取更多信息。
 - “我收到了截断的音频问题！" -请提出这个问题，
    我们不会说所有的语言，需要用户的建议来微调句子分割逻辑。😊
+- “此 ebook2audiobook 文件夹的路径太长”，或者 piper 在`Error processing file '.../phontab'`处停止？
+   Piper 从`python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>读取其 espeak-ng 数据
+   （Windows 上为`python_env\Lib\site-packages\piper\espeak-ng-data`），且无法打开超过 159 字节（Windows 上为 229 字节）的文件，<br>
+   因此，在 Linux/MacOS 上，文件夹路径本身最多只能有 98 个字符，在 Windows 上最多只能有 179 个字符（非 ASCII 字符计为 2 至 4 个字符）。<br>
+   启动脚本会在每次启动时、在安装任何内容之前进行检查，并在较长的文件夹（包括已安装的文件夹）中停止。<br>
+   将文件夹移至较短的路径，其`python_env`和模型将随之移动（pip/pipx/Nix：然后将其`E2A_HOME`设置为其新路径）。
 
 ## 路线图
 - 所有功能均向公众开放 ⭐
@@ -759,6 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice/LuxTTS（https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice（https://github.com/vibevoice-community/VibeVoice)[cite: 1]）
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]

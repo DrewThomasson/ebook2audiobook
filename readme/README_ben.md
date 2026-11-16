@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## বৈশিষ্ট্য
-- 🔧 **TTS ইঞ্জিন সমর্থিত**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **TTS ইঞ্জিন সমর্থিত**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **একাধিক ফাইল ফরম্যাট রূপান্তর করুন**: , , , , , , , , , , , , , , , , , , , , , , `.epub` `.mobi` `.azw3` `.fb2` `.lrf` `.rb` `.snb` `.tcr` `.pdf` `.txt` `.rtf` `.doc` `.docx` `.html` `.odt` `.azw` `.tiff` `.tif` `.png` `.jpg` `.jpeg` `.bmp` `.zip`
 - 💻 সংক্ষিপ্ত টেক্সট সরাসরি অডিওতে রূপান্তর করার জন্য **টেক্সট এরিয়া**
 - 🔍 ছবি হিসেবে টেক্সট পৃষ্ঠা সহ ফাইলের জন্য **OCR স্ক্যানিং**
@@ -249,7 +249,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - প্রথমবার চালু করার সময় ebook2audiobook-কে `~/ebook2audiobook`-এ (Windows-এ `%USERPROFILE%\ebook2audiobook`-এ) কপি করা হয় এবং সেখানেই এটি ইনস্টল করা হয়<br>
   তার লঞ্চ স্ক্রিপ্ট সহ, ঠিক যেমনটা `./ebook2audiobook.command` বা `ebook2audiobook.cmd` করবে।
 - অন্য কোনও ফোল্ডার ব্যবহার করতে, প্রথমবার চালু করার আগে `E2A_HOME` সেট করুন এবং পরবর্তী বারগুলির জন্য এটি সেট করা রাখুন<br>
-  (অর্থাৎ Linux/MacOS-এ `export E2A_HOME=/data/ebook2audiobook`, তারপর Windows-এ একটি নতুন টার্মিনাল `setx E2A_HOME D:\ebook2audiobook`)।
+  (অর্থাৎ Linux/MacOS-এ `export E2A_HOME=/data/ebook2audiobook`, তারপর Windows-এ একটি নতুন টার্মিনাল `setx E2A_HOME D:\ebook2audiobook`)।<br>
+  এর পাথ ছোট রাখুন: Linux/MacOS-এ সর্বোচ্চ 98টি অক্ষর, Windows-এ 179টি, দেখুন [Common Issues](#common-issues)।
 - এই ফোল্ডারটি একটি সাধারণ ebook2audiobook ফোল্ডার: `./ebook2audiobook.command` (`./e2a.sh`) এবং `ebook2audiobook.cmd` (`e2a.cmd`) এটিতেও কাজ করে।
 - যদি সেই ফোল্ডারে ইতিমধ্যেই একটি ক্লোন করা বা ডাউনলোড করা ebook2audiobook থাকে, তাহলে এটি যেমন আছে তেমনই চালু করা হয় এবং pip এটি কখনও পরিবর্তন করে না।
 - `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` এবং `--output_dir`<br>-কে দেওয়া আপেক্ষিক পাথগুলি
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - নোট: Docker-এ MPS উন্মুক্ত নয়, তাই CPU ব্যবহার করতে হবে
-- নোট: নামযুক্ত ভলিউম `e2a_venvs` নিজ নিজ venv-এ ইনস্টল করা TTS ইঞ্জিনগুলো (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM ইত্যাদি)
+- দ্রষ্টব্য: উল্লিখিত ভলিউম `e2a_venvs` TTS ইঞ্জিনগুলিকে তাদের নিজস্ব venv-এ ইনস্টল করা অবস্থায় রাখে (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM ইত্যাদি।)
   কন্টেইনারের প্রতিটি রানের মধ্যে সংরক্ষণ করে, তাই প্রতিবার আবার ইনস্টল করতে হয় না। সেগুলো রিসেট করতে: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -721,6 +722,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    আরও তথ্যের জন্য docker run কমান্ডের শেষে `--help` প্যারামিটার যোগ করুন।
 - "আমার কাটা অডিওর সমস্যা হচ্ছে!" - অনুগ্রহ করে এই বিষয়ে একটি ISSUE তৈরি করুন,
    আমরা প্রতিটি ভাষা বলি না এবং বাক্য বিভাজন যুক্তি ফাইন-টিউন করতে ব্যবহারকারীদের পরামর্শ প্রয়োজন।😊
+- "এই ebook2audiobook ফোল্ডারের পাথটি অত্যন্ত দীর্ঘ", অথবা piper কি `Error processing file '.../phontab'`-এর সঙ্গে থেমে যায়?
+   পাইপার তার espeak-ng ডেটা `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br> থেকে পড়ে
+   (Windows-এ `python_env\Lib\site-packages\piper\espeak-ng-data`) এবং এটি ১৫৯ বাইটের (Windows-এ ২২৯) বেশি খুলতে পারে না,<br>
+   তাই ফোল্ডারের পাথটি নিজেই Linux/MacOS-এ সর্বোচ্চ 98টি অক্ষর, Windows-এ 179টি অক্ষর হতে হবে (একটি নন-ASCII অক্ষর 2 থেকে 4টি অক্ষর হিসেবে গণনা করা হয়)।<br>
+   লঞ্চ স্ক্রিপ্টগুলি প্রতিটি শুরুতে, কিছু ইনস্টল করার আগে, এটি পরীক্ষা করে এবং একটি দীর্ঘ ফোল্ডারে, একটি ইনস্টল করা ফোল্ডারেও থেমে যায়।<br>
+   ফোল্ডারটিকে একটি ছোট পথে সরান, এর `python_env` এবং মডেলগুলিও এর সাথে সরে যাবে (pip / pipx / Nix: তারপর `E2A_HOME`-কে এর নতুন পথে সেট করুন)।
 
 ## ***** রোডম্যাপ *****
 - সমস্ত বৈশিষ্ট্য সর্বজনীন অবদানের জন্য উন্মুক্ত ⭐
@@ -759,6 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] মায়া 1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] ওমনিভয়েস (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]

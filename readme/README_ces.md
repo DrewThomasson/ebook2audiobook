@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Funkce
-- 🔧 **Podporované motory TTS**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Podporované moduly TTS**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Převod více formátů souborů**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Textové pole** pro přímý převod krátkého textu na zvuk
 - 🔍 **OCR skenování** pro soubory s textovými stránkami ve formě obrázků
@@ -249,7 +249,8 @@ Další způsob instalace a spuštění nástroje ebook2audiobook bez klonován
 - Při prvním spuštění se ebook2audiobook zkopíruje do složky `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` v systému Windows) a zde se nainstaluje<br>
   se svým spouštěcím skriptem, přesně jako by to udělal `./ebook2audiobook.command` nebo `ebook2audiobook.cmd`.
 - Chcete-li použít jinou složku, nastavte `E2A_HOME` před prvním spuštěním a ponechte toto nastavení i pro další spuštění<br>
-  (tj. `export E2A_HOME=/data/ebook2audiobook` v systému Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` a poté nový terminál v systému Windows).
+  (tj. `export E2A_HOME=/data/ebook2audiobook` v systému Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` a poté nový terminál v systému Windows).<br>
+  Zkraťte cestu: maximálně 98 znaků v systému Linux/MacOS, 179 znaků v systému Windows, viz [Common Issues](#common-issues).
 - Tato složka je běžná složka ebook2audiobook: `./ebook2audiobook.command` (`./e2a.sh`) a `ebook2audiobook.cmd` (`e2a.cmd`) v ní také fungují.
 - Pokud tato složka již obsahuje naklonovanou nebo staženou knihu ebook2audiobook, spustí se tak, jak je, a pip ji nikdy nezmění.
 - Relativní cesty zadané pro `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` a `--output_dir`<br>
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - POZNÁMKA: MPS není v Dockeru zpřístupněno, proto je nutné použít CPU
-- POZNÁMKA: pojmenovaný svazek `e2a_venvs` uchovává TTS enginy nainstalované ve vlastních venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM atd.)
+- POZNÁMKA: Uvedený svazek `e2a_venvs` uchovává moduly TTS nainstalované ve vlastním virtuálním prostředí (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM atd.)
   mezi spuštěními kontejneru, takže se pokaždé znovu neinstalují. Pro jejich resetování: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -721,6 +722,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    pro více informací přidejte na konec příkazu docker run parametr . `--help`
 - „Mám problém s oříznutým zvukem!“ - PROSÍM, NAHLASTE TO JAKO ISSUE,
    nemluvíme každým jazykem a potřebujeme rady uživatelů, abychom doladili logiku dělení vět.😊
+- „Cesta k této složce ebook2audiobook je příliš dlouhá“ nebo se Piper zastaví u `Error processing file '.../phontab'`?
+   Piper načítá svá data espeak-ng z `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` v systému Windows) a nelze jej otevřít po 159 bajtech (229 bajtech v systému Windows),<br>
+   Cesta ke složce tedy musí mít nejvýše 98 znaků v systémech Linux/MacOS a 179 znaků v systému Windows (znak, který není v kódování ASCII, se počítá jako 2 až 4 znaky).<br>
+   Spouštěcí skripty ji kontrolují při každém spuštění, před instalací čehokoli, a zastaví se v delší složce, také v nainstalované.<br>
+   Přesuňte složku na kratší cestu, její `python_env` a modely se přesunou s ní (pip / pipx / Nix: poté nastavte `E2A_HOME` na její novou cestu).
 
 ## ***** PLÁN ROZVOJE *****
 - Všechny funkce otevřené veřejným příspěvkům ⭐
@@ -759,6 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1)
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1)
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
