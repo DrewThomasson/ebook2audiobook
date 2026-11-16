@@ -100,6 +100,9 @@ class NonTextFilter:
         r'(?:\s*[+\-*/^]\s*(?:[A-Za-z]\w*|\d+(?:\.\d+)?))*'
     )
     _PLACEHOLDER_RE = re.compile(r'SMLZZ(\d+)ZZSML')
+    # SML tags written between paragraphs or as a pause: a number after one of them
+    # stands apart from the word before the tag
+    _PAUSE_TAGS = frozenset({'break', 'pause'})
     # Punctuation before a word: an opening bracket or quote mark ('(No.', '"Oct.')
     _LEADING_NON_WORD_RE = re.compile(r'^\W+')
     # Longest title-case word taken for an abbreviation by its shape alone
@@ -159,7 +162,7 @@ class NonTextFilter:
         text = self._EMOJI_RE.sub(' ', text)
         text = self._CHARS_REMOVE_RE.sub(' ', text)
         text = self._strip_special_chars(text)
-        text = self._filter_sentences(text)
+        text = self._filter_sentences(text, tags)
 
         if self.sml_pattern is not None:
             text = self._restore_tags(text, tags)
@@ -186,6 +189,13 @@ class NonTextFilter:
         tags = ' '.join(m.group(0) for m in self._PLACEHOLDER_RE.finditer(fragment))
         if tags:
             kept.append(tags)
+
+    def _is_pause_tag(self, word:str, store:list)->bool:
+        m = self._PLACEHOLDER_RE.fullmatch(word)
+        if not m or int(m.group(1)) >= len(store):
+            return False
+        tag = self.sml_pattern.fullmatch(store[int(m.group(1))])
+        return tag is not None and tag.groupdict().get('tag') in self._PAUSE_TAGS
 
     def _strip_unicode_math(self, s:str)->str:
         ranges = self._MATH_UNICODE_RANGES
@@ -252,7 +262,7 @@ class NonTextFilter:
             and body[0].isupper() and body[1:].islower()
         )
 
-    def _filter_sentences(self, text:str)->str:
+    def _filter_sentences(self, text:str, tags:list)->str:
         kept:list = []
         punct = self._TEXT_PUNCT
         hard = punctuation_split_hard_set
@@ -308,8 +318,9 @@ class NonTextFilter:
                     # stray symbols) contains no letters at all.
                     # A period also closes an abbreviation ("Oct. 23.", "No. 7."), so a
                     # number alone right after a kept fragment that ends in one is the
-                    # rest of that sentence, tags after it included ("Oct. 23[pause].").
-                    # After an ordinary sentence end, or with an SML tag between the two
+                    # rest of that sentence, other tags around it included
+                    # ("Oct. 23[pause].", "Oct. [emphasis]23[/emphasis]."). After an
+                    # ordinary sentence end, or with a [break] or [pause] between the two
                     # ("Nov. [pause] 6.", "Nov.[break]6."), the number stays noise.
                     is_interjection = (
                         any(c.isalpha() for c in real_words[0])
@@ -318,7 +329,10 @@ class NonTextFilter:
                     is_sentence_tail = (
                         follows_abbreviation
                         and len(real_words) == 1
-                        and words[0] == real_words[0]
+                        and not any(
+                            self._is_pause_tag(w, tags)
+                            for w in words[:words.index(real_words[0])]
+                        )
                         and any(c.isdigit() for c in s)
                     )
                     if not (is_interjection or is_sentence_tail):
