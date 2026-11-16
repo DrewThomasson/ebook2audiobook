@@ -972,6 +972,17 @@ class TTSUtils:
         return current_voice, None
         
     def _split_sentence_on_sml(self, sentence:str)->list[str]:
+        # an [emphasis] passage is read inside its sentence, in the same request: its tags are taken out and the
+        # words stay as written (two spaces left side by side become one). A tag on its own, in a sentence cut
+        # inside the passage, goes the same way
+        plain, last = '', 0
+        for m in SML_TAG_PATTERN.finditer(sentence):
+            if m.group('tag') == 'emphasis':
+                plain += sentence[last:m.start()]
+                last = m.end()
+                if plain.endswith(' ') and sentence.startswith(' ', last):
+                    last += 1
+        sentence = plain + sentence[last:]
         if not self.reads_direction:
             # one space where each [direct] tag and the spaces around it were; the rest of the sentence, the values
             # of the other tags included, stays as written

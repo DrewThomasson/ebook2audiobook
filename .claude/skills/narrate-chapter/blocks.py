@@ -21,7 +21,7 @@ import re
 import sys
 
 # the tag grammar of SML_TAG_PATTERN in lib/conf_models.py
-TAG = re.compile(r'\[\s*(?P<close>/)?\s*(?P<tag>break|pause|voice|emotion|direct)(?:\s*:\s*(?P<value>.*?))?\s*\]', re.DOTALL)
+TAG = re.compile(r'\[\s*(?P<close>/)?\s*(?P<tag>break|pause|voice|emotion|direct|emphasis)(?:\s*:\s*(?P<value>.*?))?\s*\]', re.DOTALL)
 DIRECT_MAX_WORDS = 9
 SENTENCE_END = re.compile(r'[.!?…]["\'”’»)\]]*$')
 
@@ -70,8 +70,12 @@ def added_tags(original, edited):
         if i < len(want) and token == want[i]:
             i += 1
         elif isinstance(token, tuple):
-            # a tag right after another tag is already at a cut, whatever the word before them
-            before = have[j - 1] if j and isinstance(have[j - 1], str) else None
+            # a tag right after another tag is already at a cut, whatever the word before them. An [emphasis]
+            # tag is no cut: the engine takes it out of its sentence
+            k = j - 1
+            while k >= 0 and isinstance(have[k], tuple) and have[k][2] == 'emphasis':
+                k -= 1
+            before = have[k] if k >= 0 and isinstance(have[k], str) else None
             added.append((token, before, [t for t in have[j + 1:j + 60] if isinstance(t, str)]))
         else:
             expected = written(want[i]) if i < len(want) else 'the end of the block'
@@ -102,7 +106,7 @@ def tag_errors(text):
         else:
             if name in open_tags:
                 errors.append(f'{written(token)} opens inside another [{name}] passage')
-            if not value:
+            if not value and name != 'emphasis':
                 errors.append(f'[{name}] has no value')
             elif name == 'direct' and len(value.split()) > DIRECT_MAX_WORDS:
                 errors.append(f'{written(token)} is {len(value.split())} words, a direction is under ten')
@@ -157,9 +161,10 @@ def cmd_check(original_path, edited_path, only=None):
             for token, prev, following in added:
                 if not token[1]:
                     print(f'    {written(token):<44} {" ".join(following[:8])}')
-            # the engines that read a tag render the text on each side of it as a request of its own
+            # the engines that read a tag render the text on each side of it as a request of its own; an
+            # [emphasis] tag is taken out and leaves its sentence in one request
             for token, prev, following in added:
-                if prev and following and not SENTENCE_END.search(prev):
+                if token[2] != 'emphasis' and prev and following and not SENTENCE_END.search(prev):
                     print(f'    note: {written(token)} falls inside a sentence, after "{prev}"')
     if failed:
         sys.exit(1)

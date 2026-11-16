@@ -124,6 +124,9 @@ footnote_markup = {
     "BLOCK": ['p', 'li', 'dd', 'dt', 'dl', 'aside', 'div', 'blockquote']
 }
 
+# the tags that sit inside a line of text. Any other tag (a paragraph, a line break, a list item) ends the line
+inline_tags = {'a', 'abbr', 'b', 'bdi', 'bdo', 'big', 'cite', 'code', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'q', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'tt', 'u', 'var'}
+
 footnote_marker_re = re.compile(r'^[\[\(]?(?:\d{1,4}|[a-z]{1,2}|[ivxlc]{1,6}|[*†‡§¶#]{1,3})[\]\)]?\.?$', re.IGNORECASE)
 footnote_href_re = re.compile(r'#[^#]*(?:note|fn|ftn|edn)', re.IGNORECASE)
 # a number token: digits joined by "." or "," or by a space (or NBSP) only when a 3 digits group follows, i.e. 1 234
@@ -1658,6 +1661,95 @@ def remove_footnotes(soup:BeautifulSoup, note_targets:dict|None=None)->int:
             ref.decompose()
     return removed
 
+def get_italic_classes(css:str)->dict[str, bool]:
+    # the classes of a stylesheet that set the font style: True for italic or oblique, False for normal, the last rule
+    # of a class winning. Only a rule whose selector is a class on its own is read: ebook-convert rewrites every
+    # style of a book (a tag rule, an inline style, a <style> block) into such rules of one linked stylesheet
+    classes = {}
+    for selectors, declarations in re.findall(r'([^{}]+)\{([^{}]*)\}', re.sub(r'/\*.*?\*/', '', css, flags=re.DOTALL)):
+        style = re.search(r'(?:^|;)\s*font-style\s*:\s*(italic|oblique|normal)\b', declarations, flags=re.IGNORECASE)
+        if style:
+            # an at-rule with no block of its own (@charset, @import) ends in ";" and is not part of the selector
+            for selector in selectors.rpartition(';')[2].split(','):
+                name = re.fullmatch(r'\s*\.(-?[_a-zA-Z][\w-]*)\s*', selector)
+                if name:
+                    classes[name.group(1)] = style.group(1).lower() != 'normal'
+    return classes
+
+def mark_emphasis(body:Tag, italic_classes:dict[str, bool])->None:
+    # An italic passage of a few words inside a sentence becomes plain text between [emphasis] tags, joined to the
+    # text around it, so that no [break] is written beside it (rules: TTS_SML['emphasis']). A passage is the run of
+    # inline tags that turn italics on (<i>, <em>, or a class of the stylesheet) with nothing but spaces between them.
+    # It is inside a sentence when its line holds other words and it does not carry a sentence end of its own.
+    # Italic punctuation alone, and italics over part of a word, are joined to the text with no tag. Any other italic
+    # passage (a long one, a sentence or a paragraph of its own, a heading) stays as it is in the document
+    max_words = TTS_SML['emphasis']['max_words']
+    sentence_end = r'[.!?…]'
+
+    def _own_style(tag:Tag)->bool|None:
+        styles = [italic_classes[name] for name in tag.get('class') or [] if name in italic_classes]
+        if styles:
+            return any(styles)
+        return True if tag.name in ('i', 'em') else None
+
+    def _is_italic(tag:Tag|None)->bool:
+        # the style of the nearest tag that sets one, as the font style is inherited
+        while tag is not None:
+            style = _own_style(tag)
+            if style is not None:
+                return style
+            tag = tag.parent
+        return False
+
+    def _words_beside(node:Any, forward:bool)->bool:
+        # True when the line of the node holds a word on that side of it
+        while True:
+            sibling = node.next_sibling if forward else node.previous_sibling
+            while sibling is not None:
+                if isinstance(sibling, Tag) and sibling.name not in inline_tags:
+                    return False
+                if re.search(r'\w', sibling.get_text()):
+                    return True
+                sibling = sibling.next_sibling if forward else sibling.previous_sibling
+            node = node.parent
+            if node is None or node.name not in inline_tags:
+                return False
+
+    units = [tag for tag in body.find_all(inline_tags) if _own_style(tag) and not _is_italic(tag.parent) and not tag.find_parent(re.compile(r'^h[1-6]$'))]
+    unit_ids = {id(tag) for tag in units}
+    done = set()
+    for unit in units:
+        if id(unit) in done:
+            continue
+        run, between, node = [unit], [], unit.next_sibling
+        while node is not None and (id(node) in unit_ids or (isinstance(node, NavigableString) and not node.strip())):
+            between.append(node)
+            if id(node) in unit_ids:
+                run += between
+                between = []
+            node = node.next_sibling
+        done.update(id(node) for node in run if isinstance(node, Tag))
+        raw = ''.join(node.get_text() for node in run)
+        lead, core, trail = re.fullmatch(r'(\W*)(.*?)(\W*)', raw, flags=re.DOTALL).groups()
+        words = core.split()
+        before, after = run[0].previous_sibling, run[-1].next_sibling
+        in_word = (not lead and isinstance(before, NavigableString) and before[-1:].isalnum()) or (not trail and isinstance(after, NavigableString) and after[:1].isalnum())
+        if not words or in_word:
+            text = raw
+        elif len(words) <= max_words and not re.search(sentence_end, trail) and not re.search(rf'{sentence_end}\s', core) and (_words_beside(run[0], False) or _words_beside(run[-1], True)):
+            text = f"{lead}{sml_token('emphasis')}{' '.join(words)}{sml_token('emphasis', close=True)}{trail}"
+        else:
+            continue
+        text = NavigableString(text)
+        run[0].replace_with(text)
+        for node in run[1:]:
+            node.extract()
+        # an inline tag left with nothing but the passage goes too (<b><i>word</i></b>), and the passage becomes
+        # one string with the text on each side of it
+        while text.parent.name in inline_tags and len(text.parent.contents) == 1:
+            text.parent.unwrap()
+        text.parent.smooth()
+
 def get_blocks(session_id:str, epubBook:EpubBook)->list:
     try:
         msg = legends['msg_vocab_warning']
@@ -1689,6 +1781,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                 return []
             title = get_ebook_title(epubBook, all_docs)
             note_targets = get_note_targets(all_docs)
+            italic_classes = get_italic_classes('\n'.join(item.get_content().decode('utf-8', errors='ignore') for item in epubBook.get_items_of_type(ebooklib.ITEM_STYLE)))
             blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
@@ -1735,7 +1828,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                     zip_names = set(zf.namelist())
                     zip_basenames = {os.path.basename(n): n for n in zip_names}
                     for doc_idx, doc in enumerate(all_docs):
-                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames, note_targets.get(posixpath.normpath(doc.get_name())))
+                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames, note_targets.get(posixpath.normpath(doc.get_name())), italic_classes)
                         if text is None:
                             error = legends['error_doc_extract'].format(doc=doc_idx + 1)
                             show_alert(session_id, {"type": "warning", "msg": error})
@@ -1767,7 +1860,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None, note_targets:dict|None=None)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None, note_targets:dict|None=None, italic_classes:dict|None=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -1933,6 +2026,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                                 show_alert(session_id, {"type": "warning", "msg": error})
                         except Exception as ocr_err:
                             print(f'OCR error on {img_zip_path}: {ocr_err}')
+            mark_emphasis(body, italic_classes or {})
             tuples_list = list(_tuple_row(body))
             if not tuples_list:
                 msg = legends['msg_no_text_no_images_skip']
@@ -2092,6 +2186,9 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             print(msg)
             text = normalize_text(text, lang, lang_iso1, tts_engine)
             text = restore_sml(text, sml_blocks)
+            # the treatments above set a tag against the word before it and put a space after it: an opening
+            # [emphasis] tag goes back against the word it opens on
+            text = re.sub(rf"(\S?)\s*{re.escape(sml_token('emphasis'))}\s*", lambda m: f"{m.group(1)} {sml_token('emphasis')}" if m.group(1) else sml_token('emphasis'), text)
             return text
         return None
     except Exception as e:
@@ -2277,19 +2374,21 @@ def get_sentences(session_id:str, text:str)->list|None:
         if session['is_gui_process']:
             msg = legends['msg_segment'].format(n=1)
             progress_bar(0, desc=msg)
-        # Tokenize into content and SML runs
+        # Tokenize into content and SML runs. An [emphasis] tag sits inside a sentence and is no place to cut:
+        # it stays in the text around it
+        in_text = {chr(sml_escape_tag + i) for i, block in enumerate(sml_blocks) if SML_TAG_PATTERN.fullmatch(block).group('tag') == 'emphasis'}
         segments = []
         idx = 0
         tlen = len(text)
         current_text = []
         while idx < tlen:
             c = text[idx]
-            if ord(c) >= sml_escape_tag:
+            if ord(c) >= sml_escape_tag and c not in in_text:
                 if current_text:
                     segments.append(('text', ''.join(current_text)))
                     current_text = []
                 start = idx
-                while idx < tlen and ord(text[idx]) >= sml_escape_tag:
+                while idx < tlen and ord(text[idx]) >= sml_escape_tag and text[idx] not in in_text:
                     idx += 1
                 segments.append(('sml', text[start:idx]))
             else:
@@ -2985,7 +3084,9 @@ def normalize_sml_tags(text:str)->tuple[bool, str]:
                 out.append(f"[/{tag}]")
             else:
                 stack.append(tag)
-                if value is not None:
+                if info.get("value") is False:
+                    out.append(f"[{tag}]")
+                elif value is not None:
                     out.append(f"[{tag}:{value.strip()}]")
                 else:
                     error = f'normalize_sml_tags() error: paired tag [{tag}] requires a value'
@@ -3805,8 +3906,8 @@ def convert_chapters2audio(session_id:str)->bool:
                 guide_stale = False
                 # a [direct] or [emotion] passage can run over several sentences and the engine carries it from one
                 # sentence to the next: a stale sentence of such a block cannot be converted on its own. A [voice]
-                # passage is carried by each sentence itself
-                has_passages = any(tag.group('tag') != 'voice' and TTS_SML.get(tag.group('tag'), {}).get('paired') for s in sentences for tag in SML_TAG_PATTERN.finditer(s))
+                # passage is carried by each sentence itself, and an [emphasis] passage is taken out of each sentence
+                has_passages = any(tag.group('tag') not in ('voice', 'emphasis') and TTS_SML.get(tag.group('tag'), {}).get('paired') for s in sentences for tag in SML_TAG_PATTERN.finditer(s))
                 if x < block_resume and not block_changed:
                     if not os.path.exists(chapter_audio_file):
                         show_alert(session_id, {'type': 'warning', 'msg': legends['msg_block_audio_missing'].format(block=x)})

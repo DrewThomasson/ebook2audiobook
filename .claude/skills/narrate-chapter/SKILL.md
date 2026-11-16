@@ -77,6 +77,10 @@ existing tag stays as it is.
   on each side of a tag as a request of its own, so a tag inside a sentence breaks its flow.
   `check` prints a note for each tag that falls inside one; move it unless the text has no
   sentence end near where the delivery changes.
+- `[emphasis]word[/emphasis]` in the export marks an italic word, or a few, inside a sentence,
+  and stays where it is. It is the one tag that sits inside a sentence without breaking its
+  flow: the engine takes it out and reads the words with the rest of the sentence. None is
+  added by hand, since no engine turns it into stress.
 - Plain narration gets no tag. A chapter where every sentence is directed has no plain
   reading left to differ from.
 - `[pause:2]` at a scene break; `N` is seconds. The export may already carry a `[pause]` or
