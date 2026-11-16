@@ -67,6 +67,12 @@ def main()->int:
             return 1
         import numpy as np
         import torch
+        # E2A_XPU_UNUSABLE: e2a found torch xpu cannot run on this Intel GPU (unsupported iGPU, driver too old). Its
+        # device count is a Windows access violation in the SYCL runtime, and transformers asks it at import, CPU
+        # sessions included. Set here too: this venv's sitecustomize.py copy dates from its install, maybe older
+        if os.environ.get('E2A_XPU_UNUSABLE') == '1' and hasattr(torch, 'xpu'):
+            torch.xpu.device_count = lambda: 0
+            torch.xpu.is_available = lambda: False
         import torch.distributed
         if not torch.distributed.is_available():
             # torch built without distributed support (USE_DISTRIBUTED=0: the jetson wheels, e2a's macOS +vulkan
