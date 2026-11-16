@@ -2,7 +2,7 @@ import regex as re
 import unicodedata
 
 from typing import Optional
-from lib.conf_lang import punctuation_split_hard_set, punctuation_list_set, chars_remove, emojis_list, language_math_phonemes
+from lib.conf_lang import punctuation_split_hard_set, punctuation_list_set, chars_remove, emojis_list, language_math_phonemes, abbreviations_mapping
 
 class NonTextFilter:
 
@@ -100,6 +100,12 @@ class NonTextFilter:
         r'(?:\s*[+\-*/^]\s*(?:[A-Za-z]\w*|\d+(?:\.\d+)?))*'
     )
     _PLACEHOLDER_RE = re.compile(r'SMLZZ(\d+)ZZSML')
+    # Punctuation and SML placeholders before a word: a paragraph or a [break]
+    # reaches the filter glued to the next word ("SMLZZ4ZZSMLOct.")
+    _LEADING_NON_WORD_RE = re.compile(r'^(?:SMLZZ\d+ZZSML|\W)+')
+    # Longest title-case word taken for an abbreviation by its shape alone
+    # ("Oct.", "Sept.", "Vol."); longer ones count only through the language table
+    _ABBREVIATION_MAX_LETTERS = 4
 
     def __init__(
         self,
@@ -115,7 +121,8 @@ class NonTextFilter:
                       no-space scripts) than this
         aggressive  : also strip bare equations like 'x = y + 3'
         sml_pattern : compiled re.Pattern matching SML tags to preserve
-        lang        : ISO-639-3 code, used only for no-space-script handling.
+        lang        : ISO-639-3 code, used for no-space-script handling and for
+                      the abbreviations of the language (see _is_abbreviation).
                       Math symbol preservation is global (see _MATH_KEEP).
         '''
         self.alpha_ratio = alpha_ratio
@@ -124,6 +131,13 @@ class NonTextFilter:
         self.sml_pattern = sml_pattern
         self.lang        = lang
         self._no_space   = lang in self._NO_SPACE_LANGS if lang else None
+        # last word of each entry of the language's abbreviation table that ends in
+        # a period, lowercased: "dr.", "al." (et al.), "b." (z. B.)
+        self._abbreviations = frozenset(
+            k.split()[-1].lower()
+            for k in abbreviations_mapping.get(lang, {})
+            if k.endswith('.')
+        )
 
     def filter(self, text:str)->str:
         if not text:
@@ -213,6 +227,25 @@ class NonTextFilter:
         )
         return hits / len(sample) > 0.5
 
+    def _is_abbreviation(self, word:str)->bool:
+        # word is the last word of a fragment, so its period either ends a sentence
+        # or closes an abbreviation. It counts as an abbreviation when the language
+        # table knows it, or by shape: one letter ("p.") or a short title-case word
+        # ("Oct.", "No."). Lowercase or longer words ("closed.", "thing.") are
+        # ordinary sentence ends.
+        if not word.endswith('.'):
+            return False
+        token = self._LEADING_NON_WORD_RE.sub('', word)
+        if token.lower() in self._abbreviations:
+            return True
+        body = token[:-1]
+        if not body.isalpha():
+            return False
+        return len(body) == 1 or (
+            len(body) <= self._ABBREVIATION_MAX_LETTERS
+            and body[0].isupper() and body[1:].islower()
+        )
+
     def _filter_sentences(self, text:str)->str:
         kept:list = []
         punct = self._TEXT_PUNCT
@@ -222,8 +255,8 @@ class NonTextFilter:
             else self._detect_no_space(text)
         )
         # True while the fragment just before the current one was kept and its last
-        # word holds a letter, ends in a period and holds no SML placeholder
-        after_period = False
+        # word is an abbreviation
+        after_abbreviation = False
         for sent in self._SENT_SPLIT.split(text):
             s = sent.strip() if sent else ''
             if not s:
@@ -231,8 +264,8 @@ class NonTextFilter:
             non_space = [c for c in s if not c.isspace()]
             if not non_space:
                 continue
-            follows_period = after_period
-            after_period = False
+            follows_abbreviation = after_abbreviation
+            after_abbreviation = False
             text_chars = sum(
                 1 for c in non_space
                 if c.isalpha() or c.isdigit() or c in punct
@@ -260,26 +293,20 @@ class NonTextFilter:
                     # spoken interjection, not noise. Real noise (lone digits,
                     # stray symbols) contains no letters at all.
                     # A period also closes an abbreviation ("Oct. 23.", "No. 7."), so a
-                    # number alone right after a kept fragment that ends in a word with
-                    # a letter and a period is the rest of that sentence. An SML tag
-                    # between the two means the number starts a block of its own, where
-                    # it stays noise.
+                    # number alone right after a kept fragment that ends in one is the
+                    # rest of that sentence. After an ordinary sentence end, or with an
+                    # SML tag between the two, the number stays noise.
                     is_interjection = (
                         any(c.isalpha() for c in real_words[0])
                         and any(c in hard for c in s)
                     )
                     is_sentence_tail = (
-                        follows_period
+                        follows_abbreviation
                         and len(words) == 1
                         and any(c.isdigit() for c in s)
                     )
                     if not (is_interjection or is_sentence_tail):
                         continue
-                last_word = words[-1]
-                after_period = (
-                    last_word.endswith('.')
-                    and any(c.isalpha() for c in last_word)
-                    and not self._PLACEHOLDER_RE.search(last_word)
-                )
+                after_abbreviation = self._is_abbreviation(words[-1])
             kept.append(s)
         return ' '.join(kept)
