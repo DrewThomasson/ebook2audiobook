@@ -39,13 +39,13 @@ Koristite ovaj alat odgovorno i u skladu sa svim primjenjivim zakonima.
 
 <a id="gui-interface"></a>
 #### Grafičko sučelje (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Kliknite za prikaz slika web GUI-ja</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -117,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Značajke
-- 🔧 **Podržani TTS motori**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Podržani TTS motori**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Pretvaranje više formata datoteka**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Tekstno polje** za izravno pretvaranje kratkog teksta u zvuk
 - 🔍 **OCR skeniranje** za datoteke s tekstualnim stranicama u obliku slika
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Podržani jezici
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,61 @@ Stoga biste prvo trebali ručno ukloniti sav tekst koji ne želite pretvoriti u 
 **Ako se skripta zaustavi i ponovno pokrene, morate osvježiti svoje Gradio GUI sučelje<br>
 kako bi se web stranica ponovno povezala s novim utičnicom veze.**
 
+<a id="pip-install"></a>
+### Instalacija pomoću alata pip / pipx
+Drugi način instalacije i pokretanja programa ebook2audiobook, bez kloniranja repozitorija: pip instalira naredbu `ebook2audiobook`<br>
+(svi operativni sustavi, bilo koja verzija Pythona 3.8 ili novija). Klonirani repozitorij s gore navedenim skriptama za pokretanje i dalje funkcionira na isti način.
+
+1. **Instalirajte naredbu** iz PyPI-ja
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   ili s UV zrakama
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   ili sa sjemenkom
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>Za najnoviji kod koji još nije objavljen upotrijebite `git+https://github.com/DrewThomasson/ebook2audiobook.git` umjesto `ebook2audiobook`.</i>
+
+2. **Instalirajte / pokrenite ebook2audiobook**, s istim opcijama kao i skripte za pokretanje:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Ako se naredba ne pronađe (mapa sa skriptama za pip nije u vašem PATHU): `python -m ebook2audiobook`
+
+- Prvim se pokretanjem aplikacija ebook2audiobook kopira na `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` na sustavu Windows) i tamo se instalira<br>
+  sa svojom skriptom za pokretanje, baš kao što bi to učinili `./ebook2audiobook.command` ili `ebook2audiobook.cmd`.
+- Ako želite upotrebljavati drugu mapu, postavite `E2A_HOME` prije prvog pokretanja i zadržite tu postavku za sljedeća pokretanja<br>
+  (tj. `export E2A_HOME=/data/ebook2audiobook` na sustavu Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook`, a zatim novi terminal na sustavu Windows).<br>
+  Neka putanja bude kratka: najviše 98 znakova na sustavima Linux/MacOS, 179 na sustavu Windows, pogledajte [Common Issues](#common-issues).
+- Ta je mapa uobičajena mapa aplikacije ebook2audiobook: `./ebook2audiobook.command` (`./e2a.sh`) i `ebook2audiobook.cmd` (`e2a.cmd`) također funkcioniraju u njoj.
+- Ako se u toj mapi već nalazi klonirana ili preuzeta knjiga u formatu ebook2audiobook, pokreće se u postojećem obliku i pip je nikada ne mijenja.
+- Relativne putanje dodijeljene stavkama `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` i `--output_dir`<br>
+  čitaju se iz mape u koju unesete naredbu.
+- Nema potrebe za deaktiviranjem vašeg venv ili conda env okruženja: ebook2audiobook uvijek se pokreće u vlastitom `python_env`.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (po želji s `--docker_mode compose` ili `--docker_mode podman`)<br>
+  izrađuje sliku iz te mape. Pokrenite naredbe `docker run` / `docker compose` koje ispisuje i iz te mape:<br>
+  njihovi `./ebooks`, `./audiobooks`... montiranja i datoteke za sastavljanje odnose se na to. Slika ima iste opcije,<br>
+  s putanjama unutar spremnika (`/app/...`), pogledajte [Docker](#docker).
+- **Novost**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` ili `pip install -U ebook2audiobook`.<br>
+  Prilikom sljedećeg pokretanja ažurirat će se datoteke aplikacije i zadržat će se `python_env`, modeli, glasovi, audio knjige i sve što ste dodali u mapu.
+- **Deinstalacija**: `pip uninstall`, `pipx uninstall` ili `uv tool uninstall` sami uklanjaju samo naredbu:<br>
+  Mapa i njezini gigabajti modela ostaju. Prvo deinstalirajte ebook2audiobook samom naredbom:
+  1. Premjestite svoje audio knjige iz podmape `audiobooks` mape: sve u mapi bit će izbrisano.
+  2. `ebook2audiobook --uninstall`<br>
+     Pokreće deinstalacijski program mape, koji od vas traži da potvrdite, a zatim uklanja prečace i programe koje je instalirao<br>
+     (navedeno u `.installed`) i sadržaj mape, a zatim briše mapu.
+  3. Pokrenite naredbu koju je posljednju ispisao kako biste uklonili sam program `ebook2audiobook`, a to ovisi o tome kako ste ga instalirali:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` ili `pip uninstall ebook2audiobook`.
+  4. Ako ste izradili Dockerove slike: `docker rmi athomasson2/ebook2audiobook:<tag>` i `docker volume rm e2a_venvs`<br>
+     (s Podmanom: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` i `podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### Osnovna upotreba
    - **Linux/MacOS**:
@@ -226,6 +282,10 @@ kako bi se web stranica ponovno povezala s novim utičnicom veze.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (svi operativni sustavi)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Putanja do vaše datoteke e-knjige
@@ -260,6 +320,10 @@ kako bi se web stranica ponovno povezala s novim utičnicom veze.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (svi operativni sustavi)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Ili za sve OS-ove**
     ```python
@@ -373,6 +437,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -447,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NAPOMENA: MPS nije dostupan u Dockeru pa se mora koristiti CPU
-- NAPOMENA: imenovani volumen `e2a_venvs` čuva TTS pogone instalirane u vlastitim venv okruženjima (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM itd.)
+- NAPOMENA: navedena jedinica `e2a_venvs` čuva mehanizme za pretvaranje teksta u govor instalirane u vlastitom virtualnom okruženju (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM itd.)
   između pokretanja kontejnera, pa se ne instaliraju iznova svaki put. Za njihovo resetiranje: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -486,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -645,6 +722,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    dodajte parametar `--help` na kraj naredbe docker run za više informacija.
 - „Imam problem s odrezanim zvukom!“ - MOLIMO OTVORITE ISSUE O TOME,
    ne govorimo svaki jezik i trebamo savjete korisnika kako bismo fino podesili logiku dijeljenja rečenica.😊
+- „Put ove mape ebook2audiobook predugačak je” ili se Piper zaustavlja s porukom `Error processing file '.../phontab'`?
+   Piper čita svoje podatke za espeak-ng iz `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` u sustavu Windows) i ne može se otvoriti nakon 159 bajtova (229 u sustavu Windows),<br>
+   stoga sam put do mape mora imati najviše 98 znakova na sustavima Linux/MacOS, odnosno 179 na sustavu Windows (znak koji nije ASCII računa se kao 2 – 4 znaka).<br>
+   Skripte za pokretanje provjeravaju ga pri svakom pokretanju, prije instalacije bilo čega, i zaustavljaju se u dužoj mapi, a također i u instaliranoj mapi.<br>
+   Premjestite mapu na kraću putanju, a njezini `python_env` i modeli premjestit će se zajedno s njom (pip / pipx / Nix: zatim postavite `E2A_HOME` na njezinu novu putanju).
 
 ## ***** PLAN RAZVOJA *****
 - Sve značajke otvorene za javne doprinose ⭐
@@ -678,18 +761,19 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 #### TTS motori
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
 - [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
-- [x] Fish-speech / Fish Audio (https://github.com/fishaudio/fish-speech)[cite: 1]
+- [x] Govor riba / Zvuk riba (https://github.com/fishaudio/fish-speech)[cite: 1]
 - [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Brbljavac (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
-- [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
+- [x] Indeks-tts / Indeks TTS2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1]
 - [x] Konfucije4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
@@ -699,10 +783,10 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1]
 - [x] Magpie TTS (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
-- [x] Moss TTS Local / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
+- [x] Moss TTS lokalno / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
 - [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Pocket TTS (https://github.com/pocket-tts/pocket-tts)[cite: 1]
-- [x] Gradium Phonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
+- [x] Gradiumov fonon (https://github.com/gradium-ai/xn-ptts)[cite: 1]
 - [x] Supertonik (https://github.com/supertone-inc/supertonic)[cite: 1]
 - [x] Irodori TTS (https://github.com/irodori-tts/irodori-tts)[cite: 1]
 - [x] Piper (https://github.com/rhasspy/piper)[cite: 1]
@@ -713,7 +797,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Kornjača (https://github.com/neonbjb/tortoise-tts)[cite: 1]
 - [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
 - [x] Kora (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] Vaš TTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] Orfej-TTS (https://github.com/canopyai/Orpheus-TTS)
 - [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
 - [x] ChatTTS (https://github.com/2noise/ChatTTS)

@@ -4,7 +4,7 @@ from typing import Callable
 root_dir = str(Path(__file__).resolve().parents[1])
 os.chdir(root_dir)
 sys.path.insert(0, root_dir)
-categories = ['common', 'xtts', 'bark', 'tortoise', 'vits', 'fairseq', 'glowtts', 'tacotron', 'yourtts', 'piper', 'zonos', 'audiocpp', 'audiocpp_server', 'gptsovits', 'f5tts', 'omnivoice', 'orpheus', 'sparktts', 'chattts', 'csm', 'openvoice', 'melotts', 'phonon', 'stanza', 'pyannote', 'demucs', 'interlude', 'argos', 'tessdata', 'jieba', 'voices']
+categories = ['common', 'xtts', 'bark', 'tortoise', 'vits', 'fairseq', 'glowtts', 'tacotron', 'yourtts', 'piper', 'zonos', 'audiocpp', 'audiocpp_server', 'gptsovits', 'f5tts', 'zipvoice', 'omnivoice', 'orpheus', 'sparktts', 'chattts', 'csm', 'openvoice', 'melotts', 'phonon', 'stanza', 'pyannote', 'demucs', 'interlude', 'argos', 'tessdata', 'jieba', 'voices']
 parser = argparse.ArgumentParser(description='Download every model e2a uses into one folder laid out exactly like ./models (i.e. a USB key for offline installs).')
 parser.add_argument('models_dir', type=str, help='Target folder, i.e. /media/user/KEY/models or E:\\models')
 parser.add_argument('--only', type=str, default='', help=f"Comma list of categories: {','.join(categories)}")
@@ -373,6 +373,24 @@ if f5_checkpoints:
     add('f5tts', f"whisper {f5['asr_model']}", lambda: hf_folder(f5['asr_model'], os.path.join(tts_dir, f5['asr_model'].replace('/', '--')), None, True))
 if any(ckpt.get('tashkeel') for ckpt in f5_checkpoints):
     add('f5tts', 'catt tashkeel', lambda: tashkeel(f5['tashkeel']['url'], os.path.join(tts_dir, 'f5tts', f5['tashkeel']['dir'])), (os.path.join(tts_dir, 'f5tts', f5['tashkeel']['dir']),))
+zv = default_engine_settings[TTS_ENGINES['ZIPVOICE']]
+zv_presets = [cfg for cfg in load_presets('zipvoice').values() if any(wanted(lang) for lang in cfg['checkpoints'])]
+# the worker's own files: the checkpoint (or its ONNX pair) with model.json / tokens.txt, those from assets_repo when the
+# checkpoint ships without them; a .pt is converted to safetensors by the worker at its first start. A gated checkpoint's
+# fallback too, so the key works whether HF_TOKEN's account accepted the gated repo or not (a refused job is reported)
+zv_wanted = [ckpt for cfg in zv_presets for lang, ckpt in cfg['checkpoints'].items() if wanted(lang)]
+for ckpt in {json.dumps(ckpt, sort_keys=True): ckpt for ckpt in zv_wanted + [c['fallback'] for c in zv_wanted if c.get('fallback')]}.values():
+    zv_model_dir = os.path.join(tts_dir, 'zipvoice', ckpt['repo'].replace('/', '--'))
+    zv_assets_repo = ckpt.get('assets_repo') or ckpt['repo']
+    zv_files = (list(ckpt['onnx'].values()) if ckpt.get('onnx') else [ckpt['ckpt']]) + ([ckpt['config'], ckpt['tokens']] if zv_assets_repo == ckpt['repo'] else [])
+    add('zipvoice', f"{ckpt['repo']}/{zv_files[0]}", lambda ckpt=ckpt, zv_model_dir=zv_model_dir, zv_files=zv_files: hf_folder(ckpt['repo'], zv_model_dir, zv_files))
+    if zv_assets_repo != ckpt['repo']:
+        add('zipvoice', f"{zv_assets_repo}/{ckpt['config']}", lambda ckpt=ckpt, zv_assets_repo=zv_assets_repo: hf_folder(zv_assets_repo, os.path.join(tts_dir, 'zipvoice', zv_assets_repo.replace('/', '--')), [ckpt['config'], ckpt['tokens']]))
+for zv_vocoder in dict.fromkeys(cfg['vocoder'] for cfg in zv_presets):
+    zv_voc = zv['vocoders'][zv_vocoder]
+    add('zipvoice', f"{zv_voc['repo']} vocoder", lambda zv_voc=zv_voc: hf_folder(zv_voc['repo'], os.path.join(tts_dir, 'zipvoice', zv_voc['repo'].replace('/', '--')), zv_voc['files']))
+if zv_presets:
+    add('zipvoice', f"whisper {zv['asr_model']}", lambda: hf_folder(zv['asr_model'], os.path.join(tts_dir, zv['asr_model'].replace('/', '--')), None, True))
 omni = default_engine_settings[TTS_ENGINES['OMNIVOICE']]
 if engine_wanted(TTS_ENGINES['OMNIVOICE']):
     add('omnivoice', omni['repo'], lambda: hf_folder(omni['repo'], os.path.join(tts_dir, 'omnivoice', omni['repo'].replace('/', '--'))))

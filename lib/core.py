@@ -186,6 +186,20 @@ class SessionTracker:
         with self.lock:
             context.sessions.pop(session_id, None)
 
+def to_builtin(value:Any)->Any:
+    # gr.File hands gradio.utils.NamedString (a str subclass): pickled into a session proxy it makes the Manager server
+    # import gradio to unpickle it, and every write fails (RemoteError: No module named 'gradio') once it cannot,
+    # e.g. a second e2a start reinstalling gradio under this one. Only builtins may cross into the Manager
+    if isinstance(value, str):
+        return str(value)
+    if isinstance(value, list):
+        return [to_builtin(v) for v in value]
+    if isinstance(value, tuple):
+        return tuple(to_builtin(v) for v in value)
+    if isinstance(value, dict):
+        return {to_builtin(k): to_builtin(v) for k, v in value.items()}
+    return value
+
 class SessionContext:
     def __init__(self):
         self.manager:Manager = Manager()

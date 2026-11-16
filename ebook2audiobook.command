@@ -264,7 +264,9 @@ linux_app() {
 	local DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
 	local DESKTOP_SHORTCUT="$DESKTOP_DIR/$APP_NAME.desktop"
 	local ICON_PATH="$SCRIPT_DIR/tools/icons/linux/appIcon"
-	if [[ -f "$MENU_ENTRY" ]]; then open_desktop_app; return 0; fi
+	# E2A_NO_DESKTOP_ENTRY=1: a package (nix) ships its own menu entry running its own command, this one would
+	# start the launcher outside of it
+	if [[ -f "$MENU_ENTRY" || "${E2A_NO_DESKTOP_ENTRY:-0}" == "1" ]]; then open_desktop_app; return 0; fi
 	mkdir -p "$HOME/.local/share/applications"
 	cat > "$MENU_ENTRY" <<EOF
 [Desktop Entry]
@@ -296,6 +298,26 @@ get_iso3_lang() {
 	case "$1" in
 		en) echo "eng" ;; fr) echo "fra" ;; de) echo "deu" ;; it) echo "ita" ;; es) echo "spa" ;; pt) echo "por" ;; ar) echo "ara" ;; tr) echo "tur" ;; ru) echo "rus" ;; bn) echo "ben" ;; zh) echo "chi_sim" ;; fa) echo "fas" ;; hi) echo "hin" ;; hu) echo "hun" ;; id) echo "ind" ;; jv) echo "jav" ;; ja) echo "jpn" ;; ko) echo "kor" ;; pl) echo "pol" ;; ta) echo "tam" ;; te) echo "tel" ;; yo) echo "yor" ;; *) echo "eng" ;;
 	esac
+}
+
+check_path_length() {
+	# piper-tts bundles espeak-ng 1.52, which opens its data folder from a path of 159 bytes at most: past it piper
+	# stops with "Error processing file '.../phontab'". That folder sits 61 bytes below SCRIPT_DIR, so SCRIPT_DIR is
+	# 98 bytes at most (a non-ASCII character takes 2 to 4). Checked at every start, before anything is installed:
+	# an installed folder stops too, piper would fail there in the middle of a conversion. Moved, it keeps its
+	# python_env (check_uv adopts it) and its models
+	local espeak_data="$SCRIPT_DIR/$PYTHON_ENV/lib/python$PYTHON_VERSION/site-packages/piper/espeak-ng-data"
+	local max_bytes=159
+	local data_bytes root_bytes max_root_bytes
+	data_bytes="$(printf '%s' "$espeak_data" | wc -c | tr -d '[:space:]')"
+	if (( data_bytes <= max_bytes )); then return 0; fi
+	root_bytes="$(printf '%s' "$SCRIPT_DIR" | wc -c | tr -d '[:space:]')"
+	max_root_bytes=$(( max_bytes - data_bytes + root_bytes ))
+	echo -e "\e[31m=============== Error: the path of this ebook2audiobook folder is too long: $root_bytes bytes, $max_root_bytes at most (a non-ASCII character takes 2 to 4).\e[0m"
+	echo "  $SCRIPT_DIR"
+	echo "The piper engine cannot read its espeak-ng data from a longer path:"
+	echo "move this folder to a shorter path, then with a pip, pipx or Nix install set E2A_HOME to its new path."
+	return 1
 }
 
 check_python() {
@@ -686,6 +708,7 @@ if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then
 	fi
 fi
 
+if [[ "$SCRIPT_MODE" == "$NATIVE" ]]; then check_path_length || exit 1; fi
 check_python || exit 1
 
 # Validate command arguments against conf.py

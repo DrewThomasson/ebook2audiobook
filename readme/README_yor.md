@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 ìwé-kọ̀m̀pútà2ìwé-ohùn (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 Ayípadà CPU/GPU láti inú ìwé-kàwé ẹ̀rọ sí ìwé-ohùn pẹ̀lú àwọn orí àti metadata<br/>
 ní lílo àwọn ẹ̀rọ TTS tó ní ìlọsíwájú àti púpọ̀ síi.<br/>
 Ṣe àtìlẹyìn fún ìsopọ̀ ohùn àti àwọn èdè 1696!
-> [!IMPORTANT]
+> Pàtàkì
 **Ọ̀pá-ìṣẹ́ yìí jẹ́ fún lílo pẹ̀lú àwọn ìwé-kàwé ẹ̀rọ tí kò ní DRM, tí a rí gbà ní ọ̀nà òfin nìkan.** <br>
 Àwọn òǹkọ̀wé kò ní jẹ́jọ́ fún ìlòkulò èyíkéyìí ti software yìí tàbí àbájáde òfin èyíkéyìí tí ó bá yọrí sí. <br>
 Lo ọ̀pá-ìṣẹ́ yìí pẹ̀lú ojúṣe àti ní ìbámu pẹ̀lú gbogbo àwọn òfin tó wà ní agbára.
@@ -118,13 +118,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Àwọn Ẹ̀yà
-- 🔧 **TTS Engines ni atilẹyin**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Àwọn Ẹ̀rọ TTS tí a ṣe àtìlẹyìn**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Yí àwọn ọ̀nà fáìlì púpọ̀ padà**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Agbègbè Ọ̀rọ̀** láti yí ọ̀rọ̀ kúkúrú padà tààrà sí ohùn
 - 🔍 **Àyẹ̀wò OCR** fún àwọn fáìlì tó ní àwọn ojú-ìwé ọ̀rọ̀ gẹ́gẹ́ bí àwòrán
 - 🔊 **Ọ̀rọ̀-sí-ọ̀rọ̀ olódodo gíga**, láti ó fẹ́rẹ̀ jẹ́ àkókò gidi sí ohùn tó fẹ́rẹ̀ jẹ́ gidi
 - 🗣️ **Ẹ̀dà ohùn àṣàyàn** ní lílo fáìlì ohùn tìrẹ
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Ṣe atilẹyin awọn ede 1696** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Ọ̀rẹ́ àwọn ohun-àmúṣe kékeré** — ó ń ṣiṣẹ́ lórí **2 GB RAM / 1 GB VRAM (tó kéré jù)**
 - 🎵 **Àwọn ọ̀nà ìjáde ìwé-ohùn**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **A ṣe àtìlẹ́yìn fún àwọn àmì SML** — ìṣàkóso tó pé fún àwọn ìdáwọ́dúró, ìdúró, ìyípadà ohùn àti púpọ̀ síi ([see below](#sml-tags-available))
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Wo repo wa míràn tí a yà sọ́tọ̀ fún àfikún SML lọ́nà aládàáṣiṣẹ́ nínú eBook rẹ -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> Pàtàkì
 **Kí o tó fi ìṣòro ìfìsọ́nà tàbí àṣìṣe sílẹ̀, ṣàwárí dáradára nínú TAB àwọn ìṣòro tó ṣí sílẹ̀ àti èyí tí a ti tì<br>
 láti rí i dájú pé ìṣòro rẹ kò tíì sí.**
 
@@ -214,7 +214,7 @@ Nítorí náà o gbọ́dọ̀ kọ́kọ́ yọ ọ̀rọ̀ èyíkéyìí tí o
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (gbogbo OS, lẹẹkan ṣoṣo ti a fi sii ati pẹlu python ti folda python_env rẹ)
 
-> [!IMPORTANT]
+> Pàtàkì
 **Tí a bá dúró kọ̀ǹpútà-ìtọ́ni tí a sì tún ṣe é, o nílò láti tún wíwo GUI gradio rẹ ṣe<br>
 láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket ìsopọ̀ tuntun.**
 
@@ -249,7 +249,8 @@ láti gba ojú-ìwé wẹ́ẹ̀bù láàyè láti tún sopọ̀ mọ́ socket �
 - Ìbẹ̀rẹ̀ àkọ́kọ́ gbé ebook2audiobook lọ sí `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` lórí Windows) ó sì fi síbẹ̀<br>
   pẹ̀lú ìwé àtòjọ́ ìbẹ̀rẹ̀ rẹ̀, gẹ́gẹ́ bí `./ebook2audiobook.command` tàbí `ebook2audiobook.cmd` yóò ṣe.
 - Láti lo fọ́ọ̀dà mìíràn, ṣètò `E2A_HOME` ṣáájú ìbẹ̀rẹ̀ àkọ́kọ́ kí o sì jẹ́ kí ó wà bẹ́ẹ̀ fún àwọn tí ó kàn<br>
-  (ìyẹn ni `export E2A_HOME=/data/ebook2audiobook` lórí Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` lẹ́yìn náà tẹ́rmínàlì tuntun lórí Windows).
+  (ìyẹn ni `export E2A_HOME=/data/ebook2audiobook` lórí Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` lẹ́yìn náà kọ̀m̀pútà tuntun lórí Windows).<br>
+  Jẹ́ kí ọ̀nà rẹ̀ kúkú: àwọn ohun kikọ 98 ní pàtó lórí Linux/MacOS, 179 lórí Windows, wo [Common Issues](#common-issues).
 - Fóòlà náà jẹ́ fóòlà ebook2audiobook déédéé: `./ebook2audiobook.command` (`./e2a.sh`) àti `ebook2audiobook.cmd` (`e2a.cmd`) sì ń ṣiṣẹ́ nínú rẹ̀ pẹ̀lú.
 - Tí fóldà yẹn bá ti ní ìwé-kọ̀m̀pútà tí a ti ṣe àdàkọ tàbí tí a ti ṣe ìgbàsílẹ̀ sí ìwé-ohùn, a óò bẹ̀rẹ̀ bí ó ṣe rí bẹ́ẹ̀, pip kò sì ní yí i padà láéláé.
 - Àwọn ọ̀nà ìbátan tí a fún `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` àti `--output_dir`<br>
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - ÀKÍYÈSÍ: MPS kò sí ní àrọ́wọ́tó nínú Docker, nítorí náà a gbọ́dọ̀ lo CPU
-- ÀKÍYÈSÍ: volume tí a sọ ní orúkọ `e2a_venvs` máa ń pa àwọn ẹ̀rọ TTS tí a fi sori ẹ̀rọ nínú venv tiwọn mọ́ (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM àti bẹ́ẹ̀ bẹ́ẹ̀ lọ)
+- ÀKÍYÉSÍ: ààyè `e2a_venvs` tí a dárúkọ ń tọ́jú àwọn ẹ̀rọ TTS tí a fi sori ẹrọ ní venv tiwọn (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM àti bẹ́ẹ̀ bẹ́ẹ̀ lọ)
   láti ìgbà kan tí container bá ṣiṣẹ́ sí òmíràn, kí a má baà tún wọn fi sori ẹ̀rọ ní gbogbo ìgbà. Láti tún wọn ṣètò: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -715,12 +716,18 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Àwọn Ìṣòro Tó Wọ́pọ̀:
 - A kò rí GPU NVIDIA/ROCm/XPU/MPS mi?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU lọ́ra (ó dára jù lórí CPU smp sáfà) nígbà tí GPU lè ní ìyípadà tó fẹ́rẹ̀ jẹ́ àkókò gidi.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Bí ó tilẹ̀ jẹ́ pé kò ní ẹ̀dà ohùn zero-shot, tí ó sì jẹ́ àwọn ohùn olódodo Siri, ṣùgbọ́n ó yára púpọ̀ síi lórí cpu).
 - "Mo ní àwọn ìṣòro dependency" - Kàn lo Docker, ó dá dúró pátápátá ó sì ní ìpò headless,
    ṣàfikún pàrámítà `--help` ní òpin àṣẹ docker run fún ìsọfúnni síi.
 - "Mo ní ìṣòro ohùn tí a gé kúrú!" - JỌ̀WỌ́ ṢÍ ISSUE NÍPA ÈYÍ,
    a kò sọ gbogbo èdè a sì nílò ìmọ̀ràn láti ọ̀dọ̀ àwọn olùmúlò láti ṣàtúnṣe ọgbọ́n pípín gbólóhùn.😊
+- "Ọ̀nà fọ́ldà ebook2audiobook yìí gùn jù", tàbí kí piper dáwọ́ dúró pẹ̀lú `Error processing file '.../phontab'`?
+   Piper ń ka àwọn dátà espeak-ng rẹ̀ láti `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` lori Windows) ati pe ko le ṣii rẹ kọja awọn baiti 159 (229 lori Windows),<br>
+   nítorí náà ọ̀nà fódà náà fúnra rẹ̀ gbọ́dọ̀ jẹ́ àwọn ohun kikọ 98 ní ọ̀pọ̀lọpọ̀ lórí Linux/MacOS, 179 lórí Windows (ohun kikọ tí kì í ṣe ASCII kan ka 2 sí 4).<br>
+   Àwọn ìwé àkọsílẹ̀ ìbẹ̀rẹ̀ máa ń yẹ ẹ́ wò ní gbogbo ìbẹ̀rẹ̀, kí wọ́n tó fi ohunkóhun sí i, tí wọ́n sì máa ń dúró ní àwọn fọ́lídà tí ó gùn, àti èyí tí wọ́n ti fi sí i.<br>
+   Gbé fọ́lídà náà lọ sí ọ̀nà tí ó kúrú, `python_env` rẹ̀ àti àwọn awoṣe yóò bá a lọ (pip / pipx / Nix: lẹ́yìn náà ṣètò `E2A_HOME` sí ọ̀nà tuntun rẹ̀).
 
 ## ***** ÈTÒ-ÌLỌSÍWÁJÚ *****
 - Gbogbo Àwọn Ẹ̀yà ṣí sílẹ̀ fún Àwọn Ìdáwó àjọ̀dún ⭐
@@ -759,6 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1)
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1)
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1)
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1)
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1)
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1)
@@ -799,7 +807,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Ìtumọ̀ Readme
 - [x] Lárúbáwá (Lárúbáwá)
-- [x] Chinese (zho)
+- [x] Èdè Ṣáínà (zho)
 - [x] Èdè Gẹ̀ẹ́sì (eng)
 - [x] Èdè Sípáníìṣì (SPA)
 - [x] Faranse (fra)
@@ -809,21 +817,21 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Pólándì (pol)
 - [x] Tọki (TUR)
 - [x] Rọ́ṣíà (Rọ́ṣíà)
-- [x] Dutch (nld)
-- [x] Czech (ces)
-- [x] Japanese (jpn)
-- [x] Hindi (hin)
+- [x] Èdè Dutch (nld)
+- [x] Èdè Czech (ces)
+- [x] Èdè Japan (jpn)
+- [x] Èdè Híndì (hin)
 - [x] Èdè Bengali (BEN)
-- [x] Hungarian (hun)
+- [x] Èdè Hungary (hun)
 - [x] Kòréà (kor)
 - [x] Vietnamese (VIVE)
-- [x] Swedish (swe)
+- [x] Èdè Sísí (swe)
 - [x] Persian (FAS)
 - [x] Yorùbá (yor)
-- [x] Swahili (swa)
+- [x] Èdè Swahili (swa)
 - [x] Indonesian (IND)
-- [x] Slovak (slk)
-- [x] Croatian (hrv)
+- [x] Èdè Slovak (slk)
+- [x] Èdè Kíròshíà (hrv)
 
 #### Ibamu 💻 OS
 - [x] 🪟 Windows x86
@@ -854,7 +862,7 @@ A gba irú ohun-èlò èyíkéyìí láti dán ìdàgbàsókè wa wò bíi:
 
 ## Awọn kirediti
 - [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Ohun èlò ìkẹ́kọ̀ọ́ tó jinlẹ̀ fún Text-to-Speech, tí a dán wò nínú ìwádìí àti ìṣẹ̀dá.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Ẹ̀rọ ọ̀rọ̀-sí-ọ̀rọ̀ sísọ tí ó yá tí ó sì wà ní agbègbè.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml kóódù ìfihàn fún Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) - Ẹrọ ìfihàn C++ tí ó mọ́ fún àwọn àwòṣe ohùn, tí ggml ń lò.
 

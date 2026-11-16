@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 Z e-knihy na audioknihu (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU prevodník z e-knihy na audioknihu s kapitolami a metadátami<br/>
 s využitím pokročilých TTS enginov a mnohého ďalšieho.<br/>
 Podporuje klonovanie hlasu a 1696 jazykov!
-> [!IMPORTANT]
+> Dôležité
 **Tento nástroj je určený len na použitie s e-knihami bez DRM, získanými legálne.** <br>
 Autori nenesú zodpovednosť za akékoľvek zneužitie tohto softvéru ani za prípadné právne následky. <br>
 Používajte tento nástroj zodpovedne a v súlade so všetkými platnými zákonmi.
@@ -39,13 +39,13 @@ Používajte tento nástroj zodpovedne a v súlade so všetkými platnými záko
 
 <a id="gui-interface"></a>
 #### Grafické rozhranie (GUI)
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Kliknite pre zobrazenie obrázkov webového GUI</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -101,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-
+  
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
@@ -117,13 +118,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Funkcie
-- 🔧 **Podporované motory TTS**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Podporované nástroje TTS**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Prevod viacerých formátov súborov**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Textové pole** na priamy prevod krátkeho textu na zvuk
 - 🔍 **OCR skenovanie** pre súbory s textovými stránkami vo forme obrázkov
 - 🔊 **Vysokokvalitný prevod textu na reč**, od takmer reálneho času po takmer skutočný hlas
 - 🗣️ **Voliteľné klonovanie hlasu** pomocou vlastného hlasového súboru
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Podporuje 1 696 jazykov** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Vhodné pre obmedzené zdroje** — beží na **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Výstupné formáty audioknihy**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Podpora SML tagov** — jemné ovládanie prerušení, páuz, prepínania hlasu a ďalšieho ([see below](#sml-tags-available))
@@ -137,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 GB RAM min., 8 GB odporúčané.
 - 1 GB VRAM min., 4 GB odporúčané.
 - Povolená virtualizácia pri spustení vo Windows (iba Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
 - MPS (CPU Apple Silicon)
 
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Podporované jazyky
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -169,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Pozrite si náš ďalší repozitár venovaný automatickému pridávaniu SML do vašej e-knihy -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> Dôležité
 **Skôr než nahlásite problém s inštaláciou alebo chybu, dôkladne prehľadajte záložku otvorených a uzavretých issues<br>
 aby ste sa uistili, že váš problém ešte neexistuje.**
 
@@ -213,9 +214,64 @@ Preto by ste mali najprv ručne odstrániť všetok text, ktorý nechcete prevá
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (všetky OS, iba raz nainštalované a s pythonom v priečinku python_env)
 
-> [!IMPORTANT]
+> Dôležité
 **Ak je skript zastavený a znovu spustený, musíte obnoviť svoje grafické rozhranie Gradio<br>
 aby sa webová stránka mohla znovu pripojiť k novému pripojovaciemu socketu.**
+
+<a id="pip-install"></a>
+### Inštalácia pomocou nástroja pip/pipx
+Ďalší spôsob inštalácie a spustenia nástroja ebook2audiobook bez klonovania repozitára: pip nainštaluje príkaz `ebook2audiobook`<br>
+(všetky operačné systémy, akákoľvek verzia Pythonu 3.8 a novšia). Klonovaný repozitár s vyššie uvedenými spúšťacími skriptmi naďalej funguje rovnakým spôsobom.
+
+1. **Nainštalujte príkaz** z PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   alebo s UV žiarením
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   alebo s semenom
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>V prípade najnovšieho kódu, ktorý ešte nebol vydaný, použite `git+https://github.com/DrewThomasson/ebook2audiobook.git` namiesto `ebook2audiobook`.</i>
+
+2. **Nainštalujte/spustite nástroj ebook2audiobook** s rovnakými možnosťami ako spustiteľné skripty:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   Ak sa príkaz nenašiel (priečinok so skriptmi nástroja pip nie je vo vašej premennej PATH): `python -m ebook2audiobook`
+
+- Pri prvom spustení sa ebook2audiobook skopíruje do priečinka `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` v systéme Windows) a nainštaluje sa tam<br>
+  so svojím spúšťacím skriptom, presne tak, ako by to urobili `./ebook2audiobook.command` alebo `ebook2audiobook.cmd`.
+- Ak chcete použiť iný priečinok, nastavte `E2A_HOME` pred prvým spustením a ponechajte ho nastavený aj pre ďalšie spustenia.<br>
+  (t. j. `export E2A_HOME=/data/ebook2audiobook` v systéme Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` a potom nový terminál v systéme Windows).<br>
+  Zabezpečte, aby bola jeho cesta krátka: maximálne 98 znakov v systéme Linux/MacOS, 179 znakov v systéme Windows, pozri [Common Issues](#common-issues).
+- Tento priečinok je bežný priečinok ebook2audiobook: `./ebook2audiobook.command` (`./e2a.sh`) a `ebook2audiobook.cmd` (`e2a.cmd`) v ňom tiež fungujú.
+- Ak sa v tomto priečinku už nachádza klonovaná alebo stiahnutá kniha ebook2audiobook, spustí sa tak, ako je, a nástroj pip ju nikdy nezmení.
+- Relatívne cesty zadané pre `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` a `--output_dir`<br>
+  sa načítajú z priečinka, v ktorom zadáte príkaz.
+- Nie je potrebné deaktivovať vaše prostredie venv alebo conda env: ebook2audiobook vždy beží vo svojom vlastnom prostredí `python_env`.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (voliteľne s `--docker_mode compose` alebo `--docker_mode podman`)<br>
+  vytvorí obraz z tohto priečinka. Spustite príkazy `docker run` / `docker compose`, ktoré sa zobrazia aj z tohto priečinka:<br>
+  ich `./ebooks`, `./audiobooks`... pripojenia a súbory Compose sú k nim relatívne. Obrázok používa rovnaké možnosti,<br>
+  s cestami vo vnútri kontajnera (`/app/...`), pozri [Docker](#docker).
+- **Aktualizácia**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` alebo `pip install -U ebook2audiobook`.<br>
+  Pri ďalšom spustení sa aktualizujú súbory aplikácie a zachovajú sa `python_env`, modely, hlasy, audioknihy a všetko, čo ste pridali do priečinka.
+- **Odinštalovať**: `pip uninstall`, `pipx uninstall` alebo `uv tool uninstall` odstráni iba príkaz:<br>
+  Priečinok a jeho gigabajty modelov zostávajú. Najskôr odinštalujte nástroj ebook2audiobook pomocou samotného príkazu:
+  1. Presuňte svoje audioknihy z podsložky `audiobooks` tejto zložky: všetko v tejto zložke sa odstráni.
+  2. `ebook2audiobook --uninstall`<br>
+     Spustí sa odinštalátor priečinka, ktorý vás požiada o potvrdenie a potom odstráni skratky a programy, ktoré nainštaloval<br>.
+     (uvedené v `.installed`) a obsah priečinka, potom priečinok odstráni.
+  3. Spustite príkaz, ktorý sa zobrazí ako posledný, aby ste odstránili samotný nástroj `ebook2audiobook`. Spôsob odstránenia závisí od toho, ako ste ho nainštalovali:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` alebo `pip uninstall ebook2audiobook`.
+  4. Ak ste vytvorili obrazy Docker: `docker rmi athomasson2/ebook2audiobook:<tag>` a `docker volume rm e2a_venvs`<br>
+     (s Podmanom: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` a `podman volume rm e2a_venvs`).
 
 <a id="basic-usage"></a>
 ### Základné použitie
@@ -226,6 +282,10 @@ aby sa webová stránka mohla znovu pripojiť k novému pripojovaciemu socketu.*
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (všetky OS)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Cesta k súboru vašej e-knihy
@@ -260,6 +320,10 @@ aby sa webová stránka mohla znovu pripojiť k novému pripojovaciemu socketu.*
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (všetky OS)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Alebo pre všetky OS**
     ```python
@@ -373,6 +437,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -447,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - POZNÁMKA: MPS nie je v Dockeri sprístupnené, preto je nutné použiť CPU
-- POZNÁMKA: pomenovaný zväzok `e2a_venvs` uchováva TTS enginy nainštalované vo vlastných venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM atď.)
+- POZNÁMKA: pomenovaný zväzok `e2a_venvs` uchováva moduly TTS nainštalované vo vlastnom virtuálnom prostredí (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM atď.)
   medzi spusteniami kontajnera, takže sa zakaždým znova neinštalujú. Na ich resetovanie: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -486,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -639,12 +716,18 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Časté problémy:
 - Moje GPU NVIDIA/ROCm/XPU/MPS nie je detekované?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU je pomalé (lepšie na serverovom SMP CPU), zatiaľ čo GPU môže mať takmer prevod v reálnom čase.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Nemá však klonovanie hlasu zero-shot a hlasy sú kvality Siri, ale na CPU je oveľa rýchlejšie).
 - „Mám problémy so závislosťami“ - Použite jednoducho Docker, je úplne samostatný a má režim headless,
    pre viac informácií pridajte na koniec príkazu docker run parameter . `--help`
 - „Mám problém s oREZaným zvukom!“ - PROSÍM, NAHLÁSTE TO AKO ISSUE,
    nehovoríme každým jazykom a potrebujeme rady používateľov, aby sme doladili logiku delenia viet.😊
+- „Cesta k tomuto priečinku ebook2audiobook je príliš dlhá“ alebo sa Piper zastaví pri `Error processing file '.../phontab'`?
+   Piper číta svoje údaje espeak-ng z `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` v systéme Windows) a nemôžete ho otvoriť po 159 bajtov (229 v systéme Windows),<br>
+   Preto musí mať samotná cesta k priečinku najviac 98 znakov v systéme Linux/MacOS a 179 znakov v systéme Windows (znak, ktorý nie je znakom ASCII, sa počíta ako 2 až 4 znaky).<br>
+   Spúšťacie skripty ju kontrolujú pri každom spustení, pred inštaláciou čohokoľvek, a zastavia sa v dlhšom priečinku, aj v nainštalovanom.<br>
+   Presuňte priečinok na kratšiu cestu. Jeho `python_env` a modely sa presunú spolu s ním (pip / pipx / Nix: potom nastavte `E2A_HOME` na jeho novú cestu).
 
 ## ***** PLÁN ROZVOJA *****
 - Všetky funkcie otvorené verejným príspevkom ⭐
@@ -683,12 +766,13 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1)
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1)
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1)
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1)
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral TTS (https://github.com/voxtral/voxtral-tts)[cite: 1]
 - [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1)
-- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
+- [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1)
 - [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1)
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1)
@@ -734,7 +818,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Turečtina (tur)
 - [x] Ruština (rus)
 - [x] Holandčina (nld)
-- [x] Czech (ces)
+- [x] Čeština (ces)
 - [x] Japončina (jpn)
 - [x] Hindčina (hin)
 - [x] Bengálčina (BEN)
@@ -743,19 +827,19 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Vietnamčina (vie)
 - [x] Švédčina (swe)
 - [x] Perzština (fas)
-- [x] Yoruba (yor)
-- [x] Swahili (swa)
+- [x] Jorubčina (yor)
+- [x] Svahilčina (swa)
 - [x] Indonézština (ind)
-- [x] Slovak (slk)
+- [x] Slovenčina (slk)
 - [x] Chorvátčina (hrv)
 
 #### Kompatibilita 💻 OS
 - [x] 🪟 Windows x86
-- [x] Okná 🪟 ARM
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac s čipom Apple Silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 

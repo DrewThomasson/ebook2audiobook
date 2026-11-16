@@ -307,6 +307,28 @@ if /i "%~1"=="te" set "ISO3_LANG=tel"
 if /i "%~1"=="yo" set "ISO3_LANG=yor"
 exit /b
 
+:check_path_length
+:: piper-tts bundles espeak-ng 1.52, which opens its data folder from a path of 229 bytes at most on Windows: past it
+:: piper stops with "Error processing file '...phontab'". That folder sits 50 bytes below SAFE_SCRIPT_DIR, so
+:: SAFE_SCRIPT_DIR is 179 bytes at most (a non-ASCII character takes 2 to 4). Checked at every start, before anything is
+:: installed: an installed folder stops too, piper would fail there in the middle of a conversion. Moved, it keeps its
+:: python_env (check_uv adopts it) and its models. No parenthesized block around the path, which can hold ( ) or &, and
+:: no check at all if PowerShell cannot count it
+set "ESPEAK_DATA_SUFFIX=\%PYTHON_ENV%\Lib\site-packages\piper\espeak-ng-data"
+set "ROOT_BYTES="
+set "MAX_ROOT_BYTES="
+for /f "tokens=1,2" %%a in ('%PS_EXE% %PS_ARGS% -Command "$r=[Text.Encoding]::UTF8.GetByteCount($env:SAFE_SCRIPT_DIR); $m=229-$env:ESPEAK_DATA_SUFFIX.Length; [string]$r+' '+$m"') do (
+	set "ROOT_BYTES=%%a"
+	set "MAX_ROOT_BYTES=%%b"
+)
+if not defined MAX_ROOT_BYTES exit /b 0
+if %ROOT_BYTES% LEQ %MAX_ROOT_BYTES% exit /b 0
+echo %ESC%[31m=============== Error: the path of this ebook2audiobook folder is too long: %ROOT_BYTES% bytes, %MAX_ROOT_BYTES% at most (a non-ASCII character takes 2 to 4).%ESC%[0m
+echo   "%SAFE_SCRIPT_DIR%"
+echo The piper engine cannot read its espeak-ng data from a longer path:
+echo move this folder to a shorter path, then with a pip or pipx install set E2A_HOME to its new path.
+exit /b 1
+
 :check_python
 :: full_docker: the image python is used as is, nothing to install
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" exit /b 0
@@ -956,6 +978,10 @@ exit /b 0
 :::::::::::: END CORE FUNCTIONS
 
 :main
+if "%SCRIPT_MODE%"=="%NATIVE%" (
+	call :check_path_length
+	if errorlevel 1 exit /b 1
+)
 call :check_python
 if errorlevel 1 exit /b 1
 if defined ARGS (

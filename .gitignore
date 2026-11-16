@@ -24,3 +24,5 @@ models/*
 .installed
 .env
 .gpu_choice
+result
+result-*

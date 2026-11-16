@@ -10,6 +10,7 @@ TTS_ENGINES = {
     "GPTSOVITS": "gptsovits",
     "OMNIVOICE": "omnivoice",
     "F5TTS": "f5tts",
+    "ZIPVOICE": "zipvoice",
     "ORPHEUS": "orpheus",
     "SPARKTTS": "sparktts",
     "CHATTTS": "chattts",
@@ -382,6 +383,62 @@ default_engine_settings = {
         "voices": {},
         "devices": torch_devices,
         "rating": {"VRAM": 3, "CPU": 1, "RAM": 4, "Realism": 4}
+    },
+    TTS_ENGINES['ZIPVOICE']: {
+        # runs in its own uv venv (lib/classes/tts_engines/venvs/zipvoice) behind a persistent worker, from the pinned
+        # source tree: upstream is not a package (its pyproject.toml has no [project]), the worker imports zipvoice from
+        # the extracted repo root. LuxTTS is this engine's luxtts preset (same acoustic model, see presets/zipvoice_presets.py)
+        "repo": "k2-fsa/ZipVoice",
+        "source": "https://github.com/k2-fsa/ZipVoice/archive/2f7326fbfe999a3ad179e3f1af82a424d4a62819.tar.gz",
+        # LuxTTS' 48 kHz vocoder classes (Vocos backbone + upsampler + 48 kHz head): the worker loads LinaCodec's vocoder
+        # modules from this tree, not the linacodec package (its __init__ imports the whole codec)
+        "source_lina": "https://github.com/ysharma3501/LinaCodec/archive/c0ae7c7285e121475c27592cfbb600624b714290.tar.gz",
+        "python": "3.12",
+        # package list = upstream's own requirements.txt (in the extracted tree), torch from the device's PyTorch index
+        # (--torch-backend, e2a's detected tag) or e2a's DeviceInstaller as fallback. Nothing left out: tensorboard is
+        # imported by zipvoice.utils.common at inference too. urllib3: lhotse imports it (lhotse.ais) without declaring
+        # it, and huggingface_hub 1.x no longer brings it through requests; transformers runs Whisper for the reference
+        # transcripts (5.0.0 left out: its Whisper pipeline breaks them, see F5-TTS); onnxruntime (cpu) runs the
+        # ONNX-only checkpoints; soundfile reads and writes the audio (no torchcodec); hf_xet as for GPT-SoVITS
+        # (windows reports AMD64, so huggingface_hub's own marker misses it)
+        "requirements_file": "requirements.txt",
+        "requirements_exclude": [],
+        "requirements_extra": ["urllib3", "transformers!=5.0.0", "onnxruntime", "soundfile", "pyyaml", "hf_xet>=1.1.3,<2.0.0; sys_platform == 'win32'"],
+        # upstream's own --find-links line: piper_phonemize (espeak-ng) wheels for every platform are k2-fsa's
+        "find_links": "https://k2-fsa.github.io/icefall/piper_phonemize.html",
+        # every package installs as a wheel, so no platform ever needs a compiler; these only exist as pure-python
+        # sources (encodec: vocos' dependency)
+        "packages_sdist": ["encodec", "jieba"],
+        # vocoders the presets pick from, both decode ZipVoice's 24 kHz 100-bin mels: upstream's Vocos, and LuxTTS'
+        # (Vocos backbone, a 24 kHz head and a 48 kHz upsampled head merged at 4 kHz). files: config, weights
+        "vocoders": {
+            "vocos": {"repo": "charactr/vocos-mel-24khz", "files": ["config.yaml", "pytorch_model.bin"], "samplerate": 24000},
+            "lux48k": {"repo": "YatharthS/LuxTTS", "files": ["vocoder/config.yaml", "vocoder/vocos.bin"], "samplerate": 48000}
+        },
+        # reference transcription (ZipVoice clones from audio + its text) and its language (the transcript is
+        # phonemized in the voice's language), Whisper run on cpu; one copy under models/tts shared with the other
+        # engines using it
+        "asr_model": "openai/whisper-large-v3-turbo",
+        # the worker cuts a reference clip of at most ref_max seconds (upstream warns from 10 s: a long prompt slows
+        # every sentence and leaks into the speech; LuxTTS takes 5 s); no padding
+        "ref_max": 6.0,
+        # languages a checkpoint exists for (presets/zipvoice_presets.py: k2-fsa's zh & en, community fine-tunes,
+        # DhVaani's Indic languages) -> their iso-639-1 code
+        "languages": {"eng": "en", "zho": "zh", "ara": "ar", "srp": "sr", "cat": "ca", "vie": "vi", "ces": "cs", "fin": "fi", "asm": "as", "ben": "bn", "brx": "brx", "dgo": "doi", "guj": "gu", "hin": "hi", "hne": "hne", "bho": "bho", "kan": "kn", "kas": "ks", "gom": "kok", "mai": "mai", "mag": "mag", "mal": "ml", "mni": "mni", "mar": "mr", "npi": "ne", "ory": "or", "pan": "pa", "san": "sa", "sat": "sat", "snd": "sd", "tam": "ta", "tel": "te", "urd": "ur"},
+        "samplerate": 24000,
+        # upstream defaults (zipvoice/bin/infer_zipvoice.py, zipvoice model); a checkpoint may set its own (presets)
+        "num_step": 16,
+        "guidance_scale": 1.0,
+        "t_shift": 0.5,
+        "speed": 1.0,
+        "target_rms": 0.1,
+        "files": [],
+        "voice": default_speaker,
+        "voices": {},
+        # 123M params (fp32) + vocoder: about 1 GB of VRAM; the distilled checkpoints run faster than real time on CPU,
+        # the base ones (16 steps, 2 passes each) about 5x slower than real time on 4 cores
+        "devices": torch_devices,
+        "rating": {"VRAM": 2, "CPU": 2, "RAM": 4, "Realism": 4}
     },
     TTS_ENGINES['ORPHEUS']: {
         # runs in its own uv venv (lib/classes/tts_engines/venvs/orpheus) behind a persistent worker. Upstream's own

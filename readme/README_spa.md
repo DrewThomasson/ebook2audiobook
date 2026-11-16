@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Rasgos
-- 🔧 **Motores TTS compatibles**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Motores de TTS compatibles**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Convertir múltiples formatos de archivo**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** para convertir directamente un texto corto en audio
 - 🔍 **Escaneo OCR** para archivos con páginas de texto como imágenes
@@ -249,7 +249,8 @@ Otra forma de instalar y ejecutar ebook2audiobook, sin clonar el repositorio: pi
 - El primer inicio copia ebook2audiobook en `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` en Windows) y lo instala allí<br>
   con su script de lanzamiento, exactamente como lo harían `./ebook2audiobook.command` o `ebook2audiobook.cmd`.
 - Para usar otra carpeta, configúrala `E2A_HOME` antes del primer inicio y mantenla configurada para los siguientes<br>
-  (es decir, `export E2A_HOME=/data/ebook2audiobook` en Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` y luego un nuevo terminal en Windows).
+  (es decir, `export E2A_HOME=/data/ebook2audiobook` en Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` y luego un nuevo terminal en Windows).<br>
+  Mantén su ruta corta: 98 caracteres como máximo en Linux/macOS, 179 en Windows; consulta [Common Issues](#common-issues).
 - Esa carpeta es una carpeta ebook2audiobook normal: `./ebook2audiobook.command` (`./e2a.sh`) y `ebook2audiobook.cmd` (`e2a.cmd`) también funcionan en ella.
 - Si esa carpeta ya contiene un ebook2audiobook clonado o descargado, se inicia tal cual y pip nunca lo modifica.
 - Rutas relativas proporcionadas a `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` y `--output_dir`<br>
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTA: MPS no está expuesto en Docker, por lo que se debe usar la CPU
-- NOTA: el volumen con nombre `e2a_venvs` conserva los motores TTS instalados en su propio venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, etc.)
+- NOTA: El volumen denominado `e2a_venvs` conserva los motores de TTS instalados en su propio entorno virtual (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, etc.).
   entre ejecuciones del contenedor, para que no se reinstalen cada vez. Para restablecerlos: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -721,6 +722,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    añada el parámetro `--help` al final del comando docker run para obtener más información.
 - "¡Tengo un problema de audio truncado!" - POR FAVOR, HAGA UN PROBLEMA con ESTO,
    no hablamos todos los idiomas y necesitamos consejos de los usuarios para afinar la lógica de división de oraciones.😊
+- «La ruta de esta carpeta de ebook2audiobook es demasiado larga» o Piper se detiene con `Error processing file '.../phontab'`?
+   Piper lee sus datos de espeak-ng desde `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` en Windows) y no se puede abrir más allá de 159 bytes (229 en Windows),<br>
+   Por lo tanto, la ruta de la carpeta en sí debe tener como máximo 98 caracteres en Linux/macOS y 179 en Windows (un carácter no ASCII cuenta como 2-4).<br>
+   Los scripts de inicio lo comprueban en cada arranque, antes de instalar nada, y se detienen en una carpeta más larga, también instalada.<br>
+   Mueva la carpeta a una ruta más corta; su `python_env` y sus modelos se moverán con ella (pip / pipx / Nix: a continuación, establezca `E2A_HOME` en su nueva ruta).
 
 ## Hoja de ruta
 - Todas las funciones están abiertas al público Contribuciones ⭐
@@ -759,6 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice/LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
