@@ -127,6 +127,15 @@ footnote_markup = {
 # the tags that sit inside a line of text. Any other tag (a paragraph, a line break, a list item) ends the line
 inline_tags = {'a', 'abbr', 'b', 'bdi', 'bdo', 'big', 'cite', 'code', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'q', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'tt', 'u', 'var'}
 
+# the pause written after a question of one or two words that opens a sentence ("Why?", "But why?") when the text goes
+# on after it, in seconds, so that the question lands. The tag cuts the sentence there; on the engines that add a short
+# silence after a part ending in punctuation (Maya1 among them) the gap comes to about 1 s, twice the 0.5 s of an
+# ordinary sentence end, and on the others to the 0.3 s alone
+short_question_pause = 0.3
+# a question of one or two words (a comma may part them) at the start of the text, after a sentence end or after an
+# escaped SML tag, with the character that comes after the spaces after it
+short_question_re = re.compile(r'(?<=^|[.!?…]\s+|\p{Co}\s*)(?P<question>(?:¿\s*)?[\p{L}\p{N}\'’-]+(?:,?\s+[\p{L}\p{N}\'’-]+)?\?)(?=\s+(?P<next>\S))')
+
 footnote_marker_re = re.compile(r'^[\[\(]?(?:\d{1,4}|[a-z]{1,2}|[ivxlc]{1,6}|[*†‡§¶#]{1,3})[\]\)]?\.?$', re.IGNORECASE)
 footnote_href_re = re.compile(r'#[^#]*(?:note|fn|ftn|edn)', re.IGNORECASE)
 # a number token: digits joined by "." or "," or by a space (or NBSP) only when a 3 digits group follows, i.e. 1 234
@@ -2203,6 +2212,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             msg = legends['msg_normalize_text']
             print(msg)
             text = normalize_text(text, lang, lang_iso1, tts_engine)
+            text = mark_short_question_pauses(text, sml_blocks)
             text = restore_sml(text, sml_blocks)
             # the treatments above set a tag against the word before it and put a space after it: an opening
             # [emphasis] tag goes back against the word it opens on, after a space unless an opening quote or
@@ -3248,6 +3258,53 @@ def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
     if value is not None:
         return f"[{tag}:{value}]"
     return f"[{tag}]"
+
+def mark_short_question_pauses(text:str, sml_blocks:list[str])->str:
+    # text with its SML tags escaped (escape_sml) and normalized (normalize_text: quotes dropped, abbreviations
+    # spelled out): a [pause:short_question_pause] goes after each question of one or two words that opens a sentence,
+    # escaped the same way and added to sml_blocks, when a sentence starting with a capital or a tag other than a
+    # [break] or a [pause] comes after it. The question opens a sentence when it starts with a capital and, tags set
+    # aside, the text before it ends a sentence or is a [break] or a [pause]: a tag inside a sentence ([/emphasis]
+    # after an italic word) does not start one. A lowercase word after it ("Why? she asked") goes on the same
+    # sentence, and a [break] or a [pause] there is a gap of its own already
+    token = None
+
+    def _tag(char:str)->re.Match|None:
+        index = ord(char) - sml_escape_tag
+        return SML_TAG_PATTERN.fullmatch(sml_blocks[index]) if 0 <= index < len(sml_blocks) else None
+
+    def _opens_sentence(m:re.Match)->bool:
+        if not m.group('question').lstrip('¿ ')[:1].isupper():
+            return False
+        pos = m.start()
+        while pos > 0:
+            char = m.string[pos - 1]
+            pos -= 1
+            if char.isspace():
+                continue
+            tag = _tag(char)
+            if tag is None:
+                return char in '.!?…'
+            if tag.group('tag') in ('break', 'pause'):
+                return True
+        return True
+
+    def _repl(m:re.Match)->str:
+        nonlocal token
+        nxt = m.group('next')
+        tag = _tag(nxt)
+        if tag is not None and tag.group('tag') in ('break', 'pause'):
+            return m.group(0)
+        if tag is None and not (nxt.isupper() or nxt in '¿¡'):
+            return m.group(0)
+        if not _opens_sentence(m):
+            return m.group(0)
+        if token is None:
+            sml_blocks.append(sml_token('pause', f'{short_question_pause:g}'))
+            token = chr(sml_escape_tag + len(sml_blocks) - 1)
+        return f"{m.group('question')}{token}"
+
+    return short_question_re.sub(_repl, text)
 
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
 
