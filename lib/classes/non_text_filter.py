@@ -333,7 +333,7 @@ class NonTextFilter:
                             self._is_pause_tag(w, tags)
                             for w in words[:words.index(real_words[0])]
                         )
-                        and any(c.isdigit() for c in s)
+                        and any(c.isdigit() for c in real_words[0])
                     )
                     if not (is_interjection or is_sentence_tail):
                         self._keep_tags(s, kept)
