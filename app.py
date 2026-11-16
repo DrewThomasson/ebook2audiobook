@@ -674,7 +674,18 @@ valence, arousal (-1 to 1).""")
                         # replays each one in order: a background tab (throttled or frozen by the browser) piled them up and
                         # kept showing an old step long after the server had moved on. Set after queue(), which builds the queue
                         app._queue.progress_update_sleep_when_free = interface_progress_interval
-                        app.launch(**gr_blocks_kwargs)
+                        try:
+                            app.launch(**gr_blocks_kwargs)
+                        except ValueError as e:
+                            # after its startup-events request went through (server up, queue started: is_running) gradio
+                            # probes HEAD http://localhost:<port>/ once more with a 3s timeout and gives up on the first
+                            # timeout: on Windows localhost tries ::1 first (~2s refused, the server listens on ipv4), then
+                            # the first render of this big page. The app is served, only that probe failed: keep serving
+                            if 'localhost' in str(e).lower() and not args['share'] and getattr(app, 'is_running', False) and is_port_in_use(interface_port):
+                                print(f'[WARN] gradio localhost check failed ({e}) but the server answers on port {interface_port}, continuing.')
+                                app.block_thread()
+                            else:
+                                raise
                 except OSError as e:
                     error = legends['error_connection'].format(e=e)
                     c.exception_alert(None, error)
