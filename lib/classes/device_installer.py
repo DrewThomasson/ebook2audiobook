@@ -1,10 +1,69 @@
-import os, re, sys, csv, platform, shutil, subprocess, importlib, json, tempfile
-from functools import cached_property
-from typing import Union
+import os, re, sys, csv, platform, shutil, subprocess, importlib, json, tempfile, time
+from functools import cached_property, wraps
+from typing import Any, Callable, Union
 from glob import glob
 from importlib.metadata import version, distribution, distributions, PackageNotFoundError
 from lib.conf import *
 from lib.lang import legends
+
+# one install pass at a time per python env: two e2a starts (double click, a second shortcut, a headless run next to
+# the GUI) ran their uv installs side by side, and the --reinstall-package of one removed files and metadata under the
+# other already importing them (gradio without gradio/http_server.py nor dist-info at launch). The lock file lives in
+# sys.prefix, the env uv installs into (an engine venv gets its own), is reentrant within a process and is released by
+# the OS when its holder dies. The later start waits, then finds the env complete
+install_lock_depth = 0
+
+def install_lock_acquire()->Any:
+    try:
+        lock_file = open(os.path.join(sys.prefix, '.e2a_install.lock'), 'a+')
+    except OSError:
+        # read-only env (docker image layer): nothing installs into it concurrently
+        return None
+    waiting = False
+    while True:
+        try:
+            if os.name == 'nt':
+                import msvcrt
+                lock_file.seek(0)
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return lock_file
+        except OSError:
+            if not waiting:
+                msg = legends['msg_install_lock_wait'].format(env=sys.prefix)
+                print(msg)
+                waiting = True
+            time.sleep(1)
+
+def install_lock_release(lock_file:Any)->None:
+    try:
+        if os.name == 'nt':
+            import msvcrt
+            lock_file.seek(0)
+            msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+    except OSError:
+        pass
+    finally:
+        lock_file.close()
+
+def install_locked(method:Callable)->Callable:
+    @wraps(method)
+    def wrapper(*args, **kwargs):
+        global install_lock_depth
+        lock_file = install_lock_acquire() if install_lock_depth == 0 else None
+        install_lock_depth += 1
+        try:
+            return method(*args, **kwargs)
+        finally:
+            install_lock_depth -= 1
+            if lock_file is not None:
+                install_lock_release(lock_file)
+    return wrapper
 
 class DeviceInstaller():
     device_pkgs = ['onnxruntime', 'transformers']
@@ -1552,6 +1611,7 @@ class DeviceInstaller():
         kept = [pkg for pkg in requirements if self.pkg_head(pkg) not in heads]
         return kept + pins
 
+    @install_locked
     def install_python_packages(self)->int:
         if not os.path.exists(requirements_file):
             error = legends['error_requirements_missing'].format(file=requirements_file)
@@ -2213,6 +2273,7 @@ class DeviceInstaller():
         except OSError:
             pass
 
+    @install_locked
     def install_device_packages(self, device_info_str:str)->int:
         def _tag_ok(installed_tag):
             # CPU index: '/whl/cpu' -> bare on macOS, '+cpu' on linux/windows; both are fine

@@ -495,6 +495,7 @@ legends = {
     'msg_upgrading_outdated_deps': 'ارتقای وابستگی‌هایی که قدیمی‌تر از بسته دیگری هستند، مستلزم موارد زیر است: {pkgs}',
     'msg_vulkan_torch_libomp': 'مشعل Vulkan نصب‌شده فاقد {dll} است و نمی‌توان آن را بارگذاری کرد: در حال نصب مجدد آن از چرخ منتشر شده.',
     'msg_reinstalling_incomplete': 'نصب مجدد بسته‌های دارای فایل‌های ناقص: {pkgs}',
+    'msg_install_lock_wait': 'یک ebook2audiobook دیگر در حال نصب بسته\u200cها در {env} است، در انتظار پایان آن…',
     'msg_removing_unusable_torchcodec': 'در حال حذف torchcodec {version}: هیچ torchcodec با torch {torch} (کمتر از 2.9) اجرا نمی‌شود، pyannote بدون آن کار می‌کند.',
     'msg_removing_obsolete': 'در حال حذف بسته منسوخ {pkg}…',
     'msg_remove_obsolete_failed': 'حذف بسته منسوخ {pkg} ناموفق بود (غیربحرانی): {e}',

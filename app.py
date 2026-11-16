@@ -135,8 +135,12 @@ def check_data_dirs(script_mode:str)->bool:
     return False
 
 def is_port_in_use(port:int)->bool:
+    # interface_host 0.0.0.0 listens on every interface: probe it on loopback. Windows refuses a connect to 0.0.0.0
+    # (WSAEADDRNOTAVAIL), so the port always read free there and a second start went on into its own installs
+    host = '127.0.0.1' if interface_host in ['0.0.0.0', ''] else interface_host
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
-        return s.connect_ex(('0.0.0.0',port))==0
+        s.settimeout(2)
+        return s.connect_ex((host,port))==0
 
 def kill_previous_instances(script_name: str):
     current_pid = os.getpid()

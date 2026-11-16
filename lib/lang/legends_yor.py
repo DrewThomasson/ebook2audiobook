@@ -495,6 +495,7 @@ legends = {
     'msg_upgrading_outdated_deps': 'Ìgbéga àwọn ohun tí ó nílò fún àwọn ohun tí ó ti pẹ́ ju àkójọ mìíràn lọ nílò: {pkgs}',
     'msg_vulkan_torch_libomp': 'Iná Vulkan tí a fi sori ẹrọ ko ni {dll} bẹ́ẹ̀ ni kò sì lè gba: a tún fi sori ẹrọ láti orí wheel tí a tẹ̀ jáde.',
     'msg_reinstalling_incomplete': 'Fífi àwọn àkójọpọ̀ tí àwọn fáìlì wọn kò sí padà sí i: {pkgs}',
+    'msg_install_lock_wait': 'ebook2audiobook mìíràn ń fi àwọn package sí {env}, à ń dúró kí ó parí…',
     'msg_removing_unusable_torchcodec': 'Yíyọ torchcodec {version} kúrò: kò sí torchcodec tí ó ń ṣiṣẹ́ pẹ̀lú torch {torch} (ní ìsàlẹ̀ 2.9), pyannote ń ṣiṣẹ́ láìsí i.',
     'msg_removing_obsolete': 'À ń yọ àpò àtijọ́ {pkg} kúrò…',
     'msg_remove_obsolete_failed': 'Yíyọ àpò àtijọ́ {pkg} kò ṣiṣẹ́ (kò léwu): {e}',

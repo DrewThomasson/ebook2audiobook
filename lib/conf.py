@@ -160,6 +160,33 @@ tts_dir = os.path.join(models_dir, 'tts')
 components_dir = os.path.abspath('components')
 tempfile.tempdir = run_dir
 
+# spawn binds the multiprocessing sockets (Manager() in lib/core.py SessionContext) at <tempdir>/pymp-XXXXXXXX/listener-XXXXXXXX:
+# under a deep <e2a>/run that path passes the AF_UNIX limit (108 bytes, 104 on macOS), bind() fails in the manager child
+# and Manager() only gets EOFError. Python 3.13.4+ falls back to the system temp dir by itself (gh-132124): backported for
+# the 3.10/3.12 python_env. Only multiprocessing's own temp dir moves, everything else stays in run_dir
+def multiprocessing_tempdir_patch()->None:
+    if os.name == 'nt':
+        return
+    import multiprocessing.util as mp_util
+    if hasattr(mp_util, '_get_base_temp_dir'):
+        return
+    import shutil
+    from multiprocessing import process as mp_process
+    sun_path_max = 104 if DEVICE_SYSTEM == systems['MACOS'] else 108
+    def get_temp_dir()->str:
+        tempdir = mp_process.current_process()._config.get('tempdir')
+        if tempdir is None:
+            base_tempdir = tempfile.gettempdir()
+            # + '/pymp-XXXXXXXX' + '/listener-XXXXXXXX', strict for the NUL terminator
+            if len(base_tempdir) + 32 >= sun_path_max:
+                base_tempdir = next((d for d in ['/tmp', '/var/tmp', '/usr/tmp'] if os.access(d, os.W_OK | os.X_OK)), base_tempdir)
+            tempdir = tempfile.mkdtemp(prefix='pymp-', dir=base_tempdir)
+            mp_util.Finalize(None, mp_util._remove_temp_dir, args=(shutil.rmtree, tempdir), exitpriority=-100)
+            mp_process.current_process()._config['tempdir'] = tempdir
+        return tempdir
+    mp_util.get_temp_dir = get_temp_dir
+multiprocessing_tempdir_patch()
+
 # components/sitecustomize.py, copied into python_env by the launchers, routes torchaudio.load to soundfile (torchcodec
 # cannot load everywhere: FFmpeg 8 on Windows, ROCm builds) and allowlists coqui's config for torch.load. When this
 # interpreter did not run it (copy missing, app.py started another way), it runs here, before torch/torchaudio import
@@ -248,6 +275,21 @@ if DEVICE_SYSTEM == systems['WINDOWS']:
 if not any(_v in os.environ for _v in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES', 'CUDA_VISIBLE_DEVICES')):
     os.environ['ROCR_VISIBLE_DEVICES'] = '0'
     os.environ['HIP_VISIBLE_DEVICES'] = '0'
+
+# PYTHONUTF8/PYTHONIOENCODING above only reach child processes: this interpreter opened its std streams at startup.
+# Started without the launcher and redirected (pipe, log file, IDE, task scheduler), Windows encodes them with the ANSI
+# code page (cp936/gbk, cp1252...) and one sentence char outside it raised UnicodeEncodeError mid-conversion.
+# A real Windows console is already utf-8 (WindowsConsoleIO) and stays untouched
+def std_streams_utf8()->None:
+    for stream in [sys.stdout, sys.stderr]:
+        if stream is None or not hasattr(stream, 'reconfigure'):
+            continue
+        try:
+            if (stream.encoding or '').lower().replace('-', '').replace('_', '') != 'utf8':
+                stream.reconfigure(encoding='utf-8', errors='backslashreplace')
+        except (ValueError, OSError):
+            pass
+std_streams_utf8()
 
 # ---------------------------------------------------------------------
 # TLS trust
