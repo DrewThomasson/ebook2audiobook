@@ -172,6 +172,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[voice:Name]...[/voice]` — switch to the voice a character has in the [voice cast](#voice-casts) of the series or the book
 - `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
 - `[direct:quiet, tense, slowing down]...[/direct]`: a reading direction for a passage, in free text, never spoken. Maya1 adds it to its voice description as the tone and, for keywords it knows (whispering, angry, sarcastic and the like), puts its own expression token before the text; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an `[emotion]` tag inside the passage keeps the emotion; other engines ignore it
+- `[emphasis]word[/emphasis]`: stress on a word or a few inside a sentence, never spoken, with no value. The ebook parser writes it around an italic passage of up to three words that sits inside a sentence, whether the italics come from `<i>`, `<em>` or a class of the ebook's stylesheet; a longer italic passage, or an italic sentence of its own (a quoted thought, a letter, a sign), gets no tag. Every engine reads the words inside their sentence, with no pause beside them; no engine has a stress control, so the tag does not change the voice
 
 **Check our other repo dedicated to add SML automatically in your ebook -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -535,6 +536,7 @@ SML tags available:
 	[voice:Name]...[/voice] — switch to the voice a character has in the voice cast of the series or the book (casts/README.md)
 	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
 	[direct:quiet, tense, slowing down]...[/direct]: a reading direction for a passage, in free text, never spoken. Maya1 adds it to its voice description as the tone and, for keywords it knows (whispering, angry, sarcastic and the like), puts its own expression token before the text; Zonos maps its keywords (tense, sad, whispering, slow, fast and the like) to emotion and speaking rate, and an [emotion] tag inside the passage keeps the emotion; other engines ignore it
+	[emphasis]word[/emphasis]: stress on a word or a few inside a sentence, never spoken, with no value. The ebook parser writes it around an italic passage of up to three words that sits inside a sentence, whether the italics come from <i>, <em> or a class of the ebook's stylesheet; a longer italic passage, or an italic sentence of its own (a quoted thought, a letter, a sign), gets no tag. Every engine reads the words inside their sentence, with no pause beside them; no engine has a stress control, so the tag does not change the voice
 
 ```
 

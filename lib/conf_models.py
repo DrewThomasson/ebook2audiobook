@@ -133,7 +133,15 @@ TTS_SML = {
             (("slow", "unhurr", "deliberate", "measured", "linger"), {"rate": 0.8}),
             (("fast", "quick", "rapid", "hurr", "rush", "breathless", "brisk"), {"rate": 1.25})
         ]
-    }
+    },
+    # stress on a word or a few inside a sentence, never spoken: she had [emphasis]not[/emphasis] listened. The tag
+    # takes no value. The ebook parser writes it around an italic passage of at most "max_words" words that sits
+    # inside a sentence (core.py mark_emphasis); a longer italic passage, or one that is a sentence of its own, is a
+    # quoted thought, a letter or a sign and gets no tag. Stress falls on one to three words of a phrase, so a longer
+    # passage cannot be stressed as a whole.
+    # Every engine takes the tags out and reads the words inside their sentence, in the same request: no engine here
+    # has a stress control that a tag inside a sentence can drive.
+    "emphasis": {"paired": True, "value": False, "max_words": 3}
 }
 
 sml_escape_tag = 0xE000
