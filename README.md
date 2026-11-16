@@ -424,6 +424,7 @@ optional parameters:
   --abs_library ABS_LIBRARY
                         Audiobookshelf library ID.
   --enable_interlude    Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py
+  --verify_sentences    Check each converted sentence against its text (speech recognition with facebook/mms-1b-all, 1162 languages, plus a length check) and generate it again when it fails. The best take is kept and listed at the end when all retries fail. Settings are in ./lib/conf_models.py
   --version             Show the version of the script and exit
 
 Example usage:

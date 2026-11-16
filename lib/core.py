@@ -243,6 +243,7 @@ class SessionContext:
             "ebook_mode": ebook_modes['SINGLE'],
             "blocks_preview": False,
             "interlude_enabled": False,
+            "verify_sentences": False,
             "device": default_device,
             "tts_engine": default_tts_engine,
             "fine_tuned": default_fine_tuned,
@@ -3395,7 +3396,7 @@ def convert_chapters2audio(session_id:str)->bool:
             progress_bar(0.0, desc=msg)
         print(f'*********** Session: {session_id} **************\n{session_info}')
         try:
-            tts_manager = TTSManager(session)
+            tts_manager = TTSManager(session, verify=bool(session.get('verify_sentences')))
         except Exception as e:
             # engine could not start (unsupported hardware, venv install, missing files...):
             # traceback to the console only, the reason goes up to finalize_audiobook() and
@@ -3583,6 +3584,13 @@ def convert_chapters2audio(session_id:str)->bool:
             save_db_stamp(session_id)
             session['blocks_saved'] = copy.deepcopy(blocks_current)
             save_json_blocks(session_id, 'blocks_saved')
+            # --verify_sentences: the sentences still failing after their retries, block numbers as in the messages above
+            verifier = tts_manager.verifier
+            if verifier is not None and verifier.flagged:
+                block_numbers = {b['id']: i for i, b in enumerate(blocks)}
+                lines = [f"{legends['word_block']} {block_numbers.get(f['block'], f['block'])}, {legends['word_sentence']} {f['sentence']}: {f['text'][:80]}" for f in verifier.flagged]
+                msg = legends['msg_verify_summary'].format(count=len(lines), sentences='<br/>'.join(lines))
+                show_alert(session_id, {'type': 'warning', 'msg': msg})
             conversion = True
             return True
     except Exception as e:
@@ -3590,6 +3598,9 @@ def convert_chapters2audio(session_id:str)->bool:
         exception_alert(session_id, f'convert_chapters2audio() error: {e}')
         return False
     finally:
+        # the sentence check model is not kept between conversions, the engine is when it completes
+        if tts_manager is not None:
+            tts_manager.close_verifier()
         # every exit that is not a completed conversion drops the engine and evicts
         # its models: there are ten early `return False` paths in here, so a finally
         # is the only way to cover them all.
@@ -4695,6 +4706,7 @@ def convert_ebook(args:dict)->tuple:
             session['is_gui_process'] = bool(args['is_gui_process'])
             session['blocks_preview'] = bool(args['blocks_preview']) if args.get('blocks_preview') else False
             session['interlude_enabled'] = bool(args.get('interlude_enabled', False))
+            session['verify_sentences'] = bool(args.get('verify_sentences', False))
             session['device'] = str(args['device'])
             session['language'] = str(args['language'])
             session['language_iso1'] = args.get('language_iso1') or ''

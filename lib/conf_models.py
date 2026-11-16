@@ -194,6 +194,40 @@ audiocpp_packages = {
 audiocpp_asr = {"family": "qwen3_asr", "files": ["Qwen3-ASR-0.6B-GGUF/qwen3-asr-0.6b-q8_0.gguf"]}
 audiocpp_repo = "audio-cpp/audio.cpp-gguf"
 
+# --verify_sentences: each converted sentence is checked against its text and generated again when it fails. MMS
+# transcribes the take (CTC, 1162 languages, writes what it hears: no language model to put back a word the TTS skipped,
+# as Whisper does), both texts romanized by uroman are compared letter by letter (CER), any script, spaces or not.
+# Limits follow the book (median of the first takes) since names, foreign words or a weak MMS language raise the CER of
+# good takes too. Short sentences, digits normalize_text() could not spell (their reading is not known) and languages
+# MMS does not know get the length check only.
+#   retries: new takes after the first one, the best take is kept when all of them fail
+#   warmup: first takes measured before the book's own medians replace the warmup limits
+#   min_letters: below it (romanized letters) a sentence gets the length check only, one wrong letter weighs too much
+#   rate_min_letters: shorter sentences are left out of the speaking rate median (the silence around them weighs too much)
+#   cer_factor / cer_floor: CER limit = max(cer_floor, cer_factor * median CER), cer_warmup until warmup
+#   length_factor / length_slack: duration limit = median s/letter * letters * length_factor + length_slack (seconds)
+#   length_warmup_rate / length_warmup_slack: duration limit until warmup, letters * rate + slack (seconds)
+#   short_factor: below median s/letter * letters * short_factor the take is cut (rate_min_letters and more only)
+#   lang_alias: e2a code -> MMS code where the ISO-639-3 macrolanguage lookup would pick another language first
+default_verify_settings = {
+    "asr_model": "facebook/mms-1b-all",
+    "samplerate": 16000,
+    "retries": 2,
+    "warmup": 20,
+    "samples_max": 500,
+    "min_letters": 10,
+    "rate_min_letters": 20,
+    "cer_factor": 2.5,
+    "cer_floor": 0.2,
+    "cer_warmup": 0.6,
+    "length_factor": 2.0,
+    "length_slack": 1.5,
+    "length_warmup_rate": 0.25,
+    "length_warmup_slack": 4.0,
+    "short_factor": 0.35,
+    "lang_alias": {"zho": "cmn", "nor": "nob"}
+}
+
 max_custom_model = 100
 max_custom_voices = 1000
 

@@ -86,7 +86,9 @@ def build_interface(args:dict)->gr.Blocks:
                             with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_tts_engine', elem_classes=['gr-group']):
                                     gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value=legends['gr_tts_rating'])
-                                    gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
+                                    with gr.Row(elem_id='gr_row_tts_engine'):
+                                        gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True, scale=2)
+                                        gr_verify_sentences = gr.Checkbox(label=legends['gr_verify_sentences'], elem_id='gr_verify_sentences', value=False, interactive=True, scale=1, min_width=120)
                                 with gr.Group(elem_id='gr_group_models', elem_classes=['gr-group']):
                                     gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', elem_classes=['gr-markdown'], value=legends['gr_models_markdown'])
                                     gr_group_custom_model = gr.Group(visible=False)
@@ -1048,6 +1050,7 @@ def build_interface(args:dict)->gr.Blocks:
                             _update_gr_voice_list(session_id),
                             tts_engine_update,
                             gr.update(value=_show_rating(session['tts_engine'])),
+                            gr.update(value=bool(session.get('verify_sentences', False))),
                             _update_gr_custom_model_list(session_id),
                             gr.update(value=session['output_format']),
                             gr.update(value=session['output_channel']),
@@ -1124,6 +1127,7 @@ def build_interface(args:dict)->gr.Blocks:
                             _update_gr_voice_list(session_id),
                             gr.update(value=legends['gr_device_markdown']),
                             gr.update(value=_show_rating(session['tts_engine'])),
+                            gr.update(label=legends['gr_verify_sentences']),
                             gr.update(value=legends['gr_models_markdown']),
                             gr.update(label=legends['gr_custom_model_file_engine'].format(engine=session['tts_engine'].upper(), files=', '.join(models[default_fine_tuned]['files']))),
                             gr.update(value=legends['gr_output_markdown']),
@@ -3083,7 +3087,7 @@ def build_interface(args:dict)->gr.Blocks:
                 return
 
             def _start_conversion(
-                    session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, interlude_enabled:bool, tts_engine:str, language:str, voice:str, custom_model:str, output_format:str, output_channel:str, xtts_temperature:float, 
+                    session_id:str, device:str, ebook_mode:str, ebook_src:str|list|None, ebook_textarea:str|None, blocks_preview:bool, interlude_enabled:bool, verify_sentences:bool, tts_engine:str, language:str, voice:str, custom_model:str, output_format:str, output_channel:str, xtts_temperature:float, 
                     xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                     output_split:bool, output_split_hours:str,
                     translate_enabled:bool, translate_target:str|None
@@ -3105,6 +3109,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 "script_mode": script_mode,
                                 "blocks_preview": blocks_preview,
                                 "interlude_enabled": interlude_enabled,
+                                "verify_sentences": verify_sentences,
                                 "device": device,
                                 # the Dropdown sends None when gradio cleared it (its value left out of new choices)
                                 "tts_engine": tts_engine if tts_engine in default_engine_settings else session['tts_engine'],
@@ -3825,14 +3830,14 @@ def build_interface(args:dict)->gr.Blocks:
             ######## grouped tuples
 
             inputs_start_conversion = [
-                gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_interlude_enabled, gr_tts_engine_list, gr_language, gr_voice_list,
+                gr_session, gr_device, gr_ebook_mode, gr_ebook_src, gr_ebook_textarea, gr_blocks_preview, gr_interlude_enabled, gr_verify_sentences, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate
             ]
             outputs_disable_components = [
-                gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_language, gr_voice_file, gr_voice_list,
+                gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_verify_sentences, gr_language, gr_voice_file, gr_voice_list,
                 gr_device, gr_tts_engine_list, gr_custom_model_file,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
                 gr_translate_enabled, gr_translate,
@@ -3849,7 +3854,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_voice_play, gr_voice_del_btn, gr_session_switch_btn, gr_blocks_cancel_btn, gr_blocks_confirm_btn, gr_custom_model_del_btn, gr_modal, gr_convert_btn,
                 gr_abs_upload_btn,
                 gr_audiobook_edit_btn, gr_audiobook_export_btn, gr_audiobook_del_btn,
-                gr_interlude_enabled
+                gr_interlude_enabled, gr_verify_sentences
             ]
             outputs_edit_blocks = [
                 gr_blocks_markdown, gr_group_main, gr_group_blocks,
@@ -3860,7 +3865,7 @@ def build_interface(args:dict)->gr.Blocks:
             ]
             outputs_restore_interface = [
                 gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_device, gr_language,
-                gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating,
+                gr_translate_enabled, gr_translate, gr_voice_list, gr_tts_engine_list, gr_tts_rating, gr_verify_sentences,
                 gr_custom_model_list, gr_output_format_list, gr_output_channel_list,
                 gr_output_split, gr_output_split_hours, gr_row_output_split_hours, gr_audiobook_list, gr_group_custom_model, gr_convert_btn,
                 gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn, gr_row_voice_player, gr_custom_model_file, gr_custom_model_del_btn,
@@ -3870,7 +3875,7 @@ def build_interface(args:dict)->gr.Blocks:
             outputs_ui_language = [
                 gr_tab_main, gr_tab_xtts_params, gr_tab_bark_params, gr_tab_zonos_params, gr_tab_gptsovits_params, gr_tab_orpheus_params, gr_tab_sparktts_params, gr_tab_chattts_params, gr_tab_csm_params, gr_tab_abs_params, gr_import_markdown, gr_ebook_textarea,
                 gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_language_markdown, gr_translate_enabled, gr_voice_markdown,
-                gr_voice_file, gr_voice_list, gr_device_markdown, gr_tts_rating, gr_models_markdown,
+                gr_voice_file, gr_voice_list, gr_device_markdown, gr_tts_rating, gr_verify_sentences, gr_models_markdown,
                 gr_custom_model_file, gr_output_markdown, gr_output_format_list, gr_output_channel_list, gr_output_split,
                 gr_output_split_hours_markdown, gr_session_markdown, gr_progress_markdown, gr_audiobook_markdown,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k,
@@ -3971,7 +3976,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_audiobook_player
             ]
             outputs_audiobook_edit_lock = [
-                gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_language, gr_translate_enabled, gr_translate,
+                gr_ebook_src, gr_ebook_textarea, gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_verify_sentences, gr_language, gr_translate_enabled, gr_translate,
                 gr_voice_file, gr_voice_play, gr_voice_list, gr_voice_del_btn, gr_device, gr_tts_engine_list,
                 gr_custom_model_file, gr_custom_model_list, gr_custom_model_del_btn,
                 gr_output_format_list, gr_output_channel_list, gr_output_split, gr_output_split_hours,
@@ -4047,6 +4052,11 @@ def build_interface(args:dict)->gr.Blocks:
             gr_interlude_enabled.select(
                 fn=lambda session_id, val: _change_param('interlude_enabled', session_id, bool(val)),
                 inputs=[gr_session, gr_interlude_enabled],
+                outputs=None
+            )
+            gr_verify_sentences.select(
+                fn=lambda session_id, val: _change_param('verify_sentences', session_id, bool(val)),
+                inputs=[gr_session, gr_verify_sentences],
                 outputs=None
             )
             gr_voice_file.upload(
