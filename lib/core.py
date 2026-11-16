@@ -137,9 +137,9 @@ number_glue_class = r'[^\W\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]'
 # long again as the 0.45 s Maya1 leaves at a colon inside a sentence. The audio.cpp engines make a [pause:N] after a
 # colon the whole gap; the other engines add their own short silence after a part that ends on punctuation to it
 colon_pause = 0.65
-# a colon that closes a word (closing quotes and brackets aside, and the space French sets before it), with the spaces
-# after it and the character after those
-colon_pause_re = re.compile(r'(?<=(?P<before>[^\W_])[\p{Pe}\p{Pf}"\']*[ \u00A0\u202F]?):(?P<space>\s*)(?P<next>\S?)')
+# a colon that closes a word (closing quotes, brackets and escaped SML tags aside, and the space French sets before
+# it), with the escaped SML tags right after it, the spaces after those and the character after the spaces
+colon_pause_re = re.compile(r'(?<=(?P<before>[^\W_])[\p{Pe}\p{Pf}"\'\p{Co}]*[ \u00A0\u202F\u2009]?):(?P<tags>\p{Co}*)(?P<space>\s*)(?P<next>\S?)')
 
 ########### Classes
 
@@ -2120,7 +2120,10 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text = non_text_filter(text)
             # escape all SML tags to not be touched by any text treatment
             text, sml_blocks = escape_sml(text)
-            text = mark_colon_pauses(text, sml_blocks)
+            # with translation on, the blocks are translated after this and an SML tag cuts what the translator sees,
+            # so the colon pause is left out there
+            if not (session.get('translate_enabled') and session.get('translate')):
+                text = mark_colon_pauses(text, sml_blocks)
             # ranges, currencies and percents first so years conversion does not eat 1990-2000, $1500 or 15%
             text = range2words(text, lang)
             text = currency2words(text, lang, lang_iso1, is_num2words_compat)
@@ -3180,27 +3183,33 @@ def restore_sml(text:str, sml_blocks:list[str])->str:
 def mark_colon_pauses(text:str, sml_blocks:list[str])->str:
     # text with its SML tags escaped (escape_sml): a [pause:colon_pause] goes after each colon that opens what follows
     # it, escaped the same way and added to sml_blocks, so the conversions of numbers that come next leave its value
-    # alone. They have not run yet either, so the digits are still there: a colon between two digits (a time, a ratio,
-    # a verse) is not a pause, and neither is one with no space after it (10:30, 3:1, John 3:16, https://). A [break]
-    # right after the colon (a paragraph or a passage that ends on it) gives way to the colon pause; a [pause] there
-    # stays alone
+    # alone. They have not run yet either, so the digits are still there: a colon with no space after it (10:30, 3:1,
+    # John 3:16, https://) is not a pause, and neither is one with a digit on both sides (3 : 1, 3: 1). Tags that close
+    # on the word before the colon ([/emphasis]) are passed over, and the pause goes after the tags right after the colon.
+    # Of those, a [break] (a paragraph or a passage that ends on the colon) gives way to the colon pause; a [pause]
+    # there stays alone
     token = None
+
+    def _tag(char:str)->re.Match|None:
+        index = ord(char) - sml_escape_tag if char else -1
+        return SML_TAG_PATTERN.fullmatch(sml_blocks[index]) if 0 <= index < len(sml_blocks) else None
 
     def _repl(m:re.Match)->str:
         nonlocal token
-        space, nxt = m.group('space'), m.group('next')
-        index = ord(nxt) - sml_escape_tag if nxt else -1
-        tag = SML_TAG_PATTERN.fullmatch(sml_blocks[index]) if 0 <= index < len(sml_blocks) else None
-        if tag is None and (not space or (m.group('before').isdigit() and nxt.isdigit())):
+        tags, space, nxt = m.group('tags'), m.group('space'), m.group('next')
+        nxt_tag = _tag(nxt)
+        after = [_tag(char) for char in tags] + ([nxt_tag] if nxt_tag else [])
+        if not after and (not space or (m.group('before').isdigit() and nxt.isdigit())):
             return m.group(0)
-        if tag is not None and tag.group('tag') == 'pause':
+        if any(tag is not None and tag.group('tag') == 'pause' for tag in after):
             return m.group(0)
         if token is None:
             sml_blocks.append(sml_token('pause', f'{colon_pause:g}'))
             token = chr(sml_escape_tag + len(sml_blocks) - 1)
-        if tag is not None and tag.group('tag') == 'break':
-            return f':{token}'
-        return f':{token}{space}{nxt}'
+        kept = ''.join(char for char in tags if not ((tag := _tag(char)) is not None and tag.group('tag') == 'break'))
+        if nxt_tag is not None and nxt_tag.group('tag') == 'break':
+            return f':{kept}{token}'
+        return f':{kept}{token}{space}{nxt}'
 
     return colon_pause_re.sub(_repl, text)
 
