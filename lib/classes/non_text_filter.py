@@ -221,6 +221,9 @@ class NonTextFilter:
             self._no_space if self._no_space is not None
             else self._detect_no_space(text)
         )
+        # True while the fragment just before the current one was kept, holds a letter
+        # and ends in a period
+        after_period = False
         for sent in self._SENT_SPLIT.split(text):
             s = sent.strip() if sent else ''
             if not s:
@@ -228,6 +231,8 @@ class NonTextFilter:
             non_space = [c for c in s if not c.isspace()]
             if not non_space:
                 continue
+            follows_period = after_period
+            after_period = False
             text_chars = sum(
                 1 for c in non_space
                 if c.isalpha() or c.isdigit() or c in punct
@@ -254,10 +259,21 @@ class NonTextFilter:
                     # punctuation ("Ten?", "Really?!?", "Well...") is a valid
                     # spoken interjection, not noise. Real noise (lone digits,
                     # stray symbols) contains no letters at all.
-                    if not (
+                    # A period also closes an abbreviation ("Oct. 23.", "No. 7."), so a
+                    # number alone right after a kept fragment that ends in a period is
+                    # the rest of that sentence. An SML tag in the fragment means the
+                    # number starts a block of its own, where it stays noise.
+                    is_interjection = (
                         any(c.isalpha() for c in real_words[0])
                         and any(c in hard for c in s)
-                    ):
+                    )
+                    is_sentence_tail = (
+                        follows_period
+                        and len(words) == len(real_words)
+                        and any(c.isdigit() for c in s)
+                    )
+                    if not (is_interjection or is_sentence_tail):
                         continue
             kept.append(s)
+            after_period = s.endswith('.') and any(c.isalpha() for c in s)
         return ' '.join(kept)
