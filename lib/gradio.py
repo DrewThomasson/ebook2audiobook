@@ -1235,12 +1235,11 @@ def build_interface(args:dict)->gr.Blocks:
                         return (gr.update(interactive=True), 'No audiobook file to upload!')
                     elif not os.path.isfile(str(audiobook)):
                         return (gr.update(interactive=True), 'Audiobook file does not exist!')
-                    from lib.classes.audiobookshelf import upload_to_abs
+                    from lib.classes.audiobookshelf import upload_to_abs, get_abs_book_info
                     from urllib.parse import urlparse
-                    title = Path(audiobook).stem
-                    author = str(session.get('metadata', {}).get('creator') or '')
-                    series = str(session.get('metadata', {}).get('series') or '')
-                    series_index = str(session.get('metadata', {}).get('series_index') or '')
+                    # any audiobook of the list, and the session metadata was reset at the end of the conversion: never
+                    # read it, only the file itself tells its title, author and series
+                    title, author, series, series_index = get_abs_book_info(str(audiobook), None)
                     if not url or not api_token or not library_id:
                         return (gr.update(interactive=True), 'Configure ABS settings first')
                     parsed = urlparse(url)

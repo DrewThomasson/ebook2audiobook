@@ -5175,17 +5175,16 @@ def finalize_audiobook(session_id:str)->tuple:
             return _fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         if not session['is_gui_process'] and session['abs_url'] and session['abs_api_token'] and session['abs_library']:
-            from lib.classes.audiobookshelf import fetch_libraries, upload_to_abs
+            from lib.classes.audiobookshelf import fetch_libraries, upload_to_abs, get_abs_book_info
             try:
                 abs_libs = fetch_libraries(session['abs_url'], session['abs_api_token'])
                 if abs_libs:
                     abs_library_id = next((v for name, v in abs_libs if name == session['abs_library']), '')
                     if abs_library_id:
-                        a_title = Path(session['audiobook']).stem
-                        a_author = str(session.get('metadata', {}).get('creator') or '')
-                        a_series = str(session.get('metadata', {}).get('series') or '')
-                        a_series_index = str(session.get('metadata', {}).get('series_index') or '')
-                        ok, msg = upload_to_abs([session['audiobook']], a_title, a_author, session['abs_url'],  session['abs_api_token'], abs_library_id, series=a_series, series_index=a_series_index)
+                        # the file just made: its tags, else the metadata it was made from. Every part of a split book,
+                        # only the last one was sent
+                        a_title, a_author, a_series, a_series_index = get_abs_book_info(session['audiobook'], dict(session.get('metadata') or {}))
+                        ok, msg = upload_to_abs(exported_files, a_title, a_author, session['abs_url'],  session['abs_api_token'], abs_library_id, series=a_series, series_index=a_series_index)
                         if ok:
                             msg = legends['msg_abs_upload'].format(msg=msg)
                             print(msg)
