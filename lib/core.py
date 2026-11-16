@@ -2386,7 +2386,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             best_idx = -1
             # 1) regress to the last hard punctuation in the window (a space too where a space ends a sentence)
             for i in range(len(cut) - 1, -1, -1):
-                if cut[i] in hard_set or (space_ends_sentence and cut[i].isspace()):
+                if cut[i] in hard_set or (space_ends_sentence and cut[i].isspace() and cut[:i].strip()):
                     best_idx = i + 1
                     break
             # 2) no hard punct -> the sentence that opens rest is longer than the window
