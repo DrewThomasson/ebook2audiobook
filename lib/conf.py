@@ -346,11 +346,7 @@ bug_reports_dir = os.path.join(tmp_dir, 'bug_reports')
 # Interface configuration
 # ---------------------------------------------------------------------
 interface_host = '0.0.0.0'
-# GRADIO_SERVER_PORT, the variable gradio's own errors point to: launch() gets server_port, so gradio never reads it.
-# The launchers' browser helpers read it too
 interface_port = 7860
-if os.environ.get('GRADIO_SERVER_PORT', '').strip().isdigit() and 0 < int(os.environ['GRADIO_SERVER_PORT']) < 65536:
-    interface_port = int(os.environ['GRADIO_SERVER_PORT'])
 interface_shared_tmp_expire = 3 # in days
 interface_concurrency_limit = 1 # or None for unlimited multiple parallele user conversion
 interface_progress_interval = 0.2 # in seconds, min delay between two progress bar updates sent to the browser
