@@ -274,7 +274,7 @@ SML tags available:
 [pause] — silence (random range 1.0–1.6 sec.)
 [pause:N] — fixed pause (N sec.)
 [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-[emotion:sad]...[/emotion] — Zonos only: emotion for a passage (happy, sad, angry, surprised, valence, arousal; also fear, disgust, neutral) or a mix like [emotion:sad=0.7,angry=0.2]; other engines ignore it
+[emotion:sad]...[/emotion] — Zonos and Zonos3 only: emotion for a passage (happy, sad, angry, surprised, valence, arousal; also fear, disgust, neutral; Zonos3 also calm, confused) or a mix like [emotion:sad=0.7,angry=0.2]; other engines ignore it
 ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
@@ -338,13 +338,13 @@ Default to config.json model.""")
 Default to config.json model.""")
     headless_optional_group.add_argument(cli_options[27], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[37], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'], help=f"""(zonos only, optional) Speaking rate: 0 lets the model pick its own pace,
+    headless_optional_group.add_argument(cli_options[37], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'], help=f"""(zonos, zonos3 only, optional) Speaking rate: 0 lets the model pick its own pace,
 otherwise about 10 is slow, 15 is natural narration, 30 is very fast. Default {default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate']}.""")
-    headless_optional_group.add_argument(cli_options[38], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'], help=f"""(zonos only, optional) Emotion strength, multiplier on the emotion mix (0-2).
+    headless_optional_group.add_argument(cli_options[38], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'], help=f"""(zonos, zonos3 only, optional) Emotion strength, multiplier on the emotion mix (0-2).
 Default {default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']}.""")
-    headless_optional_group.add_argument(cli_options[39], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'], help=f"""(zonos only, optional) Emotion guidance, 1.0 is off, about 1.5 makes the emotion clearer (1-3).
+    headless_optional_group.add_argument(cli_options[39], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'], help=f"""(zonos, zonos3 only, optional) Emotion guidance, 1.0 is off, about 1.5 makes the emotion clearer (1-3).
 Default {default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']}.""")
-    headless_optional_group.add_argument(cli_options[40], type=str, nargs='?', const=True, default=None, help=f"""(zonos only, optional) Enable emotion. Alone, every emotion is at 0 (the plain cloned voice);
+    headless_optional_group.add_argument(cli_options[40], type=str, nargs='?', const=True, default=None, help=f"""(zonos, zonos3 only, optional) Enable emotion. Alone, every emotion is at 0 (the plain cloned voice);
 followed by a mix like happy=0.5,sad=0.2 it uses that mix. Names: happy, sad, angry, surprised (0 to 1),
 valence, arousal (-1 to 1).""")
     headless_optional_group.add_argument(cli_options[28], type=str, help='Path to the output directory. Default is set in ./lib/conf.py')

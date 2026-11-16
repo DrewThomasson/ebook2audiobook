@@ -1040,9 +1040,11 @@ class TTSUtils:
             # ZONOS2 sliders: [emotion:sad] (full) or a mix [emotion:sad=0.7,angry=0.2], scaled by
             # 1/max(1, sum of |weights|) so a mix never adds up above full; Zonos v0.1 names work through
             # aliases / map (fear, disgust on the valence/arousal axes, neutral/other = plain voice)
-            names = TTS_SML['emotion']['values']
+            # zonos3 adds its own directions (scared, disgusted, calm, confused) and maps fear/disgust onto them
+            tts_engine = self.session.get('tts_engine')
+            names = TTS_SML['emotion']['values'] + TTS_SML['emotion'].get('engine_values', {}).get(tts_engine, [])
             aliases = TTS_SML['emotion']['aliases']
-            mapping = TTS_SML['emotion'].get('map', {})
+            mapping = {**TTS_SML['emotion'].get('map', {}), **TTS_SML['emotion'].get('engine_map', {}).get(tts_engine, {})}
             weights = {}
             for item in [p for p in re.split(r'[,\s]+', (value or '').strip().lower()) if p]:
                 key, _, weight = item.partition('=')

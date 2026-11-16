@@ -4,7 +4,7 @@ from typing import Callable
 root_dir = str(Path(__file__).resolve().parents[1])
 os.chdir(root_dir)
 sys.path.insert(0, root_dir)
-categories = ['common', 'xtts', 'bark', 'tortoise', 'vits', 'fairseq', 'glowtts', 'tacotron', 'yourtts', 'piper', 'zonos', 'audiocpp', 'audiocpp_server', 'gptsovits', 'f5tts', 'zipvoice', 'omnivoice', 'orpheus', 'sparktts', 'chattts', 'csm', 'openvoice', 'melotts', 'phonon', 'stanza', 'pyannote', 'demucs', 'interlude', 'argos', 'tessdata', 'jieba', 'voices']
+categories = ['common', 'xtts', 'bark', 'tortoise', 'vits', 'fairseq', 'glowtts', 'tacotron', 'yourtts', 'piper', 'zonos', 'zonos3', 'audiocpp', 'audiocpp_server', 'gptsovits', 'f5tts', 'zipvoice', 'omnivoice', 'orpheus', 'sparktts', 'chattts', 'csm', 'openvoice', 'melotts', 'phonon', 'stanza', 'pyannote', 'demucs', 'interlude', 'argos', 'tessdata', 'jieba', 'voices']
 parser = argparse.ArgumentParser(description='Download every model e2a uses into one folder laid out exactly like ./models (i.e. a USB key for offline installs).')
 parser.add_argument('models_dir', type=str, help='Target folder, i.e. /media/user/KEY/models or E:\\models')
 parser.add_argument('--only', type=str, default='', help=f"Comma list of categories: {','.join(categories)}")
@@ -77,12 +77,12 @@ def load_presets(name:str)->dict:
     spec.loader.exec_module(module)
     return module.models
 
-def hf_file(repo:str, filename:str, local_dir:str|None=None)->None:
+def hf_file(repo:str, filename:str, local_dir:str|None=None, revision:str|None=None)->None:
     from huggingface_hub import hf_hub_download
     if local_dir:
-        hf_hub_download(repo_id=repo, filename=filename, cache_dir=tts_dir, local_dir=local_dir)
+        hf_hub_download(repo_id=repo, filename=filename, revision=revision, cache_dir=tts_dir, local_dir=local_dir)
     else:
-        hf_hub_download(repo_id=repo, filename=filename, cache_dir=tts_dir)
+        hf_hub_download(repo_id=repo, filename=filename, revision=revision, cache_dir=tts_dir)
 
 def hf_folder(repo:str, local_dir:str, patterns:list|None=None, marker:bool=False)->None:
     from huggingface_hub import snapshot_download
@@ -309,6 +309,12 @@ if engine_wanted(TTS_ENGINES['ZONOS']):
     zonos_repo = default_engine_settings[TTS_ENGINES['ZONOS']]['repo']
     for file in dict.fromkeys(f for cfg in load_presets('zonos').values() for f in cfg['files']):
         add('zonos', f'{zonos_repo}/{file}', lambda file=file: hf_file(zonos_repo, file))
+if engine_wanted(TTS_ENGINES['ZONOS3']):
+    # at the revision the engine pins (zonos3-server refuses GGUFs of another schema)
+    zonos3_repo = default_engine_settings[TTS_ENGINES['ZONOS3']]['repo']
+    zonos3_revision = default_engine_settings[TTS_ENGINES['ZONOS3']]['revision']
+    for file in dict.fromkeys(f for cfg in load_presets('zonos3').values() for f in cfg['files']):
+        add('zonos3', f'{zonos3_repo}/{file}', lambda file=file: hf_file(zonos3_repo, file, revision=zonos3_revision))
 audiocpp_presets = load_presets('audiocpp')
 for engine in audiocpp_engines:
     if not engine_wanted(engine):

@@ -994,7 +994,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
-                        elif session['tts_engine'] == TTS_ENGINES['ZONOS']:
+                        elif session['tts_engine'] in (TTS_ENGINES['ZONOS'], TTS_ENGINES['ZONOS3']):
                             visible_zonos = visible_gr_tab_zonos_params
                         elif session['tts_engine'] == TTS_ENGINES['GPTSOVITS']:
                             visible_gptsovits = visible_gr_tab_gptsovits_params
@@ -1293,7 +1293,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 visible_xtts = visible_gr_tab_xtts_params
                             elif session['tts_engine'] == TTS_ENGINES['BARK']:
                                 visible_bark = visible_gr_tab_bark_params
-                            elif session['tts_engine'] == TTS_ENGINES['ZONOS']:
+                            elif session['tts_engine'] in (TTS_ENGINES['ZONOS'], TTS_ENGINES['ZONOS3']):
                                 visible_zonos = visible_gr_tab_zonos_params
                             elif session['tts_engine'] == TTS_ENGINES['GPTSOVITS']:
                                 visible_gptsovits = visible_gr_tab_gptsovits_params
@@ -2905,7 +2905,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['fine_tuned'] = default_fine_tuned
                             visible_xtts = visible_gr_tab_xtts_params if session['tts_engine'] == TTS_ENGINES['XTTS'] else False
                             visible_bark = visible_gr_tab_bark_params if session['tts_engine'] == TTS_ENGINES['BARK'] else False
-                            visible_zonos = visible_gr_tab_zonos_params if session['tts_engine'] == TTS_ENGINES['ZONOS'] else False
+                            visible_zonos = visible_gr_tab_zonos_params if session['tts_engine'] in (TTS_ENGINES['ZONOS'], TTS_ENGINES['ZONOS3']) else False
                             visible_gptsovits = visible_gr_tab_gptsovits_params if session['tts_engine'] == TTS_ENGINES['GPTSOVITS'] else False
                             visible_orpheus = visible_gr_tab_orpheus_params if session['tts_engine'] == TTS_ENGINES['ORPHEUS'] else False
                             visible_sparktts = visible_gr_tab_sparktts_params if session['tts_engine'] == TTS_ENGINES['SPARKTTS'] else False
