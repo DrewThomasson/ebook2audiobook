@@ -78,9 +78,14 @@ class DeviceInstaller():
     #      at import (torch.library.custom_op with string annotations, rejected by
     #      2.4's infer_schema), 5.9/5.10 fail too, 5.14 imports DTensor from its
     #      2.5-only public path. Verified on torch 2.4.1: 5.0.0 to 5.7.0 import and generate.
+    # 2.6: 5.20+ declares torch>=2.6 and disables PyTorch below it (cu121/rocm6.2 install
+    #      torch 2.5.1: "NameError: name 'nn' is not defined" importing core_model_loading).
+    #      The declared floor lies for 2.5 too: 5.19 calls torch.accelerator (2.6+) when
+    #      transformers.pipelines imports. Verified on torch 2.5.1: 5.18.0 imports, runs a
+    #      pipeline and generates with MusicGen loaded from safetensors.
     # add a row when a release raises the floor again, and test it: the declared
     # floor alone is not enough.
-    transformers_caps = {'2.4': '5.1', '2.5': '5.8'}
+    transformers_caps = {'2.4': '5.1', '2.5': '5.8', '2.6': '5.19'}
     # coqui-tts' own transformers floor (coqui-tts 0.28: transformers>=4.57). A bare 'transformers' keeps an older
     # release installed by hand, which coqui-tts does not run with: 4.46 imports torch.distributed.fsdp in generate()
     # and fails on torch builds without distributed (the +vulkan wheels)
@@ -2154,10 +2159,10 @@ class DeviceInstaller():
                 # when the installed torch is below its floor, and transformers then disables
                 # PyTorch at import:
                 #   Disabling PyTorch because PyTorch >= 2.5 is required but found 2.2.2
-                # the torch floor is the only thing arbitrated here. The rest of what the
-                # older stacks need from transformers 5.x / huggingface_hub 1.x is patched at
-                # runtime by sitecustomize.py (check_torch_load_is_safe for torch<2.6,
-                # isin_mps_friendly for coqui-tts tortoise, use_auth_token for pyannote 3.4).
+                # the torch floor is the only thing arbitrated here. Nothing patches the rest
+                # anymore (sitecustomize.py only allowlists XttsConfig for torch.load): below
+                # torch 2.6 transformers also refuses torch.load, so a .bin checkpoint fails,
+                # the main env's transformers models load from safetensors.
                 # listed in device_pkgs so the cap rides along on every install call and
                 # coqui-tts cannot drag transformers back above it.
                 torch_version = self.get_package_version('torch') or ''
