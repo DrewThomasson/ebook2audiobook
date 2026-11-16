@@ -3,7 +3,7 @@ import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warning
 from pathlib import Path
 from lib.conf import *
 from lib.conf_lang import default_language_code, language_mapping, install_info
-from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings, tts_engines_renamed
+from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
 from lib.lang import legends
 
 warnings.filterwarnings('ignore', category=SyntaxWarning)
@@ -280,8 +280,6 @@ SML tags available:
     )
     tts_engine_list_keys = [*TTS_ENGINES]
     tts_engine_list_values = list(TTS_ENGINES.values())
-    # older engine names (zonos -> zonos2) still accepted, not listed
-    tts_engine_list_renamed = [name for old in tts_engines_renamed for name in (old, old.upper())]
 
     all_group = parser.add_argument_group('**** The following options are for container only', 'Optional')
     all_group.add_argument(cli_options[0], type=str, help='Mandatory to build a container. The only value is: build_docker.')
@@ -312,7 +310,7 @@ Keys may be absolute paths or basenames. Example:
 Default is set in ./lib/conf.py if not present. The conversion stops if this machine does not have the device
 or the TTS engine cannot run on it (no fall back to CPU). With a voice other than the engine's built-in ones, its
 voice conversion takes the next GPU (Vulkan included) or CPU when it cannot run on the device, and goes on.''')
-    headless_optional_group.add_argument(cli_options[13], type=str, default=TTS_ENGINES['XTTS'], choices=tts_engine_list_keys+tts_engine_list_values+tts_engine_list_renamed, help=f'''Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
+    headless_optional_group.add_argument(cli_options[13], type=str, default=TTS_ENGINES['XTTS'], choices=tts_engine_list_keys+tts_engine_list_values, help=f'''Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
 Default depends on the selected language. The tts engine should be compatible with the chosen language''')
     headless_optional_group.add_argument(cli_options[14], type=str, default=None, help='Path to the custom model zip file containing mandatory model files. Please refer to ./lib/models.py')
     headless_optional_group.add_argument(cli_options[15], type=str, default=default_fine_tuned, help='Fine tuned model path. Default is builtin model.')
@@ -461,7 +459,6 @@ valence, arousal (-1 to 1).""")
             args['blocks_preview'] = False
             args['interlude_enabled'] = bool(args.get('enable_interlude'))
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
-            args['tts_engine'] = tts_engines_renamed.get(args['tts_engine'].lower(), args['tts_engine'])
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
             args['output_split_hours'] = default_output_split_hours

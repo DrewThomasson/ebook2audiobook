@@ -49,15 +49,6 @@ class Zonos2(TTSUtils, TTSRegistry, name='zonos2'):
             fine_tuned = self.session.get('fine_tuned')
             show_alert = getattr(sys.modules.get('lib.core'), 'show_alert', None)
             progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
-            if fine_tuned == 'hybrid':
-                # Zonos v0.1's hybrid backbone has no ZONOS2 equivalent: sessions saved with it move to the default
-                fine_tuned = self.session['fine_tuned'] = 'internal'
-                self.session['model_cache'] = self.tts_key = f'{tts_engine}-{fine_tuned}'
-                msg = legends['msg_zonos2_hybrid_gone'].format(model=fine_tuned)
-                if show_alert is not None:
-                    show_alert(self.session['id'], {'type': 'warning', 'msg': msg})
-                else:
-                    print(msg)
             if fine_tuned not in self.models:
                 error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list(self.models.keys()))
                 raise ValueError(error)
@@ -199,19 +190,6 @@ class Zonos2(TTSUtils, TTSRegistry, name='zonos2'):
                 try:
                     engine_dir = os.path.dirname(os.path.abspath(__file__))
                     packages_dir = os.path.join(engine_dir, 'venvs', tts_engine)
-                    # venvs/zonos: the engine's folder before it was renamed zonos -> zonos2
-                    old_dir = os.path.join(engine_dir, 'venvs', 'zonos')
-                    if os.path.exists(os.path.join(old_dir, 'pyvenv.cfg')):
-                        # the Zonos v0.1 venv (torch, several GB) has no use with ZONOS2: replaced by its packages
-                        msg = legends['msg_zonos2_old_venv'].format(dir=old_dir)
-                        print(msg)
-                        shutil.rmtree(old_dir, ignore_errors=True)
-                    elif os.path.isdir(old_dir):
-                        # ZONOS2 packages installed under the old name: moved, not downloaded again
-                        if not os.path.exists(packages_dir):
-                            shutil.move(old_dir, packages_dir)
-                        else:
-                            shutil.rmtree(old_dir, ignore_errors=True)
                     package_dir = os.path.join(packages_dir, self.package_name)
                     marker_file = os.path.join(package_dir, '.e2a_installed.json')
                     # downloaded once: a package folder with its install record is used as it is from then on

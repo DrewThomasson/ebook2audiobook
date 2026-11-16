@@ -57,8 +57,6 @@ TTS_ENGINES = {
     "VOXCPM2": "voxcpm2",
     "VOXTRAL_TTS": "voxtral_tts"
 }
-# engines saved under an older name (sessions, block databases, CLI): read as the new one
-tts_engines_renamed = {"zonos": TTS_ENGINES['ZONOS2']}
 
 # voice conversion: a voice file picked for a built-in voice engine (piper, vits, fairseq, glowtts, tacotron, orpheus, melotts,
 # phonon and the audio.cpp ones with clone False) turns its output into that voice, on audio.cpp's server (common/voice_conversion.py).

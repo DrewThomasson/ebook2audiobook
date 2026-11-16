@@ -30,10 +30,8 @@ from lib.conf_models import TTS_ENGINES, TTS_VOICE_CONVERSION, default_engine_se
 from lib.conf_lang import year_to_decades_languages
 from lib.conf_interlude import interlude_classifier_repo
 languages = {lang.strip().lower() for lang in args.languages.split(',') if lang.strip()}
-# zonos: the zonos2 category before the engine was renamed
-renamed = {'zonos': 'zonos2'}
-skip = {renamed.get(c, c) for c in args.skip.split(',') if c}
-only = [renamed.get(c, c) for c in args.only.split(',') if c] or categories
+skip = {c for c in args.skip.split(',') if c}
+only = [c for c in args.only.split(',') if c] or categories
 unknown = [c for c in only + list(skip) if c not in categories]
 if unknown:
     parser.error(f"unknown categories: {', '.join(unknown)}")

@@ -2016,7 +2016,7 @@ def build_interface(args:dict)->gr.Blocks:
                             # the edit must be spoken by the engine the book was converted with, or the
                             # sentence files would not share the same stream params for the concat demuxer
                             engine_backup = (session['tts_engine'], session['fine_tuned'], session['model_cache'])
-                            session['tts_engine'] = tts_engines_renamed.get(block.get('tts_engine'), block.get('tts_engine')) or session['tts_engine']
+                            session['tts_engine'] = block.get('tts_engine') or session['tts_engine']
                             session['fine_tuned'] = block.get('fine_tuned') or session['fine_tuned']
                             session['model_cache'] = f"{session['tts_engine']}-{session['fine_tuned']}"
                             _take_lock(session_id)
@@ -3643,8 +3643,6 @@ def build_interface(args:dict)->gr.Blocks:
                         if isinstance(custom_model_dir, str) and not os.path.exists(custom_model_dir):
                             session['custom_model'] = None
                     if isinstance(session.get('tts_engine'), str):
-                        # saved under the engine's older name (zonos -> zonos2): restored as the new one
-                        session['tts_engine'] = tts_engines_renamed.get(session['tts_engine'], session['tts_engine'])
                         try:
                             models = load_engine_presets(session['tts_engine'])
                             if models:
