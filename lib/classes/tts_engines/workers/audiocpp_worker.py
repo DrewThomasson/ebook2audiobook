@@ -19,6 +19,90 @@
 import os, sys, json, time, wave, math, array, base64, shutil, signal, socket, argparse, platform, tempfile, threading, subprocess
 import urllib.request, urllib.error
 
+# Seed-VC makes sound out of a long silence: a reply that ends in seconds of exact zeros comes back with seconds of
+# loud wordless noise there. So only the speech goes through it, and the reply's silences come back as exact zeros,
+# the leading and trailing ones kept up to VC_EDGE_MAX each (a reply padded with many seconds of silence would
+# otherwise leave that gap in the sentence)
+VC_SILENCE = 32         # |sample| at or under 0.001 of full scale is silence (the level e2a trims parts at)
+VC_MARGIN = 0.05        # seconds of silence Seed-VC gets around the speech, faded to zero after it
+VC_GAP_MIN = 0.3        # a silence inside the speech this long or longer is zeroed after conversion
+VC_EDGE_MAX = 1.0       # seconds of leading or trailing silence kept
+
+def read_pcm16(path:str, work_dir:str)->tuple:
+    # (rate, mono 16-bit samples) of a WAV file; a float or multichannel one goes through ffmpeg first
+    try:
+        with wave.open(path, 'rb') as w:
+            if w.getsampwidth() == 2 and w.getnchannels() == 1:
+                pcm = array.array('h', w.readframes(w.getnframes()))
+                if sys.byteorder == 'big':
+                    pcm.byteswap()
+                return w.getframerate(), pcm
+    except (wave.Error, EOFError):
+        pass
+    dst = os.path.join(work_dir, 'pcm16.wav')
+    run = subprocess.run(['ffmpeg', '-nostdin', '-v', 'error', '-y', '-i', path, '-ac', '1', '-sample_fmt', 's16', dst], capture_output=True, text=True)
+    if run.returncode != 0:
+        raise RuntimeError(f'ffmpeg cannot read {path}: {run.stderr.strip()[-300:]}')
+    try:
+        return read_pcm16(dst, work_dir)
+    finally:
+        os.unlink(dst)
+
+def write_pcm16(path:str, rate:int, pcm:array.array)->None:
+    if sys.byteorder == 'big':
+        pcm = array.array('h', pcm)
+        pcm.byteswap()
+    with wave.open(path, 'wb') as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(pcm.tobytes())
+
+def convert_speech(reply:str, file:str, work_dir:str, convert)->None:
+    # the model's reply (a WAV file) -> file, its speech converted by convert(wav path) -> WAV bytes
+    rate, pcm = read_pcm16(reply, work_dir)
+    edge = int(VC_EDGE_MAX * rate)
+    gap_min = int(VC_GAP_MIN * rate)
+    first = last = -1
+    gaps = []
+    for i, s in enumerate(pcm):
+        if s > VC_SILENCE or s < -VC_SILENCE:
+            if first < 0:
+                first = i
+            elif i - last - 1 >= gap_min:
+                gaps.append((last + 1, i))
+            last = i
+    if first < 0:
+        # no speech: nothing to convert
+        write_pcm16(file, rate, array.array('h', bytes(2 * min(len(pcm), edge))))
+        return
+    margin = int(VC_MARGIN * rate)
+    lo, hi = max(0, first - margin), min(len(pcm), last + 1 + margin)
+    source = os.path.join(work_dir, 'vc_source.wav')
+    write_pcm16(source, rate, pcm[lo:hi])
+    converted = os.path.join(work_dir, 'vc_converted.wav')
+    with open(converted, 'wb') as f:
+        f.write(convert(source))
+    out_rate, out = read_pcm16(converted, work_dir)
+    # Seed-VC keeps the length (at its own rate): a sample of the source maps to the same share of the output
+    scale = len(out) / (hi - lo)
+    def at(i:int)->int:
+        return min(len(out), max(0, round((i - lo) * scale)))
+    def fade(a:int, b:int, rising:bool)->None:
+        for k in range(a, b):
+            out[k] = int(out[k] * ((k - a) if rising else (b - k)) / (b - a))
+    fade(0, at(first), True)
+    fade(at(last + 1), len(out), False)
+    for a, b in gaps:
+        # silent inside, faded over the margin on each side (gap_min is over twice the margin)
+        x0, x1 = at(a + margin), at(b - margin)
+        fade(at(a), x0, False)
+        out[x0:x1] = array.array('h', bytes(2 * (x1 - x0)))
+        fade(x1, at(b), True)
+    lead = array.array('h', bytes(2 * min(round(lo * out_rate / rate), int(VC_EDGE_MAX * out_rate))))
+    tail = array.array('h', bytes(2 * min(round((len(pcm) - hi) * out_rate / rate), int(VC_EDGE_MAX * out_rate))))
+    write_pcm16(file, out_rate, lead + out + tail)
+
 def main()->int:
     # the protocol owns a private copy of fd 1; fd 1 itself is pointed at stderr so nothing else can ever
     # write into the reply stream (e2a shows stderr in its log)
@@ -348,17 +432,20 @@ def main()->int:
                 if not audio.startswith(b'RIFF'):
                     raise RuntimeError(f'not a WAV reply: {audio[:200]!r}')
                 if convert_to:
-                    # built-in voice -> the picked voice (Seed-VC resamples both itself)
-                    vc_src = os.path.join(work_dir, 'vc_source.wav')
-                    with open(vc_src, 'wb') as f:
+                    # built-in voice -> the picked voice (Seed-VC resamples both itself), its speech only
+                    vc_reply = os.path.join(work_dir, 'vc_reply.wav')
+                    with open(vc_reply, 'wb') as f:
                         f.write(audio)
-                    result = json.loads(post('/v1/tasks/run', {'model': 'e2a-vc', 'request': {'audio': vc_src, 'voice_ref': convert_to, **vc_route}}, 1800))
-                    if not result.get('audio'):
-                        raise RuntimeError(f"voice conversion returned no audio: {str(result)[:200]}")
-                    audio = base64.b64decode(result['audio'])
-                # written as served (PCM or float WAV): e2a reads it with soundfile
-                with open(req['file'], 'wb') as f:
-                    f.write(audio)
+                    def seed_vc(source:str)->bytes:
+                        result = json.loads(post('/v1/tasks/run', {'model': 'e2a-vc', 'request': {'audio': source, 'voice_ref': convert_to, **vc_route}}, 1800))
+                        if not result.get('audio'):
+                            raise RuntimeError(f"voice conversion returned no audio: {str(result)[:200]}")
+                        return base64.b64decode(result['audio'])
+                    convert_speech(vc_reply, req['file'], work_dir, seed_vc)
+                else:
+                    # written as served (PCM or float WAV): e2a reads it with soundfile
+                    with open(req['file'], 'wb') as f:
+                        f.write(audio)
                 reply = {'ok': True, 'file': req['file']}
             except Exception as e:
                 # no retry here: e2a's convert() returns False and core.py unloads the engine, which closes
