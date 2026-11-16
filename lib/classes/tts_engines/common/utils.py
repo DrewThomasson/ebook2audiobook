@@ -1024,8 +1024,11 @@ class TTSUtils:
         m = SML_TAG_PATTERN.fullmatch(parts[pos_break].strip()) if pos_break >= 0 else None
         if m is None or m.group('tag') != 'break':
             return False
-        pos_text = pos if step == 1 else _next_audio(pos_break, -1)
+        # the spoken part before the [break] and the part after it: a [pause] on either side keeps the full gap
+        pos_text, pos_after = _next_audio(pos_break, -1), _next_audio(pos_break, 1)
         if pos_text < 0 or SML_TAG_PATTERN.fullmatch(parts[pos_text].strip()):
+            return False
+        if pos_after >= 0 and (m := SML_TAG_PATTERN.fullmatch(parts[pos_after].strip())) and m.group('tag') == 'pause':
             return False
         text = parts[pos_text].strip()
         if text[-1].isalnum():
