@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 Z e-knihy na audioknihu (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU prevodník z e-knihy na audioknihu s kapitolami a metadátami<br/>
 s využitím pokročilých TTS enginov a mnohého ďalšieho.<br/>
 Podporuje klonovanie hlasu a 1696 jazykov!
-> [!IMPORTANT]
+> Dôležité
 **Tento nástroj je určený len na použitie s e-knihami bez DRM, získanými legálne.** <br>
 Autori nenesú zodpovednosť za akékoľvek zneužitie tohto softvéru ani za prípadné právne následky. <br>
 Používajte tento nástroj zodpovedne a v súlade so všetkými platnými zákonmi.
@@ -118,13 +118,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Funkcie
-- 🔧 **Podporované motory TTS**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
+- 🔧 **Podporované nástroje TTS**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Prevod viacerých formátov súborov**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Textové pole** na priamy prevod krátkeho textu na zvuk
 - 🔍 **OCR skenovanie** pre súbory s textovými stránkami vo forme obrázkov
 - 🔊 **Vysokokvalitný prevod textu na reč**, od takmer reálneho času po takmer skutočný hlas
 - 🗣️ **Voliteľné klonovanie hlasu** pomocou vlastného hlasového súboru
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Podporuje 1 696 jazykov** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Vhodné pre obmedzené zdroje** — beží na **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Výstupné formáty audioknihy**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Podpora SML tagov** — jemné ovládanie prerušení, páuz, prepínania hlasu a ďalšieho ([see below](#sml-tags-available))
@@ -138,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 GB RAM min., 8 GB odporúčané.
 - 1 GB VRAM min., 4 GB odporúčané.
 - Povolená virtualizácia pri spustení vo Windows (iba Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - CUDA, ROCm, JETSON
 - MPS (CPU Apple Silicon)
 
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Pozrite si náš ďalší repozitár venovaný automatickému pridávaniu SML do vašej e-knihy -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> Dôležité
 **Skôr než nahlásite problém s inštaláciou alebo chybu, dôkladne prehľadajte záložku otvorených a uzavretých issues<br>
 aby ste sa uistili, že váš problém ešte neexistuje.**
 
@@ -214,7 +214,7 @@ Preto by ste mali najprv ručne odstrániť všetok text, ktorý nechcete prevá
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (všetky OS, iba raz nainštalované a s pythonom v priečinku python_env)
 
-> [!IMPORTANT]
+> Dôležité
 **Ak je skript zastavený a znovu spustený, musíte obnoviť svoje grafické rozhranie Gradio<br>
 aby sa webová stránka mohla znovu pripojiť k novému pripojovaciemu socketu.**
 
@@ -818,7 +818,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Turečtina (tur)
 - [x] Ruština (rus)
 - [x] Holandčina (nld)
-- [x] Czech (ces)
+- [x] Čeština (ces)
 - [x] Japončina (jpn)
 - [x] Hindčina (hin)
 - [x] Bengálčina (BEN)
@@ -827,19 +827,19 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Vietnamčina (vie)
 - [x] Švédčina (swe)
 - [x] Perzština (fas)
-- [x] Yoruba (yor)
-- [x] Swahili (swa)
+- [x] Jorubčina (yor)
+- [x] Svahilčina (swa)
 - [x] Indonézština (ind)
-- [x] Slovak (slk)
+- [x] Slovenčina (slk)
 - [x] Chorvátčina (hrv)
 
 #### Kompatibilita 💻 OS
 - [x] 🪟 Windows x86
-- [x] Okná 🪟 ARM
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac s čipom Apple Silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 
