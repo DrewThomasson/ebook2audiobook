@@ -2220,11 +2220,49 @@ def get_sentences(session_id:str, text:str)->list|None:
             i += 1
         return s[i:].lstrip()
 
+    def _clause_cut(rest:str)->int:
+        # rest opens with a sentence longer than max_chars: returns the length of its first piece.
+        # A cut leaves more than merge_threshold on each side, the length at which the merge below calls
+        # a piece too short: a few words cut off a sentence are spoken as an utterance of their own,
+        # in another tone than the clause they belong to
+        sentence_end = len(rest)
+        for i in range(max_chars + 1, len(rest)):
+            if rest[i] in punctuation_split_hard_set:
+                sentence_end = i + 1
+                break
+        lo = merge_threshold + 1
+        hi = min(max_chars, sentence_end - merge_threshold - 1)
+        # 1) the last soft punctuation (it closes the piece) or dash between two spaces (it opens the next one)
+        for i in range(hi, lo - 1, -1):
+            if rest[i - 1] in punctuation_split_soft_set:
+                return i
+            if rest[i] in punctuation_split_dash_set and rest[i - 1].isspace() and rest[i + 1:i + 2].isspace():
+                return i
+        # 2) no punctuation -> the sentence stays whole when it fits the length the merge below allows a piece:
+        # a cut inside a clause is heard more than a longer piece
+        if _clean_len(rest[:sentence_end]) <= merge_ceiling:
+            return sentence_end
+        # 3) longer than that -> the last conjunction, which opens the next piece
+        if conjunction_pattern:
+            idx = -1
+            for m in conjunction_pattern.finditer(rest):
+                if m.start() > hi:
+                    break
+                if m.start() >= lo:
+                    idx = m.start()
+            if idx != -1:
+                return idx
+        # 4) no conjunction -> fall back to last whitespace (space, NBSP, NNBSP, tab, newline...)
+        for i in range(hi, lo - 1, -1):
+            if rest[i].isspace():
+                return i
+        # 5) last resort -> hard cut at max_chars
+        return max_chars
+
     def _force_split_segment(segment:str)->list[str]:
         results = []
         rest = segment
         hard_set = tuple(punctuation_split_hard_set)
-        soft_set = tuple(punctuation_split_soft_set)
         while rest:
             if _clean_len(rest) <= max_chars:
                 results.append(rest.strip())
@@ -2236,21 +2274,9 @@ def get_sentences(session_id:str, text:str)->list|None:
                 if cut[i] in hard_set:
                     best_idx = i + 1
                     break
-            # 2) no hard punct -> regress to the last soft punctuation
+            # 2) no hard punct -> the sentence that opens rest is longer than the window
             if best_idx == -1:
-                for i in range(len(cut) - 1, -1, -1):
-                    if cut[i] in soft_set:
-                        best_idx = i + 1
-                        break
-            # 3) no punctuation at all -> fall back to last whitespace (space, NBSP, NNBSP, tab, newline...)
-            if best_idx == -1:
-                for i in range(len(cut) - 1, 0, -1):
-                    if cut[i].isspace():
-                        best_idx = i
-                        break
-            # 4) last resort -> hard cut at max_chars
-            if best_idx <= 0:
-                best_idx = max_chars
+                best_idx = _clause_cut(rest)
             # Safety: never cut inside an SML group
             while best_idx < len(rest) and ord(rest[best_idx]) >= sml_escape_tag:
                 best_idx += 1
@@ -2272,6 +2298,12 @@ def get_sentences(session_id:str, text:str)->list|None:
             lang = session['translate']
         tts_engine = session['tts_engine']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
+        # a piece of merge_threshold or less is too short to be spoken on its own, and a piece may reach
+        # merge_ceiling to avoid one: the cut of a long sentence and the merge of short pieces both go by them
+        merge_threshold = max_chars // 2
+        merge_ceiling = max_chars + max_chars // 2
+        conjunctions = language_conjunctions.get(lang)
+        conjunction_pattern = re.compile(r'(?<=\s)(?:' + '|'.join(map(re.escape, conjunctions)) + r')(?=\s)', re.IGNORECASE) if conjunctions else None
         text, sml_blocks = escape_sml(text)
         assert not SML_TAG_PATTERN.search(text)
         if session['is_gui_process']:
@@ -2381,10 +2413,8 @@ def get_sentences(session_id:str, text:str)->list|None:
 
         final_list = [_strip_leading_noise(s) for s in final_list if s.strip()]
         final_list = [s for s in final_list if s]
-        # Merge orphan-short sentences. A sentence below max_chars/2 is "too short";
-        # absorb it into the previous (preferred) or next sentence when that fits.
-        merge_threshold = max_chars // 2
-        merge_ceiling   = max_chars + max_chars // 2   # max_chars + overhead of max_chars/2
+        # Merge orphan-short sentences. A sentence of merge_threshold or less is "too short";
+        # absorb it into the previous (preferred) or next sentence when that fits merge_ceiling.
         merged_list = []
         i = 0
         n = len(final_list)
