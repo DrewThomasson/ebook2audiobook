@@ -128,9 +128,9 @@ footnote_markup = {
 inline_tags = {'a', 'abbr', 'b', 'bdi', 'bdo', 'big', 'cite', 'code', 'del', 'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'q', 's', 'samp', 'small', 'span', 'strike', 'strong', 'sub', 'sup', 'tt', 'u', 'var'}
 
 # the pause written after a question of one or two words that opens a sentence ("Why?", "But why?") when the text goes
-# on after it, in seconds, so that the question lands. The tag cuts the sentence there, and the part that ends on the
-# question mark already gets the short silence every engine adds after punctuation: on Maya1 the gap comes to about
-# 1 s, twice the 0.5 s of an ordinary sentence end
+# on after it, in seconds, so that the question lands. The tag cuts the sentence there; on the engines that add a short
+# silence after a part ending in punctuation (Maya1 among them) the gap comes to about 1 s, twice the 0.5 s of an
+# ordinary sentence end, and on the others to the 0.3 s alone
 short_question_pause = 0.3
 # a question of one or two words (a comma may part them) at the start of the text, after a sentence end or after an
 # escaped SML tag, with the character that comes after the spaces after it
@@ -3190,19 +3190,41 @@ def mark_short_question_pauses(text:str, sml_blocks:list[str])->str:
     # text with its SML tags escaped (escape_sml) and normalized (normalize_text: quotes dropped, abbreviations
     # spelled out): a [pause:short_question_pause] goes after each question of one or two words that opens a sentence,
     # escaped the same way and added to sml_blocks, when a sentence starting with a capital or a tag other than a
-    # [break] or a [pause] comes after it. A lowercase word after it ("Why? she asked") goes on the same sentence, and
-    # a [break] or a [pause] there is a gap of its own already
+    # [break] or a [pause] comes after it. The question opens a sentence when it starts with a capital and, tags set
+    # aside, the text before it ends a sentence or is a [break] or a [pause]: a tag inside a sentence ([/emphasis]
+    # after an italic word) does not start one. A lowercase word after it ("Why? she asked") goes on the same
+    # sentence, and a [break] or a [pause] there is a gap of its own already
     token = None
+
+    def _tag(char:str)->re.Match|None:
+        index = ord(char) - sml_escape_tag
+        return SML_TAG_PATTERN.fullmatch(sml_blocks[index]) if 0 <= index < len(sml_blocks) else None
+
+    def _opens_sentence(m:re.Match)->bool:
+        if not m.group('question').lstrip('¿ ')[:1].isupper():
+            return False
+        pos = m.start()
+        while pos > 0:
+            char = m.string[pos - 1]
+            pos -= 1
+            if char.isspace():
+                continue
+            tag = _tag(char)
+            if tag is None:
+                return char in '.!?…'
+            if tag.group('tag') in ('break', 'pause'):
+                return True
+        return True
 
     def _repl(m:re.Match)->str:
         nonlocal token
         nxt = m.group('next')
-        index = ord(nxt) - sml_escape_tag
-        if 0 <= index < len(sml_blocks):
-            tag = SML_TAG_PATTERN.fullmatch(sml_blocks[index])
-            if tag is not None and tag.group('tag') in ('break', 'pause'):
-                return m.group(0)
-        elif not nxt.isupper():
+        tag = _tag(nxt)
+        if tag is not None and tag.group('tag') in ('break', 'pause'):
+            return m.group(0)
+        if tag is None and not (nxt.isupper() or nxt in '¿¡'):
+            return m.group(0)
+        if not _opens_sentence(m):
             return m.group(0)
         if token is None:
             sml_blocks.append(sml_token('pause', f'{short_question_pause:g}'))
