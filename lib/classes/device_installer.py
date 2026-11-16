@@ -1283,8 +1283,10 @@ class DeviceInstaller():
                 # torch installed by an earlier run. Without it an NVIDIA GPU fell to the +vulkan torch below
                 if not devices['CUDA']['found'] and has_cmd('nvidia-smi'):
                     out = try_cmd('nvidia-smi')
-                    # Header line: '| NVIDIA-SMI ...  Driver Version: ...  CUDA Version: 12.4 |'
-                    m = re.search(r'cuda\s*version\s*:?\s*([0-9]+(?:\.[0-9]+)?)', out, re.IGNORECASE)
+                    # Header line: '| NVIDIA-SMI ...  Driver Version: ...  CUDA Version: 12.4 |', and from driver 620
+                    # '| NVIDIA-SMI ...  KMD Version: ...  CUDA UMD Version: 13.5 |': 'cuda version' alone missed it, the
+                    # NVIDIA GPU fell to the +vulkan torch. One word between 'cuda' and 'version' is accepted for that
+                    m = re.search(r'cuda(?:\s+[a-z]+)?\s*version\s*:?\s*([0-9]+(?:\.[0-9]+)?)', out, re.IGNORECASE)
                     if m:
                         smi_version = m.group(1)
                         cmp, current, min_tuple, max_tuple = version_classify(smi_version, cuda_version_range)
