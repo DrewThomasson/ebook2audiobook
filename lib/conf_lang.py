@@ -196,6 +196,27 @@ punctuation_split_soft = [
 ]
 punctuation_split_soft_set = set(punctuation_split_soft)
 
+# a dash between two spaces separates two clauses: a sentence longer than max_chars can be cut before it
+punctuation_split_dash = [
+    '-',        # hyphen-minus
+    '\u2012',   # figure dash
+    '\u2013',   # en dash
+    '\u2015'    # horizontal bar
+]
+punctuation_split_dash_set = set(punctuation_split_dash)
+
+# words that open a clause: a sentence too long for one piece, with no punctuation to cut at, is cut before
+# the last of them within reach. A language with no list here goes straight to the cut at a space
+language_conjunctions = {
+    "eng": ["and", "but", "or", "nor", "because", "although", "though", "while", "whereas", "unless", "until", "when", "whenever", "where", "before", "after", "since", "if"],
+    "fra": ["et", "ou", "mais", "car", "parce", "puisque", "lorsque", "quand", "tandis"],
+    "deu": ["und", "oder", "aber", "sondern", "denn", "weil", "obwohl", "während", "wenn", "bevor", "nachdem"],
+    "spa": ["y", "e", "o", "u", "ni", "pero", "sino", "porque", "aunque", "mientras", "cuando", "donde"],
+    "ita": ["e", "ed", "o", "ma", "perché", "poiché", "mentre", "quando", "benché", "sebbene"],
+    "por": ["e", "ou", "mas", "porque", "embora", "enquanto", "quando", "onde"],
+    "nld": ["en", "of", "maar", "want", "omdat", "terwijl", "toen", "wanneer", "hoewel", "voordat", "nadat"]
+}
+
 chars_remove = [
     '\\', '|', '©', '®', '™',
     '*', '`', '\u00A0', '\xa0'
