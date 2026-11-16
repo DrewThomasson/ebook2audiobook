@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': 'Dalga Formu Sıcaklığı',
     'gr_bark_waveform_temp_info': 'Yüksek değerler daha yaratıcı ve öngörülemez çıktılar üretir. Düşük değerler çıktıyı daha temkinli yapar.',
     'gr_markdown_tab_zonos_params_title': 'ZONOS Parametrelerini Özelleştir',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). Use Emotion kapalı veya 0 \'daki her kaydırıcı ile düz klonlanmış ses elde edersiniz: kaydırıcıları kademeli olarak uzaklaştırın. Tek bir pasaj için, metinde [emotion:sad]...[/emotion] veya [emotion:sad=0.7,angry=0.2] gibi bir karışım kullanın.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 ve ZONOS3 (Zyphra). Duygu Kullanımı kapalıyken veya tüm kaydırıcılar 0\'dayken sade klonlanmış sesi elde edersiniz: Kaydırıcıları bundan yavaş yavaş uzaklaştırın. Tek bir pasaj için metinde [emotion:sad]...[/emotion] veya [emotion:sad=0.7,angry=0.2] gibi bir karışım kullanın. ZONOS3 ayrıca etikette korku, tiksinti, sakinlik ve şaşkınlık duygularını da kullanır.',
     'gr_zonos_speaking_rate': 'Konuşma Oranı',
     'gr_zonos_speaking_rate_info': '0, modelin kendi hızını seçmesine izin verir. Yoksa 10 civarı yavaştır, 15 doğal anlatımdır, 30 çok hızlıdır.',
     'gr_zonos_emotion_enabled': 'Duyguları Kullan',

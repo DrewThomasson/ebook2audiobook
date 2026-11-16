@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': 'Suhu Bentuk Gelombang',
     'gr_bark_waveform_temp_info': 'Nilai yang lebih tinggi menghasilkan keluaran yang lebih kreatif dan tak terduga. Nilai yang lebih rendah membuatnya lebih konservatif.',
     'gr_markdown_tab_zonos_params_title': 'Sesuaikan Parameter ZONOS',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). Dengan Use Emotion off, atau setiap slider di 0, Anda mendapatkan suara kloning polos: gerakkan slider menjauh darinya secara bertahap. Untuk satu bagian, gunakan [emotion:sad]...[/emotion] atau campuran seperti [emotion:sad=0.7,angry=0.2] dalam teks.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 dan ZONOS3 (Zyphra). Dengan Gunakan Emosi dinonaktifkan, atau setiap penggeser di angka 0, Anda akan mendapatkan suara kloning biasa: geser penggeser menjauh darinya secara bertahap. Untuk satu bagian, gunakan [emotion:sad]...[/emotion] atau campuran seperti [emotion:sad=0.7,angry=0.2] dalam teks. ZONOS3 juga menggunakan takut, jijik, tenang, dan bingung dalam tag.',
     'gr_zonos_speaking_rate': 'Tingkat Berbicara',
     'gr_zonos_speaking_rate_info': '0 memungkinkan model memilih langkahnya sendiri. Kalau tidak, sekitar 10 lambat, 15 adalah narasi alami, 30 sangat cepat.',
     'gr_zonos_emotion_enabled': 'Gunakan Emosi',

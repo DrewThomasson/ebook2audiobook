@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': 'Temperatura da forma de onda',
     'gr_bark_waveform_temp_info': 'Valores mais altos geram resultados mais criativos e imprevisíveis. Valores mais baixos os tornam mais conservadores.',
     'gr_markdown_tab_zonos_params_title': 'Personalizar Parâmetros ZONOS',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). Com Use Emotion desligado, ou cada controle deslizante em 0, você obtém a voz clonada simples: afaste os controles deslizantes gradualmente. Para uma única passagem, use [emotion:sad]...[/emotion] ou uma mistura como [emotion:sad=0.7,angry=0.2] no texto.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 e ZONOS3 (Zyphra). Com a opção "Usar emoção" desativada ou todos os controles deslizantes em 0, você obtém a voz clonada simples: afaste os controles deslizantes dela gradualmente. Para uma única passagem, use [emotion:sad]...[/emotion] ou uma combinação como [emotion:sad=0.7,angry=0.2] no texto. O ZONOS3 também usa medo, nojo, calma e confusão na tag.',
     'gr_zonos_speaking_rate': 'Velocidade de fala',
     'gr_zonos_speaking_rate_info': '0 permite que o modelo escolha seu próprio ritmo. Caso contrário, cerca de 10 é lento, 15 é uma narração natural, 30 é muito rápido.',
     'gr_zonos_emotion_enabled': 'Usar Emoção',

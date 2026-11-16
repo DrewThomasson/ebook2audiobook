@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': 'حرارة الموجة الصوتية',
     'gr_bark_waveform_temp_info': 'القيم الأعلى تؤدي إلى مخرجات أكثر إبداعًا وأقل قابلية للتوقع. القيم الأدنى تجعلها أكثر تحفظًا.',
     'gr_markdown_tab_zonos_params_title': 'تخصيص معلمات ZONOS',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). مع إيقاف تشغيل استخدام Emotion، أو كل شريط تمرير عند 0، تحصل على الصوت المستنسخ العادي: حرك أشرطة التمرير بعيدًا عنه تدريجيًا. لمقطع واحد، استخدم [emotion:sad]...[/emotion] أو مزيج مثل [emotion:sad=0.7,angry=0.2] في النص.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 وZONOS3 (Zyphra). عند إيقاف تشغيل "استخدام العاطفة"، أو عند ضبط كل شريط تمرير على 0، ستحصل على الصوت المستنسخ العادي: حرك أشرطة التمرير بعيدًا عنه تدريجيًا. بالنسبة لمقطع واحد، استخدم [emotion:sad]...[/emotion] أو مزيجًا مثل [emotion:sad=0.7,angry=0.2] في النص. يأخذ ZONOS3 أيضًا الخوف والاشمئزاز والهدوء والارتباك في العلامة.',
     'gr_zonos_speaking_rate': 'معدل التحدث',
     'gr_zonos_speaking_rate_info': '0 يتيح للنموذج اختيار وتيرته الخاصة. وبخلاف ذلك، فإن حوالي 10 بطيئة، و 15 رواية طبيعية، و 30 سريعة جدًا.',
     'gr_zonos_emotion_enabled': 'استخدم العاطفة',

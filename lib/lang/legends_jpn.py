@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': '波形温度',
     'gr_bark_waveform_temp_info': '値を高くすると、より創造的で予測しにくい出力になります。値を低くすると、より控えめになります。',
     'gr_markdown_tab_zonos_params_title': 'ZONOSパラメータのカスタマイズ',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS 2 （ Zyphra ）。Use Emotionをオフにした場合、またはすべてのスライダーが0の場合、単純なクローン音声が得られます。スライダーを徐々に離れます。単一の通路の場合は、 [emotion:sad]...[/emotion] またはミックスのような [emotion:sad=0.7,angry=0.2] テキストに含まれています。',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2およびZONOS3（Zyphra）。「感情を使用」をオフにするか、すべてのスライダーを0にすると、単なるクローン音声になります。スライダーを徐々にそこから動かしてください。1つの文章に対しては、[emotion:sad]...[/emotion]を使用するか、テキスト内で[emotion:sad=0.7,angry=0.2]のような組み合わせを使用します。ZONOS3は、タグに「fear（恐怖）」、「disgust（嫌悪）」、「calm（落ち着き）」、「confused（混乱）」も使用します。',
     'gr_zonos_speaking_rate': 'スピーキングレート',
     'gr_zonos_speaking_rate_info': '0は、モデルが独自のペースを選択できるようにします。そうでなければ、10は遅く、15は自然なナレーション、30は非常に速いです。',
     'gr_zonos_emotion_enabled': '感情を使う',

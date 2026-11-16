@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': 'Hullámforma-hőmérséklet',
     'gr_bark_waveform_temp_info': 'A magasabb értékek kreatívabb, kiszámíthatatlanabb kimenetet adnak. Az alacsonyabb értékek visszafogottabbá teszik.',
     'gr_markdown_tab_zonos_params_title': 'ZONOS paraméterek testreszabása',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). Ha az Érzelem használata ki van kapcsolva, vagy minden csúszka 0-nál van, akkor az egyszerű klónozott hangot kapja: fokozatosan távolítsa el a csúszkákat. Egyetlen szövegrészhez használjon [emotion:sad]...[/emotion] vagy olyan keveréket, mint [emotion:sad=0.7,angry=0.2] a szövegben.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 és ZONOS3 (Zyphra). Ha az Érzések használata ki van kapcsolva, vagy minden csúszka 0-n áll, akkor a sima klónozott hangot kapja: fokozatosan mozgassa el a csúszkákat ettől a beállítástól. Egyetlen szövegrészhez használja a [emotion:sad]...[/emotion] értéket vagy egy olyan kombinációt, mint a [emotion:sad=0.7,angry=0.2] a szövegben. A ZONOS3 a félelmet, az undort, a nyugalmat és a zavartságot is figyelembe veszi a címkében.',
     'gr_zonos_speaking_rate': 'Beszédsebesség',
     'gr_zonos_speaking_rate_info': 'A 0 lehetővé teszi a modell számára, hogy kiválassza a saját tempóját. Ellenkező esetben a 10 lassú, a 15 természetes elbeszélés, a 30 nagyon gyors.',
     'gr_zonos_emotion_enabled': 'Érzelem használata',

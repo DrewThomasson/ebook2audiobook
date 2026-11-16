@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': 'Wellenform-Temperatur',
     'gr_bark_waveform_temp_info': 'Höhere Werte führen zu kreativeren, unvorhersehbareren Ergebnissen. Niedrigere Werte machen sie konservativer.',
     'gr_markdown_tab_zonos_params_title': 'Anpassen der ZONOS-Parameter',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). Bei Verwendung von Emotion aus oder jedem Schieberegler bei 0 erhalten Sie die geklonte Stimme: Bewegen Sie die Schieberegler schrittweise von ihr weg. Verwenden Sie für eine einzelne Passage [emotion:sad]...[/emotion] oder eine Mischung wie [emotion:sad=0.7,angry=0.2] im Text.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 und ZONOS3 (Zyphra). Wenn „Emotionen verwenden“ deaktiviert ist oder alle Schieberegler auf 0 stehen, erhalten Sie die einfache geklonte Stimme: Bewegen Sie die Schieberegler allmählich von dieser Position weg. Verwenden Sie für eine einzelne Passage [emotion:sad] … [/emotion] oder eine Mischung wie [emotion:sad=0.7,angry=0.2] im Text. ZONOS3 berücksichtigt im Tag auch Angst, Ekel, Ruhe und Verwirrung.',
     'gr_zonos_speaking_rate': 'Sprechgeschwindigkeit',
     'gr_zonos_speaking_rate_info': '0 lässt das Modell sein eigenes Tempo wählen. Ansonsten ist etwa 10 langsam, 15 ist natürliche Erzählung, 30 ist sehr schnell.',
     'gr_zonos_emotion_enabled': 'Emotion verwenden',

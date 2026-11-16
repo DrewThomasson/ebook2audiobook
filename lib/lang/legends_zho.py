@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': '波形温度',
     'gr_bark_waveform_temp_info': '数值越高，输出越有创意、越难预测；数值越低，输出越保守。',
     'gr_markdown_tab_zonos_params_title': '自定义ZONOS参数',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 （ Zyphra ）。关闭“使用情绪”或每个滑块为0时，您将获得纯粹的克隆声音：逐渐移动滑块。对于单个段落，请在文本中使用[emotion:sad]...[/emotion]或混合[emotion:sad=0.7,angry=0.2]。',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 和 ZONOS3（Zyphra）。如果关闭“使用情感”或所有滑块都位于 0，您将得到普通的克隆声音：请将滑块逐渐移离该位置。对于单个段落，请在文本中使用[emotion:sad]...[/emotion]或[emotion:sad=0.7,angry=0.2]这样的组合。ZONOS3 还在标签中包含恐惧、厌恶、平静和困惑。',
     'gr_zonos_speaking_rate': '发言率：',
     'gr_zonos_speaking_rate_info': '0让模型选择自己的节奏。否则，大约10是缓慢的， 15是自然的叙述， 30是非常快的。',
     'gr_zonos_emotion_enabled': '使用情感',

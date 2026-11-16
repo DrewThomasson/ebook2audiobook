@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': 'Suhu Wujud Gelombang',
     'gr_bark_waveform_temp_info': 'Nilai sing luwih dhuwur ngasilake asil sing luwih kreatif lan ora bisa ditebak. Nilai sing luwih endhek ndadekake luwih konservatif.',
     'gr_markdown_tab_zonos_params_title': 'Kustomisasi Parameter ZONOS',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). Kanthi Gunakake Emosi mati, utawa saben slider ing 0, sampeyan njaluk swara kloning polos: mindhah slider adoh saka iku mboko sithik. Kanggo ayat siji, gunakake [emotion:sad]...[/emotion] utawa campuran kaya [emotion:sad=0.7,angry=0.2] ing teks.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 lan ZONOS3 (Zyphra). Yen Gunakake Emosi dipateni, utawa saben slider ing angka 0, sampeyan bakal entuk swara kloning biasa: geser slider adoh saka swara kasebut kanthi bertahap. Kanggo siji wacana, gunakake [emotion:sad]...[/emotion] utawa campuran kaya [emotion:sad=0.7,angry=0.2] ing teks. ZONOS3 uga nggunakake wedi, sengit, tenang, lan bingung ing tag.',
     'gr_zonos_speaking_rate': 'Rata-rata wicara',
     'gr_zonos_speaking_rate_info': '0 ngidini model milih kacepetan dhewe. Yen ora kira-kira 10 alon, 15 minangka narasi alami, 30 cepet banget.',
     'gr_zonos_emotion_enabled': 'Gunakake Emosi',

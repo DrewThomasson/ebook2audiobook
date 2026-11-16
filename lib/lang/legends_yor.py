@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': 'Ìwọ̀n Ooru Ìrísí Ìgbì',
     'gr_bark_waveform_temp_info': 'Àwọn iye tó ga ń mú àbájáde tó ní àtinúdá jù, tí a kò sì lè sọ tẹ́lẹ̀ wá. Àwọn iye tó kéré ń jẹ́ kí ó ṣọ́ra jù.',
     'gr_markdown_tab_zonos_params_title': 'Ṣe àtúnṣe àwọn ìlànà ZONOS',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). Pẹ̀lú lílo Ìrònú kúrò, tàbí gbogbo àlàfo ní 0, o máa ń rí ohùn tí a fi ṣe àlàfo: kó àwọn àlàfo kúrò lọ́dọ̀ rẹ̀ díẹ̀díẹ̀. Fún àyọkà kan, lo [emotion:sad]...[/emotion] tàbí ìdàpọ̀ bíi [emotion:sad=0.7,angry=0.2] nínú àyọkà náà.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 àti ZONOS3 (Zyphra). Pẹ̀lú ìdásílẹ̀ Ìlò Ìmọ̀lára, tàbí gbogbo àwọn olùyípadà ní 0, ìwọ yóò rí ohùn tí a ṣe àdàkọ rẹ̀ tí kò ní ohun kan: mú àwọn olùyípadà náà kúrò lọ́dọ̀ rẹ̀ díẹ̀díẹ̀. Fún ìpín kan ṣoṣo, lo [emotion:sad]...[/emotion] tàbí àdàlú bíi [emotion:sad=0.7,angry=0.2] nínú ọ̀rọ̀ náà. ZONOS3 tún gba ìbẹ̀rù, ìkórìíra, ìdẹ̀ra àti ìdààmú nínú àmì náà.',
     'gr_zonos_speaking_rate': 'Oṣuwọn sisọ',
     'gr_zonos_speaking_rate_info': '0 jẹ́ kí àwòṣe náà yan ìpele tirẹ̀. Bí kò bá rí bẹ́ẹ̀, nǹkan bí 10 ń lọ ní pẹ̀lẹ́, 15 jẹ́ ìtàn àtayébáyé, 30 yára gan-an.',
     'gr_zonos_emotion_enabled': 'Lo Ìrònú',

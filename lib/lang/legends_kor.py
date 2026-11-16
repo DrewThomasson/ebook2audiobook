@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': '파형 온도',
     'gr_bark_waveform_temp_info': '값이 높을수록 더 창의적이고 예측하기 어려운 출력이 생성됩니다. 값이 낮을수록 더 보수적이 됩니다.',
     'gr_markdown_tab_zonos_params_title': 'ZONOS 매개 변수 사용자 지정',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). Use Emotion OFF 또는 0의 모든 슬라이더를 사용하면 일반 복제 음성을 얻을 수 있습니다. 슬라이더를 점진적으로 멀리 이동하십시오. 단일 구절의 경우, [emotion:sad]...[/emotion] 또는 다음과 같은 믹스 [emotion:sad=0.7,angry=0.2] 뜻입니다.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 및 ZONOS3(Zyphra). \'감정 사용\'을 끄거나 모든 슬라이더를 0으로 설정하면 평범한 복제 음성이 나옵니다. 슬라이더를 점차적으로 0에서 멀어지게 움직여 보세요. 한 구절의 경우, 텍스트에 [emotion:sad]...[/emotion] 또는 [emotion:sad=0.7,angry=0.2]와 같은 조합을 사용하세요. ZONOS3는 태그에 두려움, 혐오, 침착함, 혼란도 포함합니다.',
     'gr_zonos_speaking_rate': '말하기 속도',
     'gr_zonos_speaking_rate_info': '0을 사용하면 모델이 자신의 페이스를 선택할 수 있습니다. 그렇지 않으면 약 10은 느리고, 15는 자연스러운 나레이션이며, 30은 매우 빠릅니다.',
     'gr_zonos_emotion_enabled': '감정 사용',

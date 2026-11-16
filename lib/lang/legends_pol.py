@@ -63,7 +63,7 @@ legends = {
     'gr_bark_waveform_temp': 'Temperatura przebiegu fali',
     'gr_bark_waveform_temp_info': 'Wyższe wartości dają bardziej kreatywne, nieprzewidywalne wyniki. Niższe wartości sprawiają, że są one bardziej zachowawcze.',
     'gr_markdown_tab_zonos_params_title': 'Dostosuj parametry ZONOS',
-    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 (Zyphra). Przy wyłączonej funkcji Use Emotion lub przy każdym suwaku ustawionym na 0, uzyskujesz zwykły sklonowany głos: stopniowo odsuwaj suwaki od niego. Dla pojedynczego fragmentu użyj [emotion:sad]...[/emotion] lub mieszanki jak [emotion:sad=0.7,angry=0.2] w tekście.',
+    'gr_markdown_tab_zonos_params_desc': 'ZONOS2 i ZONOS3 (Zyphra). Gdy funkcja „Użyj emocji” jest wyłączona lub wszystkie suwaki są ustawione na 0, uzyskujesz zwykły sklonowany głos: stopniowo przesuwaj suwaki w kierunku przeciwnym. W przypadku pojedynczego fragmentu użyj [emotion:sad]...[/emotion] lub kombinacji takiej jak [emotion:sad=0.7,angry=0.2] w tekście. ZONOS3 uwzględnia również w tagu strach, obrzydzenie, spokój i dezorientację.',
     'gr_zonos_speaking_rate': 'Szybkość mówienia:',
     'gr_zonos_speaking_rate_info': '0 pozwala modelowi wybrać własne tempo. W przeciwnym razie około 10 jest powolne, 15 jest naturalną narracją, 30 jest bardzo szybkie.',
     'gr_zonos_emotion_enabled': 'Wykorzystaj emocje',
