@@ -310,9 +310,10 @@ exit /b
 :check_path_length
 :: piper-tts bundles espeak-ng 1.52, which opens its data folder from a path of 229 bytes at most on Windows: past it
 :: piper stops with "Error processing file '...phontab'". That folder sits 50 bytes below SAFE_SCRIPT_DIR, so
-:: SAFE_SCRIPT_DIR is 179 bytes at most (a non-ASCII character takes 2 to 4). Checked before anything is installed in a
-:: new folder, an installed one only gets a warning: every other engine runs there. No parenthesized block around the
-:: path, which can hold ( ) or &, and no check at all if PowerShell cannot count it
+:: SAFE_SCRIPT_DIR is 179 bytes at most (a non-ASCII character takes 2 to 4). Checked at every start, before anything is
+:: installed: an installed folder stops too, piper would fail there in the middle of a conversion. Moved, it keeps its
+:: python_env (check_uv adopts it) and its models. No parenthesized block around the path, which can hold ( ) or &, and
+:: no check at all if PowerShell cannot count it
 set "ESPEAK_DATA_SUFFIX=\%PYTHON_ENV%\Lib\site-packages\piper\espeak-ng-data"
 set "ROOT_BYTES="
 set "MAX_ROOT_BYTES="
@@ -322,15 +323,10 @@ for /f "tokens=1,2" %%a in ('%PS_EXE% %PS_ARGS% -Command "$r=[Text.Encoding]::UT
 )
 if not defined MAX_ROOT_BYTES exit /b 0
 if %ROOT_BYTES% LEQ %MAX_ROOT_BYTES% exit /b 0
-if not exist "%SAFE_SCRIPT_DIR%\%PYTHON_ENV%\.provisioned" goto :check_path_length_failed
-echo %ESC%[33m=============== Warning: the path of this ebook2audiobook folder is too long for the piper engine: %ROOT_BYTES% bytes, %MAX_ROOT_BYTES% at most (a non-ASCII character takes 2 to 4).%ESC%[0m
-echo %ESC%[33mpiper cannot run from "%SAFE_SCRIPT_DIR%", the other engines can. Move the folder to a shorter path to use piper.%ESC%[0m
-exit /b 0
-:check_path_length_failed
 echo %ESC%[31m=============== Error: the path of this ebook2audiobook folder is too long: %ROOT_BYTES% bytes, %MAX_ROOT_BYTES% at most (a non-ASCII character takes 2 to 4).%ESC%[0m
 echo   "%SAFE_SCRIPT_DIR%"
-echo The piper engine cannot read its espeak-ng data from a longer path, so python and its packages were not installed:
-echo move this folder to a shorter path, or with a pip or pipx install set E2A_HOME to a shorter folder and delete this one.
+echo The piper engine cannot read its espeak-ng data from a longer path:
+echo move this folder to a shorter path, then with a pip or pipx install set E2A_HOME to its new path.
 exit /b 1
 
 :check_python
