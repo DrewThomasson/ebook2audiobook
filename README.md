@@ -167,7 +167,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 ## SML tags available
 - `[break]` — silence (random range **0.3–0.6 sec.**)
 - `[pause]` — silence (random range **1.0–1.6 sec.**)
-- `[pause:N]` — fixed pause (**N sec.**)
+- `[pause:N]`: fixed pause (**N sec.**). On the audio.cpp engines (Maya1 among them), a `[pause:N]` inside a sentence, after a comma, a semicolon or a colon, is the whole gap there; the other engines add their own short silence after the text before it. The ebook parser writes a `[pause:0.65]` after a colon that opens what follows it, in place of a `[break]` there; a colon inside a time, a ratio, a verse reference (`10:30`, `3:1`, `John 3:16`) or a link gets none, and with `--translate` no colon gets one, as the tag would cut the sentence the translator reads
 - `[voice:/path/to/voice/file]...[/voice]` — switch voice from default or selected voice from GUI/CLI
 - `[voice:Name]...[/voice]` — switch to the voice a character has in the [voice cast](#voice-casts) of the series or the book
 - `[emotion:sadness]...[/emotion]` — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like `[emotion:sadness=0.7,neutral=0.3]`; other engines ignore it
