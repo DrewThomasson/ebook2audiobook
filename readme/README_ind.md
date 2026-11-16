@@ -118,13 +118,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Fitur
-- 🔧 **Mesin tts didukung**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Mesin TTS yang didukung**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Mengonversi berbagai format file**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Area Teks** untuk langsung mengonversi teks pendek menjadi audio
 - 🔍 **Pemindaian OCR** untuk file dengan halaman teks berupa gambar
 - 🔊 **Text-to-speech berkualitas tinggi**, dari hampir waktu nyata hingga suara hampir nyata
 - 🗣️ **Kloning suara opsional** menggunakan file suara Anda sendiri
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Mendukung 1696 bahasa** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Ramah sumber daya rendah** — berjalan pada **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Format keluaran buku audio**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Tag SML didukung** — kontrol terperinci atas jeda, hentian, peralihan suara, dan lainnya ([see below](#sml-tags-available))
@@ -249,7 +249,8 @@ Cara lain untuk menginstal dan meluncurkan ebook2audiobook, tanpa mengkloning re
 - Saat pertama kali dijalankan, ebook2audiobook akan disalin ke `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` di Windows) dan diinstal di sana<br>
   dengan skrip peluncurannya, persis seperti yang akan dilakukan `./ebook2audiobook.command` atau `ebook2audiobook.cmd`.
 - Untuk menggunakan folder lain, atur `E2A_HOME` sebelum memulai pertama kali dan pertahankan pengaturan tersebut untuk memulai berikutnya<br>
-  (yaitu `export E2A_HOME=/data/ebook2audiobook` di Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` lalu terminal baru di Windows).
+  (yaitu `export E2A_HOME=/data/ebook2audiobook` di Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` lalu terminal baru di Windows).<br>
+  Pastikan jalurnya pendek: maksimal 98 karakter di Linux/MacOS, 179 karakter di Windows, lihat [Common Issues](#common-issues).
 - Folder itu adalah folder ebook2audiobook biasa: `./ebook2audiobook.command` (`./e2a.sh`) dan `ebook2audiobook.cmd` (`e2a.cmd`) juga berfungsi di dalamnya.
 - Jika folder tersebut sudah berisi ebook2audiobook yang dikloning atau diunduh, folder tersebut akan dijalankan apa adanya dan pip tidak akan pernah mengubahnya.
 - Jalur relatif yang diberikan ke `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model`, dan `--output_dir`<br>
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - CATATAN: MPS tidak tersedia di Docker sehingga CPU harus digunakan
-- CATATAN: volume bernama `e2a_venvs` menyimpan mesin TTS yang terpasang di venv masing-masing (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, dll.)
+- CATATAN: volume bernama `e2a_venvs` menyimpan mesin TTS yang diinstal di venv-nya sendiri (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, dll.)
   di antara setiap kali kontainer dijalankan, sehingga tidak dipasang ulang setiap kali. Untuk meresetnya: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -721,6 +722,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    tambahkan parameter `--help` di akhir perintah docker run untuk informasi lebih lanjut.
 - "Saya mendapat masalah audio terpotong!" - HARAP BUAT ISSUE TENTANG INI,
    kami tidak berbicara setiap bahasa dan memerlukan saran dari pengguna untuk menyetel halus logika pemisahan kalimat.😊
+- "Jalur folder ebook2audiobook ini terlalu panjang", atau piper berhenti dengan `Error processing file '.../phontab'`?
+   Piper membaca data espeak-ng-nya dari `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` di Windows) dan tidak dapat membukanya melebihi 159 byte (229 di Windows),<br>
+   jadi jalur folder itu sendiri harus berisi paling banyak 98 karakter di Linux/MacOS, 179 karakter di Windows (karakter non-ASCII dihitung 2 hingga 4).<br>
+   Skrip peluncuran memeriksanya setiap kali memulai, sebelum menginstal apa pun, dan berhenti di folder yang lebih panjang, juga folder yang sudah diinstal.<br>
+   Pindahkan folder ke jalur yang lebih pendek, `python_env` dan modelnya akan ikut berpindah (pip / pipx / Nix: lalu atur `E2A_HOME` ke jalur barunya).
 
 ## ***** PETA JALAN *****
 - Semua Fitur terbuka untuk Kontribusi publik ⭐
@@ -759,11 +766,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5 - tts (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3 - tts (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
 - [x] Voxtral tts (https://github.com/voxtral/voxtral-tts)[cite: 1]
-- [x] Chatterbox (https://github.com/resemble-ai/chatterbox)[cite: 1]
+- [x] Banyak Bicara (https://github.com/resemble-ai/chatterbox)[cite: 1]
 - [x] CosyVoice / CosyVoice3 (https://github.com/FunAudioLLM/CosyVoice)[cite: 1]
 - [x] Indeks - tts/ Indeks tts2 (https://github.com/index-tts/index-tts)[cite: 1]
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
@@ -776,7 +784,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Magpie tts (https://github.com/magpie-tts/magpie-tts)[cite: 1]
 - [x] MioTTS (https://github.com/mio-tts/miotts)[cite: 1]
 - [x] Moss tts Lokal / Nano (https://github.com/OpenBMB/MossTTS)[cite: 1]
-- [x] NewTTS / NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
+- [x] NewTTS/NeuTTS (https://github.com/neuphonic/neutts)[cite: 1]
 - [x] Tts Saku (https://github.com/pocket-tts/pocket-tts)[cite: 1]
 - [x] Fonon Gradium (https://github.com/gradium-ai/xn-ptts)[cite: 1]
 - [x] Supertonik (https://github.com/supertone-inc/supertonic)[cite: 1]
@@ -813,7 +821,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Ceko (ces)
 - [x] Jepang (jpn)
 - [x] Hindi (hin)
-- [x] Bengali (ben)
+- [x] Benggali (ben)
 - [x] Hungaria (hun)
 - [x] Korea (kor)
 - [x] Vietnam (vie)
@@ -827,11 +835,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Kompatibilitas 💻 OS
 - [x] 🪟 Windows x86
-- [x] 🪟 ARM WINDOWS
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac Apple Silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 
@@ -853,8 +861,8 @@ Kami menerima segala jenis perangkat keras untuk menguji pengembangan kami seper
 -->
 
 ## Kredit
-- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- A deep learning toolkit for Text-to-Speech, battle-tested in research and production.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
+- [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Toolkit pembelajaran mendalam untuk Teks-ke-Ucapan, yang telah teruji dalam penelitian dan produksi.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Mesin teks-ke-ucapan neural yang cepat dan lokal.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- kode inferensi ggml untuk Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Mesin inferensi C++ murni all - in - one untuk model audio, didukung oleh ggml.
 

@@ -39,13 +39,13 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 <a id="gui-interface"></a>
 #### GUI Interface
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/demo_web_gui.gif)
 
 <details>
   <summary>Click to see images of Web GUI</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/HEAD/assets/gui_3.png">
 </details>
 
 <a id="demos"></a>
@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Usage](#instructions)
   - [Run Locally](#instructions)
     - [Launching Gradio Web Interface](#instructions)
+    - [Install with pip / pipx](#pip-install)
     - [Basic Headless Usage](#basic-usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
@@ -117,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Features
-- 🔧 **TTS Engines supported**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **TTS Engines supported**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Convert multiple file formats**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **TextArea** to convert directly a short text in audio
 - 🔍 **OCR scanning** for files with text pages as images
@@ -145,7 +146,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="supported-languages"></a>
 ## Supported Languages
-[+1696 languages here](SUPPORTED_LANGUAGES.md)
+[+1696 languages here](https://github.com/DrewThomasson/ebook2audiobook/blob/HEAD/SUPPORTED_LANGUAGES.md)
 
 
 <a id="supported-ebook-formats"></a>
@@ -217,6 +218,61 @@ So you should first remove manually any text you don't want to be converted in a
 **If the script is stopped and run again, you need to refresh your gradio GUI interface<br>
 to let the web page reconnect to the new connection socket.**
 
+<a id="pip-install"></a>
+### Install with pip / pipx
+Another way to install and launch ebook2audiobook, without cloning the repo: pip installs the `ebook2audiobook` command<br>
+(all OS, any python 3.8+). The cloned repo with its launchers above keeps working the same way.
+
+1. **Install the command** from PyPI
+   ```bash
+   pipx install ebook2audiobook
+   ```
+   or with uv
+   ```bash
+   uv tool install ebook2audiobook
+   ```
+   or with pip
+   ```bash
+   pip install ebook2audiobook
+   ```
+   <i>For the latest code not released yet, use `git+https://github.com/DrewThomasson/ebook2audiobook.git` in place of `ebook2audiobook`.</i>
+
+2. **Install / Run ebook2audiobook**, with the same options as the launchers:
+   ```bash
+   ebook2audiobook
+   ```
+   ```bash
+   ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+   ```
+   If the command is not found (pip's scripts folder is not in your PATH): `python -m ebook2audiobook`
+
+- The first start copies ebook2audiobook to `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` on Windows) and installs it there<br>
+  with its launcher, exactly like `./ebook2audiobook.command` or `ebook2audiobook.cmd` would do.
+- To use another folder, set `E2A_HOME` before the first start and keep it set for the next ones<br>
+  (i.e. `export E2A_HOME=/data/ebook2audiobook` on Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` then a new terminal on Windows).<br>
+  Keep its path short: 98 characters at most on Linux/MacOS, 179 on Windows, see [Common Issues](#common-issues).
+- That folder is a regular ebook2audiobook folder: `./ebook2audiobook.command` (`./e2a.sh`) and `ebook2audiobook.cmd` (`e2a.cmd`) work in it too.
+- If that folder already holds a cloned or downloaded ebook2audiobook, it is started as it is and pip never changes it.
+- Relative paths given to `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` and `--output_dir`<br>
+  are read from the folder where you type the command.
+- No need to deactivate your venv or conda env: ebook2audiobook always runs in its own `python_env`.
+- **Docker**: `ebook2audiobook --script_mode build_docker` (optionally with `--docker_mode compose` or `--docker_mode podman`)<br>
+  builds the image from that folder. Run the `docker run` / `docker compose` commands it prints from that folder too:<br>
+  their `./ebooks`, `./audiobooks`... mounts and the compose files are relative to it. The image takes the same options,<br>
+  with paths inside the container (`/app/...`), see [Docker](#docker).
+- **Update**: `pipx upgrade ebook2audiobook`, `uv tool upgrade ebook2audiobook` or `pip install -U ebook2audiobook`.<br>
+  The next start updates the app files and keeps `python_env`, models, voices, audiobooks and anything you added to the folder.
+- **Uninstall**: `pip uninstall`, `pipx uninstall` or `uv tool uninstall` alone only remove the command:<br>
+  the folder and its gigabytes of models stay. Uninstall ebook2audiobook with the command itself first:
+  1. Move your audiobooks out of the folder's `audiobooks` subfolder: everything in the folder is deleted.
+  2. `ebook2audiobook --uninstall`<br>
+     It runs the uninstaller of the folder, which asks you to confirm then removes the shortcuts, the programs it installed<br>
+     (listed in `.installed`) and the folder content, then it deletes the folder.
+  3. Run the command it prints last to remove `ebook2audiobook` itself, which depends on how you installed it:<br>
+     `pipx uninstall ebook2audiobook`, `uv tool uninstall ebook2audiobook` or `pip uninstall ebook2audiobook`.
+  4. If you built Docker images: `docker rmi athomasson2/ebook2audiobook:<tag>` and `docker volume rm e2a_venvs`<br>
+     (with Podman: `podman rmi localhost/athomasson2/ebook2audiobook:<tag>` and `podman volume rm e2a_venvs`).
+
 <a id="basic-usage"></a>
 ### Basic  Usage
    - **Linux/MacOS**:
@@ -226,6 +282,10 @@ to let the web page reconnect to the new connection socket.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
+     ```
+   - **pip / pipx install** (all OS)
+     ```bash
+     ebook2audiobook --headless --ebook <path_to_ebook_file> --voice <path_to_voice_file> --language <language_code>
      ```
      
   - **[--ebook]**: Path to your eBook file
@@ -260,6 +320,10 @@ to let the web page reconnect to the new connection socket.**
    - **Windows**
      ```bash
      ebook2audiobook.cmd --help
+     ```
+   - **pip / pipx install** (all OS)
+     ```bash
+     ebook2audiobook --help
      ```
    - **Or for all OS**
     ```python
@@ -373,6 +437,19 @@ Linux/Mac:
     ./ebook2audiobook.command
     Headless mode:
     ./ebook2audiobook.command --headless --ebook '/path/to/file' --language eng
+pip/pipx install (all OS, python 3.8+, no clone needed):
+    pipx install ebook2audiobook
+    (or: uv tool install ebook2audiobook, or: pip install ebook2audiobook)
+    Gradio/GUI:
+    ebook2audiobook
+    Headless mode:
+    ebook2audiobook --headless --ebook '/path/to/file' --language eng
+    Docker build image:
+    ebook2audiobook --script_mode build_docker [--docker_mode compose|podman]
+    The first start installs e2a in ~/ebook2audiobook, or in the folder set in E2A_HOME,
+    where ./ebook2audiobook.command (e2a.sh) or ebook2audiobook.cmd (e2a.cmd) also work.
+    Run the docker commands printed after a build from that folder.
+    Uninstall: ebook2audiobook --uninstall (it deletes the audiobooks folder too), then the command it prints.
 
 SML tags available:
 	[break] — silence (random range **0.3–0.6 sec.**)
@@ -447,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOTE: MPS is not exposed in docker so CPU must be used
-- NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
+- NOTE: the named volume `e2a_venvs` keeps the TTS engines installed in their own venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM etc.)
   across container runs, so they are not reinstalled each time. To reset them: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -486,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -645,6 +722,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    add `--help` parameter at the end of the docker run command for more information.
 - "I'm getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
    we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
+- "The path of this ebook2audiobook folder is too long", or piper stops with `Error processing file '.../phontab'`?
+   Piper reads its espeak-ng data from `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` on Windows) and cannot open it past 159 bytes (229 on Windows),<br>
+   so the folder path itself must be 98 characters at most on Linux/MacOS, 179 on Windows (a non-ASCII character counts 2 to 4).<br>
+   The launchers check it at every start, before installing anything, and stop in a longer folder, an installed one too.<br>
+   Move the folder to a shorter path, its `python_env` and models move with it (pip / pipx / Nix: then set `E2A_HOME` to its new path).
 
 ## ***** ROADMAP *****
 - All Features open to public Contributions ⭐
@@ -683,6 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]

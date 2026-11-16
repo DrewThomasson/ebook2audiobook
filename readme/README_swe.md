@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 e-bok till ljudbok (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 CPU/GPU-omvandlare från e-bok till ljudbok med kapitel och metadata<br/>
 med avancerade TTS-motorer och mycket mer.<br/>
 Stöder röstkloning och 1696 språk!
-> [!IMPORTANT]
+> VIKTIGT
 **Detta verktyg är endast avsett att användas med DRM-fria, lagligt förvärvade e-böcker.** <br>
 Författarna ansvarar inte för något missbruk av denna programvara eller för eventuella rättsliga följder. <br>
 Använd detta verktyg ansvarsfullt och i enlighet med alla tillämpliga lagar.
@@ -118,13 +118,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Funktioner
-- 🔧 **Stöd för TTS-motorer**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **TTS-motorer som stöds**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Konvertera flera filformat**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Textområde** för att direkt konvertera en kort text till ljud
 - 🔍 **OCR-skanning** för filer med textsidor som bilder
 - 🔊 **Högkvalitativ text-till-tal**, från nära realtid till en nästan verklig röst
 - 🗣️ **Valfri röstkloning** med din egen röstfil
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Stöder 1 696 språk** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Resurssnål** — körs på **2 GB RAM / 1 GB VRAM (minimum)**
 - 🎵 **Utdataformat för ljudbok**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **SML-taggar stöds** — finkornig kontroll av avbrott, pauser, röstbyte och mer ([see below](#sml-tags-available))
@@ -138,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 2 GB RAM min., 8 GB rekommenderas.
 - 1 GB VRAM min., 4 GB rekommenderas.
 - Virtualisering aktiverad vid körning på Windows (endast Docker).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - Cuda, ROCm, JETSON
 - MPS (Apple Silicon-CPU)
 
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Kolla in vårt andra repo som är dedikerat till att lägga till SML automatiskt i din e-bok -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> VIKTIGT
 **Innan du rapporterar ett installations- eller buggproblem, sök noggrant i fliken med öppna och stängda ärenden<br>
 för att vara säker på att ditt problem inte redan finns.**
 
@@ -214,7 +214,7 @@ Du bör därför först manuellt ta bort all text som du inte vill omvandla till
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (alla operativsystem, endast när det har installerats och med Python i mappen python_env)
 
-> [!IMPORTANT]
+> VIKTIGT
 **Om skriptet stoppas och körs igen måste du uppdatera ditt Gradio-GUI-gränssnitt<br>
 så att webbsidan kan återansluta till den nya anslutningssocketen.**
 
@@ -249,7 +249,8 @@ Ett annat sätt att installera och starta ebook2audiobook, utan att klona repot:
 - Vid första starten kopieras ebook2audiobook till `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` på Windows) och installeras där<br>
   med dess startskript, precis som `./ebook2audiobook.command` eller `ebook2audiobook.cmd` skulle göra.
 - För att använda en annan mapp ska du ställa in `E2A_HOME` före den första starten och behålla inställningen för de kommande<br>
-  (dvs. `export E2A_HOME=/data/ebook2audiobook` på Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` och sedan en ny terminal på Windows).
+  (dvs. `export E2A_HOME=/data/ebook2audiobook` på Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` och sedan en ny terminal på Windows).<br>
+  Håll dess sökväg kort: högst 98 tecken på Linux/MacOS, 179 på Windows, se [Common Issues](#common-issues).
 - Den mappen är en vanlig ebook2audiobook-mapp: `./ebook2audiobook.command` (`./e2a.sh`) och `ebook2audiobook.cmd` (`e2a.cmd`) fungerar också i den.
 - Om den mappen redan innehåller en klonad eller nedladdad ebook2audiobook startas den som den är och pip ändrar den aldrig.
 - Relativa sökvägar angivna för `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` och `--output_dir`<br>
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - OBS: MPS exponeras inte i Docker, så CPU måste användas
-- OBS: den namngivna volymen `e2a_venvs` behåller TTS-motorerna installerade i sina egna venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM osv.)
+- OBS! Den namngivna volymen `e2a_venvs` behåller TTS-motorerna installerade i sin egen venv (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM osv.)
   mellan containerkörningar, så att de inte installeras om varje gång. För att återställa dem: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -715,12 +716,18 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Vanliga problem:
 - Min NVIDIA/ROCm/XPU/MPS-GPU upptäcks inte?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU:n är långsam (bättre på en server-SMP-CPU) medan GPU:n kan ha nästan realtidskonvertering.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Den har dock inte zero-shot-röstkloning, och rösterna är av Siri-kvalitet, men den är mycket snabbare på CPU).
 - "Jag har problem med beroenden" - Använd bara Docker, den är helt fristående och har ett headless-läge,
    lägg till parametern  i slutet av docker run-kommandot för mer information. `--help`
 - "Jag har ett problem med avklippt ljud!" - VÄNLIGEN SKAPA ETT ÄRENDE OM DETTA,
    vi talar inte alla språk och behöver råd från användare för att finjustera logiken för meningsdelning.😊
+- "Sökvägen till den här ebook2audiobook-mappen är för lång", eller stannar piper med `Error processing file '.../phontab'`?
+   Piper läser sina espeak-ng-data från `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` på Windows) och kan inte öppna den efter 159 byte (229 på Windows),<br>
+   så själva mappvägen får vara högst 98 tecken på Linux/MacOS, 179 på Windows (ett icke-ASCII-tecken räknas som 2 till 4).<br>
+   Startskripten kontrollerar det vid varje start, innan de installerar något, och stannar i en längre mapp, även en installerad sådan.<br>
+   Flytta mappen till en kortare sökväg, dess `python_env` och modeller flyttas med den (pip / pipx / Nix: ställ sedan in `E2A_HOME` till dess nya sökväg).
 
 ## ***** FÄRDPLAN *****
 - Alla funktioner öppna för offentliga bidrag ⭐
@@ -753,12 +760,13 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### TTS-motorer
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1)
-- [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
+- [x] FireRed Audio/FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1]
 - [x] Fisk-tal / fiskljud (https://github.com/fishaudio/fish-speech)[cite: 1)
 - [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1)
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1)
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice/LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
@@ -768,8 +776,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Index-tts / Index TTS2 (https://github.com/index-tts/index-tts)[cite: 1)
 - [x] XTTSv2 (https://github.com/coqui-ai/XTTS)[cite: 1]
 - [x] Breeze TTS (https://github.com/FreedomIntelligence/Breeze-TTS)[cite: 1)
-- [x] Confucius4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
-- [x] Dots TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
+- [x] Konfutse4 TTS (https://github.com/confucius-tts/confucius4)[cite: 1]
+- [x] Punkter TTS (https://github.com/dot-audio/dots-tts)[cite: 1]
 - [x] GPT-SoVITS (https://github.com/RVC-Boss/GPT-SoVITS)[cite: 1]
 - [x] Kokoro-TTS (https://github.com/hexgrad/kokoro)[cite: 1]
 - [x] KugelAudio (https://github.com/kugel-audio/kugelaudio)[cite: 1)
@@ -788,8 +796,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1)
 - [x] Sköldpadda (https://github.com/neonbjb/tortoise-tts)[cite: 1)
 - [x] Zoner (https://github.com/Zyphra/Zonos)[cite: 1)
-- [x] Bark (https://github.com/suno-ai/bark)[cite: 1]
-- [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
+- [x] Skälla (https://github.com/suno-ai/bark)[cite: 1]
+- [x] DinTTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
 - [x] OpenVoice (https://github.com/myshell-ai/OpenVoice)
 - [x] ChatTTS (https://github.com/2noise/ChatTTS)
@@ -827,11 +835,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### 💻 OS-kompatibilitet
 - [x] 🪟 Windows x86
-- [x] 🪟 Armfönster
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac med Apple Silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 

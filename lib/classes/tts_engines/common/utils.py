@@ -801,7 +801,18 @@ class TTSUtils:
                         vocab_path = hf_download(progress_bar, msg, repo_id=hf_repo, filename=f"{hf_sub}{default_engine_settings[xtts]['files'][2]}", cache_dir=self.cache_dir)
                         engine = self._load_checkpoint(tts_engine=xtts, key=key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path)
                     if engine:
-                        device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
+                        # XTTS is a torch model, the session device is the TTS engine's: a native engine (audio.cpp,
+                        # zonos) session can be Vulkan, and torch has no Vulkan device. Moving the latents or XTTS there
+                        # segfaults in Tensor.to() (+vulkan wheel, macOS MoltenVK), so Vulkan runs XTTS on CPU, as in
+                        # VoiceExtractor and InterludeGenerator. ROCm and Jetson torch are 'cuda'
+                        torch_procs = {
+                            devices['CUDA']['proc']: devices['CUDA']['proc'],
+                            devices['ROCM']['proc']: devices['CUDA']['proc'],
+                            devices['JETSON']['proc']: devices['CUDA']['proc'],
+                            devices['MPS']['proc']: devices['MPS']['proc'],
+                            devices['XPU']['proc']: devices['XPU']['proc'],
+                        }
+                        device = torch_procs.get(self.session['device'], devices['CPU']['proc'])
                         if speaker in default_engine_settings[xtts]['voices'].keys():
                             gpt_cond_latent, speaker_embedding = self.xtts_speakers[default_engine_settings[xtts]['voices'][speaker]].values()
                         else:

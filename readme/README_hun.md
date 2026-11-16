@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Funkciók
-- 🔧 **Támogatott TTS-motorok**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Támogatott TTS-motorok**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Több fájlformátum átalakítása**: , , , , , , , , , , , , , , , , , , , , , , `.epub` `.mobi` `.azw3` `.fb2` `.lrf` `.rb` `.snb` `.tcr` `.pdf` `.txt` `.rtf` `.doc` `.docx` `.html` `.odt` `.azw` `.tiff` `.tif` `.png` `.jpg` `.jpeg` `.bmp` `.zip`
 - 💻 **Szövegmező** rövid szöveg közvetlen hanggá alakításához
 - 🔍 **OCR-beolvasás** képként megjelenő szöveges oldalakat tartalmazó fájlokhoz
@@ -249,7 +249,8 @@ Az ebook2audiobook telepítésének és indításának másik módja az adattár
 - Az első indításkor az ebook2audiobook alkalmazást a rendszer a(z) `~/ebook2audiobook` mappába másolja (Windows rendszeren a(z) `%USERPROFILE%\ebook2audiobook` mappába), és ott telepíti<br>
   az indítási parancsfájljával, pontosan úgy, ahogy a(z) `./ebook2audiobook.command` vagy a(z) `ebook2audiobook.cmd` tenné.
 - Másik mappa használatához állítsa be a(z) `E2A_HOME` értéket az első indítás előtt, és hagyja beállítva a következő indításokhoz<br>
-  (azaz `export E2A_HOME=/data/ebook2audiobook` Linux/MacOS rendszeren, `setx E2A_HOME D:\ebook2audiobook`, majd egy új terminál Windows rendszeren).
+  (azaz `export E2A_HOME=/data/ebook2audiobook` Linuxon/MacOS-on, `setx E2A_HOME D:\ebook2audiobook`, majd egy új terminál Windowson).<br>
+  Legyen rövid az elérési útja: legfeljebb 98 karakter Linux/MacOS rendszeren, 179 karakter Windows rendszeren, lásd: [Common Issues](#common-issues).
 - Ez egy szokásos ebook2audiobook mappa: a(z) `./ebook2audiobook.command` (`./e2a.sh`) és a(z) `ebook2audiobook.cmd` (`e2a.cmd`) is működik benne.
 - Ha ebben a mappában már van egy klónozott vagy letöltött ebook2audiobook, akkor az változatlanul elindul, és a pip soha nem módosítja.
 - A(z) `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` és `--output_dir`<br> számára megadott relatív elérési utak
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - MEGJEGYZÉS: az MPS nem érhető el a Dockerben, ezért CPU-t kell használni
-- MEGJEGYZÉS: az `e2a_venvs` nevű kötet megőrzi a saját venv-jükbe telepített TTS-motorokat (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM stb.)
+- MEGJEGYZÉS: A(z) `e2a_venvs` nevű tárhely a saját virtuális környezetében tárolja a telepített TTS-motorokat (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM stb.).
   a konténer futtatásai között, így nem kell minden alkalommal újratelepíteni őket. Visszaállításukhoz: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -721,6 +722,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    adj hozzá  paramétert a docker run parancs végéhez további információkért. `--help`
 - „Levágott hang problémám van!” - KÉRJÜK, NYISS ERRŐL EGY ISSUE-T,
    nem beszélünk minden nyelvet, és szükségünk van a felhasználók tanácsaira a mondatfelosztási logika finomhangolásához.😊
+- „Az ebook2audiobook mappa elérési útja túl hosszú”, vagy a Piper `Error processing file '.../phontab'`-val áll le?
+   A Piper az espeak-ng adatait innen olvassa be: `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` Windows rendszeren), és nem lehet megnyitni 159 bájt (Windows rendszeren 229 bájt) felett,<br>
+   így magának a mappaútvonalnak legfeljebb 98 karakterből kell állnia Linux/MacOS rendszeren, 179 karakterből pedig Windows rendszeren (egy nem ASCII-karakter 2–4 karakternek számít).<br>
+   Az indítóparancsfájlok minden indításkor ellenőrzik ezt, mielőtt bármit telepítenének, és megállnak egy hosszabb mappánál, amely egyben telepített mappa is.<br>
+   Helyezze át a mappát egy rövidebb elérési útra, a `python_env` és a modellek vele együtt átkerülnek (pip / pipx / Nix: ezután állítsa a(z) `E2A_HOME` értékét az új elérési útra).
 
 ## ***** ÜTEMTERV *****
 - Minden funkció nyitva a nyilvános hozzájárulások előtt ⭐
@@ -759,6 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1)
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1)
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1)
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]

@@ -1,10 +1,10 @@
-# The ebook2audiobook command of a pip/pipx install.
+# The ebook2audiobook command of a pip/pipx install, and of the Nix package (nix/package.nix) which runs it in an FHS env.
 # e2a reads and writes everything next to app.py (models, voices, tmp, audiobooks, python_env) and is installed by
 # its launcher, so it cannot run from site-packages. The wheel ships the app files in app_tree: this command copies
 # them to a user folder (~/ebook2audiobook, or E2A_HOME) then hands over to the launcher of that folder, exactly as
 # if the user ran ./e2a.sh or e2a.cmd there. Standard library only, and python 3.8 syntax: it runs on whatever
 # python ran pip, e2a itself runs in the python_env the launcher installs.
-import os, sys, json, shlex, shutil, signal, hashlib, subprocess
+import os, sys, json, stat, shlex, shutil, signal, hashlib, subprocess
 
 from typing import Optional
 
@@ -108,6 +108,18 @@ def is_inside(path:str, root:str)->bool:
     root = os.path.normcase(os.path.realpath(root))
     return path.startswith(root + os.sep)
 
+def copy_file(src:str, dst:str)->None:
+    # the content only, never the mode and mtime of the source: a Nix store file is read-only with mtime 1, so its
+    # copy could not be overwritten by the next update, and the newer-than check of the launcher (sitecustomize.py)
+    # would never see it change. A copy left read-only by an older bootstrap is made writable again first
+    if os.path.isfile(dst) and not os.access(dst, os.W_OK):
+        os.chmod(dst, stat.S_IMODE(os.stat(dst).st_mode) | stat.S_IWUSR)
+    shutil.copyfile(src, dst)
+    if os.name != 'nt' and os.stat(src).st_mode & 0o111:
+        mode = stat.S_IMODE(os.stat(dst).st_mode)
+        # executable for whoever can read it, as chmod +x under the user's umask
+        os.chmod(dst, mode | (mode & 0o444) >> 2)
+
 def sync_tree(source:str, home:str, marker:Optional[dict], version:str, tree_id:str, files:list)->None:
     old_files = marker.get('files', []) if marker else []
     old_files = [rel for rel in old_files if isinstance(rel, str)] if isinstance(old_files, list) else []
@@ -117,7 +129,7 @@ def sync_tree(source:str, home:str, marker:Optional[dict], version:str, tree_id:
     for rel in files:
         dst = os.path.join(home, rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
-        shutil.copy2(os.path.join(source, rel), dst)
+        copy_file(os.path.join(source, rel), dst)
         if os.name != 'nt' and rel.endswith(('.sh', '.command')):
             os.chmod(dst, os.stat(dst).st_mode | 0o755)
     # files the previous version shipped and this one does not. Only listed files are ever removed: models,
@@ -185,7 +197,10 @@ def run_launcher(app_dir:str, args:list)->None:
     os.execvpe('bash', ['bash', launcher] + args, env)
 
 def get_remove_command()->str:
-    # how this command was installed decides how it is removed: uv tool and pipx leave a receipt in their venv
+    # how this command was installed decides how it is removed: the Nix package runs it from the store,
+    # uv tool and pipx leave a receipt in their venv
+    if get_package_dir().startswith('/nix/store/'):
+        return f"nix profile remove {app_name}, or remove it from the Nix configuration that installed it"
     if os.path.isfile(os.path.join(sys.prefix, 'uv-receipt.toml')):
         return f"uv tool uninstall {app_name}"
     if os.path.isfile(os.path.join(sys.prefix, 'pipx_metadata.json')):

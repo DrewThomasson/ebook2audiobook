@@ -1,11 +1,11 @@
 <a id="ebook2audiobook"></a>
-# 📚 ebook2audiobook (E2A)
+# 📚 Kitabu cha kielektroniki kuwa kitabu cha kusikiliza (E2A)
 <a href="https://trendshift.io/repositories/12252?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-12252" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/12252" alt="DrewThomasson%2Febook2audiobook | Trendshift" width="250" height="55"/></a>
 
 Kibadilishaji cha CPU/GPU kutoka E-Kitabu hadi kitabu cha sauti chenye sura na metadata<br/>
 kwa kutumia injini za hali ya juu za TTS na mengi zaidi.<br/>
 Inasaidia kupiga picha za sauti na lugha 1696!
-> [!IMPORTANT]
+> Muhimu
 **Zana hii imekusudiwa kutumika tu na vitabu pepe visivyo na DRM, vilivyopatikana kihalali.** <br>
 Waandishi hawawajibikii matumizi mabaya yoyote ya programu hii au matokeo yoyote ya kisheria yanayotokana nayo. <br>
 Tumia zana hii kwa uwajibikaji na kwa kufuata sheria zote zinazotumika.
@@ -118,13 +118,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Vipengele
-- 🔧 **Injini za TTS zinatumika**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **Injini za TTS zinazotumika**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Badilisha miundo mingi ya faili**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Eneo la Maandishi** ili kubadilisha moja kwa moja maandishi mafupi kuwa sauti
 - 🔍 **Uchanganuzi wa OCR** kwa faili zenye kurasa za maandishi kama picha
 - 🔊 **Maandishi-kwa-usemi ya ubora wa juu**, kutoka karibu wakati halisi hadi sauti karibu halisi
 - 🗣️ **Unakili wa sauti wa hiari** kwa kutumia faili yako mwenyewe ya sauti
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **Inatumia lugha 1696** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **Rafiki kwa rasilimali ndogo** — inaendeshwa kwa **2 GB RAM / 1 GB VRAM (kima cha chini)**
 - 🎵 **Miundo ya matokeo ya kitabu cha sauti**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **Lebo za SML zinaungwa mkono** — udhibiti wa kina wa mapumziko, vituo, ubadilishaji wa sauti na zaidi ([see below](#sml-tags-available))
@@ -138,7 +138,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - RAM 2GB chini, 8GB inapendekezwa.
 - VRAM 1GB chini, 4GB inapendekezwa.
 - Uboreshaji umewezeshwa ikiwa unaendeshwa kwenye windows (Docker pekee).
-- CPU, XPU (intel, AMD, ARM)*.
+- CPU, XPU (Intel, AMD, ARM)*.
 - CUDA, Rocm, JETSON
 - MPS (CPU ya Apple Silicon)
 
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **Angalia repo yetu nyingine iliyojikita katika kuongeza SML kiotomatiki katika eBook yako -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> Muhimu
 **Kabla ya kutuma tatizo la usakinishaji au hitilafu, tafuta kwa makini katika KICHUPO cha matatizo yaliyofunguliwa na yaliyofungwa<br>
 ili kuhakikisha tatizo lako halipo tayari.**
 
@@ -214,7 +214,7 @@ Kwa hivyo unapaswa kwanza kuondoa kwa mkono maandishi yoyote ambayo hutaki kubad
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (OS zote, mara moja tu baada ya kufungwa na kwa kutumia python ya folda yake ya python_env)
 
-> [!IMPORTANT]
+> Muhimu
 **Ikiwa hati itasimamishwa na kuendeshwa tena, unahitaji kuonyesha upya kiolesura chako cha GUI cha gradio<br>
 ili kuruhusu ukurasa wa wavuti uunganishe upya kwa soketi mpya ya muunganisho.**
 
@@ -249,7 +249,8 @@ Njia nyingine ya kusakinisha na kuzindua ebook2audiobook, bila kunakili hifadhi:
 - Ufunguzi wa kwanza hunakili ebook2audiobook kwenye `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` kwenye Windows) na kuiweka hapo<br>
   kwa kutumia hati yake ya uzinduzi, kama vile `./ebook2audiobook.command` au `ebook2audiobook.cmd` ingefanya.
 - Ili utumie folda nyingine, weka `E2A_HOME` kabla ya ufunguzi wa kwanza na uendelee kuiweka kwa ajili ya ufunguzi unaofuata<br>
-  (yaani `export E2A_HOME=/data/ebook2audiobook` kwenye Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` kisha terminali mpya kwenye Windows).
+  (yaani `export E2A_HOME=/data/ebook2audiobook` kwenye Linux/MacOS, `setx E2A_HOME D:\ebook2audiobook` kisha terminali mpya kwenye Windows).<br>
+  Fanya njia yake iwe fupi: Herufi 98 zaidi kwenye Linux/MacOS, 179 kwenye Windows, angalia [Common Issues](#common-issues).
 - Folda hiyo ni folda ya kawaida ya ebook2audiobook: `./ebook2audiobook.command` (`./e2a.sh`) na `ebook2audiobook.cmd` (`e2a.cmd`) pia zinafanya kazi ndani yake.
 - Ikiwa folda hiyo tayari ina kitabu cha kielektroniki kilichonakiliwa au kupakuliwa, kinazinduliwa jinsi kilivyo na pip haikibadilishi kamwe.
 - Njia za kulinganisha zilizotolewa kwa `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` na `--output_dir`<br>
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - KUMBUKA: MPS haipatikani ndani ya Docker kwa hiyo lazima CPU itumike
-- KUMBUKA: volume iliyopewa jina `e2a_venvs` huhifadhi injini za TTS zilizosakinishwa katika venv zao wenyewe (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM n.k.)
+- KUMBUKA: Kiasi kilichotajwa `e2a_venvs` kinahifadhi injini za TTS zilizosakinishwa katika venv yao wenyewe (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM n.k.)
   kati ya uendeshaji mmoja wa kontena na mwingine, kwa hiyo hazisakinishwi upya kila mara. Ili kuziweka upya: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -715,12 +716,18 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## Matatizo ya Kawaida:
 - GPU yangu ya NVIDIA/ROCm/XPU/MPS haitambuliki?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU ni polepole (bora kwenye CPU smp ya seva) huku GPU ikiweza kuwa na ubadilishaji wa karibu wakati halisi.
- [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (Hata hivyo haina unakili wa sauti wa zero-shot, na ni sauti za ubora wa Siri, lakini ni haraka zaidi kwenye cpu).
 - "Nina matatizo ya utegemezi" - Tumia tu docker, imejitosheleza kabisa na ina hali ya headless,
    ongeza kigezo  mwishoni mwa amri ya docker run kwa maelezo zaidi. `--help`
 - "Ninapata tatizo la sauti iliyokatwa!" - TAFADHALI FUNGUA ISSUE KUHUSU HILI,
    hatuzungumzi kila lugha na tunahitaji ushauri kutoka kwa watumiaji ili kuboresha mantiki ya kugawanya sentensi.😊
+- "Njia ya folda hii ya ebook2audiobook ni ndefu sana", au piper inasimama ikiwa na `Error processing file '.../phontab'`?
+   Piper husoma data yake ya espeak-ng kutoka `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` kwenye Windows) na haiwezi kuifungua zaidi ya baiti 159 (229 kwenye Windows),<br>
+   kwa hivyo njia ya folda yenyewe lazima iwe na herufi 98 zaidi kwenye Linux/MacOS, 179 kwenye Windows (herufi isiyo ya ASCII huhesabiwa kuwa 2 hadi 4).<br>
+   Hati za uzinduzi huzikagua kila zinapoanza, kabla ya kufunga chochote na husimama katika folda ndefu, pamoja na ile iliyofungwa.<br>
+   Sogeza folda kwenye njia fupi, `python_env` yake na modeli zitasogea pamoja nayo (pip / pipx / Nix: kisha weka `E2A_HOME` kwenye njia yake mpya).
 
 ## ***** RAMANI YA BARABARA *****
 - Vipengele vyote vimefunguliwa kwa Michango ya umma ⭐
@@ -755,10 +762,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] DramaBox (https://github.com/dramabox-ai/dramabox)[cite: 1]
 - [x] FireRed Audio / FireRedTTS3 (https://github.com/FireRedTeam/FireRedTTS)[cite: 1)
 - [x] Kuzungumza kwa Samaki/Sauti ya Samaki (https://github.com/fishaudio/fish-speech)[cite: 1)
-- [x] Higgs Audio TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
+- [x] Sauti ya Higgs TTS (https://github.com/higgs-audio/higgs-audio)[cite: 1]
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice (https://github.com/k2-fsa/OmniVoice)[cite: 1)
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1]
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS (https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice (https://github.com/vibevoice-community/VibeVoice)[cite: 1)
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1)
@@ -827,11 +835,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### Utangamano wa 💻 OS
 - [x] 🪟 Windows x86
-- [x] Windows 🪟 YA MKONO
+- [x] 🪟 ARM Windows
 - [x] 🍎 Mac Intel x86
-- [x] 🍎 Apple Silicon Mac
+- [x] 🍎 Mac ya Apple Silicon
 - [x] 🐧 Linux x86
-- [x] 🐧 ARM LINUX
+- [x] 🐧 ARM Linux
 
 **********
 
@@ -854,8 +862,8 @@ Tunakubali aina yoyote ya maunzi ili kujaribu maendeleo yetu kama vile:
 
 ## Credits
 - [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Zana ya kujifunza kwa kina kwa ajili ya Maandishi-kwa-maongezi, iliyojaribiwa katika utafiti na uzalishaji.
-- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Fast and local neural text-to-speech engine.
-- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml inference code for Zonos2.
+- [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Injini ya haraka na ya ndani ya kubadilisha maandishi kuwa usemi kupitia mfumo wa neva.
+- [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- msimbo wa makisio ya ggml kwa ajili ya Zonos2.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Injini safi ya makadirio ya C++ kwa modeli za sauti, inayoendeshwa na ggml.
 
 <a id="special-thanks"></a>

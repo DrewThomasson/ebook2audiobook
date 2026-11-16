@@ -1416,6 +1416,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _change_gr_ebook_src(session_id:str, ebook_mode:str, data:any)->tuple:
                 try:
+                    data = to_builtin(data)
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
                         if (session.get('ebook_src') == data and ebook_mode == ebook_modes['SINGLE']) or (session.get('ebook_list') == data and ebook_mode == ebook_modes['DIRECTORY']):
@@ -1467,6 +1468,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _select_gr_ebook_src(session_id:str, ebook_mode:str, ebook_src:list|None, evt:gr.SelectData)->tuple:
                 try:
+                    ebook_src = to_builtin(ebook_src)
                     session = context.get_session(session_id)
                     if not (session and session.get('id', False)):
                         return tuple(gr.update() for _ in range(4))
@@ -2817,6 +2819,7 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     nonlocal models
                     if custom_file is not None:
+                        custom_file = to_builtin(custom_file)
                         state = {}
                         session = context.get_session(session_id)
                         if session and session.get('id', False):
@@ -3090,6 +3093,7 @@ def build_interface(args:dict)->gr.Blocks:
                 # the whole conversion holds the session: a page reload waits for it instead of replacing the session
                 context_tracker.begin_task(session_id)
                 try:
+                    ebook_src = to_builtin(ebook_src)
                     session = context.get_session(session_id)
                     reset_ebook_session(session_id, force=True, filter_keys=False)
                     if session and session.get('id', False):
@@ -3317,6 +3321,7 @@ def build_interface(args:dict)->gr.Blocks:
 
             def _check_override_ebook(session_id:str, ebook_mode:str, ebook_data:any, ebook_textarea:str, blocks_preview:bool, event:int, translate_enabled:bool, translate_target:str|None)->tuple:
                 try:
+                    ebook_data = to_builtin(ebook_data)
                     session = context.get_session(session_id)
                     source = None
                     error = None

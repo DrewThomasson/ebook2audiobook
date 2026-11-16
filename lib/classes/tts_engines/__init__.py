@@ -11,6 +11,7 @@ from .zonos import Zonos
 from .gptsovits import GptSovits
 from .omnivoice import OmniVoice
 from .f5tts import F5TTS
+from .zipvoice import ZipVoice
 from .orpheus import Orpheus
 from .openvoice import OpenVoice
 from .phonon import Phonon

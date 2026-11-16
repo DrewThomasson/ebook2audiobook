@@ -5,7 +5,7 @@
 مبدل CPU/GPU از کتاب الکترونیکی به کتاب صوتی همراه با فصل‌ها و فراداده<br/>
 با استفاده از موتورهای پیشرفته TTS و موارد دیگر.<br/>
 پشتیبانی از شبیه‌سازی صدا و ۱۶۹۶ زبان!
-> [!IMPORTANT]
+> مهم
 **این ابزار تنها برای استفاده با کتاب‌های الکترونیکی فاقد DRM که به‌صورت قانونی به دست آمده‌اند، در نظر گرفته شده است.** <br>
 نویسندگان مسئول هیچ‌گونه سوءاستفاده از این نرم‌افزار یا هرگونه پیامد قانونی ناشی از آن نیستند. <br>
 از این ابزار مسئولانه و در چارچوب تمام قوانین قابل اجرا استفاده کنید.
@@ -118,13 +118,13 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## ویژگی‌ها
-- 🔧 **موتورهای TTS پشتیبانی شده**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **موتورهای TTS پشتیبانی‌شده**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **تبدیل چندین قالب فایل**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **ناحیه متن** برای تبدیل مستقیم یک متن کوتاه به صدا
 - 🔍 **اسکن OCR** برای فایل‌هایی با صفحات متنی به‌صورت تصویر
 - 🔊 **تبدیل متن به گفتار باکیفیت**، از تقریباً بلادرنگ تا صدایی تقریباً واقعی
 - 🗣️ **شبیه‌سازی صدای اختیاری** با استفاده از فایل صوتی خودتان
-- 🌐 **Supports 1696 languages** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
+- 🌐 **از 1696 زبان پشتیبانی می‌کند** ([supported languages list](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html))
 - 💻 **سازگار با منابع کم** — روی **2 GB RAM / 1 GB VRAM (حداقل)** اجرا می‌شود
 - 🎵 **قالب‌های خروجی کتاب صوتی**: mono or stereo `aac`, `flac`, `mp3`, `m4b`, `m4a`, `mp4`, `mov`, `ogg`, `wav`, `webm`
 - 🧠 **برچسب‌های SML پشتیبانی می‌شوند** — کنترل دقیق وقفه‌ها، مکث‌ها، تعویض صدا و موارد بیشتر ([see below](#sml-tags-available))
@@ -170,7 +170,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 **مخزن دیگر ما را که به افزودن خودکار SML در کتاب الکترونیکی شما اختصاص دارد، بررسی کنید -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
-> [!IMPORTANT]
+> مهم
 **پیش از ارسال مشکل نصب یا باگ، با دقت در زبانه مسائل باز و بسته جستجو کنید<br>
 تا مطمئن شوید مشکل شما از قبل وجود ندارد.**
 
@@ -210,11 +210,11 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
    
 1. **برنامه وب را باز کنید**: برای دسترسی به برنامه وب و تبدیل کتاب‌های الکترونیکی، روی URL ارائه‌شده در ترمینال کلیک کنید. `http://localhost:7860/`
 2. **برای پیوند عمومی**:
-   `./ebook2audiobook.command --share` (لینوکس/مک او اس)
+   `./ebook2audiobook.command --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
    `python app.py --share` (همه سیستم‌عامل‌ها، فقط یک بار نصب شده و با پایتون موجود در پوشه python_env آن)
 
-> [!IMPORTANT]
+> مهم
 **اگر اسکریپت متوقف و دوباره اجرا شود، باید رابط گرافیکی Gradio خود را تازه‌سازی کنید<br>
 تا صفحه وب بتواند دوباره به سوکت اتصال جدید متصل شود.**
 
@@ -249,7 +249,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - در اولین راه‌اندازی، ebook2audiobook در `~/ebook2audiobook` (`%USERPROFILE%\ebook2audiobook` در ویندوز) کپی می‌شود و در آنجا نصب می‌گردد<br>
   با اسکریپت راه‌اندازی‌اش، دقیقاً همانطور که `./ebook2audiobook.command` یا `ebook2audiobook.cmd` انجام می‌دهند.
 - برای استفاده از پوشه دیگری، قبل از اولین راه‌اندازی، `E2A_HOME` را تنظیم کنید و آن را برای راه‌اندازی‌های بعدی نیز تنظیم نگه دارید<br>
-  (یعنی `export E2A_HOME=/data/ebook2audiobook` در Linux/MacOS، `setx E2A_HOME D:\ebook2audiobook` سپس یک ترمینال جدید در ویندوز).
+  (یعنی `export E2A_HOME=/data/ebook2audiobook` در Linux/MacOS، `setx E2A_HOME D:\ebook2audiobook` سپس یک ترمینال جدید در Windows).<br>
+  مسیر آن را کوتاه نگه دارید: حداکثر 98 کاراکتر در Linux/MacOS، 179 کاراکتر در Windows، به [Common Issues](#common-issues) مراجعه کنید.
 - این پوشه یک پوشه معمولی ebook2audiobook است: `./ebook2audiobook.command` (`./e2a.sh`) و `ebook2audiobook.cmd` (`e2a.cmd`) نیز در آن کار می‌کنند.
 - اگر آن پوشه از قبل حاوی یک کتاب الکترونیکی تبدیل‌شده به کتاب صوتی کلون‌شده یا دانلود‌شده باشد، همان‌طور که هست راه‌اندازی می‌شود و pip هرگز آن را تغییر نمی‌دهد.
 - مسیرهای نسبی داده شده به `--ebook`، `--ebooks_dir`، `--voice`، `--voice_map`، `--custom_model` و `--output_dir`<br>
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - توجه: MPS در Docker در دسترس نیست، بنابراین باید از CPU استفاده شود
-- توجه: volume نام‌دار `e2a_venvs` موتورهای TTS نصب‌شده در venv مخصوص هر کدام (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM و غیره) را
+- توجه: حجم نام‌گذاری‌شده `e2a_venvs` موتورهای TTS را در محیط مجازی خودشان (GPT-SoVITS، Zonos، OmniVoice، F5-TTS، ZipVoice، Orpheus، Spark-TTS، ChatTTS، OpenVoice، MeloTTS، CSM و غیره) نگه می‌دارد.
   بین اجراهای کانتینر حفظ می‌کند، بنابراین هر بار دوباره نصب نمی‌شوند. برای بازنشانی آن‌ها: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -715,12 +716,18 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 ## مشکلات رایج:
 - پردازنده گرافیکی NVIDIA/ROCm/XPU/MPS من شناسایی نمی‌شود؟؟ -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU کند است (روی CPU سرور SMP بهتر است) در حالی که GPU می‌تواند تبدیل تقریباً بلادرنگ داشته باشد.
-   ] [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    (با این حال شبیه‌سازی صدای zero-shot ندارد، و صداها با کیفیت Siri هستند، اما روی cpu بسیار سریع‌تر است).
 - «مشکلاتی با وابستگی‌ها دارم» - کافی است از docker استفاده کنید، کاملاً مستقل است و حالت بدون رابط دارد،
    برای اطلاعات بیشتر پارامتر  را به انتهای دستور docker run اضافه کنید. `--help`
 - «مشکل قطع شدن صدا دارم!» - لطفاً یک ISSUE در این مورد ایجاد کنید،
    ما به همه زبان‌ها صحبت نمی‌کنیم و برای تنظیم دقیق منطق تقسیم جمله به توصیه کاربران نیاز داریم.😊
+- «مسیر این پوشه ebook2audiobook خیلی طولانی است»، یا اینکه Piper با `Error processing file '.../phontab'` متوقف می‌شود؟
+   Piper داده‌های espeak-ng خود را از `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br> می‌خواند
+   (`python_env\Lib\site-packages\piper\espeak-ng-data` در ویندوز) و نمی‌توان آن را بیش از 159 بایت (229 در ویندوز) باز کرد،<br>
+   بنابراین خود مسیر پوشه باید حداکثر 98 کاراکتر در Linux/MacOS و 179 کاراکتر در Windows باشد (یک کاراکتر غیر ASCII معادل 2 تا 4 کاراکتر حساب می‌شود).<br>
+   اسکریپت‌های راه‌اندازی آن را در هر بار شروع، قبل از نصب هر چیزی، بررسی می‌کنند و در یک پوشه طولانی‌تر، که یک پوشه نصب‌شده نیز هست، متوقف می‌شوند.<br>
+   پوشه را به یک مسیر کوتاه‌تر منتقل کنید، `python_env` و مدل‌های آن همراه با آن منتقل می‌شوند (pip / pipx / Nix: سپس `E2A_HOME` را روی مسیر جدید آن تنظیم کنید).
 
 ## ***** نقشه راه *****
 - تمام ویژگی‌ها برای مشارکت‌های عمومی باز هستند ⭐
@@ -759,6 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 ( 1] https://github.com/maya-ai/maya1)[cite:
 - [x] OmniVoice ( 1] https://github.com/k2-fsa/OmniVoice)[cite:
 - [x] F5-TTS ( 1) https://github.com/swivid/f5-tts)[cite:
+- [x] ZipVoice / LuxTTS (https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS ( 1) https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite:
 - [x] VibeVoice ( 1] https://github.com/vibevoice-community/VibeVoice)[cite:
 - [x] VoxCPM2 ( 1) https://github.com/voxcpm/voxcpm)[cite:
@@ -827,11 +835,11 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 
 #### سازگاری با سیستم عامل
 - [x] 🪟 ویندوز x86
-- [x] 🪟 ویندوز آرم
+- [x] 🪟 ARM Windows
 - [x] 🍎 مک اینتل x86
 - [x] 🍎 مک اپل سیلیکون
 - [x] 🐧 لینوکس x86
-- [x] 🐧 آرم لینوکس
+- [x] 🐧 ARM Linux
 
 **********
 

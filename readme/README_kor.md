@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## 기능
-- 🔧 **TTS 엔진 지원**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS`
+- 🔧 **지원되는 TTS 엔진**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **여러 파일 형식 변환**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 짧은 텍스트를 직접 오디오로 변환하는 **텍스트 영역**
 - 🔍 이미지로 된 텍스트 페이지가 있는 파일을 위한 **OCR 스캔**
@@ -249,7 +249,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 첫 번째 시작 시 ebook2audiobook을 `~/ebook2audiobook`(Windows의 경우 `%USERPROFILE%\ebook2audiobook`)에 복사하고 해당 위치에 설치합니다.<br>
   `./ebook2audiobook.command` 또는 `ebook2audiobook.cmd`과 정확히 동일한 방식으로 실행 스크립트를 사용하여 실행합니다.
 - 다른 폴더를 사용하려면 첫 번째 시작 전에 `E2A_HOME`을(를) 설정하고 다음 시작을 위해 계속 설정된 상태로 유지하세요.<br>
-  (즉, Linux/MacOS에서는 `export E2A_HOME=/data/ebook2audiobook`, Windows에서는 `setx E2A_HOME D:\ebook2audiobook` 다음 새 터미널).
+  (즉, Linux/MacOS에서는 `export E2A_HOME=/data/ebook2audiobook`, Windows에서는 `setx E2A_HOME D:\ebook2audiobook` 다음 새 터미널).<br>
+  경로를 짧게 유지하세요. Linux/MacOS에서는 최대 98자, Windows에서는 179자입니다. [Common Issues](#common-issues)을(를) 참조하세요.
 - 이 폴더는 일반적인 ebook2audiobook 폴더입니다. `./ebook2audiobook.command`(`./e2a.sh`) 및 `ebook2audiobook.cmd`(`e2a.cmd`)도 이 폴더에서 작동합니다.
 - 해당 폴더에 이미 복제되거나 다운로드된 ebook2audiobook이 있는 경우, 그대로 시작되며 pip는 이를 변경하지 않습니다.
 - `--ebook`, `--ebooks_dir`, `--voice`, `--voice_map`, `--custom_model` 및 `--output_dir`<br>에 지정된 상대 경로
@@ -523,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - 참고: MPS는 Docker에 노출되지 않으므로 CPU를 사용해야 합니다
-- 참고: 명명된 볼륨 `e2a_venvs`는 각자의 venv에 설치된 TTS 엔진(GPT-SoVITS, Zonos, OmniVoice, F5-TTS, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM 등)을
+- 참고: 지정된 볼륨 `e2a_venvs`은 TTS 엔진을 자체 가상 환경(GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM 등)에 설치된 상태로 유지합니다.
   컨테이너 실행 간에 유지하므로 매번 다시 설치되지 않습니다. 초기화하려면: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -562,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,omnivoice,orpheus,sparktt
-                        s,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,argos,tessda
-                        ta,jieba,voices
+                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
+                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
+                        os,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -721,6 +722,12 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
    자세한 정보는 docker run 명령 끝에 `--help` 매개변수를 추가하세요.
 - "오디오가 잘리는 문제가 있습니다!" - 이에 대해 ISSUE를 작성해 주세요,
    저희는 모든 언어를 구사하지 못하며 문장 분할 로직을 미세 조정하기 위해 사용자의 조언이 필요합니다.😊
+- '이 ebook2audiobook 폴더의 경로가 너무 깁니다' 또는 piper가 `Error processing file '.../phontab'`에서 중지되나요?
+   Piper는 `python_env/lib/python3.x/site-packages/piper/espeak-ng-data`<br>에서 espeak-ng 데이터를 읽습니다.
+   (Windows에서는 `python_env\Lib\site-packages\piper\espeak-ng-data`)이며 159바이트(Windows에서는 229바이트)를 초과하여 열 수 없습니다.<br>
+   따라서 폴더 경로 자체는 Linux/MacOS에서는 최대 98자, Windows에서는 179자여야 합니다(ASCII가 아닌 문자는 2~4자로 계산).<br>
+   시작 스크립트는 무엇이든 설치하기 전에 매번 시작 시 이를 확인하고, 더 긴 폴더와 설치된 폴더에서도 중지합니다.<br>
+   폴더를 더 짧은 경로로 이동하면 `python_env` 및 모델이 함께 이동합니다(pip / pipx / Nix: 그런 다음 `E2A_HOME`을 새 경로로 설정).
 
 ## ***** 로드맵 *****
 - 모든 기능이 공개 기여에 열려 있습니다 ⭐
@@ -759,6 +766,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] Maya1 (https://github.com/maya-ai/maya1)[cite: 1]
 - [x] OmniVoice(https://github.com/k2-fsa/OmniVoice)[cite: 1]
 - [x] F5-TTS (https://github.com/swivid/f5-tts)[cite: 1)
+- [x] ZipVoice / LuxTTS(https://github.com/k2-fsa/ZipVoice)
 - [x] Qwen3-TTS(https://huggingface.co/spaces/Qwen/Qwen3-TTS)[cite: 1]
 - [x] VibeVoice(https://github.com/vibevoice-community/VibeVoice)[cite: 1]
 - [x] VoxCPM2 (https://github.com/voxcpm/voxcpm)[cite: 1]
