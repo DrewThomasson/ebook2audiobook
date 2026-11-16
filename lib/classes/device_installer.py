@@ -245,7 +245,9 @@ class DeviceInstaller():
                 # once the device is set to vulkan. The launchers run it like the cpu image on a host without /dev/dri
                 linux_arch = archs['X86_64'] if arch == archs['AMD64'] else arch
                 if self.vulkan_wheels_ok(tuple(pyvenv), f'{os_env}_{linux_arch}'):
-                    if name == devices['CPU']['proc']:
+                    # a macOS host takes vulkan for its Metal GPU through MoltenVK: the Linux container never sees it, and
+                    # 'Vulkan GPU Metal (MoltenVK)' in the image's device_info misled every bug report sent from it
+                    if name == devices['CPU']['proc'] or self.system == systems['MACOS']:
                         msg = legends['msg_vulkan_docker_image']
                     name = tag = devices['VULKAN']['proc']
                     arch = linux_arch
