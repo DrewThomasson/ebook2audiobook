@@ -1006,7 +1006,8 @@ class TTSUtils:
         # sentence once closing quotes and brackets are set aside (a quote or italic passage that closes on a comma).
         # A [break] after a sentence end can close a paragraph, which the text does not tell apart, and keeps its full
         # pause, as does one next to a [pause]. Blank parts, parts with nothing to speak and tags that add no audio are
-        # passed over; parts_before, the parts of the sentence before this one, are read when step -1 runs past the start
+        # passed over; parts_before, the parts of the sentence before this one, are read when step -1 runs past the start.
+        # A [break] that opens the next sentence is not seen from the end of this one (step 1 stops at the sentence end)
         parts = (parts_before or []) + sentence_parts
 
         def _next_audio(pos:int, step:int)->int:
@@ -1033,7 +1034,7 @@ class TTSUtils:
         text = parts[pos_text].strip()
         if text[-1].isalnum():
             return False
-        text = text.rstrip('"\')]}»”’›')
+        text = re.sub(r'[\p{Pe}\p{Pf}"\']+$', '', text)
         return bool(text) and text[-1] not in punctuation_split_hard_set
 
     def _direction_matches(self, direction:str, table:list)->list:

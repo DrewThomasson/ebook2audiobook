@@ -2033,8 +2033,11 @@ def build_interface(args:dict)->gr.Blocks:
                                 if not (isinstance(sentence_idx, int) and 0 <= sentence_idx < len(block_sentences)):
                                     sentence_idx, block_sentences = 0, ['']
                                 block_sentences[sentence_idx] = text
-                                spoken = get_engine_sentences(block_sentences, get_pronunciation_guide(session)[0], get_cast(session)[0])[sentence_idx]
-                                converted, error = tts_manager.convert_sentence2audio(preview_file, spoken, block_voice=block_voice)
+                                engine_sentences = get_engine_sentences(block_sentences, get_pronunciation_guide(session)[0], get_cast(session)[0])
+                                spoken = engine_sentences[sentence_idx]
+                                # the sentence before in the block, as the conversion passes it: a pause ending it runs on into this one
+                                sentence_before = engine_sentences[sentence_idx - 1] if sentence_idx > 0 else ''
+                                converted, error = tts_manager.convert_sentence2audio(preview_file, spoken, block_voice=block_voice, sentence_before=sentence_before)
                                 if converted and not os.path.exists(preview_file):
                                     converted, error = False, f'{Path(preview_file).name} was not created!'
                                 if converted:
