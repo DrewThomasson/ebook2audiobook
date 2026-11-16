@@ -2188,12 +2188,13 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text = restore_sml(text, sml_blocks)
             # the treatments above set a tag against the word before it and put a space after it: an opening
             # [emphasis] tag goes back against the word it opens on, after a space unless an opening quote or
-            # bracket stands before it
+            # bracket stands before it. A closing tag against a word (a quote between them was dropped) gets a
+            # space: no tag is written inside a word
             def _open_emphasis(m:re.Match)->str:
-                space, char = m.group(1), m.group(2)
-                opening = char in '“‘«([{¿¡' or (char in '"\'' and (space or m.start() == 0))
-                return f"{space}{char}{'' if not char or opening else ' '}{sml_token('emphasis')}"
-            text = re.sub(rf"(\s?)(\S?)\s*{re.escape(sml_token('emphasis'))}\s*", _open_emphasis, text)
+                char = m.group(1)
+                return f"{char}{'' if not char or char in '“‘«([{¿¡' else ' '}{sml_token('emphasis')}"
+            text = re.sub(rf"(\S?)\s*{re.escape(sml_token('emphasis'))}\s*", _open_emphasis, text)
+            text = re.sub(rf"({re.escape(sml_token('emphasis', close=True))})(?=\w)", r"\1 ", text)
             return text
         return None
     except Exception as e:
