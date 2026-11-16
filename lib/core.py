@@ -2233,11 +2233,11 @@ def get_sentences(session_id:str, text:str)->list|None:
                 i = m.end()
                 last = i
                 continue
-            if ord(sentence[i]) >= sml_escape_tag:
+            if _is_sml_char(sentence[i]):
                 if i > last:
                     parts.append(sentence[last:i])
                 j = i
-                while j < n and ord(sentence[j]) >= sml_escape_tag:
+                while j < n and _is_sml_char(sentence[j]):
                     j += 1
                 parts.append(sentence[i:j])
                 i = j
@@ -2248,8 +2248,13 @@ def get_sentences(session_id:str, text:str)->list|None:
             parts.append(sentence[last:])
         return parts
 
+    def _is_sml_char(c:str)->bool:
+        # an SML tag stands in the text as one character of its own from sml_escape_tag on; the characters
+        # past the last tag are text, such as the full-width comma (U+FF0C) of Chinese and Japanese
+        return sml_escape_tag <= ord(c) < sml_escape_end
+
     def _strip_escaped_sml(s:str)->str:
-        return ''.join(c for c in s if ord(c) < sml_escape_tag)
+        return ''.join(c for c in s if not _is_sml_char(c))
 
     def _clean_len(s:str)->int:
         return len(_strip_escaped_sml(s))
@@ -2289,38 +2294,30 @@ def get_sentences(session_id:str, text:str)->list|None:
             return [text]
 
     def _join_ideogramms(idg_list:list[str])->str:
-        try:
-            buffer = ''
-            prev_latin = False
-            prev_nonlatin = False
-            for token in idg_list:
-                cur_starts_latin = bool(re.match(r'[A-Za-z0-9]', token))
-                cur_starts_nonlatin = bool(re.match(r'[^\x00-\x7F]', token))
-                if buffer:
-                    if (prev_latin and (cur_starts_latin or cur_starts_nonlatin)) or (prev_nonlatin and cur_starts_latin):
-                        buffer += ' '
-                    elif len(buffer) + len(token) > max_chars:
-                        yield buffer
-                        buffer = ''
-                buffer += token
-                prev_latin = bool(re.search(r'[A-Za-z0-9]$', token))
-                prev_nonlatin = bool(re.search(r'[^\x00-\x7F]$', token))
-            if buffer:
-                yield buffer
-        except Exception as e:
-            DependencyError(e)
-            if buffer:
-                yield buffer
+        # joins the tokens of one piece: no space between two ideogram tokens, one beside a latin token.
+        # The pieces were already cut at sentence and clause ends, so the join never cuts again
+        buffer = ''
+        prev_latin = False
+        prev_nonlatin = False
+        for token in idg_list:
+            cur_starts_latin = bool(re.match(r'[A-Za-z0-9]', token))
+            cur_starts_nonlatin = bool(re.match(r'[^\x00-\x7F]', token))
+            if buffer and ((prev_latin and (cur_starts_latin or cur_starts_nonlatin)) or (prev_nonlatin and cur_starts_latin)):
+                buffer += ' '
+            buffer += token
+            prev_latin = bool(re.search(r'[A-Za-z0-9]$', token))
+            prev_nonlatin = bool(re.search(r'[^\x00-\x7F]$', token))
+        return buffer
 
     def _is_pure_escaped_sml(s:str)->bool:
-        return bool(s) and all(ord(c) >= sml_escape_tag for c in s)
+        return bool(s) and all(_is_sml_char(c) for c in s)
 
     def _strip_leading_noise(s:str)->str:
         i = 0
         n = len(s)
         while i < n:
             c = s[i]
-            if c.isalnum() or c == '_' or c.isspace() or ord(c) >= sml_escape_tag:
+            if c.isalnum() or c == '_' or c.isspace() or _is_sml_char(c):
                 break
             i += 1
         return s[i:].lstrip()
@@ -2332,7 +2329,7 @@ def get_sentences(session_id:str, text:str)->list|None:
         # in another tone than the clause they belong to
         sentence_end = len(rest)
         for i in range(max_chars + 1, len(rest)):
-            if rest[i] in punctuation_split_hard_set:
+            if rest[i] in punctuation_split_hard_set or (space_ends_sentence and rest[i].isspace()):
                 sentence_end = i + 1
                 break
         lo = merge_threshold + 1
@@ -2361,7 +2358,20 @@ def get_sentences(session_id:str, text:str)->list|None:
         for i in range(hi, lo - 1, -1):
             if rest[i].isspace():
                 return i
-        # 5) last resort -> hard cut at max_chars
+        # 5) no whitespace (a language written without spaces) -> the last word end its tokenizer finds
+        if is_unspaced:
+            idx = -1
+            pos = 0
+            for token in _segment_ideogramms(rest[:sentence_end]):
+                start = rest.find(token, pos)
+                if start == -1 or start + len(token) > hi:
+                    break
+                pos = start + len(token)
+                if pos >= lo:
+                    idx = pos
+            if idx != -1:
+                return idx
+        # 6) last resort -> hard cut at max_chars
         return max_chars
 
     def _force_split_segment(segment:str)->list[str]:
@@ -2383,7 +2393,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             if best_idx == -1:
                 best_idx = _clause_cut(rest)
             # Safety: never cut inside an SML group
-            while best_idx < len(rest) and ord(rest[best_idx]) >= sml_escape_tag:
+            while best_idx < len(rest) and _is_sml_char(rest[best_idx]):
                 best_idx += 1
             left = rest[:best_idx].strip()
             right = rest[best_idx:].strip()
@@ -2402,6 +2412,10 @@ def get_sentences(session_id:str, text:str)->list|None:
         if session.get('translate_enabled') and session.get('translate'):
             lang = session['translate']
         tts_engine = session['tts_engine']
+        # languages whose pieces are tokenized into words and joined again, with no space between two non-latin words
+        is_unspaced = lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']
+        # Thai and Lao write no full stop: a space ends a sentence or a clause
+        space_ends_sentence = lang in ['tha', 'lao']
         max_chars = int(language_mapping[lang]['max_chars'] / 2)
         # a piece of merge_threshold or less is too short to be spoken on its own, and a piece may reach
         # merge_ceiling to avoid one: the cut of a long sentence and the merge of short pieces both go by them
@@ -2410,7 +2424,13 @@ def get_sentences(session_id:str, text:str)->list|None:
         conjunctions = language_conjunctions.get(lang)
         conjunction_pattern = re.compile(r'(?<=\s)(?:' + '|'.join(map(re.escape, conjunctions)) + r')(?=\s)', re.IGNORECASE) if conjunctions else None
         text, sml_blocks = escape_sml(text)
+        sml_escape_end = sml_escape_tag + len(sml_blocks)
         assert not SML_TAG_PATTERN.search(text)
+        if lang in ['zho', 'jpn']:
+            # Chinese and Japanese put no space between words. A space between two of their characters, such as
+            # the one normalize_text puts after punctuation, is dropped when a piece is joined again, so it is
+            # dropped here, before the pieces are measured
+            text = re.sub(r'(?<=[^\x00-\x7F])\s+(?=[^\x00-\x7F])', '', text)
         if session['is_gui_process']:
             msg = legends['msg_segment'].format(n=1)
             progress_bar(0, desc=msg)
@@ -2423,12 +2443,12 @@ def get_sentences(session_id:str, text:str)->list|None:
         current_text = []
         while idx < tlen:
             c = text[idx]
-            if ord(c) >= sml_escape_tag and c not in in_text:
+            if _is_sml_char(c) and c not in in_text:
                 if current_text:
                     segments.append(('text', ''.join(current_text)))
                     current_text = []
                 start = idx
-                while idx < tlen and ord(text[idx]) >= sml_escape_tag and text[idx] not in in_text:
+                while idx < tlen and _is_sml_char(text[idx]) and text[idx] not in in_text:
                     idx += 1
                 segments.append(('sml', text[start:idx]))
             else:
@@ -2456,7 +2476,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             cut_idx = -1
             j = len(combined) - 1
             while j >= 0:
-                if ord(combined[j]) >= sml_escape_tag and combined[j] not in in_text:
+                if _is_sml_char(combined[j]) and combined[j] not in in_text:
                     cut_idx = j + 1
                     break
                 j -= 1
@@ -2552,9 +2572,12 @@ def get_sentences(session_id:str, text:str)->list|None:
             merged_list.append(cur)
             i += 1
         final_list = merged_list
-        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-            result = []
+        if is_unspaced:
+            # each piece is tokenized and joined again on its own, so a piece still ends where the cut above
+            # ended it: at a sentence end when the sentence fits, else at a clause mark or a word end
+            ideogram_list = []
             for s in final_list:
+                result = []
                 parts = _split_sentence_on_sml(s)
                 for part in parts:
                     part = part.strip()
@@ -2570,9 +2593,8 @@ def get_sentences(session_id:str, text:str)->list|None:
                         tokens = tokens.strip()
                         if tokens:
                             result.append(tokens)
-            ideogram_list = []
-            for s in _join_ideogramms(result):
-                if not _is_latin_only(s):
+                s = _join_ideogramms(result)
+                if s and not _is_latin_only(s):
                     ideogram_list.append(s)
             if ideogram_list:
                 ideogram_list = [restore_sml(s, sml_blocks) for s in ideogram_list]
