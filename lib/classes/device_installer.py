@@ -2500,6 +2500,9 @@ class DeviceInstaller():
                             print(error)
                             return 1
                     self.link_os_libgomp('python_env', device_info)
+                    # an inherited one would make sitecustomize.py answer 0 for torch in the probe too: it asks torch
+                    # itself, and the verdict below sets it again
+                    os.environ.pop('E2A_XPU_UNUSABLE', None)
                     gpu_info = _probe_gpus()
                     device_info_dict['gpu_count'] = gpu_info['count']
                     device_info_dict['gpu_backend'] = gpu_info['backend']
@@ -2510,9 +2513,13 @@ class DeviceInstaller():
                     # mean torch xpu runs on it: on an iGPU it does not support or an old driver, torch.xpu.is_available()
                     # answers 0 or kills the process (Windows access violation in device_count()). Only this probe, in
                     # its own process, can ask safely: XPU off, so nothing in the app (the device dropdown,
-                    # VoiceExtractor, the session device check) asks torch.xpu again
+                    # VoiceExtractor, the session device check) asks torch.xpu again. Third-party code still asks it
+                    # on its own (transformers at import, CPU conversions included): with E2A_XPU_UNUSABLE set,
+                    # components/sitecustomize.py makes torch.xpu report no device in this process, torch not imported
+                    # yet, and in every child that inherits it
                     if device_info['name'] == devices['XPU']['proc'] and gpu_info['count'] == 0 and gpu_info.get('probed'):
                         devices['XPU']['found'] = False
+                        os.environ['E2A_XPU_UNUSABLE'] = '1'
                         msg = legends['msg_xpu_unusable']
                         print(msg)
                     if gpu_info['count'] > 0:

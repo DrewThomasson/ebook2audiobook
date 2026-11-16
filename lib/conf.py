@@ -200,6 +200,8 @@ def sitecustomize_patch()->None:
         # an import made before this point is patched right away
         if 'torchaudio' in sys.modules and hasattr(module, 'patch_torchaudio'):
             module.patch_torchaudio(sys.modules['torchaudio'])
+        if 'torch' in sys.modules and hasattr(module, 'patch_torch_xpu'):
+            module.patch_torch_xpu(sys.modules['torch'])
     except Exception as e:
         error = f'sitecustomize_patch(): {e}'
         print(error)
