@@ -291,16 +291,16 @@ class SessionContext:
             "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
             ####### Zonos settings (ZONOS2)
-            "zonos_emotion_enabled": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled'],
-            "zonos_emotion_happy": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy'],
-            "zonos_emotion_sad": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad'],
-            "zonos_emotion_angry": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry'],
-            "zonos_emotion_surprised": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised'],
-            "zonos_emotion_valence": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence'],
-            "zonos_emotion_arousal": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal'],
-            "zonos_emotion_strength": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'],
-            "zonos_emotion_cfg_scale": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'],
-            "zonos_speaking_rate": default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'],
+            "zonos_emotion_enabled": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_enabled'],
+            "zonos_emotion_happy": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['happy'],
+            "zonos_emotion_sad": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['sad'],
+            "zonos_emotion_angry": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['angry'],
+            "zonos_emotion_surprised": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['surprised'],
+            "zonos_emotion_valence": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['valence'],
+            "zonos_emotion_arousal": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['arousal'],
+            "zonos_emotion_strength": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength'],
+            "zonos_emotion_cfg_scale": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale'],
+            "zonos_speaking_rate": default_engine_settings[TTS_ENGINES['ZONOS2']]['speaking_rate'],
             ####### GPT-SoVITS settings
             "gptsovits_speed": default_engine_settings[TTS_ENGINES['GPTSOVITS']]['speed'],
             "gptsovits_top_k": default_engine_settings[TTS_ENGINES['GPTSOVITS']]['top_k'],
@@ -792,7 +792,8 @@ def load_db_blocks(db_path:str)->dict:
                     'keep': bool(keep),
                     'text': text,
                     'voice': b_voice,
-                    'tts_engine': b_tts_engine,
+                    # saved under the engine's older name (zonos -> zonos2): read as the new one
+                    'tts_engine': tts_engines_renamed.get(b_tts_engine, b_tts_engine),
                     'fine_tuned': b_fine_tuned,
                     'sentences': sentences_by_block.get(bid, []),
                 })
@@ -801,7 +802,7 @@ def load_db_blocks(db_path:str)->dict:
                 'block_resume': block_resume,
                 'sentence_resume': sentence_resume,
                 'voice': voice,
-                'tts_engine': tts_engine,
+                'tts_engine': tts_engines_renamed.get(tts_engine, tts_engine),
                 'fine_tuned': fine_tuned,
                 'blocks': blocks,
             }
@@ -968,7 +969,13 @@ def save_db_blocks(session_id:str)->None:
 def load_json_blocks(filepath:str)->dict:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+        # engines saved under their older name (zonos -> zonos2): read as the new one
+        if isinstance(data, dict):
+            for item in [data] + [b for b in (data.get('blocks') or []) if isinstance(b, dict)]:
+                if item.get('tts_engine') in tts_engines_renamed:
+                    item['tts_engine'] = tts_engines_renamed[item['tts_engine']]
+        return data
     except Exception as e:
         error = f"load_json_blocks() error: {e}"
         print(error)
@@ -3047,7 +3054,7 @@ def block_hash(block: dict) -> str:
         '|'.join((
             (block.get('text') or '').strip(),
             block.get('voice') or '',
-            block.get('tts_engine') or TTS_ENGINES['XTTS'],
+            tts_engines_renamed.get(block.get('tts_engine'), block.get('tts_engine')) or TTS_ENGINES['XTTS'],
             block.get('fine_tuned') or 'internal',
             json.dumps(block.get('sentences') or [], ensure_ascii=False),
         )).encode('utf-8')
@@ -4683,6 +4690,8 @@ def convert_ebook(args:dict)->tuple:
             session['translate_enabled'] = bool(args.get('translate_enabled', False))
             session['translate'] = args.get('translate')
             session['translate_iso1'] = args.get('translate_iso1')
+            # an engine saved under its older name (zonos -> zonos2) runs as the new one
+            args['tts_engine'] = tts_engines_renamed.get(args.get('tts_engine'), args.get('tts_engine'))
             # str(None) would leave 'None' as the session's engine, and every presets load after it fails
             if args.get('tts_engine') not in default_engine_settings:
                 error = legends['error_invalid_tts_engine'].format(engine=args.get('tts_engine'))

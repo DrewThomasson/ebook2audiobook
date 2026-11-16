@@ -7,7 +7,7 @@ from .glowtts import GlowTTS
 from .tacotron import Tacotron2
 from .piper import Piper
 from .yourtts import YourTTS
-from .zonos import Zonos
+from .zonos2 import Zonos2
 from .zonos3 import Zonos3
 from .gptsovits import GptSovits
 from .omnivoice import OmniVoice

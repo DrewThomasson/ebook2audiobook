@@ -3,7 +3,7 @@ import argparse, json, socket, shutil, multiprocessing, sys, uuid, copy, warning
 from pathlib import Path
 from lib.conf import *
 from lib.conf_lang import default_language_code, language_mapping, install_info
-from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings
+from lib.conf_models import TTS_ENGINES, default_fine_tuned, default_engine_settings, tts_engines_renamed
 from lib.lang import legends
 
 warnings.filterwarnings('ignore', category=SyntaxWarning)
@@ -274,12 +274,14 @@ SML tags available:
 [pause] — silence (random range 1.0–1.6 sec.)
 [pause:N] — fixed pause (N sec.)
 [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-[emotion:sad]...[/emotion] — Zonos and Zonos3 only: emotion for a passage (happy, sad, angry, surprised, valence, arousal; also fear, disgust, neutral; Zonos3 also calm, confused) or a mix like [emotion:sad=0.7,angry=0.2]; other engines ignore it
+[emotion:sad]...[/emotion] — Zonos2 and Zonos3 only: emotion for a passage (happy, sad, angry, surprised, valence, arousal; also fear, disgust, neutral; Zonos3 also calm, confused) or a mix like [emotion:sad=0.7,angry=0.2]; other engines ignore it
 ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
     tts_engine_list_keys = [*TTS_ENGINES]
     tts_engine_list_values = list(TTS_ENGINES.values())
+    # older engine names (zonos -> zonos2) still accepted, not listed
+    tts_engine_list_renamed = [name for old in tts_engines_renamed for name in (old, old.upper())]
 
     all_group = parser.add_argument_group('**** The following options are for container only', 'Optional')
     all_group.add_argument(cli_options[0], type=str, help='Mandatory to build a container. The only value is: build_docker.')
@@ -310,7 +312,7 @@ Keys may be absolute paths or basenames. Example:
 Default is set in ./lib/conf.py if not present. The conversion stops if this machine does not have the device
 or the TTS engine cannot run on it (no fall back to CPU). With a voice other than the engine's built-in ones, its
 voice conversion takes the next GPU (Vulkan included) or CPU when it cannot run on the device, and goes on.''')
-    headless_optional_group.add_argument(cli_options[13], type=str, default=TTS_ENGINES['XTTS'], choices=tts_engine_list_keys+tts_engine_list_values, help=f'''Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
+    headless_optional_group.add_argument(cli_options[13], type=str, default=TTS_ENGINES['XTTS'], choices=tts_engine_list_keys+tts_engine_list_values+tts_engine_list_renamed, help=f'''Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
 Default depends on the selected language. The tts engine should be compatible with the chosen language''')
     headless_optional_group.add_argument(cli_options[14], type=str, default=None, help='Path to the custom model zip file containing mandatory model files. Please refer to ./lib/models.py')
     headless_optional_group.add_argument(cli_options[15], type=str, default=default_fine_tuned, help='Fine tuned model path. Default is builtin model.')
@@ -338,13 +340,13 @@ Default to config.json model.""")
 Default to config.json model.""")
     headless_optional_group.add_argument(cli_options[27], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[37], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'], help=f"""(zonos, zonos3 only, optional) Speaking rate: 0 lets the model pick its own pace,
-otherwise about 10 is slow, 15 is natural narration, 30 is very fast. Default {default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate']}.""")
-    headless_optional_group.add_argument(cli_options[38], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'], help=f"""(zonos, zonos3 only, optional) Emotion strength, multiplier on the emotion mix (0-2).
-Default {default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']}.""")
-    headless_optional_group.add_argument(cli_options[39], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'], help=f"""(zonos, zonos3 only, optional) Emotion guidance, 1.0 is off, about 1.5 makes the emotion clearer (1-3).
-Default {default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']}.""")
-    headless_optional_group.add_argument(cli_options[40], type=str, nargs='?', const=True, default=None, help=f"""(zonos, zonos3 only, optional) Enable emotion. Alone, every emotion is at 0 (the plain cloned voice);
+    headless_optional_group.add_argument(cli_options[37], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS2']]['speaking_rate'], help=f"""(zonos2, zonos3 only, optional) Speaking rate: 0 lets the model pick its own pace,
+otherwise about 10 is slow, 15 is natural narration, 30 is very fast. Default {default_engine_settings[TTS_ENGINES['ZONOS2']]['speaking_rate']}.""")
+    headless_optional_group.add_argument(cli_options[38], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength'], help=f"""(zonos2, zonos3 only, optional) Emotion strength, multiplier on the emotion mix (0-2).
+Default {default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength']}.""")
+    headless_optional_group.add_argument(cli_options[39], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale'], help=f"""(zonos2, zonos3 only, optional) Emotion guidance, 1.0 is off, about 1.5 makes the emotion clearer (1-3).
+Default {default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale']}.""")
+    headless_optional_group.add_argument(cli_options[40], type=str, nargs='?', const=True, default=None, help=f"""(zonos2, zonos3 only, optional) Enable emotion. Alone, every emotion is at 0 (the plain cloned voice);
 followed by a mix like happy=0.5,sad=0.2 it uses that mix. Names: happy, sad, angry, surprised (0 to 1),
 valence, arousal (-1 to 1).""")
     headless_optional_group.add_argument(cli_options[28], type=str, help='Path to the output directory. Default is set in ./lib/conf.py')
@@ -459,6 +461,7 @@ valence, arousal (-1 to 1).""")
             args['blocks_preview'] = False
             args['interlude_enabled'] = bool(args.get('enable_interlude'))
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
+            args['tts_engine'] = tts_engines_renamed.get(args['tts_engine'].lower(), args['tts_engine'])
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
             args['output_split_hours'] = default_output_split_hours
@@ -494,7 +497,7 @@ valence, arousal (-1 to 1).""")
                 args[f'csm_{key}'] = args[key] if option in sys.argv else default_engine_settings[TTS_ENGINES['CSM']][key]
             args['zonos_emotion_enabled'] = args.get('enable_emotion') is not None
             if args['zonos_emotion_enabled']:
-                emotion = {name: 0.0 for name in default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']}
+                emotion = {name: 0.0 for name in default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']}
                 if args['enable_emotion'] is not True:
                     # --enable_emotion happy=0.5,sad=0.2: named sliders, the others stay at 0
                     try:

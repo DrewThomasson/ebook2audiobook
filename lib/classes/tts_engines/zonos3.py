@@ -61,8 +61,8 @@ class Zonos3(TTSUtils, TTSRegistry, name='zonos3'):
             self.model_repo = model_cfg['repo']
             self.xtts_speakers = self._load_xtts_builtin_list()
             self.device = devices['CUDA']['proc'] if self.session['device'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['JETSON']['proc']] else self.session['device']
-            # the Zonos panel (zonos_* session keys, defaults of the zonos engine) drives both ZONOS2 and ZONOS3
-            panel = default_engine_settings[TTS_ENGINES['ZONOS']]
+            # the Zonos panel (zonos_* session keys, defaults of the zonos2 engine) drives both ZONOS2 and ZONOS3
+            panel = default_engine_settings[TTS_ENGINES['ZONOS2']]
             self.fine_tuned_params = {
                 key.removeprefix('zonos_'): cast_type(self.session[key]) if self.session.get(key) is not None else cast_type(panel[key.removeprefix('zonos_')])
                 for key, cast_type in {

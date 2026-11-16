@@ -4,7 +4,7 @@ from typing import Callable
 root_dir = str(Path(__file__).resolve().parents[1])
 os.chdir(root_dir)
 sys.path.insert(0, root_dir)
-categories = ['common', 'xtts', 'bark', 'tortoise', 'vits', 'fairseq', 'glowtts', 'tacotron', 'yourtts', 'piper', 'zonos', 'zonos3', 'audiocpp', 'audiocpp_server', 'gptsovits', 'f5tts', 'zipvoice', 'omnivoice', 'orpheus', 'sparktts', 'chattts', 'csm', 'openvoice', 'melotts', 'phonon', 'stanza', 'pyannote', 'demucs', 'interlude', 'argos', 'tessdata', 'jieba', 'voices']
+categories = ['common', 'xtts', 'bark', 'tortoise', 'vits', 'fairseq', 'glowtts', 'tacotron', 'yourtts', 'piper', 'zonos2', 'zonos3', 'audiocpp', 'audiocpp_server', 'gptsovits', 'f5tts', 'zipvoice', 'omnivoice', 'orpheus', 'sparktts', 'chattts', 'csm', 'openvoice', 'melotts', 'phonon', 'stanza', 'pyannote', 'demucs', 'interlude', 'argos', 'tessdata', 'jieba', 'voices']
 parser = argparse.ArgumentParser(description='Download every model e2a uses into one folder laid out exactly like ./models (i.e. a USB key for offline installs).')
 parser.add_argument('models_dir', type=str, help='Target folder, i.e. /media/user/KEY/models or E:\\models')
 parser.add_argument('--only', type=str, default='', help=f"Comma list of categories: {','.join(categories)}")
@@ -30,8 +30,10 @@ from lib.conf_models import TTS_ENGINES, TTS_VOICE_CONVERSION, default_engine_se
 from lib.conf_lang import year_to_decades_languages
 from lib.conf_interlude import interlude_classifier_repo
 languages = {lang.strip().lower() for lang in args.languages.split(',') if lang.strip()}
-skip = {c for c in args.skip.split(',') if c}
-only = [c for c in args.only.split(',') if c] or categories
+# zonos: the zonos2 category before the engine was renamed
+renamed = {'zonos': 'zonos2'}
+skip = {renamed.get(c, c) for c in args.skip.split(',') if c}
+only = [renamed.get(c, c) for c in args.only.split(',') if c] or categories
 unknown = [c for c in only + list(skip) if c not in categories]
 if unknown:
     parser.error(f"unknown categories: {', '.join(unknown)}")
@@ -305,10 +307,10 @@ piper_names = [n for locale, names in load_presets('piper')['internal']['sub'].i
 for n in dict.fromkeys(piper_names):
     if not any(o != n and urllib.parse.unquote(o) == n for o in piper_names):
         add('piper', f'piper {n}', lambda n=n: piper_voice(n), (os.path.join(tts_dir, 'piper', n),))
-if engine_wanted(TTS_ENGINES['ZONOS']):
-    zonos_repo = default_engine_settings[TTS_ENGINES['ZONOS']]['repo']
-    for file in dict.fromkeys(f for cfg in load_presets('zonos').values() for f in cfg['files']):
-        add('zonos', f'{zonos_repo}/{file}', lambda file=file: hf_file(zonos_repo, file))
+if engine_wanted(TTS_ENGINES['ZONOS2']):
+    zonos2_repo = default_engine_settings[TTS_ENGINES['ZONOS2']]['repo']
+    for file in dict.fromkeys(f for cfg in load_presets('zonos2').values() for f in cfg['files']):
+        add('zonos2', f'{zonos2_repo}/{file}', lambda file=file: hf_file(zonos2_repo, file))
 if engine_wanted(TTS_ENGINES['ZONOS3']):
     # at the revision the engine pins (zonos3-server refuses GGUFs of another schema)
     zonos3_repo = default_engine_settings[TTS_ENGINES['ZONOS3']]['repo']

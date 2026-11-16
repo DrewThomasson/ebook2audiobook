@@ -6,7 +6,7 @@ xtts_builtin_speakers_list = {}
 
 # listed in any order: the end of this file sorts it by rating, with default_engine_settings
 TTS_ENGINES = {
-    "ZONOS": "zonos",
+    "ZONOS2": "zonos2",
     "ZONOS3": "zonos3",
     "GPTSOVITS": "gptsovits",
     "OMNIVOICE": "omnivoice",
@@ -57,6 +57,8 @@ TTS_ENGINES = {
     "VOXCPM2": "voxcpm2",
     "VOXTRAL_TTS": "voxtral_tts"
 }
+# engines saved under an older name (sessions, block databases, CLI): read as the new one
+tts_engines_renamed = {"zonos": TTS_ENGINES['ZONOS2']}
 
 # voice conversion: a voice file picked for a built-in voice engine (piper, vits, fairseq, glowtts, tacotron, orpheus, melotts,
 # phonon and the audio.cpp ones with clone False) turns its output into that voice, on audio.cpp's server (common/voice_conversion.py).
@@ -81,7 +83,7 @@ TTS_SML = {
     "break": {"static": "[break]", "paired": False},
     "pause": {"static": "[pause]", "paired": False},
     "voice": {"paired": True},
-    # zonos only (ignored by the other engines): [emotion:sad]...[/emotion] or a mix [emotion:sad=0.7,angry=0.2].
+    # zonos2 only (ignored by the other engines): [emotion:sad]...[/emotion] or a mix [emotion:sad=0.7,angry=0.2].
     # ZONOS2 directions happy/sad/angry/surprised (0..1) and axes valence/arousal (-1..1); all at 0 is the plain
     # cloned voice. Zonos v0.1 names still work through aliases, fear/disgust through "map" (no direction of their own,
     # approximated on the two axes), neutral/other add nothing. A mix is scaled by 1/max(1, sum of |weights|).
@@ -198,13 +200,13 @@ max_custom_model = 100
 max_custom_voices = 1000
 
 # devices each engine runs on ("devices" below): gradio's device list offers the ones found on this machine, convert_ebook()
-# stops on any other. torch engines: every torch device, no Vulkan (torch has no Vulkan device). Native builds (zonos,
-# audio.cpp): Vulkan too, their ROCm / XPU sessions run the Vulkan packages and MPS the Metal ones
+# stops on any other. torch engines: every torch device, no Vulkan (torch has no Vulkan device). Native builds (zonos2,
+# zonos3, audio.cpp): Vulkan too, their ROCm / XPU sessions run the Vulkan packages and MPS the Metal ones
 torch_devices = [devices['CPU']['proc'], devices['CUDA']['proc'], devices['ROCM']['proc'], devices['XPU']['proc'], devices['MPS']['proc'], devices['JETSON']['proc']]
 native_devices = torch_devices + [devices['VULKAN']['proc']]
 
 default_engine_settings = {
-    TTS_ENGINES['ZONOS']: {
+    TTS_ENGINES['ZONOS2']: {
         "version": "0.5.2",
         "packages": {
             "linux-x64-cuda13": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-linux-x64-cuda13.tar.gz", "gpu": True},
@@ -234,7 +236,7 @@ default_engine_settings = {
             "linux-aarch64": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-linux-aarch64.tar.gz", "gpu": False}
         },
         # GGUF weights (Hugging Face, e2a's tts_dir cache): the backbone file comes from the fine_tuned preset
-        # (zonos_presets.py: Q4_K / Q6_K / Q8_0), the DAC decoder and the speaker encoder are shared
+        # (zonos2_presets.py: Q4_K / Q6_K / Q8_0), the DAC decoder and the speaker encoder are shared
         "repo": "Zyphra/ZONOS2-GGUF",
         "dac": "dac.gguf",
         "spk": "spk-encoder.gguf",
