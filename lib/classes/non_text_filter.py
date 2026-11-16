@@ -221,8 +221,8 @@ class NonTextFilter:
             self._no_space if self._no_space is not None
             else self._detect_no_space(text)
         )
-        # True while the fragment just before the current one was kept, holds a letter
-        # and ends in a period
+        # True while the fragment just before the current one was kept and its last
+        # word is a word with a letter that ends in a period
         after_period = False
         for sent in self._SENT_SPLIT.split(text):
             s = sent.strip() if sent else ''
@@ -260,20 +260,25 @@ class NonTextFilter:
                     # spoken interjection, not noise. Real noise (lone digits,
                     # stray symbols) contains no letters at all.
                     # A period also closes an abbreviation ("Oct. 23.", "No. 7."), so a
-                    # number alone right after a kept fragment that ends in a period is
-                    # the rest of that sentence. An SML tag in the fragment means the
-                    # number starts a block of its own, where it stays noise.
+                    # number alone right after a kept fragment whose last word ends in
+                    # a period is the rest of that sentence. An SML tag between the two
+                    # means the number starts a block of its own, where it stays noise.
                     is_interjection = (
                         any(c.isalpha() for c in real_words[0])
                         and any(c in hard for c in s)
                     )
                     is_sentence_tail = (
                         follows_period
-                        and len(words) == len(real_words)
+                        and len(words) == 1
                         and any(c.isdigit() for c in s)
                     )
                     if not (is_interjection or is_sentence_tail):
                         continue
+                last_word = words[-1]
+                after_period = (
+                    last_word.endswith('.')
+                    and any(c.isalpha() for c in last_word)
+                    and not self._PLACEHOLDER_RE.search(last_word)
+                )
             kept.append(s)
-            after_period = s.endswith('.') and any(c.isalpha() for c in s)
         return ' '.join(kept)
