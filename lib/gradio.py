@@ -3278,17 +3278,24 @@ def build_interface(args:dict)->gr.Blocks:
                     nonlocal audiobook_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['audiobooks_dir'] is not None:
-                            audiobook_options = [
-                                (f, os.path.join(session['audiobooks_dir'], str(f)))
-                                for f in os.listdir(session['audiobooks_dir'])
-                                if not f.lower().endswith(".vtt")
-                            ]
+                        # the folder, or a file in it, can go while the page is open (full_docker bind-mounts ./audiobooks,
+                        # cleaned on the host): list what is left, prepare_dirs() makes the folder again at the next conversion.
+                        # Always this session's own list: audiobook_options is shared by all the sessions
+                        entries = []
+                        try:
+                            names = os.listdir(session['audiobooks_dir']) if session['audiobooks_dir'] is not None else []
+                        except FileNotFoundError:
+                            names = []
+                        for f in names:
+                            if not f.lower().endswith('.vtt'):
+                                path = os.path.join(session['audiobooks_dir'], str(f))
+                                try:
+                                    entries.append((os.path.getmtime(path), f, path))
+                                except FileNotFoundError:
+                                    pass
+                        entries.sort(key=lambda x: x[0], reverse=True)
+                        audiobook_options = [(f, path) for mtime, f, path in entries]
                         if len(audiobook_options) > 0:
-                            audiobook_options.sort(
-                                key=lambda x: os.path.getmtime(x[1]),
-                                reverse=True
-                            )
                             session['audiobook'] = (
                                 session['audiobook']
                                 if session['audiobook'] in [option[1] for option in audiobook_options]
