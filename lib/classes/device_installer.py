@@ -208,6 +208,47 @@ class DeviceInstaller():
                 error = legends['error_symlink_libgomp'].format(file=libgomp_dst, error=e)
                 print(error)
 
+    def sync_sitecustomize(self, env_dir:str)->None:
+        # components/sitecustomize.py in an engine's venv (torchaudio.load -> soundfile, coqui's config allowlisted for
+        # torch.load, torch.xpu off under E2A_XPU_UNUSABLE). Copied when missing or different, an identical copy is left
+        # alone: cheap enough to run at every engine start, so a venv installed before gets the patches added since
+        sitecustomize_src = os.path.join(components_dir, 'sitecustomize.py')
+        if self.system == systems['WINDOWS']:
+            site_dirs = [os.path.join(env_dir, 'Lib', 'site-packages')]
+        else:
+            site_dirs = glob(os.path.join(env_dir, 'lib', 'python*', 'site-packages'))
+        try:
+            with open(sitecustomize_src, 'rb') as f:
+                content = f.read()
+        except OSError as e:
+            error = legends['error_sitecustomize_sync'].format(file=sitecustomize_src, error=e)
+            print(error)
+            return
+        for site_dir in site_dirs:
+            if not os.path.isdir(site_dir):
+                continue
+            sitecustomize_dst = os.path.join(site_dir, 'sitecustomize.py')
+            try:
+                with open(sitecustomize_dst, 'rb') as f:
+                    if f.read() == content:
+                        continue
+            except OSError:
+                pass
+            msg = legends['msg_sitecustomize_sync'].format(file=sitecustomize_dst)
+            print(msg)
+            try:
+                # the new copy replaces the old one in one step: a worker starting meanwhile reads either, never half
+                # of one. A copy left read-only (copy2 of a read-only source) would refuse the replace on Windows
+                if os.path.exists(sitecustomize_dst) and not os.access(sitecustomize_dst, os.W_OK):
+                    os.chmod(sitecustomize_dst, os.stat(sitecustomize_dst).st_mode | 0o200)
+                sitecustomize_tmp = f'{sitecustomize_dst}.e2a'
+                with open(sitecustomize_tmp, 'wb') as f:
+                    f.write(content)
+                os.replace(sitecustomize_tmp, sitecustomize_dst)
+            except OSError as e:
+                error = legends['error_sitecustomize_sync'].format(file=sitecustomize_dst, error=e)
+                print(error)
+
     def check_pyvenv(self, tag:str)->list:
         # fixed per device, the same rule the launchers create python_env with: jetson wheels are cp310 only
         # (min_python_version), every other device runs max_python_version, which all other prebuilt wheels (py-pkg

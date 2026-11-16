@@ -517,6 +517,8 @@ legends = {
     'error_torch_install': 'Error while installing torch package: {e}',
     'msg_symlink_libgomp': 'Creating symlink to use the OS libgomp.',
     'error_symlink_libgomp': 'Cannot link {file} to the OS libgomp: {error}',
+    'msg_sitecustomize_sync': 'Updating sitecustomize.py hook in {file}',
+    'error_sitecustomize_sync': 'sitecustomize.py hook update failed for {file}: {error}',
     'error_gpu_detection_warning': 'GPU detection warning: {e}',
     'msg_argos_downloading': 'Downloading argos package {src} -> {dst}',
     'msg_argos_installed': 'Installed argos package {src} -> {dst}',
