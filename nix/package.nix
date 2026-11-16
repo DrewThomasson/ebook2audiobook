@@ -8,13 +8,13 @@
 }:
 
 let
-  version = "26.11.11";
+  version = "26.11.16";
 
   src = fetchFromGitHub {
     owner = "DrewThomasson";
     repo = "ebook2audiobook";
     tag = "v${version}";
-    hash = "sha256-nAWsxi+DM1dHoA0gwaGzeSS3WRKqibL2I3MkOtD9DZQ=";
+    hash = "sha256-ZAWuvsBQE4MI06pZGA9sKdPHvoI/QyBRl5WBlFXVwH8=";
   };
 
   # The pip package of upstream: a bootstrap on the standard library only (tools/pip_bootstrap) shipping the app
@@ -135,6 +135,8 @@ buildFHSEnv {
       ~/ebook2audiobook (or $E2A_HOME): on first run it installs python with uv, the PyTorch wheels
       matching the detected GPU (CUDA, ROCm, XPU, Vulkan or CPU) and the python packages, then downloads
       the TTS models on demand. These runtime components are not part of this package.
+
+      Crash reports are on by default (anonymized, sent to the maintainers): DO_NOT_TRACK=1 turns them off.
 
       ebook2audiobook --uninstall removes that folder.
     '';
