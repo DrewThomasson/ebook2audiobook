@@ -5043,13 +5043,8 @@ def build_interface(args:dict)->gr.Blocks:
             msg = legends['msg_ips_available'].format(ips=all_ips, port=interface_port)
             show_alert(None, {"type": "info", "msg": msg})
             # gradio probes its own server on http://localhost:<port>/ (server_name 0.0.0.0): without localhost here an
-            # HTTP(S)_PROXY caught that probe and launch failed with "When localhost is not accessible". Merge, a user
-            # no_proxy (internal hosts) was overwritten
-            no_proxy = [host.strip() for host in os.environ.get('no_proxy', os.environ.get('NO_PROXY', '')).split(',') if host.strip()]
-            for host in ['localhost', '127.0.0.1', '::1', *all_ips]:
-                if host not in no_proxy:
-                    no_proxy.append(host)
-            os.environ['no_proxy'] = os.environ['NO_PROXY'] = ','.join(no_proxy)
+            # HTTP(S)_PROXY caught that probe and launch failed with "When localhost is not accessible"
+            set_no_proxy(['localhost', '127.0.0.1', '::1', *all_ips])
             return app
     except Exception as e:
         traceback.print_exc()

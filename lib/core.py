@@ -7,7 +7,7 @@
 
 import argparse, asyncio, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
-import traceback, socket, unicodedata, codecs, urllib.request, uuid, zipfile, multiprocessing
+import traceback, socket, unicodedata, codecs, urllib.request, uuid, zipfile, multiprocessing, ipaddress
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
 
@@ -5452,3 +5452,50 @@ def get_all_ip_addresses()->list:
             if address.family in [socket.AF_INET, socket.AF_INET6]:
                 ip_addresses.append(address.address)
     return ip_addresses
+
+def get_os_proxy_bypass()->list:
+    # the OS proxy bypass list (Windows ProxyOverride, macOS exceptions) in no_proxy form: urllib applies it only while no
+    # *_proxy env var is set, httpx never. 192.168.* / 169.254/16 -> ipv4 cidr (requests honors it, httpx skips it),
+    # *.corp.com -> .corp.com. <local> (dotless hosts) has no no_proxy form; an ipv6 network makes every httpx client raise
+    entries = []
+    try:
+        if sys.platform == 'win32':
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Internet Settings') as key:
+                entries = str(winreg.QueryValueEx(key, 'ProxyOverride')[0]).split(';')
+        elif sys.platform == 'darwin':
+            from _scproxy import _get_proxy_settings
+            entries = list(_get_proxy_settings().get('exceptions', []))
+    except (OSError, ImportError):
+        return []
+    hosts = []
+    for entry in [entry.strip() for entry in entries if entry.strip()]:
+        if entry.startswith('*.') and '*' not in entry[2:]:
+            hosts.append(entry[1:])
+        elif ':' not in entry and (entry.endswith('.*') or '/' in entry):
+            prefix, _, bits = entry.removesuffix('.*').partition('/')
+            octets = prefix.split('.')
+            try:
+                hosts.append(str(ipaddress.IPv4Network(f"{'.'.join(octets + ['0'] * (4 - len(octets)))}/{bits or 8 * len(octets)}", strict=False)))
+            except ValueError:
+                pass
+        elif '*' not in entry and '<' not in entry and '/' not in entry:
+            hosts.append(entry)
+    return hosts
+
+def set_no_proxy(hosts:list)->None:
+    # any *_proxy env var makes urllib/requests/httpx stop reading the OS proxy (Windows registry, macOS settings): a
+    # system proxy (Clash, v2rayN...) was dropped for HF downloads and pip once no_proxy got set. Carry it, and its
+    # bypass list, over to the env first. Merge, a user no_proxy (internal hosts) was overwritten
+    no_proxy = [host.strip() for host in os.environ.get('no_proxy', os.environ.get('NO_PROXY', '')).split(',') if host.strip()]
+    if not any(scheme in urllib.request.getproxies_environment() for scheme in ['http', 'https', 'all']):
+        os_proxies = urllib.request.getproxies()
+        for scheme in ['http', 'https']:
+            if os_proxies.get(scheme):
+                os.environ[f'{scheme}_proxy'] = os.environ[f'{scheme.upper()}_PROXY'] = os_proxies[scheme]
+        if os_proxies.get('http') or os_proxies.get('https'):
+            hosts = [*get_os_proxy_bypass(), *hosts]
+    for host in hosts:
+        if host not in no_proxy:
+            no_proxy.append(host)
+    os.environ['no_proxy'] = os.environ['NO_PROXY'] = ','.join(no_proxy)
