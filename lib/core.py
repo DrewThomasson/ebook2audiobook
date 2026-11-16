@@ -461,8 +461,26 @@ def prepare_dirs(session_id:str)->bool:
             os.makedirs(session['interludes_dir'], exist_ok=True)
             return True
     except Exception as e:
-        DependencyError(e)
+        # host folders removed under the container are no e2a bug: no report, the caller tells the user how to recover
+        if get_deleted_host_dirs():
+            print(e)
+        else:
+            DependencyError(e)
         return False
+
+def get_deleted_host_dirs()->list:
+    # a folder bind-mounted from the host (full_docker: ./ebooks ./audiobooks ./models ./voices ./tmp) and removed there
+    # while the container runs: its path still exists in the container but no file nor folder can be created in it
+    # (FileNotFoundError) until the container restarts. An unlinked directory has no link left. Without a mount a
+    # removed folder does not resolve anymore and os.makedirs() creates it again
+    deleted = []
+    for path in [tmp_dir, models_dir, voices_dir, ebooks_dir, os.path.abspath('audiobooks')]:
+        try:
+            if os.stat(path).st_nlink == 0:
+                deleted.append(path)
+        except OSError:
+            pass
+    return deleted
 
 def check_programs(prog_name:str, command:str, options:str)->bool:
     try:
@@ -5082,7 +5100,8 @@ def convert_ebook(args:dict)->tuple:
                     else:
                         error = legends['error_not_enough_memory'].format(vram=total_vram_gb, engine=session['tts_engine'], required=device_vram_required)
                 else:
-                    error = legends['error_temp_dir_not_removed'].format(dir=session['process_dir'])
+                    deleted_dirs = get_deleted_host_dirs()
+                    error = legends['error_dirs_deleted_docker'].format(dirs='\n'.join(deleted_dirs)) if deleted_dirs else legends['error_temp_dir_not_removed'].format(dir=session['process_dir'])
         if session['cancellation_requested']:
             error = legends['msg_conversion_cancelled']
         return error, False
