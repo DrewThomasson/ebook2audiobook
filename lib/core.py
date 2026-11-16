@@ -2103,10 +2103,10 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             if res is False:
                 show_alert(session_id, {"type": "warning", "msg": text})
                 return None
-            # remove any [break] between words or cutting words
+            # remove any [break] between words or cutting words; an [emphasis] tag beside it belongs to the word
             break_token = re.escape(sml_token('break'))
             strip_break_spaces_re = re.compile(rf'\s*{break_token}\s*')
-            break_between_alnum_re = re.compile(rf'(?<=[\w]){break_token}(?=[\w])', flags=re.UNICODE)
+            break_between_alnum_re = re.compile(rf'(?:(?<=\w)|(?<=\w{re.escape(sml_token("emphasis", close=True))})){break_token}(?=(?:{re.escape(sml_token("emphasis"))})?\w)', flags=re.UNICODE)
             text = strip_break_spaces_re.sub(sml_token('break'), text)
             text = break_between_alnum_re.sub(' ', text)
             # strip non-prose content; preserves math signs for math2words
@@ -2187,8 +2187,13 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text = normalize_text(text, lang, lang_iso1, tts_engine)
             text = restore_sml(text, sml_blocks)
             # the treatments above set a tag against the word before it and put a space after it: an opening
-            # [emphasis] tag goes back against the word it opens on
-            text = re.sub(rf"(\S?)\s*{re.escape(sml_token('emphasis'))}\s*", lambda m: f"{m.group(1)} {sml_token('emphasis')}" if m.group(1) else sml_token('emphasis'), text)
+            # [emphasis] tag goes back against the word it opens on, after a space unless an opening quote or
+            # bracket stands before it
+            def _open_emphasis(m:re.Match)->str:
+                space, char = m.group(1), m.group(2)
+                opening = char in '“‘«([{¿¡' or (char in '"\'' and (space or m.start() == 0))
+                return f"{space}{char}{'' if not char or opening else ' '}{sml_token('emphasis')}"
+            text = re.sub(rf"(\s?)(\S?)\s*{re.escape(sml_token('emphasis'))}\s*", _open_emphasis, text)
             return text
         return None
     except Exception as e:
@@ -2416,7 +2421,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             cut_idx = -1
             j = len(combined) - 1
             while j >= 0:
-                if ord(combined[j]) >= sml_escape_tag:
+                if ord(combined[j]) >= sml_escape_tag and combined[j] not in in_text:
                     cut_idx = j + 1
                     break
                 j -= 1
@@ -5015,6 +5020,8 @@ def translate_blocks(session_id:str, raw_blocks:list)->tuple:
                 if not text or not text.strip():
                     out.append(text)
                 else:
+                    # an [emphasis] passage is translated with its sentence: the tags would cut it into pieces
+                    text = re.sub(r'\[\s*/?\s*emphasis\s*\]', '', text)
                     translated, ok = translator.translate(text, sml_patterns)
                     if not ok:
                         error = legends['error_translation_failed'].format(idx=idx, text=translated)
