@@ -1192,7 +1192,14 @@ def convert2epub(session_id:str)->bool:
                 # written back below as plain UTF-8 for ebook-convert, whatever the source encoding
                 text = read_text_file(file_input)
                 text = text.replace('\r\n', '\n')
-                text = re.sub(r'\n{2,}', f".{TTS_SML['pause']['static']}", text)
+                # a paragraph already ending in hard punctuation (closing quotes and brackets set aside) keeps it:
+                # an added period would win the later punctuation reduction and turn ? or ! into a statement
+                closers = '"\'”’»›)]}」』）】》〉'
+                text = re.sub(
+                    r'(\S*)[ \t]*\n{2,}',
+                    lambda m: m.group(1) + ('' if m.group(1).rstrip(closers)[-1:] in punctuation_split_hard_set else '.') + TTS_SML['pause']['static'],
+                    text
+                )
                 with open(file_input, 'w', encoding='utf-8') as f:
                     f.write(text)
             elif file_ext == '.pdf':
