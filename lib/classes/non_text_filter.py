@@ -100,9 +100,11 @@ class NonTextFilter:
         r'(?:\s*[+\-*/^]\s*(?:[A-Za-z]\w*|\d+(?:\.\d+)?))*'
     )
     _PLACEHOLDER_RE = re.compile(r'SMLZZ(\d+)ZZSML')
-    # Punctuation and SML placeholders before a word: a paragraph or a [break]
-    # reaches the filter glued to the next word ("SMLZZ4ZZSMLOct.")
-    _LEADING_NON_WORD_RE = re.compile(r'^(?:SMLZZ\d+ZZSML|\W)+')
+    # SML tags written between paragraphs or as a pause: a number after one of them
+    # stands apart from the word before the tag
+    _PAUSE_TAGS = frozenset({'break', 'pause'})
+    # Punctuation before a word: an opening bracket or quote mark ('(No.', '"Oct.')
+    _LEADING_NON_WORD_RE = re.compile(r'^\W+')
     # Longest title-case word taken for an abbreviation by its shape alone
     # ("Oct.", "Sept.", "Vol."); longer ones count only through the language table
     _ABBREVIATION_MAX_LETTERS = 4
@@ -160,7 +162,7 @@ class NonTextFilter:
         text = self._EMOJI_RE.sub(' ', text)
         text = self._CHARS_REMOVE_RE.sub(' ', text)
         text = self._strip_special_chars(text)
-        text = self._filter_sentences(text)
+        text = self._filter_sentences(text, tags)
 
         if self.sml_pattern is not None:
             text = self._restore_tags(text, tags)
@@ -180,6 +182,20 @@ class NonTextFilter:
 
     def _restore_tags(self, text:str, store:list)->str:
         return self._PLACEHOLDER_RE.sub(lambda m: store[int(m.group(1))], text)
+
+    def _keep_tags(self, fragment:str, kept:list)->None:
+        # a fragment dropped as noise leaves its SML tags in place, so pauses and
+        # paired tags around it survive
+        tags = ' '.join(m.group(0) for m in self._PLACEHOLDER_RE.finditer(fragment))
+        if tags:
+            kept.append(tags)
+
+    def _is_pause_tag(self, word:str, store:list)->bool:
+        m = self._PLACEHOLDER_RE.fullmatch(word)
+        if not m or int(m.group(1)) >= len(store):
+            return False
+        tag = self.sml_pattern.fullmatch(store[int(m.group(1))])
+        return tag is not None and tag.groupdict().get('tag') in self._PAUSE_TAGS
 
     def _strip_unicode_math(self, s:str)->str:
         ranges = self._MATH_UNICODE_RANGES
@@ -246,7 +262,7 @@ class NonTextFilter:
             and body[0].isupper() and body[1:].islower()
         )
 
-    def _filter_sentences(self, text:str)->str:
+    def _filter_sentences(self, text:str, tags:list)->str:
         kept:list = []
         punct = self._TEXT_PUNCT
         hard = punctuation_split_hard_set
@@ -272,16 +288,24 @@ class NonTextFilter:
                 or self._is_mark(c)
             )
             if text_chars / len(non_space) < self.alpha_ratio:
+                self._keep_tags(s, kept)
                 continue
             if no_space:
                 if not any(c.isalnum() for c in s):
+                    self._keep_tags(s, kept)
                     continue
                 if sum(1 for c in s
                        if c.isalnum() or self._is_mark(c)) < self.min_words * 2:
+                    self._keep_tags(s, kept)
                     continue
             else:
-                words = [w for w in re.split(r'\s+', s) if any(c.isalnum() for c in w)]
-                # SML placeholders (SMLZZ0ZZSML…) are not prose words
+                # SML placeholders (SMLZZ0ZZSML…) are words of their own, not prose words:
+                # a paragraph or a [break] reaches the filter glued to the next word
+                # ("SMLZZ4ZZSML23."), which is judged like the spaced form
+                words = [
+                    w for w in re.split(r'\s+', self._PLACEHOLDER_RE.sub(r' \g<0> ', s))
+                    if any(c.isalnum() for c in w)
+                ]
                 real_words = [w for w in words if not self._PLACEHOLDER_RE.fullmatch(w)]
                 if not real_words:
                     # fragment holds only SML tags — keep it so tags survive
@@ -294,19 +318,25 @@ class NonTextFilter:
                     # stray symbols) contains no letters at all.
                     # A period also closes an abbreviation ("Oct. 23.", "No. 7."), so a
                     # number alone right after a kept fragment that ends in one is the
-                    # rest of that sentence. After an ordinary sentence end, or with a
-                    # spaced SML tag between the two ("Nov. [pause] 6."), the number
-                    # stays noise.
+                    # rest of that sentence, other tags around it included
+                    # ("Oct. 23[pause].", "Oct. [emphasis]23[/emphasis]."). After an
+                    # ordinary sentence end, or with a [break] or [pause] between the two
+                    # ("Nov. [pause] 6.", "Nov.[break]6."), the number stays noise.
                     is_interjection = (
                         any(c.isalpha() for c in real_words[0])
                         and any(c in hard for c in s)
                     )
                     is_sentence_tail = (
                         follows_abbreviation
-                        and len(words) == 1
-                        and any(c.isdigit() for c in s)
+                        and len(real_words) == 1
+                        and not any(
+                            self._is_pause_tag(w, tags)
+                            for w in words[:words.index(real_words[0])]
+                        )
+                        and any(c.isdigit() for c in real_words[0])
                     )
                     if not (is_interjection or is_sentence_tail):
+                        self._keep_tags(s, kept)
                         continue
                 after_abbreviation = self._is_abbreviation(words[-1])
             kept.append(s)
