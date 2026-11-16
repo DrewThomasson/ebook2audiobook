@@ -359,6 +359,7 @@ legends = {
     'error_wrong_venv': '잘못된 실행! ebook2audiobook은 전용 가상 환경에서 실행해야 합니다!',
     'error_app_control_blocked': 'Windows가 ebook2audiobook에 필요한 파일을 차단했습니다.\n{error}\n스마트 앱 제어 또는 관리자가 설정한 앱 제어 정책은 Python 및 ebook2audiobook 라이브러리 설치와 같이 서명되지 않은 프로그램을 거부합니다.\nWindows 보안 > 앱 및 브라우저 제어 > 스마트 앱 제어 설정에서 스마트 앱 제어를 끕니다(Windows는 재설정 시에만 다시 켭니다).\n또는 관리자에게 ebook2audiobook 폴더와 uv의 Python 폴더(%APPDATA%\\uv)를 허용하도록 요청하세요.',
     'error_dirs_not_writable': '권한 오류: ebook2audiobook이(가) 다음 위치에 쓸 수 없습니다.\n{dirs}\n사용자가 이 폴더에 쓸 수 있도록 설정한 다음 다시 시작하세요.',
+    'error_dirs_deleted_docker': 'ebook2audiobook이 실행되는 동안 호스트에서 마운트된 다음 폴더가 삭제되었습니다.\n{dirs}\n컨테이너가 더 이상 해당 파일에 쓸 수 없습니다. 필요한 경우 호스트에서 다시 생성한 다음 컨테이너를 다시 시작하세요.',
     'error_dirs_not_writable_docker': '권한 오류: ebook2audiobook이 호스트에서 마운트된 다음 폴더에 쓸 수 없습니다.\n{dirs}\nSELinux 호스트(Fedora, RHEL...)에서 --security-opt label=disable로 컨테이너를 실행하거나 각 -v 마운트에 :z를 추가합니다.\n그렇지 않으면 컨테이너 사용자가 호스트 폴더에 쓸 수 있도록 설정한 다음 다시 시작하세요.',
     'error_launcher_required': '잘못된 실행: ebook2audiobook은 항상 런처 스크립트로 시작해야 합니다.\nLinux 및 Mac의 경우 "./e2a.sh", Windows의 경우 "e2a.cmd".\napp.py을(를) 직접 시작하는 것은 ebook2audiobook이 python_env 폴더의 Python으로 설치된 경우에만 한 번 작동합니다.',
     'error_python_version': '잘못된 실행: 시스템의 Python 버전이 호환되지 않습니다! (현재: {version})\nebook2audiobook을 올바르게 설치하거나 사용하려면 python_env 폴더를 완전히 삭제하고\nLinux와 Mac은 "./ebook2audiobook.command", Windows는 "ebook2audiobook.cmd"를 실행하세요.',
