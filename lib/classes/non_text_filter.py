@@ -308,16 +308,17 @@ class NonTextFilter:
                     # stray symbols) contains no letters at all.
                     # A period also closes an abbreviation ("Oct. 23.", "No. 7."), so a
                     # number alone right after a kept fragment that ends in one is the
-                    # rest of that sentence. After an ordinary sentence end, or with an
-                    # SML tag between the two ("Nov. [pause] 6.", "Nov.[break]6."), the
-                    # number stays noise.
+                    # rest of that sentence, tags after it included ("Oct. 23[pause].").
+                    # After an ordinary sentence end, or with an SML tag between the two
+                    # ("Nov. [pause] 6.", "Nov.[break]6."), the number stays noise.
                     is_interjection = (
                         any(c.isalpha() for c in real_words[0])
                         and any(c in hard for c in s)
                     )
                     is_sentence_tail = (
                         follows_abbreviation
-                        and len(words) == 1
+                        and len(real_words) == 1
+                        and words[0] == real_words[0]
                         and any(c.isdigit() for c in s)
                     )
                     if not (is_interjection or is_sentence_tail):
