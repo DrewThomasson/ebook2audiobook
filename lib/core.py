@@ -3901,8 +3901,9 @@ def convert_chapters2audio(session_id:str)->bool:
                                 show_alert(session_id, {'type': 'info', 'msg': legends['msg_resuming_from'].format(sentence=global_sent)})
                             sentence_file = os.path.join(block_dir, f'{j}.{default_audio_proc_format}')
                             spoken = engine_sentences[j]
-                            # sentence_before: a pause that ends the sentence before this one in the block runs on into
-                            # this one, and the engine reads the end of that sentence to size it
+                            # sentence_before: a [break] that ends the sentence before this one in the block, after a part
+                            # that does not end a sentence, is the whole gap, so the engine trims the silence the model leaves
+                            # at the start of this one
                             sentence_before = engine_sentences[j - 1] if j > 0 else ''
                             run, error = tts_manager.convert_sentence2audio(sentence_file, spoken, block_voice=block_voice, sentence_before=sentence_before)
                             if not run:
