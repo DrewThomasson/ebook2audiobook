@@ -453,7 +453,16 @@ valence, arousal (-1 to 1).""")
 ***********'''
             print(error)
             sys.exit(1)
-        c.context = c.SessionContext() if c.context is None else c.context
+        try:
+            c.context = c.SessionContext() if c.context is None else c.context
+        except PermissionError as e:
+            # the system refusing the pipe multiprocessing.Manager() opens to its server process ([WinError 5] in
+            # connection.Pipe(), the pipe e2a just created): a security program or sandbox restricting python, not a bug
+            error = f'''***********
+{legends['error_session_manager_denied'].format(error=e, python=sys.executable)}
+***********'''
+            print(error)
+            sys.exit(1)
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         error = ''

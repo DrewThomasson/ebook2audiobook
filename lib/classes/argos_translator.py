@@ -1,5 +1,20 @@
 import os, time, threading, regex as re
-import argostranslate.package, argostranslate.translate, argostranslate.settings
+
+from lib.conf import models_dir
+
+# importing argostranslate.settings creates its data folder, XDG_DATA_HOME/argos-translate else ~/.local/share/argos-translate:
+# models/argos-translate here, beside its packages (ARGOS_PACKAGES_DIR) and config (XDG_CONFIG_HOME), not the user profile,
+# which a security program or a broken ACL may refuse (PermissionError [WinError 5] at the start of e2a). For this import
+# only: on Linux and macOS uv keeps its pythons in XDG_DATA_HOME, the engine venvs would install them again in models/
+xdg_data_home = os.environ.get('XDG_DATA_HOME')
+os.environ['XDG_DATA_HOME'] = models_dir
+try:
+    import argostranslate.package, argostranslate.translate, argostranslate.settings
+finally:
+    if xdg_data_home is None:
+        os.environ.pop('XDG_DATA_HOME', None)
+    else:
+        os.environ['XDG_DATA_HOME'] = xdg_data_home
 # the package index lives beside the packages in models/argos-translate (argos defaults to ~/.local/share), so a copied
 # or offline models folder still lists its pairs; offline, update_package_index() only logs and keeps this file
 argostranslate.settings.local_package_index = argostranslate.settings.package_data_dir.parent / 'index.json'
