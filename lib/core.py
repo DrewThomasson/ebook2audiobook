@@ -50,7 +50,7 @@ from lib.classes.non_text_filter import NonTextFilter
 from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
-from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp
+from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp, gpu_fault, gpu_fault_alert
 
 from lib import *
 from lib.lang import legends, legends_langs, legends_iso1, ui_language, system_language
@@ -3430,6 +3430,11 @@ def convert_chapters2audio(session_id:str)->bool:
                 else:
                     legend = 'error_out_of_memory_gpu'
                 session['tts_init_error'] = legends[legend].format(engine=session['tts_engine'], device=session['device'])
+            else:
+                # GPU fault while loading (illegal memory access...): this process can no longer use the GPU
+                error = gpu_fault(e, session['device'])
+                if error is not None:
+                    session['tts_init_error'] = error
             return False
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
@@ -4835,6 +4840,10 @@ def convert_ebook(args:dict)->tuple:
                     engine_devices = default_engine_settings[session['tts_engine']]['devices']
                     if session['device'] not in engine_devices:
                         device_error = legends['error_device_engine'].format(engine=session['tts_engine'], device=session['device'].upper(), devices=', '.join(d.upper() for d in engine_devices))
+                    # a GPU fault earlier in this process (illegal memory access...) lost its GPU context: nothing loads
+                    # on that GPU before a restart, it would fail again with the same opaque error
+                    elif gpu_fault_alert(session['device']) is not None:
+                        device_error = gpu_fault_alert(session['device'])
                     elif session['device'] == devices['CUDA']['proc']:
                         if not devices['CUDA']['found']:
                             device_error = legends['error_device_not_supported'].format(device='CUDA', wiki=default_gpu_wiki)
@@ -5167,6 +5176,9 @@ def finalize_audiobook(session_id:str)->tuple:
                 elif session.get('tts_init_error'):
                     error = session['tts_init_error']
                     session['tts_init_error'] = None
+                else:
+                    # a GPU fault during the conversion: what to do instead of the generic failure
+                    error = gpu_fault_alert(session['device']) or error
             return _fail(error)
         generate_interludes(session_id)
         show_alert(session_id, {'type': 'info', 'msg': legends['msg_combining_all']})
