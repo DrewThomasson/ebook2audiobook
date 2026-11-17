@@ -297,6 +297,7 @@ legends = {
     'msg_verify_reason_long': 'too long for its text ({duration}s, {limit}s at most)',
     'msg_verify_reason_short': 'too short for its text ({duration}s, {limit}s at least)',
     'msg_verify_reason_mismatch': 'does not match its text (CER {cer}, {limit} at most)',
+    'msg_verify_reason_burst': 'part of it does not match its text ({burst} letters in a row, {limit} at most)',
     'msg_verify_retry': 'Sentence check: {reason}, generating it again ({attempt}/{retries})',
     'msg_verify_retry_light': 'Sentence check: {reason}, generating it again with less punctuation ({attempt}/{retries})',
     'msg_verify_retry_bare': 'Sentence check: {reason}, generating it again without punctuation ({attempt}/{retries})',

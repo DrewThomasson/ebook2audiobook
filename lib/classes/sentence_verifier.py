@@ -23,6 +23,7 @@ class SentenceVerifier:
         translated = bool(session.get('translate_enabled') and session.get('translate'))
         self.language = session['translate'] if translated else session['language']
         self.cer_samples:deque = deque(maxlen=self.settings['samples_max'])
+        self.burst_samples:deque = deque(maxlen=self.settings['samples_max'])
         self.rate_samples:deque = deque(maxlen=self.settings['samples_max'])
         self.flagged:list[dict] = []
         self.stats = dict(checked=0, failed=0, fixed_redraw=0, fixed_light=0, fixed_bare=0, flagged=0)
@@ -160,17 +161,33 @@ class SentenceVerifier:
                 break
         return ' '.join(text for _, text in parts if text)
 
-    def _cer(self, ref:str, hyp:str)->float:
-        # levenshtein distance over the reference length: above 1.0 when the take says more than the text
+    def _compare(self, ref:str, hyp:str)->tuple[float, int]:
+        # levenshtein alignment of the letters: the CER (distance over the text length, above 1.0 when the take says
+        # more than the text) and the longest burst of errors in a row, a single chance match inside not ending it.
+        # A burst is local: babble or a skipped phrase in a long sentence barely moves its CER, and a hard name raises
+        # the CER while its burst stays short
         if not ref:
-            return 0.0
-        prev = list(range(len(hyp) + 1))
-        for i, ref_char in enumerate(ref, 1):
-            cur = [i] + [0] * len(hyp)
-            for j, hyp_char in enumerate(hyp, 1):
-                cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ref_char != hyp_char))
-            prev = cur
-        return prev[-1] / len(ref)
+            return 0.0, 0
+        rows, cols = len(ref), len(hyp)
+        dist = [list(range(cols + 1))] + [[i] + [0] * cols for i in range(1, rows + 1)]
+        for i in range(1, rows + 1):
+            prev, cur, ref_char = dist[i - 1], dist[i], ref[i - 1]
+            for j in range(1, cols + 1):
+                cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ref_char != hyp[j - 1]))
+        ops = []
+        i, j = rows, cols
+        while i > 0 or j > 0:
+            if i > 0 and j > 0 and dist[i][j] == dist[i - 1][j - 1] + (ref[i - 1] != hyp[j - 1]):
+                ops.append('M' if ref[i - 1] == hyp[j - 1] else 'S')
+                i, j = i - 1, j - 1
+            elif j > 0 and dist[i][j] == dist[i][j - 1] + 1:
+                ops.append('I')
+                j -= 1
+            else:
+                ops.append('D')
+                i -= 1
+        bursts = re.findall(r'[SID](?:[SID]|M(?=[SID]))*', ''.join(ops))
+        return dist[rows][cols] / rows, max((len(b.replace('M', '')) for b in bursts), default=0)
 
     def _transcribe(self, audio:Any, samplerate:int)->str:
         import torch
@@ -185,15 +202,16 @@ class SentenceVerifier:
             logits = self.model(values).logits
         return self.processor.decode(torch.argmax(logits, dim=-1)[0].cpu())
 
-    def _cer_limit(self)->float:
-        if len(self.cer_samples) < self.settings['warmup']:
-            return self.settings['cer_warmup']
-        return max(self.settings['cer_floor'], self.settings['cer_factor'] * statistics.median(self.cer_samples))
+    def _limit(self, samples:deque, name:str)->float:
+        # max(floor, factor * the book's median), the warmup value until the median is known
+        if len(samples) < self.settings['warmup']:
+            return self.settings[f'{name}_warmup']
+        return max(self.settings[f'{name}_floor'], self.settings[f'{name}_factor'] * statistics.median(samples))
 
     def check(self, sentence_file:str, sentence:str, first_take:bool)->dict:
         # ok, the measures, a reason legend when it fails, and badness to keep the best of the failed takes (lower is
         # better, a length failure ranks below any CER since it is babble or silence most of the time)
-        result = dict(ok=True, cer=None, duration=0.0, limit=0.0, reason=None, badness=0.0)
+        result = dict(ok=True, cer=None, burst=None, duration=0.0, limit=0.0, reason=None, badness=0.0)
         try:
             import soundfile as sf
             spoken = SML_TAG_PATTERN.sub(' ', sentence)
@@ -233,18 +251,23 @@ class SentenceVerifier:
             # them is not known, the length check is all that is left
             if not self.asr_enabled or letters < self.settings['min_letters'] or digits or not self._load():
                 return result
-            cer = self._cer(ref, self._letters(self._transcribe(audio, samplerate)))
-            cer_limit = self._cer_limit()
+            cer, burst = self._compare(ref, self._letters(self._transcribe(audio, samplerate)))
+            cer_limit = self._limit(self.cer_samples, 'cer')
+            burst_limit = self._limit(self.burst_samples, 'burst')
             if first_take:
                 self.cer_samples.append(cer)
-            result.update(cer=cer, badness=cer)
-            if cer > cer_limit:
+                self.burst_samples.append(burst)
+            result.update(cer=cer, burst=burst, badness=cer + burst / letters)
+            if burst > burst_limit:
+                reason = legends['msg_verify_reason_burst'].format(burst=burst, limit=f'{burst_limit:.0f}')
+                result.update(ok=False, reason=reason)
+            elif cer > cer_limit:
                 reason = legends['msg_verify_reason_mismatch'].format(cer=f'{cer:.2f}', limit=f'{cer_limit:.2f}')
                 result.update(ok=False, reason=reason)
             return result
         except Exception as e:
             self._disable_asr(e)
-            return dict(ok=True, cer=None, duration=0.0, limit=0.0, reason=None, badness=0.0)
+            return dict(ok=True, cer=None, burst=None, duration=0.0, limit=0.0, reason=None, badness=0.0)
 
     def flag(self, sentence_file:str, sentence:str, result:dict)->None:
         # a sentence still failing after its retries: its best take is kept, listed at the end of the conversion

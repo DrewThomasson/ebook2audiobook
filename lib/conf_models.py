@@ -206,7 +206,11 @@ audiocpp_repo = "audio-cpp/audio.cpp-gguf"
 #   warmup: first takes measured before the book's own medians replace the warmup limits
 #   min_letters: below it (romanized letters) a sentence gets the length check only, one wrong letter weighs too much
 #   rate_min_letters: shorter sentences are left out of the speaking rate median (the silence around them weighs too much)
-#   cer_factor / cer_floor: CER limit = max(cer_floor, cer_factor * median CER), cer_warmup until warmup
+#   burst_factor / burst_floor: longest run of wrong, missing or extra letters (one chance match inside does not end
+#     it), limit = max(burst_floor, burst_factor * median burst), burst_warmup until warmup. The local check: babble or
+#     a skipped phrase in a long sentence is a long run but barely moves its CER, a hard name stays a short one
+#   cer_factor / cer_floor: CER limit = max(cer_floor, cer_factor * median CER), cer_warmup until warmup. The backstop
+#     for a take wrong all along, high enough for sentences full of names (CER up to 0.43 with good audio)
 #   length_factor / length_slack: duration limit = median s/letter * letters * length_factor + length_slack (seconds)
 #   length_warmup_rate / length_warmup_slack: duration limit until warmup, letters * rate + slack (seconds)
 #   short_factor: below median s/letter * letters * short_factor the take is cut (rate_min_letters and more only)
@@ -220,7 +224,10 @@ default_verify_settings = {
     "min_letters": 10,
     "rate_min_letters": 20,
     "cer_factor": 2.5,
-    "cer_floor": 0.2,
+    "burst_factor": 3.0,
+    "burst_floor": 9,
+    "burst_warmup": 9,
+    "cer_floor": 0.5,
     "cer_warmup": 0.6,
     "length_factor": 2.0,
     "length_slack": 1.5,
