@@ -9,6 +9,7 @@ class TTSManager:
     def __init__(self, session:Any, verify:bool=False)->None:
         self.session = session
         self.verifier = None
+        self.deterministic = False
         engine_name = session.get("tts_engine")
         if engine_name is None:
             raise ValueError("session['tts_engine'] is missing")
@@ -43,30 +44,55 @@ class TTSManager:
     def convert_sentence2audio(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         if self.verifier is None:
             return self.engine.convert(sentence_file, sentence, **kwargs)
-        # each failed take is generated again (the engines draw a new one on each call), the best take is kept when
-        # all of them fail. Two identical takes in a row: the engine gives the same audio each time, no use going on
+        # a failed take is generated again, its text by levels (conf_models.py): new draws first (the engines draw a
+        # new take on each call), then less punctuation, then none. The best take is kept when all of them fail
         best_file = os.path.join(os.path.dirname(sentence_file), f'__verify_best_{os.path.basename(sentence_file)}')
+        # a deterministic engine gives the same audio for the same text: no new draws, no level with nothing to strip
+        plan = []
+        for level in self.verifier.levels:
+            text = self.verifier.text_variant(sentence, level)
+            if plan and self.deterministic and (level == plan[-1][0] or text == plan[-1][1]):
+                continue
+            plan.append((level, text))
+        retries = len(plan) - 1
+        stats = self.verifier.stats
         best = None
+        result = None
+        last_text = None
         last_digest = None
-        for attempt in range(self.verifier.retries + 1):
-            run, error = self.engine.convert(sentence_file, sentence, **kwargs)
+        for attempt, (level, text) in enumerate(plan):
+            if attempt > 0:
+                # found deterministic during this sentence
+                if self.deterministic and text == last_text:
+                    continue
+                msg = legends[('msg_verify_retry', 'msg_verify_retry_light', 'msg_verify_retry_bare')[level]].format(reason=result['reason'], attempt=attempt, retries=retries)
+                print(msg)
+            run, error = self.engine.convert(sentence_file, text, **kwargs)
             if not run or not os.path.exists(sentence_file):
                 self._drop_file(best_file)
                 return run, error
             result = self.verifier.check(sentence_file, sentence, attempt == 0)
+            if attempt == 0:
+                stats['checked'] += 1
             if result['ok']:
+                if attempt > 0:
+                    stats[('fixed_redraw', 'fixed_light', 'fixed_bare')[level]] += 1
                 self._drop_file(best_file)
                 return True, None
+            if attempt == 0:
+                stats['failed'] += 1
             if best is None or result['badness'] < best['badness']:
                 shutil.copyfile(sentence_file, best_file)
                 best = result
+            # the same audio again for the same text: no new draw from this engine, its next sentences go to the
+            # punctuation levels straight away
             digest = self._file_digest(sentence_file)
-            if digest == last_digest:
-                break
-            last_digest = digest
-            if attempt < self.verifier.retries:
-                msg = legends['msg_verify_retry'].format(reason=result['reason'], attempt=attempt + 1, retries=self.verifier.retries)
+            if not self.deterministic and text == last_text and digest == last_digest:
+                self.deterministic = True
+                msg = legends['msg_verify_deterministic'].format(engine=self.session.get('tts_engine'))
                 print(msg)
+            last_text = text
+            last_digest = digest
         os.replace(best_file, sentence_file)
         self.verifier.flag(sentence_file, sentence, best)
         return True, None

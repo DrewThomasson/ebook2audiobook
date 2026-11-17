@@ -3586,6 +3586,8 @@ def convert_chapters2audio(session_id:str)->bool:
             save_json_blocks(session_id, 'blocks_saved')
             # --verify_sentences: the sentences still failing after their retries, block numbers as in the messages above
             verifier = tts_manager.verifier
+            if verifier is not None and verifier.stats['checked']:
+                show_alert(session_id, {'type': 'info', 'msg': legends['msg_verify_stats'].format(**verifier.stats)})
             if verifier is not None and verifier.flagged:
                 block_numbers = {b['id']: i for i, b in enumerate(blocks)}
                 lines = [f"{legends['word_block']} {block_numbers.get(f['block'], f['block'])}, {legends['word_sentence']} {f['sentence']}: {f['text'][:80]}" for f in verifier.flagged]

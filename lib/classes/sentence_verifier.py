@@ -19,12 +19,13 @@ class SentenceVerifier:
     def __init__(self, session:Any)->None:
         self.session = session
         self.settings = default_verify_settings
-        self.retries = int(self.settings['retries'])
+        self.levels = list(self.settings['levels'])
         translated = bool(session.get('translate_enabled') and session.get('translate'))
         self.language = session['translate'] if translated else session['language']
         self.cer_samples:deque = deque(maxlen=self.settings['samples_max'])
         self.rate_samples:deque = deque(maxlen=self.settings['samples_max'])
         self.flagged:list[dict] = []
+        self.stats = dict(checked=0, failed=0, fixed_redraw=0, fixed_light=0, fixed_bare=0, flagged=0)
         self.model = None
         self.processor = None
         self.uroman = None
@@ -110,6 +111,54 @@ class SentenceVerifier:
             return ''
         text = unicodedata.normalize('NFKD', self._romanize(text).casefold())
         return re.sub(r'[^\p{L}]+', '', text)
+
+    def _strip_punctuation(self, text:str, level:int)->str:
+        # by unicode category, not the punctuation lists: they hold two Lao vowel signs (U+0ECC, U+0ECD). Kept: letters,
+        # marks (Indic, Thai, Arabic vowels), digits, ZWNJ/ZWJ (Persian, Indic) and ' or - inside a word (don't, l'homme)
+        text = re.sub(r"(?<=\p{L}\p{M}*)['’](?=\p{L})", '\uf8f0', text)
+        text = re.sub(r'(?<=\p{L}\p{M}*)[-‐](?=\p{L})', '\uf8f1', text)
+        pause = ',' if level == 1 else ' '
+        out = []
+        for c in text:
+            category = unicodedata.category(c)
+            if category[0] in 'LMN' or c.isspace() or c in '\u200c\u200d\uf8f0\uf8f1':
+                out.append(c)
+            elif category[0] == 'P' and category not in ('Ps', 'Pe', 'Pi', 'Pf') and c not in '"\'':
+                # a pause stays a pause (commas only), quotes and brackets go
+                out.append(pause)
+            else:
+                out.append(' ')
+        text = ''.join(out).replace('\uf8f0', "'").replace('\uf8f1', '-')
+        text = re.sub(r'\s*,[\s,]*', ', ', text)
+        return re.sub(r'\s+', ' ', text).strip(' ,')
+
+    def _end_mark(self, sentence:str, level:int)->str:
+        # a question stays a question at both levels, an exclamation at level 1 only
+        text = re.sub(r'[\s"\'»”’)\]]+$', '', SML_TAG_PATTERN.sub(' ', sentence).rstrip())
+        ending = re.search(r'[\p{P}\s]*$', text).group(0)
+        if any(c in ending for c in ('?', '？', '؟', '፧', '‽')):
+            return '?'
+        if any(c in ending for c in ('!', '！')) and level == 1:
+            return '!'
+        return '.'
+
+    def text_variant(self, sentence:str, level:int)->str:
+        # the text sent to the engine for a take of this level (see levels in conf_models.py), the check still compares
+        # with the sentence itself: only punctuation goes, the letters stay. SML tags are left as they are
+        if level <= 0 or not any(c.isalpha() for c in SML_TAG_PATTERN.sub(' ', sentence)):
+            return sentence
+        parts = []
+        last = 0
+        for match in SML_TAG_PATTERN.finditer(sentence):
+            parts.append([False, self._strip_punctuation(sentence[last:match.start()], level)])
+            parts.append([True, match.group(0)])
+            last = match.end()
+        parts.append([False, self._strip_punctuation(sentence[last:], level)])
+        for part in reversed(parts):
+            if not part[0] and any(c.isalnum() for c in part[1]):
+                part[1] += self._end_mark(sentence, level)
+                break
+        return ' '.join(text for _, text in parts if text)
 
     def _cer(self, ref:str, hyp:str)->float:
         # levenshtein distance over the reference length: above 1.0 when the take says more than the text
@@ -202,6 +251,7 @@ class SentenceVerifier:
         stem = Path(sentence_file).stem
         entry = dict(block=os.path.basename(os.path.dirname(sentence_file)), sentence=int(stem) if stem.isdigit() else stem, text=sentence, cer=result.get('cer'), reason=result.get('reason'))
         self.flagged.append(entry)
+        self.stats['flagged'] += 1
         msg = legends['msg_verify_flagged'].format(reason=entry['reason'], text=sentence)
         print(msg)
 
