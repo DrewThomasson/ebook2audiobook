@@ -162,6 +162,22 @@ class SentenceVerifier:
                 break
         return ' '.join(text for _, text in parts if text)
 
+    def _distances(self, ref:str, hyp:str)->list:
+        # levenshtein table: dist[i][j] between ref[:i] and hyp[:j]
+        rows, cols = len(ref), len(hyp)
+        dist = [list(range(cols + 1))] + [[i] + [0] * cols for i in range(1, rows + 1)]
+        for i in range(1, rows + 1):
+            prev, cur, ref_char = dist[i - 1], dist[i], ref[i - 1]
+            for j in range(1, cols + 1):
+                cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ref_char != hyp[j - 1]))
+        return dist
+
+    def _tail_extra(self, last_row:list)->int:
+        # extra letters heard after the text ends, as many as an optimal alignment allows: a word said twice at the
+        # end ("fourteen fourteen") is aligned either way at the same cost, the repeat counts as extra
+        total = last_row[-1]
+        return max(k for k in range(len(last_row)) if last_row[len(last_row) - 1 - k] + k == total)
+
     def _compare(self, ref:str, hyp:str)->tuple[float, int, int]:
         # levenshtein alignment of the letters: the CER (distance over the text length, above 1.0 when the take says
         # more than the text), the longest burst of errors in a row (a single chance match inside not ending it) and
@@ -171,11 +187,7 @@ class SentenceVerifier:
         if not ref:
             return 0.0, 0, 0
         rows, cols = len(ref), len(hyp)
-        dist = [list(range(cols + 1))] + [[i] + [0] * cols for i in range(1, rows + 1)]
-        for i in range(1, rows + 1):
-            prev, cur, ref_char = dist[i - 1], dist[i], ref[i - 1]
-            for j in range(1, cols + 1):
-                cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ref_char != hyp[j - 1]))
+        dist = self._distances(ref, hyp)
         ops = []
         i, j = rows, cols
         while i > 0 or j > 0:
@@ -188,9 +200,9 @@ class SentenceVerifier:
             else:
                 ops.append('D')
                 i -= 1
-        ops = ''.join(reversed(ops))
-        bursts = re.findall(r'[SID](?:[SID]|M(?=[SID]))*', ops)
-        edge = max(len(re.match(r'I*', ops).group(0)), len(re.search(r'I*$', ops).group(0)))
+        bursts = re.findall(r'[SID](?:[SID]|M(?=[SID]))*', ''.join(reversed(ops)))
+        # leading extra letters: the same on both texts reversed
+        edge = max(self._tail_extra(dist[rows]), self._tail_extra(self._distances(ref[::-1], hyp[::-1])[rows]))
         return dist[rows][cols] / rows, max((len(b.replace('M', '')) for b in bursts), default=0), edge
 
     def _transcribe(self, audio:Any, samplerate:int)->str:
