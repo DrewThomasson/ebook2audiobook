@@ -1919,24 +1919,41 @@ class DeviceInstaller():
             error = f'remove_unusable_torchcodec(): {e}'
             print(error)
 
+    def lacks_record_files(self, dist:Any)->bool:
+        # a code file RECORD lists is gone. RECORD itself: Distribution.files leaves out the entries whose file is gone
+        # (python >= 3.12)
+        code_suffixes = ('.py', '.so', '.pyd', '.dll', '.dylib')
+        for row in csv.reader((dist.read_text('RECORD') or '').splitlines()):
+            if row and row[0].endswith(code_suffixes) and not os.path.exists(dist.locate_file(row[0])):
+                return True
+        return False
+
+    def package_incomplete(self, pkg:str)->bool:
+        # pkg installed but some of its code files are gone (see repair_incomplete_packages())
+        try:
+            return self.lacks_record_files(distribution(pkg))
+        except PackageNotFoundError:
+            return False
+        except Exception as e:
+            error = f'package_incomplete({pkg}): {e}'
+            print(error)
+            return False
+
     def repair_incomplete_packages(self)->int:
         # an install cut short (closed terminal, antivirus, full disk) can leave a package with its metadata but not
         # all its files: the version checks and uv pip check pass and the import fails (gradio without
         # gradio/history.py: "cannot import name 'history' from partially initialized module 'gradio'"). RECORD lists
         # each package's files: the same version is reinstalled when code files are missing. Left out: the device
-        # step's packages (dependency_skip_re) and packages installed from a URL or a local path (direct_url.json)
-        code_suffixes = ('.py', '.so', '.pyd', '.dll', '.dylib')
+        # step's packages (dependency_skip_re, install_device_packages() repairs the torch family from its own wheels)
+        # and packages installed from a URL or a local path (direct_url.json)
         incomplete = {}
         try:
             for dist in distributions():
                 name = self.pkg_head(dist.metadata['Name'] or '')
                 if not name or name in incomplete or self.dependency_skip_re.match(name) or dist.read_text('direct_url.json'):
                     continue
-                # RECORD itself: Distribution.files leaves out the entries whose file is gone (python >= 3.12)
-                for row in csv.reader((dist.read_text('RECORD') or '').splitlines()):
-                    if row and row[0].endswith(code_suffixes) and not os.path.exists(dist.locate_file(row[0])):
-                        incomplete[name] = dist.version
-                        break
+                if self.lacks_record_files(dist):
+                    incomplete[name] = dist.version
         except Exception as e:
             error = f'repair_incomplete_packages(): {e}'
             print(error)
@@ -2375,6 +2392,18 @@ class DeviceInstaller():
                 return True
             # torchcodec: presence only (when torch >= 2.9 needs it)
             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and not self.get_package_version('torchcodec'):
+                return True
+            # the right versions with files gone (install cut short, antivirus): every check above passes and the first
+            # import fails (torch without torch/amp/: "cannot import name 'amp' from partially initialized module
+            # 'torch'"). repair_incomplete_packages() leaves the torch family to this step, which reinstalls it from the
+            # device's own wheels. torchcodec only where this step installs it
+            pkgs = ['torch', 'torchaudio']
+            if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and torchcodec_version_matrix:
+                pkgs.append('torchcodec')
+            incomplete = [pkg for pkg in pkgs if self.package_incomplete(pkg)]
+            if incomplete:
+                msg = legends['msg_reinstalling_incomplete'].format(pkgs=', '.join(incomplete))
+                print(msg)
                 return True
             # Windows +vulkan torch published without the OpenMP runtime it links: same version as the fixed wheel
             if device_info['name'] == devices['VULKAN']['proc'] and self.system == systems['WINDOWS']:
