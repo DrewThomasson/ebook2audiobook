@@ -266,8 +266,10 @@ default_engine_settings = {
         # are pinned together and move together
         "commit": "96d9e0ec1e39083ed336ac78f24e3dbc93721c0f",
         "packages": {
-            "linux-x64-cuda13": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cuda13.tar.gz", "gpu": True},
-            "linux-x64-cuda12": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cuda12.tar.gz", "gpu": True},
+            # glibc floors of the x64 CUDA builds (Ubuntu 22.04 / 20.04 CUDA images): an older system skips them instead of
+            # failing to start them
+            "linux-x64-cuda13": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cuda13.tar.gz", "gpu": True, "glibc_min": "2.34"},
+            "linux-x64-cuda12": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cuda12.tar.gz", "gpu": True, "glibc_min": "2.30"},
             "linux-x64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-vulkan.tar.gz", "gpu": True, "cpu_flags": ["avx2", "fma", "f16c"]},
             "linux-x64-cpu-avx2": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cpu-avx2.tar.gz", "gpu": False, "cpu_flags": ["avx2", "fma", "f16c", "bmi2"]},
             "linux-x64-cpu-sse42": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cpu-sse42.tar.gz", "gpu": False, "cpu_flags": ["sse4_2"]},
