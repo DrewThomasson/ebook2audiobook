@@ -186,13 +186,23 @@ multiprocessing_tempdir_patch()
 
 # components/sitecustomize.py, copied into python_env by the launchers, routes torchaudio.load to soundfile (torchcodec
 # cannot load everywhere: FFmpeg 8 on Windows, ROCm builds) and allowlists coqui's config for torch.load. When this
-# interpreter did not run it (copy missing, app.py started another way), it runs here, before torch/torchaudio import
+# interpreter did not run it (copy missing, app.py started another way), it runs here, before torch/torchaudio import.
+# The launchers refresh the copy only when they run: started another way, app.py can run an older one, missing the
+# patches added since (E2A_XPU_UNUSABLE). This one then runs too, its hook goes first in sys.meta_path and takes
+# torch/torchaudio over from the old one
 def sitecustomize_patch()->None:
+    sitecustomize_src = os.path.join(os.path.dirname(root_dir), 'components', 'sitecustomize.py')
     if any(type(hook).__name__ == 'LazyPatchHook' for hook in sys.meta_path):
-        return
+        try:
+            with open(sys.modules['sitecustomize'].__file__, 'rb') as f_installed, open(sitecustomize_src, 'rb') as f_src:
+                if f_installed.read() == f_src.read():
+                    return
+        except (KeyError, AttributeError, TypeError, OSError):
+            # no file to compare: keep the hook in place
+            return
     try:
         import importlib.util
-        spec = importlib.util.spec_from_file_location('e2a_sitecustomize', os.path.join(os.path.dirname(root_dir), 'components', 'sitecustomize.py'))
+        spec = importlib.util.spec_from_file_location('e2a_sitecustomize', sitecustomize_src)
         if spec is None or spec.loader is None:
             return
         module = importlib.util.module_from_spec(spec)
@@ -200,6 +210,8 @@ def sitecustomize_patch()->None:
         # an import made before this point is patched right away
         if 'torchaudio' in sys.modules and hasattr(module, 'patch_torchaudio'):
             module.patch_torchaudio(sys.modules['torchaudio'])
+        if 'torch' in sys.modules and hasattr(module, 'patch_torch_xpu'):
+            module.patch_torch_xpu(sys.modules['torch'])
     except Exception as e:
         error = f'sitecustomize_patch(): {e}'
         print(error)
