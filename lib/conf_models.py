@@ -209,6 +209,9 @@ audiocpp_repo = "audio-cpp/audio.cpp-gguf"
 #   burst_factor / burst_floor: longest run of wrong, missing or extra letters (one chance match inside does not end
 #     it), limit = max(burst_floor, burst_factor * median burst), burst_warmup until warmup. The local check: babble or
 #     a skipped phrase in a long sentence is a long run but barely moves its CER, a hard name stays a short one
+#   edge_factor / edge_floor: extra letters heard before the text starts or after it ends, limit = max(edge_floor,
+#     edge_factor * median), edge_warmup until warmup. Trailing mumble ("sleeping ana dan") stays under the burst
+#     limit, a misheard name cannot reach an edge: 0 in 56 of 57 real XTTS takes, 6 for that one
 #   cer_factor / cer_floor: CER limit = max(cer_floor, cer_factor * median CER), cer_warmup until warmup. The backstop
 #     for a take wrong all along, high enough for sentences full of names (CER up to 0.43 with good audio)
 #   length_factor / length_slack: duration limit = median s/letter * letters * length_factor + length_slack (seconds)
@@ -228,6 +231,9 @@ default_verify_settings = {
     "burst_floor": 9,
     "burst_warmup": 9,
     "cer_floor": 0.5,
+    "edge_factor": 3.0,
+    "edge_floor": 3,
+    "edge_warmup": 3,
     "cer_warmup": 0.6,
     "length_factor": 2.0,
     "length_slack": 1.5,

@@ -24,6 +24,7 @@ class SentenceVerifier:
         self.language = session['translate'] if translated else session['language']
         self.cer_samples:deque = deque(maxlen=self.settings['samples_max'])
         self.burst_samples:deque = deque(maxlen=self.settings['samples_max'])
+        self.edge_samples:deque = deque(maxlen=self.settings['samples_max'])
         self.rate_samples:deque = deque(maxlen=self.settings['samples_max'])
         self.flagged:list[dict] = []
         self.stats = dict(checked=0, failed=0, fixed_redraw=0, fixed_light=0, fixed_bare=0, flagged=0)
@@ -161,13 +162,14 @@ class SentenceVerifier:
                 break
         return ' '.join(text for _, text in parts if text)
 
-    def _compare(self, ref:str, hyp:str)->tuple[float, int]:
+    def _compare(self, ref:str, hyp:str)->tuple[float, int, int]:
         # levenshtein alignment of the letters: the CER (distance over the text length, above 1.0 when the take says
-        # more than the text) and the longest burst of errors in a row, a single chance match inside not ending it.
-        # A burst is local: babble or a skipped phrase in a long sentence barely moves its CER, and a hard name raises
-        # the CER while its burst stays short
+        # more than the text), the longest burst of errors in a row (a single chance match inside not ending it) and
+        # the extra letters heard before the text starts or after it ends. A burst is local: babble or a skipped phrase
+        # in a long sentence barely moves its CER, and a hard name raises the CER while its burst stays short. Extra
+        # letters at an edge can only be speech the text does not have: a misheard name sits inside the text
         if not ref:
-            return 0.0, 0
+            return 0.0, 0, 0
         rows, cols = len(ref), len(hyp)
         dist = [list(range(cols + 1))] + [[i] + [0] * cols for i in range(1, rows + 1)]
         for i in range(1, rows + 1):
@@ -186,8 +188,10 @@ class SentenceVerifier:
             else:
                 ops.append('D')
                 i -= 1
-        bursts = re.findall(r'[SID](?:[SID]|M(?=[SID]))*', ''.join(ops))
-        return dist[rows][cols] / rows, max((len(b.replace('M', '')) for b in bursts), default=0)
+        ops = ''.join(reversed(ops))
+        bursts = re.findall(r'[SID](?:[SID]|M(?=[SID]))*', ops)
+        edge = max(len(re.match(r'I*', ops).group(0)), len(re.search(r'I*$', ops).group(0)))
+        return dist[rows][cols] / rows, max((len(b.replace('M', '')) for b in bursts), default=0), edge
 
     def _transcribe(self, audio:Any, samplerate:int)->str:
         import torch
@@ -211,7 +215,7 @@ class SentenceVerifier:
     def check(self, sentence_file:str, sentence:str, first_take:bool)->dict:
         # ok, the measures, a reason legend when it fails, and badness to keep the best of the failed takes (lower is
         # better, a length failure ranks below any CER since it is babble or silence most of the time)
-        result = dict(ok=True, cer=None, burst=None, duration=0.0, limit=0.0, reason=None, badness=0.0)
+        result = dict(ok=True, cer=None, burst=None, edge=None, duration=0.0, limit=0.0, reason=None, badness=0.0)
         try:
             import soundfile as sf
             spoken = SML_TAG_PATTERN.sub(' ', sentence)
@@ -251,14 +255,19 @@ class SentenceVerifier:
             # them is not known, the length check is all that is left
             if not self.asr_enabled or letters < self.settings['min_letters'] or digits or not self._load():
                 return result
-            cer, burst = self._compare(ref, self._letters(self._transcribe(audio, samplerate)))
+            cer, burst, edge = self._compare(ref, self._letters(self._transcribe(audio, samplerate)))
             cer_limit = self._limit(self.cer_samples, 'cer')
             burst_limit = self._limit(self.burst_samples, 'burst')
+            edge_limit = self._limit(self.edge_samples, 'edge')
             if first_take:
                 self.cer_samples.append(cer)
                 self.burst_samples.append(burst)
-            result.update(cer=cer, burst=burst, badness=cer + burst / letters)
-            if burst > burst_limit:
+                self.edge_samples.append(edge)
+            result.update(cer=cer, burst=burst, edge=edge, badness=cer + (burst + edge) / letters)
+            if edge > edge_limit:
+                reason = legends['msg_verify_reason_edge'].format(edge=edge, limit=f'{edge_limit:.0f}')
+                result.update(ok=False, reason=reason)
+            elif burst > burst_limit:
                 reason = legends['msg_verify_reason_burst'].format(burst=burst, limit=f'{burst_limit:.0f}')
                 result.update(ok=False, reason=reason)
             elif cer > cer_limit:
@@ -267,7 +276,7 @@ class SentenceVerifier:
             return result
         except Exception as e:
             self._disable_asr(e)
-            return dict(ok=True, cer=None, burst=None, duration=0.0, limit=0.0, reason=None, badness=0.0)
+            return dict(ok=True, cer=None, burst=None, edge=None, duration=0.0, limit=0.0, reason=None, badness=0.0)
 
     def flag(self, sentence_file:str, sentence:str, result:dict)->None:
         # a sentence still failing after its retries: its best take is kept, listed at the end of the conversion
