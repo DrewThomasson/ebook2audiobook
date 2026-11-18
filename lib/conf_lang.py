@@ -21,6 +21,10 @@ language_separator = 'zzz' # language_mapping's "More languages (A to Z)" line o
 session_info = 'In headless mode, store it in case of interruption, crash,\nor reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option.\n************************************************************************'
 year_to_decades_languages = ['eng', 'deu', 'nld', 'nob', 'dan', 'swe']
 
+# languages reading a 3 letters pronounceable all caps acronym as a word (la CIA, la ONU, gli USA) instead of spelling it.
+# an unpronounceable acronym (FBI, KGB, URSS) and a 2 letters one (UE, TV) are spelled in every language.
+acronym_as_word_languages = ['spa', 'ita', 'por', 'cat', 'glg']
+
 # languages writing decimals with a comma and grouping thousands with a dot or a space (i.e. 1.234,5 or 1 234,5)
 language_decimal_comma = [
     'afr', 'arg', 'ast', 'aze', 'bak', 'bel', 'bos', 'bre', 'bul', 'cat', 'ces', 'chv', 'dan', 'deu', 'ell', 'epo',

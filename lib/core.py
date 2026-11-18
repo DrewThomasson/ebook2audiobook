@@ -1647,6 +1647,14 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                 return []
             title = get_ebook_title(epubBook, all_docs)
             note_targets = get_note_targets(all_docs)
+            # words the whole book writes in lowercase or capitalized: an all caps word (SECRET) is not spelled like an acronym (CIA)
+            from html import unescape as html_unescape
+            known_words = set()
+            for doc in all_docs:
+                doc_body = doc.get_body_content()
+                doc_body = doc_body.decode('utf-8', errors='replace') if isinstance(doc_body, bytes) else (doc_body or '')
+                doc_body = re.sub(r'<(script|style)\b.*?</\1\s*>|<[^>]+>', ' ', doc_body, flags=re.DOTALL | re.IGNORECASE)
+                known_words |= get_known_words(html_unescape(doc_body))
             blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
@@ -1693,7 +1701,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                     zip_names = set(zf.namelist())
                     zip_basenames = {os.path.basename(n): n for n in zip_names}
                     for doc_idx, doc in enumerate(all_docs):
-                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames, note_targets.get(posixpath.normpath(doc.get_name())))
+                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames, note_targets.get(posixpath.normpath(doc.get_name())), known_words)
                         if text is None:
                             error = legends['error_doc_extract'].format(doc=doc_idx + 1)
                             show_alert(session_id, {"type": "warning", "msg": error})
@@ -1725,7 +1733,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None, note_targets:dict|None=None)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None, note_targets:dict|None=None, known_words:set|None=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -2048,7 +2056,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
             msg = legends['msg_normalize_text']
             print(msg)
-            text = normalize_text(text, lang, lang_iso1, tts_engine)
+            text = normalize_text(text, lang, lang_iso1, tts_engine, known_words)
             text = restore_sml(text, sml_blocks)
             return text
         return None
@@ -2833,7 +2841,158 @@ def roman2number(text:str)->str:
         text
     )
     return text
-    
+
+def word_key(word:str)->str:
+    # case and accent free form of a word: all caps often drop the accents (ETE/été, ΣΟΦΙΑ/Σοφία)
+    return ''.join(c for c in unicodedata.normalize('NFD', word.casefold()) if not unicodedata.combining(c))
+
+def get_known_words(text:str)->set:
+    # words the text writes with a lowercase letter (secret, Tower, McGuire): the same word in all caps is a real word, not an acronym
+    return {word_key(w) for w in set(re.findall(r'[\p{L}\p{M}]+', text)) if not w.isupper()}
+
+def acronym2letters(text:str, lang:str, known_words:set|None=None)->str:
+    # spell all caps acronyms letter by letter (CIA -> C I A) so the TTS does not read them as a word,
+    # all caps words (SECRET, AGENCY, TOWER) stay untouched. an all caps token is an acronym when the text
+    # never writes it in lowercase and it is unpronounceable (FBI, KGB, HTML, USSR) or short (CIA, OSS, UK)
+    # outside a caps passage. only cased scripts have acronyms to detect: latin, cyrillic, greek, armenian.
+
+    def _units(cluster:str)->list[str]:
+        # consonant cluster to sounds: digraphs (sch, ch, th, sz, cz...) and doubled letters are one sound
+        units = []
+        i = 0
+        while i < len(cluster):
+            for size in (3, 2):
+                if cluster[i:i + size] in digraph_sonority:
+                    units.append(cluster[i:i + size])
+                    i += size
+                    break
+            else:
+                j = i
+                while j < len(cluster) and cluster[j] == cluster[i]:
+                    j += 1
+                units.append(cluster[i:j])
+                i = j
+        return units
+
+    def _base(unit:str)->str:
+        return unit if unit in digraph_sonority else unit[0]
+
+    def _sonority(unit:str)->int:
+        base = _base(unit)
+        return digraph_sonority.get(base, letter_sonority.get(base, 2))
+
+    def _onset_pair(a:str, b:str)->bool:
+        # sonority rises toward the vowel (bl, tr, kn, ps), or s + stop/nasal (st, sp, sm), or prenasalized (mb, nd)
+        a, b = _base(a), _base(b)
+        sa, sb = _sonority(a), _sonority(b)
+        return sb > sa or (a in ('s', 'z', 'sz') and (sb in (1, 3) or b in ('f', 'v'))) or (a in ('m', 'n') and b in ('b', 'd', 'g', 'j', 'z', 'dz'))
+
+    def _onset_ok(units:list[str])->bool:
+        if len(units) < 2:
+            return True
+        if len(units) == 2:
+            return _onset_pair(units[0], units[1])
+        if len(units) == 3 and _onset_pair(units[1], units[2]):
+            return (units[0] in ('s', 'z', 'm', 'n') and _onset_pair(units[0], units[1])) or _sonority(units[0]) < _sonority(units[1])
+        return False
+
+    def _coda_ok(units:list[str])->bool:
+        # sonority falls after the vowel (nd, rst, lk), a fricative may close it (ts, pf, ks), stop + t (pt, ct, dt), fricative + nasal (ism, rhythm).
+        # a doubled consonant only right after the vowel (oss, herrn, not urss)
+        for i in range(1, len(units)):
+            a, b = units[i - 1], units[i]
+            if len(b) > 1 and b not in digraph_sonority:
+                return False
+            sa, sb = _sonority(a), _sonority(b)
+            if not (sb < sa or sb == 2 or (sb == sa and sa in (3, 4)) or (sa == 1 and b == 't') or (sa == 2 and sb == 3)):
+                return False
+        return True
+
+    def _is_pronounceable(token:str)->bool:
+        word = re.sub(r'[^a-z]', '', unidecode(token).lower())
+        # McGUIRE, McLEAN: the prefix is said apart
+        if len(word) > 4 and word.startswith('mc'):
+            word = word[2:]
+        # h after a vowel lengthens it (JOHN, STAHL, AHMED)
+        word = re.sub(r'(?<=[aeiouy])h(?=[^aeiouy])', '', word)
+        if not word:
+            return True
+        shape = ''.join('v' if c in 'aeiou' or (c == 'y' and (i + 1 == len(word) or word[i + 1] not in 'aeiou')) else 'c' for i, c in enumerate(word))
+        if 'v' not in shape:
+            return False
+        first, last = shape.index('v'), shape.rindex('v')
+        medials = [_units(word[first + m.start():first + m.end()]) for m in re.finditer(r'c+', shape[first:last + 1])]
+        return (
+            _onset_ok(_units(word[:first]))
+            and _coda_ok(_units(word[last + 1:]))
+            and all(any(_coda_ok(units[:k]) and _onset_ok(units[k:]) for k in range(len(units) + 1)) for units in medials)
+        )
+
+    def _is_caps_neighbour(gap:str, word:str)->bool:
+        # an all caps word in the same phrase (TOP SECRET CIA FILES, ODD CRAFT), or glued by a hyphen (WI-FI, CD-ROM)
+        if gap in ('-', '\u2010', '\u2011'):
+            return word.isupper()
+        if any(ch in punctuation_split_hard_set or ch in '\r\n' or 0xE000 <= ord(ch) <= 0xF8FF for ch in gap):
+            return False
+        return len(word) > 1 and word.isupper() and (word_key(word) in known_words or (len(word) > 3 and _is_pronounceable(word)))
+
+    def _in_caps_context(start:int)->bool:
+        idx = word_index[start]
+        if idx > 0:
+            p_start, p_end, p_word = word_spans[idx - 1]
+            if _is_caps_neighbour(source[p_end:start], p_word):
+                return True
+        if idx + 1 < len(word_spans):
+            n_start, n_end, n_word = word_spans[idx + 1]
+            if _is_caps_neighbour(source[word_spans[idx][1]:n_start], n_word):
+                return True
+        return False
+
+    def _repl(m:re.Match)->str:
+        token, plural = m.group(1), m.group(2)
+        if word_key(token) in known_words:
+            return m.group(0)
+        # NOOO, HMMM, GRRR stretch their last letter, СССР does not
+        if len(token) > 3 and re.search(r'(.)\1\1$', token):
+            return m.group(0)
+        start, end = m.start(), m.end()
+        near_digit = (start > 0 and source[start - 1].isdigit()) or (end < len(source) and source[end].isdigit())
+        # roman numbers roman2number() left (II. CD,) keep their current reading, MI6 or CDs are not roman numbers
+        if not plural and not near_digit and valid_roman.fullmatch(token):
+            return m.group(0)
+        if _is_pronounceable(token) and (len(token) > short_max or caps_text or _in_caps_context(start)):
+            return m.group(0)
+        return ' '.join(token) + plural
+
+    letters = r'\p{Latin}\p{Cyrillic}\p{Greek}\p{Armenian}'
+    token_pattern = re.compile(r'(?<![' + letters + r'\p{M}])((?:(?=\p{Lu})[' + letters + r']){2,})(s?)(?![' + letters + r'\p{M}])')
+    if not token_pattern.search(text):
+        return text
+    letter_sonority = {
+        **dict.fromkeys('pbtdkgcq', 1),
+        **dict.fromkeys('fvszhx', 2),
+        **dict.fromkeys('mn', 3),
+        **dict.fromkeys('lr', 4),
+        **dict.fromkeys('wjy', 5),
+    }
+    digraph_sonority = {
+        'tch': 2, 'sch': 2, 'ch': 2, 'sh': 2, 'th': 2, 'ph': 2, 'gh': 2, 'kh': 2, 'zh': 2,
+        'sz': 2, 'zs': 2, 'cs': 2, 'rz': 2, 'cz': 1, 'dz': 1, 'ck': 1, 'gn': 3, 'wh': 5, 'wr': 4, 'rh': 4,
+    }
+    valid_roman = re.compile(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})')
+    if known_words is None:
+        known_words = get_known_words(text)
+    short_max = 2 if lang in acronym_as_word_languages else 3
+    source = text
+    word_spans = [(m.start(), m.end(), m.group()) for m in re.finditer(r'[' + letters + r'\p{M}]+', text)]
+    word_index = {s: i for i, (s, e, w) in enumerate(word_spans)}
+    # a text mostly in caps (telegram, all caps book or title): only unpronounceable tokens are spelled
+    caps_text = False
+    if language_mapping.get(lang, {}).get('script') in ('latin', 'cyrillic', 'greek', 'armenian'):
+        cased = [w for s, e, w in word_spans if len(w) > 1 and (w.isupper() or w.islower() or w.istitle())]
+        caps_text = len(cased) > 0 and sum(1 for w in cased if w.isupper()) * 2 > len(cased)
+    return token_pattern.sub(_repl, text)
+
 def is_latin(s:str)->bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
@@ -2995,7 +3154,7 @@ def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
         return f"[{tag}:{value}]"
     return f"[{tag}]"
 
-def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
+def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str, known_words:set|None=None)->str:
 
     def _replace(match:re.Match)->str:
         token = match.group(1)
@@ -3003,7 +3162,14 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             if token.lower() == k.lower():
                 return expansion
         return token  # fallback
-            
+
+    def _dotted(match:re.Match)->str:
+        letters = match.group().replace('.', '')
+        # a single non latin initial (А. Пушкин) keeps its dot as before
+        if len(letters) == 1 and not letters.isascii():
+            return match.group()
+        return ' '.join(letters.upper())
+
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     text = emoji_pattern.sub('', text)
@@ -3017,10 +3183,13 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
             flags=re.IGNORECASE
         )
         text = pattern.sub(_replace, text)
-    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc…
-    pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
-    # uppercase acronyms
-    text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
+    # dotted letters like a., c.i.a., F.B.I., U.S.A, С.С.С.Р.: an acronym is always spelled, one letter per word
+    pattern = r'(?<![\p{L}\p{M}\p{N}])(?:(?:[a-zA-Z]|\p{Lu})\.)+(?:[a-zA-Z]|\p{Lu})?(?![\p{L}\p{M}\p{N}])(?:\.(?![\p{L}\p{N}]))?'
+    text = re.sub(pattern, _dotted, text)
+    # Replace ok by 'Okay' before the acronyms so OK is not spelled
+    text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
+    # spell all caps acronyms (CIA -> C I A), keep all caps words (SECRET, TOWER)
+    text = acronym2letters(text, lang, known_words)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
@@ -3041,8 +3210,6 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = re.sub(r'"', '', text)
     # Replace multiple and spaces with single space
     text = re.sub(r'\s+', ' ', text)
-    # Replace ok by 'Owkey'
-    text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
     # Reduce multiple consecutive punctuations hard
