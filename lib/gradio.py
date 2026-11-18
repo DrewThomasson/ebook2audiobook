@@ -1888,6 +1888,10 @@ def build_interface(args:dict)->gr.Blocks:
                                             error = legends['error_sentence_not_found']
                                         elif cue_text and ''.join(SML_TAG_PATTERN.sub('', sentence).split()) != cue_text:
                                             error = legends['error_vtt_out_of_sync']
+                                        elif not session.get('sentences_dir'):
+                                            # a preset-restored or reloaded session has no sentences dir yet: joining
+                                            # None below would raise TypeError instead of showing this message
+                                            error = legends['error_edit_context_lost']
                                         elif not os.path.exists(os.path.join(session['sentences_dir'], block_id, f'{sentence_idx}.{default_audio_proc_format}')):
                                             error = legends['error_sentence_audio_not_found']
                                         else:
@@ -2138,7 +2142,11 @@ def build_interface(args:dict)->gr.Blocks:
                             error = legends['error_sentence_text_changed']
                         else:
                             sentence_count = len(block['sentences'])
-                            sentence_file = os.path.join(session['sentences_dir'], block_id, f'{sentence_idx}.{default_audio_proc_format}')
+                            if not session.get('sentences_dir') or not session.get('chapters_dir'):
+                                # a preset-restored session has no dirs: the save would raise TypeError on os.path.join(None, ...)
+                                error = legends['error_edit_context_lost']
+                            else:
+                                sentence_file = os.path.join(session['sentences_dir'], block_id, f'{sentence_idx}.{default_audio_proc_format}')
                             backup_file = f'{sentence_file}.bak'
                             chapter_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
                             _take_lock(session_id)

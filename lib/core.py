@@ -3612,6 +3612,13 @@ def combine_audio_sentences(session_id:str, file:str, block_id:str, sentence_cou
             error = legends['error_no_sentences_to_combine'].format(block=block_id)
             print(error)
             return False
+        # an edit session restored from a preset (or a tab reload after the ebook was switched) can reach here
+        # with sentences_dir still None: reset_ebook_session() clears it, presets are saved without the ebook keys.
+        # Without a sentences dir there is nothing to concat: fail as a plain message, not a TypeError in pathlib
+        if not session.get('sentences_dir'):
+            error = legends['error_edit_context_lost']
+            print(error)
+            return False
         block_dir = Path(session['sentences_dir']) / block_id
         ext = default_audio_proc_format
         selected_files = []
