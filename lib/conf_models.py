@@ -285,9 +285,9 @@ default_engine_settings = {
             "jetson5-sm72-sm87": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-jetson5-sm72-sm87.tar.gz", "gpu": True, "jetpack": 5, "sm": [72, 87]},
             "jetson6-sm87": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-jetson6-sm87.tar.gz", "gpu": True, "jetpack": 6, "sm": [87]},
             "jetson7-sm87-sm110": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-jetson7-sm87-sm110.tar.gz", "gpu": True, "jetpack": 7, "sm": [87, 110]},
-            # glibc floor of the aarch64 CUDA 13 build (Ubuntu 22.04 CUDA image): an older system skips it
+            # glibc floors of the aarch64 CUDA builds (Ubuntu 22.04 CUDA images): an older system skips them
             "linux-aarch64-cuda13": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-aarch64-cuda13.tar.gz", "gpu": True, "glibc_min": "2.34"},
-            "linux-aarch64-cuda12": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-aarch64-cuda12.tar.gz", "gpu": True},
+            "linux-aarch64-cuda12": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-aarch64-cuda12.tar.gz", "gpu": True, "glibc_min": "2.34"},
             "linux-aarch64-v82": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-aarch64-v82.tar.gz", "gpu": False, "cpu_flags": ["asimddp", "asimdhp"]},
             "linux-aarch64": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-aarch64.tar.gz", "gpu": False}
         },
