@@ -1911,7 +1911,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             prev_typ = None
             for typ, payload in tuples_list:
                 if typ == 'heading':
-                    text_list.append(payload.strip())
+                    text_list.append(roman2number(payload.strip()))
                 elif typ in ('break', 'pause'):
                     # Original logic: add token if different from previous type
                     if prev_typ != typ:
@@ -1945,7 +1945,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 else:
                     text = payload.strip()
                     if text:
-                        text_list.append(text)
+                        # a paragraph used as a title (CHAPTER IV) converts its roman number too
+                        text_list.append(roman2number(text, at_start=True))
                 prev_typ = typ
             msg = legends['msg_flattening_raw']
             print(msg)
@@ -2045,9 +2046,6 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
                             text
                         )
-            msg = legends['msg_convert_romans']
-            print(msg)
-            text = roman2number(text)
             msg = legends['msg_convert_time']
             print(msg)
             text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
@@ -2770,9 +2768,10 @@ def is_roman_numeral(token:str)->bool:
     # a short one with L C D M is an acronym or a word (DC, CD, MD, CV, MIX, DI)
     return bool(re.fullmatch(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})', token)) and (len(token) > 3 or not re.search(r'[LCDM]', token))
 
-def roman2number(text:str)->str:
-    # a roman number is converted only next to a word of chapter_word_mapping: after it (Chapter IV, Kapitel XII, Psalm CL)
-    # or before it with a dot (IV. fejezet, XII. Bölüm). anywhere else it stays written (Louis XIV, Washington DC)
+def roman2number(title:str, at_start:bool=False)->str:
+    # a title's roman number in caps is converted when a word of chapter_word_mapping is in front of it and no word
+    # behind it: Chapter IV, CHAPTER XLI., Part II: The Return. Louis XIV or Chapter IV The Return stay written.
+    # at_start: the title must open the text (a paragraph used as a title), so prose (as Chapter IV, shows) is left alone
 
     def _to_int(s:str)->str:
         i = 0
@@ -2787,32 +2786,16 @@ def roman2number(text:str)->str:
                 return s
         return str(result)
 
-    def _repl_word_first(m:re.Match)->str:
-        word, roman = m.group(1), m.group(2)
-        # a lowercase word before I is followed by the pronoun (for my part I agree, in this chapter I wish)
-        if roman == 'I' and word.islower():
+    def _repl(m:re.Match)->str:
+        if not valid_roman.fullmatch(m.group(3)):
             return m.group(0)
-        # a lowercase roman (tome ii, Psalm xxxix) must read as a number alone, else it is a word (parte di loro)
-        if roman.islower():
-            roman = roman.upper()
-            if not is_roman_numeral(roman):
-                return m.group(0)
-        if not valid_roman.fullmatch(roman):
-            return m.group(0)
-        return f'{word} {_to_int(roman)}'
-
-    def _repl_roman_first(m:re.Match)->str:
-        roman, sep, word = m.group(1), m.group(2), m.group(3)
-        # the dot may end a sentence (Washington DC. Part of...), so a capitalized word needs a numeral read as such alone
-        if not valid_roman.fullmatch(roman) or (not word.islower() and not is_roman_numeral(roman)):
-            return m.group(0)
-        return f'{_to_int(roman)}{sep}{word}'
+        return f'{m.group(1)}{m.group(2)}{_to_int(m.group(3))}'
 
     valid_roman = re.compile(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})')
     chapter_words = '|'.join(map(re.escape, sorted({w for words in chapter_word_mapping.values() for w in words}, key=len, reverse=True)))
-    text = re.sub(r'(?<![\p{L}\p{M}])((?i:' + chapter_words + r'))\s+([IVXLCDM]+|[ivxlcdm]{2,})(?![\p{L}\p{M}\p{N}])', _repl_word_first, text)
-    text = re.sub(r'(?<![\p{L}\p{M}\p{N}])([IVXLCDM]+)(\.\s+)((?i:' + chapter_words + r'))(?![\p{L}\p{M}])', _repl_roman_first, text)
-    return text
+    start = r'^(\s*)' if at_start else r'(?<![\p{L}\p{M}])()'
+    pattern = start + r'((?i:' + chapter_words + r')\s+)([IVXLCDM]+)(?=\s*(?:$|[^\w\s\'’]))'
+    return re.sub(pattern, _repl, title, count=1 if at_start else 0)
 
 def word_key(word:str)->str:
     # case and accent free form of a word: all caps often drop the accents (ETE/été, ΣΟΦΙΑ/Σοφία)
