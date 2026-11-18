@@ -144,7 +144,7 @@ tts_engines_with_custom_model = (TTS_ENGINES['PIPER'], TTS_ENGINES['XTTS'], TTS_
 # workers/audiocpp_worker.py. No torch, no venv (as ZONOS2).
 # Release pinned for the official packages: asset names carry the tag and releases/latest points at side releases
 # (v0.9.2-drama3-base-small). Bumping it re-downloads them once (a package whose install record names other urls)
-audiocpp_version = '0.9.2'
+audiocpp_version = '0.9.5'
 audiocpp_release = f'https://github.com/0xShug0/audio.cpp/releases/download/v{audiocpp_version}/audio-v{audiocpp_version}'
 audiocpp_packages = {
     # official release assets. Linux ones are built on Ubuntu 24.04: glibc 2.38 / GLIBCXX_3.4.32 / libgomp.so.1 floor
@@ -160,7 +160,9 @@ audiocpp_packages = {
     "macos-arm64-cpu-acpp": {"urls": [f"{audiocpp_release}-bin-macos-arm64-metal.tar.gz"], "gpu": False, "macos_min": "13.3"},
     "macos-x86_64-acpp": {"urls": [f"{audiocpp_release}-bin-macos-x64-metal.tar.gz"], "gpu": False, "macos_min": "13.3"},
     # e2a's own builds (py-pkg release "audiocpp", made by py-pkg's audiocpp/build-audiocpp.sh, --tag
-    # matching audiocpp_version): old glibc, no libgomp, CUDA runtime bundled, macOS 11. Off until published
+    # matching audiocpp_version): old glibc, no libgomp, CUDA runtime bundled, macOS 11. Off until published.
+    # The published ones are v0.9.2 builds until rebuilt with build-audiocpp.sh (default v0.9.5): their urls carry no
+    # version, so an install that already has one keeps it after a rebuild uploaded under the same name
     # published: linux-x64-cuda12 / -cuda13 with cudart, cuBLAS and cuFFT in lib/ (driver only), CPU part SSE4.2;
     # linux-x64-vulkan and -cpu-*: glibc 2.27, only libc/libm/libdl
     "linux-x64-cuda13": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-x64-cuda13.tar.gz"], "gpu": True, "backend": "cuda"},
@@ -187,7 +189,13 @@ audiocpp_packages = {
     # aarch64 Linux with a Vulkan driver; CPU part ARMv8.2 + fp16 (asimdhp), no dotprod (Xavier has none)
     "linux-aarch64-vulkan": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-aarch64-vulkan.tar.gz"], "gpu": True, "backend": "vulkan", "cpu_flags": ["asimdhp"]},
     "linux-aarch64-v82": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-aarch64-v82.tar.gz"], "gpu": False, "cpu_flags": ["asimddp", "asimdhp"]},
-    "linux-aarch64": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-aarch64.tar.gz"], "gpu": False}
+    "linux-aarch64": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-aarch64.tar.gz"], "gpu": False},
+    # Windows arm64 (Snapdragon), which audio.cpp's own releases leave out (Windows x64 only): py-pkg's
+    # audiocpp/build-audiocpp.cmd on a Windows arm64 machine, clang-cl, static C runtime (system DLLs only); CPU part
+    # ARMv8.0, ARMv8.2 + dotprod + fp16 for -cpu-v82. Off until published
+    "windows-arm64-vulkan": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-windows-arm64-vulkan.zip"], "gpu": True, "backend": "vulkan", "enabled": False},
+    "windows-arm64-cpu-v82": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-windows-arm64-cpu-v82.zip"], "gpu": False, "cpu_flags": ["asimddp", "asimdhp"], "enabled": False},
+    "windows-arm64-cpu": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-windows-arm64-cpu.zip"], "gpu": False, "enabled": False}
 }
 # reference transcripts for the engines whose cloning takes one (ref_text below): transcribed once per voice clip by this
 # ASR model, loaded in the same server only when needed and unloaded right after
@@ -220,6 +228,11 @@ default_engine_settings = {
             "windows-x64-vulkan-zyphra": {"url": "https://github.com/Zyphra/zonos2.cpp/releases/latest/download/zonos2-windows-x64-vulkan.zip", "gpu": True, "cpu_flags": ["avx2", "fma", "f16c"]},
             "windows-x64-cpu-avx2": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-x64-cpu-avx2.zip", "gpu": False, "cpu_flags": ["avx2", "fma", "f16c", "bmi2"]},
             "windows-x64-cpu-sse42": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-x64-cpu-sse42.zip", "gpu": False, "cpu_flags": ["sse4_2"]},
+            # Windows arm64 (Snapdragon): py-pkg's build-zonos2.cmd on a Windows arm64 machine, clang-cl; CPU part
+            # ARMv8.0, ARMv8.2 + dotprod + fp16 for -cpu-v82. Off until published
+            "windows-arm64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-arm64-vulkan.zip", "gpu": True, "enabled": False},
+            "windows-arm64-cpu-v82": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-arm64-cpu-v82.zip", "gpu": False, "cpu_flags": ["asimddp", "asimdhp"], "enabled": False},
+            "windows-arm64-cpu": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-arm64-cpu.zip", "gpu": False, "enabled": False},
             "macos-arm64": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-macos-arm64.tar.gz", "gpu": True, "macos_min": 11},
             "macos-arm64-cpu": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-macos-arm64.tar.gz", "gpu": False, "macos_min": 11},
             "macos-arm64-metal": {"url": "https://github.com/Zyphra/zonos2.cpp/releases/latest/download/zonos2-macos-arm64-metal.tar.gz", "gpu": True, "macos_min": 15},
@@ -278,6 +291,11 @@ default_engine_settings = {
             "windows-x64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-x64-vulkan.zip", "gpu": True, "cpu_flags": ["sse4_2"]},
             "windows-x64-cpu-avx2": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-x64-cpu-avx2.zip", "gpu": False, "cpu_flags": ["avx2", "fma", "f16c", "bmi2"]},
             "windows-x64-cpu-sse42": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-x64-cpu-sse42.zip", "gpu": False, "cpu_flags": ["sse4_2"]},
+            # Windows arm64 (Snapdragon): py-pkg's build-zonos3.cmd on a Windows arm64 machine, clang-cl; CPU part
+            # ARMv8.0, ARMv8.2 + dotprod + fp16 for -cpu-v82. Off until published
+            "windows-arm64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-arm64-vulkan.zip", "gpu": True, "enabled": False},
+            "windows-arm64-cpu-v82": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-arm64-cpu-v82.zip", "gpu": False, "cpu_flags": ["asimddp", "asimdhp"], "enabled": False},
+            "windows-arm64-cpu": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-arm64-cpu.zip", "gpu": False, "enabled": False},
             "macos-arm64": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-macos-arm64.tar.gz", "gpu": True, "macos_min": 11},
             "macos-arm64-cpu": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-macos-arm64.tar.gz", "gpu": False, "macos_min": 11},
             "macos-x86_64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-macos-x86_64-vulkan.tar.gz", "gpu": True, "macos_min": 12},

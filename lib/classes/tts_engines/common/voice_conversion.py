@@ -160,6 +160,10 @@ class VoiceConversion(SubprocessPipe):
             candidates = ((candidates + ['linux-aarch64-vulkan']) if gpu_wanted else []) + ['linux-aarch64-v82', 'linux-aarch64']
         elif sys.platform == systems['WINDOWS'] and machine in ('amd64', 'x86_64'):
             candidates = (['windows-x64-cuda13-acpp', 'windows-x64-cuda12-acpp'] if cuda_wanted else []) + (['windows-x64-vulkan-acpp'] if gpu_wanted else []) + ['windows-x64-cpu-acpp']
+        elif sys.platform == systems['WINDOWS'] and machine in ('arm64', 'aarch64'):
+            # Windows arm64 (Snapdragon): own builds only, Vulkan on a GPU device (Adreno), then the dotprod CPU build,
+            # then the ARMv8.0 one. An x64 Python under emulation reports AMD64 and takes the x64 packages above
+            candidates = (['windows-arm64-vulkan'] if gpu_wanted else []) + ['windows-arm64-cpu-v82', 'windows-arm64-cpu']
         elif sys.platform == systems['MACOS']:
             # own builds start on macOS 11, the official ones on 13.3. arm64: Metal (the same archive runs --backend
             # cpu). x86_64: Vulkan through MoltenVK (own build only), else CPU
@@ -175,7 +179,9 @@ class VoiceConversion(SubprocessPipe):
         elif sys.platform == systems['WINDOWS']:
             import ctypes
             present = ctypes.windll.kernel32.IsProcessorFeaturePresent
-            cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set())
+            # PF_SSE4_2_INSTRUCTIONS_AVAILABLE 38, PF_AVX2_INSTRUCTIONS_AVAILABLE 40 (AVX2 CPUs all have FMA, F16C, BMI2);
+            # arm64: PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE 43, the dot product, whose cores all have fp16 arithmetic too
+            cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set()) | ({'asimddp', 'asimdhp'} if present(43) else set())
         glibc = platform.libc_ver()
         glibc_version = tuple(int(x) for x in re.findall(r'\d+', glibc[1])[:2]) if glibc[0] == 'glibc' and glibc[1] else (0, 0)
         mac_version = tuple(int(x) for x in (platform.mac_ver()[0] or '0').split('.')[:2]) if sys.platform == systems['MACOS'] else (0, 0)

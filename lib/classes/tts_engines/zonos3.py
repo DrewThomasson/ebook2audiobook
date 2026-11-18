@@ -105,6 +105,10 @@ class Zonos3(TTSUtils, TTSRegistry, name='zonos3'):
                 # CUDA 13 then 12, then the Vulkan build (SSE4.2 CPU part: CPUs without AVX2 too). CPU builds carry no
                 # Vulkan: they start even where no vulkan-1.dll exists (old GPUs, VMs)
                 candidates = (['windows-x64-cuda13', 'windows-x64-cuda12'] if self.device == devices['CUDA']['proc'] else []) + (['windows-x64-vulkan'] if gpu_wanted else []) + ['windows-x64-cpu-avx2', 'windows-x64-cpu-sse42']
+            elif sys.platform == systems['WINDOWS'] and machine in ('arm64', 'aarch64'):
+                # Windows arm64 (Snapdragon): own builds only, Vulkan on a GPU device (Adreno), then the dotprod CPU build,
+                # then the ARMv8.0 one. An x64 Python under emulation reports AMD64 and takes the x64 packages above
+                candidates = (['windows-arm64-vulkan'] if gpu_wanted else []) + ['windows-arm64-cpu-v82', 'windows-arm64-cpu']
             elif sys.platform == systems['MACOS']:
                 # arm64: Metal build (the same archive runs --cpu). x86_64: Vulkan (MoltenVK) build on a GPU device
                 candidates = ((['macos-arm64'] if gpu_wanted else []) + ['macos-arm64-cpu']) if machine == 'arm64' else ((['macos-x86_64-vulkan'] if gpu_wanted else []) + ['macos-x86_64'])
@@ -119,8 +123,9 @@ class Zonos3(TTSUtils, TTSRegistry, name='zonos3'):
             elif sys.platform == systems['WINDOWS']:
                 import ctypes
                 present = ctypes.windll.kernel32.IsProcessorFeaturePresent
-                # PF_SSE4_2_INSTRUCTIONS_AVAILABLE 38, PF_AVX2_INSTRUCTIONS_AVAILABLE 40 (AVX2 CPUs all have FMA, F16C, BMI2)
-                cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set())
+                # PF_SSE4_2_INSTRUCTIONS_AVAILABLE 38, PF_AVX2_INSTRUCTIONS_AVAILABLE 40 (AVX2 CPUs all have FMA, F16C, BMI2);
+                # arm64: PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE 43, the dot product, whose cores all have fp16 arithmetic too
+                cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set()) | ({'asimddp', 'asimdhp'} if present(43) else set())
             glibc = platform.libc_ver()
             glibc_version = tuple(int(x) for x in re.findall(r'\d+', glibc[1])[:2]) if glibc[0] == 'glibc' and glibc[1] else (0, 0)
             machine_desc = f'{sys.platform} {machine}' + (f' JetPack {jetpack}' if jetpack else '') + (f' sm_{board_sm}' if board_sm else '')
