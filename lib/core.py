@@ -2769,9 +2769,11 @@ def is_roman_numeral(token:str)->bool:
     return bool(re.fullmatch(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})', token)) and (len(token) > 3 or not re.search(r'[LCDM]', token))
 
 def roman2number(title:str, at_start:bool=False)->str:
-    # a title's roman number in caps is converted when a word of chapter_word_mapping is in front of it and no word
-    # behind it: Chapter IV, CHAPTER XLI., Part II: The Return. Louis XIV or Chapter IV The Return stay written.
-    # at_start: the title must open the text (a paragraph used as a title), so prose (as Chapter IV, shows) is left alone
+    # a title's roman number in caps is converted when no word is behind it and a word of chapter_word_mapping is in
+    # front of it (Chapter IV, CHAPTER XLI., Part II: The Return) or nothing is (IV, XII. The Return, IV: Exile).
+    # Louis XIV, Chapter IV The Return, I, Robot stay written.
+    # at_start: a paragraph used as a title must open with it (CHAPTER IV. THE RETURN) or be the numeral alone (IV.),
+    # so prose (as Chapter IV, shows / I, for one, agree) is left alone
 
     def _to_int(s:str)->str:
         i = 0
@@ -2793,9 +2795,13 @@ def roman2number(title:str, at_start:bool=False)->str:
 
     valid_roman = re.compile(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})')
     chapter_words = '|'.join(map(re.escape, sorted({w for words in chapter_word_mapping.values() for w in words}, key=len, reverse=True)))
-    start = r'^(\s*)' if at_start else r'(?<![\p{L}\p{M}])()'
-    pattern = start + r'((?i:' + chapter_words + r')\s+)([IVXLCDM]+)(?=\s*(?:$|[^\w\s\'’]))'
-    return re.sub(pattern, _repl, title, count=1 if at_start else 0)
+    word_first = r'((?i:' + chapter_words + r')\s+)([IVXLCDM]+)(?=\s*(?:$|[^\w\s\'’]))'
+    if at_start:
+        title = re.sub(r'^(\s*)' + word_first, _repl, title, count=1)
+        return re.sub(r'^([\s\-–—~*]*)()([IVXLCDM]+)(?=[\s.:\-–—~*]*$)', _repl, title)
+    title = re.sub(r'(?<![\p{L}\p{M}])()' + word_first, _repl, title)
+    # no word in front: only a numbering mark may follow (IV. The Return), not a comma (I, Robot)
+    return re.sub(r'^([\s\-–—~*]*)()([IVXLCDM]+)(?=\s*(?:$|[.:\-–—]))', _repl, title)
 
 def word_key(word:str)->str:
     # case and accent free form of a word: all caps often drop the accents (ETE/été, ΣΟΦΙΑ/Σοφία)
