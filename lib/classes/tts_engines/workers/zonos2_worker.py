@@ -86,7 +86,7 @@ def main()->int:
                 kernel32.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info))   # JobObjectExtendedLimitInformation
                 kernel32.AssignProcessToJobObject(job, wintypes.HANDLE(int(server._handle)))
         except Exception as e:
-            sys.stderr.write(f'zonos worker: no job object guard ({e})\n')
+            sys.stderr.write(f'zonos2 worker: no job object guard ({e})\n')
     elif sys.platform == 'darwin':
         try:
             with open(pid_file, 'w') as f:
@@ -202,7 +202,7 @@ def main()->int:
                     # cut mid-word. One new draw (fresh seed) at the ceiling: a long sentence fits, a runaway ends
                     eos = frames < (body['max_tokens'] - 9) * 512
                     if not eos and body['max_tokens'] < max_frames:
-                        sys.stderr.write(f"zonos worker: no end token within {body['max_tokens']} frames, regenerating with {max_frames}\n")
+                        sys.stderr.write(f"zonos2 worker: no end token within {body['max_tokens']} frames, regenerating with {max_frames}\n")
                         body['max_tokens'] = max_frames
                         continue
                     # trailing silence: 10 ms windows read back from the end (up to 500 ms) while below the voiced
@@ -231,7 +231,7 @@ def main()->int:
                     if tail_ms >= 20 or cut_draws >= 2:
                         break
                     cut_draws += 1
-                    sys.stderr.write(f"zonos worker: last word cut (tail {tail_ms} ms, thr {thr:.1f} dBFS, last 300 ms: {' '.join(f'{d:.0f}' for d in db_win[:30])}), new draw {cut_draws}/2\n")
+                    sys.stderr.write(f"zonos2 worker: last word cut (tail {tail_ms} ms, thr {thr:.1f} dBFS, last 300 ms: {' '.join(f'{d:.0f}' for d in db_win[:30])}), new draw {cut_draws}/2\n")
                 tail_ms, audio, pcm, sr, channels = best
                 if tail_ms < 20 and pcm is not None:
                     fade = min(len(pcm), sr // 50 * channels)
@@ -244,7 +244,7 @@ def main()->int:
                         w.setsampwidth(2)
                         w.setframerate(sr)
                         w.writeframes(pcm.tobytes())
-                    sys.stderr.write(f'zonos worker: still cut after {cut_draws} new draws, kept the longest take, faded out\n')
+                    sys.stderr.write(f'zonos2 worker: still cut after {cut_draws} new draws, kept the longest take, faded out\n')
                 else:
                     with open(req['file'], 'wb') as f:
                         f.write(audio)

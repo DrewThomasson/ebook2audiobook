@@ -7,12 +7,12 @@ from lib.conf_models import TTS_ENGINES, default_engine_settings
 models = {
     name: {
         "lang": "multi",
-        "repo": default_engine_settings[TTS_ENGINES['ZONOS']]['repo'],
+        "repo": default_engine_settings[TTS_ENGINES['ZONOS2']]['repo'],
         "sub": "",
         "file": file,
-        "voice": default_engine_settings[TTS_ENGINES['ZONOS']]['voice'],
-        "files": [file, default_engine_settings[TTS_ENGINES['ZONOS']]['dac'], default_engine_settings[TTS_ENGINES['ZONOS']]['spk']],
-        "samplerate": default_engine_settings[TTS_ENGINES['ZONOS']]['samplerate']
+        "voice": default_engine_settings[TTS_ENGINES['ZONOS2']]['voice'],
+        "files": [file, default_engine_settings[TTS_ENGINES['ZONOS2']]['dac'], default_engine_settings[TTS_ENGINES['ZONOS2']]['spk']],
+        "samplerate": default_engine_settings[TTS_ENGINES['ZONOS2']]['samplerate']
     }
     for name, file in (("internal", "zonos2-q4_k.gguf"), ("q6_k", "zonos2-q6_k.gguf"), ("q8_0", "zonos2-q8_0.gguf"))
 }

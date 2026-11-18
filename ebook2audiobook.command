@@ -115,6 +115,12 @@ done
 if [[ -n "${arguments[script_mode]+exists}" ]]; then
 	if [[ "${arguments[script_mode]}" == "$BUILD_DOCKER" || "${arguments[script_mode]}" == "$FULL_DOCKER" || "${arguments[script_mode]}" == "$NATIVE" ]]; then SCRIPT_MODE="${arguments[script_mode]}"
 	else echo "Error: Invalid script mode argument: ${arguments[script_mode]}"; exit 1; fi
+elif [[ "${IN_DOCKER:-}" == "1" ]]; then
+	# inside the image (IN_DOCKER from the Dockerfile) a bare launch, e.g. "docker exec <container> ./e2a.sh --headless …",
+	# runs the image's own install as the entrypoint does. native built a second install in python_env: host programs
+	# through sudo (absent from the image) and a fresh device detection, which ignored the image's device
+	SCRIPT_MODE="$FULL_DOCKER"
+	echo "Running inside the $APP_NAME image: --script_mode $FULL_DOCKER" >&2
 fi
 
 if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
@@ -145,14 +151,16 @@ if [[ "$SCRIPT_MODE" == "$BUILD_DOCKER" ]]; then
 	fi
 fi
 
-[[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]] && SUDO="sudo" || SUDO=""
+# root (a container, an LXC, a root shell) installs directly: sudo is often not even installed there
+[[ "${OSTYPE-}" != darwin* && "$SCRIPT_MODE" != "$BUILD_DOCKER" && "$(id -u)" -ne 0 ]] && SUDO="sudo" || SUDO=""
 [[ "${OSTYPE-}" == darwin* ]] && SHELL_NAME="zsh" || SHELL_NAME="bash"
 cd "$SCRIPT_DIR"
 if [[ "$SCRIPT_MODE" == "$FULL_DOCKER" ]]; then USER="${USER:-root}"; HOME="${HOME:-/root}"; SUDO=""; fi
 if [[ ! -f "$INSTALLED_LOG" && "$SCRIPT_MODE" != "$BUILD_DOCKER" ]]; then touch "$INSTALLED_LOG"; fi
 
 ######## check if the user is part of the read/write group
-if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exists}" ]]; then
+# root reads and writes every folder whatever its group, and has no sudo to call in most containers
+if [[ -n "${arguments[headless]+exists}" && ! -n "${arguments[script_mode]+exists}" && "$SCRIPT_MODE" == "$NATIVE" && "$(id -u)" -ne 0 ]]; then
 	PUBLIC_DIRS=("$SCRIPT_DIR/tmp" "$SCRIPT_DIR/models" "$SCRIPT_DIR/audiobooks")
 	if [[ "$OSTYPE" == "darwin"* ]]; then APP_GROUP=$(stat -f '%Sg' "$SCRIPT_DIR")
 	else APP_GROUP=$(stat -c '%G' "$SCRIPT_DIR"); fi
@@ -415,7 +423,13 @@ install_programs() {
 			export PATH="$(brew --prefix llvm@15)/bin:$PATH"
 		fi
 	else
-		if [[ "$SUDO" == "sudo" ]]; then echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"; fi
+		if [[ "$SUDO" == "sudo" ]]; then
+			if ! command -v sudo &>/dev/null; then
+				echo -e "\e[31m=============== sudo is not installed: run this script as root, or install sudo, or install manually: ${programs_missing[*]}\e[0m"
+				return 1
+			fi
+			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
+		fi
 		local PACK_MGR_OPTIONS=""
 		if command -v emerge &> /dev/null; then PACK_MGR="emerge"
 		elif command -v dnf &> /dev/null; then PACK_MGR="dnf install"; PACK_MGR_OPTIONS="-y"
@@ -440,7 +454,7 @@ EOF
 	fi
 	if [[ -z "$WGET" ]]; then
 		echo -e "\e[33m wget is missing! trying to install it… \e[0m"
-		result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
+		result=$(eval "$SUDO $PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
 		result_code=$?
 		if [[ $result_code -eq 0 ]]; then WGET="$(command -v wget 2>/dev/null || true)"
 		else echo "Cannot 'wget'. Please install 'wget' manually."; return 1; fi
@@ -467,7 +481,8 @@ EOF
 			sh "$RUSTUP_TMP" -y
 			rm -f "$RUSTUP_TMP"
 			if [[ -f "$HOME/.cargo/env" ]]; then source "$HOME/.cargo/env"; fi
-			if command -v $program &>/dev/null; then echo -e "\e[32m=============== $program OK! ===============\e[0m"
+			# the binary is rustc: 'rust' never resolves, so a working rustup install reported "rust failed"
+			if command -v rustc &>/dev/null; then echo -e "\e[32m=============== $program OK! ===============\e[0m"
 			else echo -e "\e[31m=============== $program failed.\e[0m"; fi
 		elif [[ "$program" == "tesseract" || "$program" == "tesseract-ocr" ]]; then
 			eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"

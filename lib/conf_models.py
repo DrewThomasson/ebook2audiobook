@@ -6,7 +6,8 @@ xtts_builtin_speakers_list = {}
 
 # listed in any order: the end of this file sorts it by rating, with default_engine_settings
 TTS_ENGINES = {
-    "ZONOS": "zonos",
+    "ZONOS2": "zonos2",
+    "ZONOS3": "zonos3",
     "GPTSOVITS": "gptsovits",
     "OMNIVOICE": "omnivoice",
     "F5TTS": "f5tts",
@@ -80,15 +81,18 @@ TTS_SML = {
     "break": {"static": "[break]", "paired": False},
     "pause": {"static": "[pause]", "paired": False},
     "voice": {"paired": True},
-    # zonos only (ignored by the other engines): [emotion:sad]...[/emotion] or a mix [emotion:sad=0.7,angry=0.2].
+    # zonos2 only (ignored by the other engines): [emotion:sad]...[/emotion] or a mix [emotion:sad=0.7,angry=0.2].
     # ZONOS2 directions happy/sad/angry/surprised (0..1) and axes valence/arousal (-1..1); all at 0 is the plain
     # cloned voice. Zonos v0.1 names still work through aliases, fear/disgust through "map" (no direction of their own,
     # approximated on the two axes), neutral/other add nothing. A mix is scaled by 1/max(1, sum of |weights|).
+    # zonos3 also reads it, with fear/disgust on their own directions and calm/confused on top (engine_values, engine_map)
     "emotion": {
         "paired": True,
         "values": ["happy", "sad", "angry", "surprised", "valence", "arousal"],
         "aliases": {"happiness": "happy", "joy": "happy", "sadness": "sad", "anger": "angry", "surprise": "surprised"},
-        "map": {"fear": {"valence": -0.6, "arousal": 0.6}, "afraid": {"valence": -0.6, "arousal": 0.6}, "scared": {"valence": -0.6, "arousal": 0.6}, "disgust": {"valence": -0.6, "arousal": 0.2}, "disgusted": {"valence": -0.6, "arousal": 0.2}, "neutral": {}, "other": {}}
+        "map": {"fear": {"valence": -0.6, "arousal": 0.6}, "afraid": {"valence": -0.6, "arousal": 0.6}, "scared": {"valence": -0.6, "arousal": 0.6}, "disgust": {"valence": -0.6, "arousal": 0.2}, "disgusted": {"valence": -0.6, "arousal": 0.2}, "neutral": {}, "other": {}},
+        "engine_values": {"zonos3": ["scared", "disgusted", "calm", "confused"]},
+        "engine_map": {"zonos3": {"fear": {"scared": 1.0}, "afraid": {"scared": 1.0}, "scared": {"scared": 1.0}, "disgust": {"disgusted": 1.0}, "disgusted": {"disgusted": 1.0}, "serene": {"calm": 1.0}}}
     }
 }
 
@@ -140,7 +144,7 @@ tts_engines_with_custom_model = (TTS_ENGINES['PIPER'], TTS_ENGINES['XTTS'], TTS_
 # workers/audiocpp_worker.py. No torch, no venv (as ZONOS2).
 # Release pinned for the official packages: asset names carry the tag and releases/latest points at side releases
 # (v0.9.2-drama3-base-small). Bumping it re-downloads them once (a package whose install record names other urls)
-audiocpp_version = '0.9.2'
+audiocpp_version = '0.9.5'
 audiocpp_release = f'https://github.com/0xShug0/audio.cpp/releases/download/v{audiocpp_version}/audio-v{audiocpp_version}'
 audiocpp_packages = {
     # official release assets. Linux ones are built on Ubuntu 24.04: glibc 2.38 / GLIBCXX_3.4.32 / libgomp.so.1 floor
@@ -156,7 +160,9 @@ audiocpp_packages = {
     "macos-arm64-cpu-acpp": {"urls": [f"{audiocpp_release}-bin-macos-arm64-metal.tar.gz"], "gpu": False, "macos_min": "13.3"},
     "macos-x86_64-acpp": {"urls": [f"{audiocpp_release}-bin-macos-x64-metal.tar.gz"], "gpu": False, "macos_min": "13.3"},
     # e2a's own builds (py-pkg release "audiocpp", made by py-pkg's audiocpp/build-audiocpp.sh, --tag
-    # matching audiocpp_version): old glibc, no libgomp, CUDA runtime bundled, macOS 11. Off until published
+    # matching audiocpp_version): old glibc, no libgomp, CUDA runtime bundled, macOS 11. Off until published.
+    # The published ones are v0.9.2 builds until rebuilt with build-audiocpp.sh (default v0.9.5): their urls carry no
+    # version, so an install that already has one keeps it after a rebuild uploaded under the same name
     # published: linux-x64-cuda12 / -cuda13 with cudart, cuBLAS and cuFFT in lib/ (driver only), CPU part SSE4.2;
     # linux-x64-vulkan and -cpu-*: glibc 2.27, only libc/libm/libdl
     "linux-x64-cuda13": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-x64-cuda13.tar.gz"], "gpu": True, "backend": "cuda"},
@@ -183,7 +189,13 @@ audiocpp_packages = {
     # aarch64 Linux with a Vulkan driver; CPU part ARMv8.2 + fp16 (asimdhp), no dotprod (Xavier has none)
     "linux-aarch64-vulkan": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-aarch64-vulkan.tar.gz"], "gpu": True, "backend": "vulkan", "cpu_flags": ["asimdhp"]},
     "linux-aarch64-v82": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-aarch64-v82.tar.gz"], "gpu": False, "cpu_flags": ["asimddp", "asimdhp"]},
-    "linux-aarch64": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-aarch64.tar.gz"], "gpu": False}
+    "linux-aarch64": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-linux-aarch64.tar.gz"], "gpu": False},
+    # Windows arm64 (Snapdragon), which audio.cpp's own releases leave out (Windows x64 only): py-pkg's
+    # audiocpp/build-audiocpp.cmd on a Windows arm64 machine, clang-cl, static C runtime (system DLLs only); CPU part
+    # ARMv8.0, ARMv8.2 + dotprod + fp16 for -cpu-v82. Off until published
+    "windows-arm64-vulkan": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-windows-arm64-vulkan.zip"], "gpu": True, "backend": "vulkan", "enabled": False},
+    "windows-arm64-cpu-v82": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-windows-arm64-cpu-v82.zip"], "gpu": False, "cpu_flags": ["asimddp", "asimdhp"], "enabled": False},
+    "windows-arm64-cpu": {"urls": ["https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/audiocpp/audiocpp-server-windows-arm64-cpu.zip"], "gpu": False, "enabled": False}
 }
 # reference transcripts for the engines whose cloning takes one (ref_text below): transcribed once per voice clip by this
 # ASR model, loaded in the same server only when needed and unloaded right after
@@ -194,13 +206,13 @@ max_custom_model = 100
 max_custom_voices = 1000
 
 # devices each engine runs on ("devices" below): gradio's device list offers the ones found on this machine, convert_ebook()
-# stops on any other. torch engines: every torch device, no Vulkan (torch has no Vulkan device). Native builds (zonos,
-# audio.cpp): Vulkan too, their ROCm / XPU sessions run the Vulkan packages and MPS the Metal ones
+# stops on any other. torch engines: every torch device, no Vulkan (torch has no Vulkan device). Native builds (zonos2,
+# zonos3, audio.cpp): Vulkan too, their ROCm / XPU sessions run the Vulkan packages and MPS the Metal ones
 torch_devices = [devices['CPU']['proc'], devices['CUDA']['proc'], devices['ROCM']['proc'], devices['XPU']['proc'], devices['MPS']['proc'], devices['JETSON']['proc']]
 native_devices = torch_devices + [devices['VULKAN']['proc']]
 
 default_engine_settings = {
-    TTS_ENGINES['ZONOS']: {
+    TTS_ENGINES['ZONOS2']: {
         "version": "0.5.2",
         "packages": {
             "linux-x64-cuda13": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-linux-x64-cuda13.tar.gz", "gpu": True},
@@ -216,6 +228,11 @@ default_engine_settings = {
             "windows-x64-vulkan-zyphra": {"url": "https://github.com/Zyphra/zonos2.cpp/releases/latest/download/zonos2-windows-x64-vulkan.zip", "gpu": True, "cpu_flags": ["avx2", "fma", "f16c"]},
             "windows-x64-cpu-avx2": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-x64-cpu-avx2.zip", "gpu": False, "cpu_flags": ["avx2", "fma", "f16c", "bmi2"]},
             "windows-x64-cpu-sse42": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-x64-cpu-sse42.zip", "gpu": False, "cpu_flags": ["sse4_2"]},
+            # Windows arm64 (Snapdragon): py-pkg's build-zonos2.cmd on a Windows arm64 machine, clang-cl; CPU part
+            # ARMv8.0, ARMv8.2 + dotprod + fp16 for -cpu-v82. Off until published
+            "windows-arm64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-arm64-vulkan.zip", "gpu": True, "enabled": False},
+            "windows-arm64-cpu-v82": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-arm64-cpu-v82.zip", "gpu": False, "cpu_flags": ["asimddp", "asimdhp"], "enabled": False},
+            "windows-arm64-cpu": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-windows-arm64-cpu.zip", "gpu": False, "enabled": False},
             "macos-arm64": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-macos-arm64.tar.gz", "gpu": True, "macos_min": 11},
             "macos-arm64-cpu": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-macos-arm64.tar.gz", "gpu": False, "macos_min": 11},
             "macos-arm64-metal": {"url": "https://github.com/Zyphra/zonos2.cpp/releases/latest/download/zonos2-macos-arm64-metal.tar.gz", "gpu": True, "macos_min": 15},
@@ -230,7 +247,7 @@ default_engine_settings = {
             "linux-aarch64": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos2/zonos2-server-linux-aarch64.tar.gz", "gpu": False}
         },
         # GGUF weights (Hugging Face, e2a's tts_dir cache): the backbone file comes from the fine_tuned preset
-        # (zonos_presets.py: Q4_K / Q6_K / Q8_0), the DAC decoder and the speaker encoder are shared
+        # (zonos2_presets.py: Q4_K / Q6_K / Q8_0), the DAC decoder and the speaker encoder are shared
         "repo": "Zyphra/ZONOS2-GGUF",
         "dac": "dac.gguf",
         "spk": "spk-encoder.gguf",
@@ -253,6 +270,78 @@ default_engine_settings = {
         "voices": {},
         "devices": native_devices,
         "rating": {"VRAM": 6, "CPU": 3, "RAM": 8, "Realism": 5}
+    },
+    TTS_ENGINES['ZONOS3']: {
+        # ZONOS3-Mini (Zyphra zonos3.cpp, servers/ggml of github.com/Zyphra/ZONOS3-Mini): a native zonos3-server package
+        # per platform plus the GGUF weights, driven by workers/zonos3_worker.py. No torch and no venv (as ZONOS2).
+        # Zyphra publishes no zonos3.cpp release: every package is e2a's own build (py-pkg release "zonos3", built from
+        # the commit below). The server refuses GGUFs of another schema, so the build commit and the weights revision
+        # are pinned together and move together
+        "commit": "96d9e0ec1e39083ed336ac78f24e3dbc93721c0f",
+        "packages": {
+            # glibc floors of the x64 CUDA builds (Ubuntu 22.04 / 20.04 CUDA images): an older system skips them instead of
+            # failing to start them
+            "linux-x64-cuda13": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cuda13.tar.gz", "gpu": True, "glibc_min": "2.34"},
+            "linux-x64-cuda12": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cuda12.tar.gz", "gpu": True, "glibc_min": "2.30"},
+            "linux-x64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-vulkan.tar.gz", "gpu": True, "cpu_flags": ["avx2", "fma", "f16c"]},
+            "linux-x64-cpu-avx2": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cpu-avx2.tar.gz", "gpu": False, "cpu_flags": ["avx2", "fma", "f16c", "bmi2"]},
+            "linux-x64-cpu-sse42": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-x64-cpu-sse42.tar.gz", "gpu": False, "cpu_flags": ["sse4_2"]},
+            "windows-x64-cuda13": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-x64-cuda13.zip", "gpu": True},
+            "windows-x64-cuda12": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-x64-cuda12.zip", "gpu": True},
+            "windows-x64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-x64-vulkan.zip", "gpu": True, "cpu_flags": ["sse4_2"]},
+            "windows-x64-cpu-avx2": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-x64-cpu-avx2.zip", "gpu": False, "cpu_flags": ["avx2", "fma", "f16c", "bmi2"]},
+            "windows-x64-cpu-sse42": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-x64-cpu-sse42.zip", "gpu": False, "cpu_flags": ["sse4_2"]},
+            # Windows arm64 (Snapdragon): py-pkg's build-zonos3.cmd on a Windows arm64 machine, clang-cl; CPU part
+            # ARMv8.0, ARMv8.2 + dotprod + fp16 for -cpu-v82. Off until published
+            "windows-arm64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-arm64-vulkan.zip", "gpu": True, "enabled": False},
+            "windows-arm64-cpu-v82": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-arm64-cpu-v82.zip", "gpu": False, "cpu_flags": ["asimddp", "asimdhp"], "enabled": False},
+            "windows-arm64-cpu": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-windows-arm64-cpu.zip", "gpu": False, "enabled": False},
+            "macos-arm64": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-macos-arm64.tar.gz", "gpu": True, "macos_min": 11},
+            "macos-arm64-cpu": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-macos-arm64.tar.gz", "gpu": False, "macos_min": 11},
+            "macos-x86_64-vulkan": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-macos-x86_64-vulkan.tar.gz", "gpu": True, "macos_min": 12},
+            "macos-x86_64": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-macos-x86_64.tar.gz", "gpu": False, "macos_min": 11},
+            "jetson5-sm72-sm87": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-jetson5-sm72-sm87.tar.gz", "gpu": True, "jetpack": 5, "sm": [72, 87]},
+            "jetson6-sm87": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-jetson6-sm87.tar.gz", "gpu": True, "jetpack": 6, "sm": [87]},
+            "jetson7-sm87-sm110": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-jetson7-sm87-sm110.tar.gz", "gpu": True, "jetpack": 7, "sm": [87, 110]},
+            # glibc floors of the aarch64 CUDA builds (Ubuntu 22.04 CUDA images): an older system skips them
+            "linux-aarch64-cuda13": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-aarch64-cuda13.tar.gz", "gpu": True, "glibc_min": "2.34"},
+            "linux-aarch64-cuda12": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-aarch64-cuda12.tar.gz", "gpu": True, "glibc_min": "2.34"},
+            "linux-aarch64-v82": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-aarch64-v82.tar.gz", "gpu": False, "cpu_flags": ["asimddp", "asimdhp"]},
+            "linux-aarch64": {"url": "https://github.com/ROBERT-MCDOWELL/py-pkg/releases/download/zonos3/zonos3-server-linux-aarch64.tar.gz", "gpu": False}
+        },
+        # GGUF weights (Hugging Face, e2a's tts_dir cache) at the revision zonos3.cpp's commit reads: the backbone file comes
+        # from the fine_tuned preset (zonos3_presets.py), the ZAC keep2 decoder, the speaker encoder and the steering
+        # bundle (emotion directions) are shared. 1.16 GB with the steering bundle
+        "repo": "Zyphra/ZONOS3-Mini",
+        "revision": "d2d142a86b1e6aeb4252679673c86ecd86177bf8",
+        "zac": "gguf/zac-keep2.gguf",
+        "spk": "gguf/spk-encoder.gguf",
+        "steer": "gguf/steer.gguf",
+        # zonos3-server's languages. The model reads raw text: the values only pick the server's text normalizer
+        # (zyphra-textnorm grammars for en, fr, de, es, it, pt, ja, zh, ko; the other ones pass through unchanged)
+        "languages": {"eng": "en_us", "fra": "fr_fr", "deu": "de", "spa": "es", "ita": "it", "por": "pt_br", "jpn": "ja", "zho": "cmn", "kor": "ko", "ara": "ar", "ben": "bn", "bul": "bg", "ces": "cs", "dan": "da", "nld": "nl", "fin": "fi", "kat": "ka", "ell": "el", "guj": "gu", "heb": "he", "hin": "hi", "hun": "hu", "ind": "id", "kan": "kn", "zlm": "ms", "mal": "ml", "mar": "mr", "nob": "no", "nor": "no", "ory": "or", "pol": "pl", "pan": "pa", "ron": "ro", "rus": "ru", "slk": "sk", "swe": "sv", "tgl": "tl", "fil": "tl", "tam": "ta", "tel": "te", "tha": "th", "tur": "tr", "ukr": "uk", "urd": "ur", "vie": "vi"},
+        "samplerate": 44100,
+        # e2a emotion -> [steering control, dose at 1.0, highest dose]. The Zonos panel and the [emotion:...] tag are
+        # shared with ZONOS2 (0..1 directions, -1..1 axes): each value is scaled to the dose Zyphra's studio calibrated
+        # for it (steer.gguf "moods": happy 4, angry 4, sad 6, calm 4, scared 12, confused 3; the mood axes' seed dose
+        # 4) and kept within the studio's range. surprised and disgusted have no calibration: the bundle's default 4
+        "controls": {
+            "happy": ["emotions.happy", 4.0, 6.0],
+            "sad": ["emotions.sad", 6.0, 8.0],
+            "angry": ["emotions.angry", 4.0, 6.0],
+            "surprised": ["emotions.surprised", 4.0, 6.0],
+            "valence": ["mood.valence", 4.0, 6.0],
+            "arousal": ["mood.arousal", 4.0, 6.0],
+            "scared": ["emotions.scared", 12.0, 14.0],
+            "disgusted": ["emotions.disgusted", 4.0, 6.0],
+            "calm": ["emotions.serene", 4.0, 8.0],
+            "confused": ["emotions.confused", 3.0, 4.0]
+        },
+        "files": [],
+        "voice": default_speaker,
+        "voices": {},
+        "devices": native_devices,
+        "rating": {"VRAM": 2, "CPU": 3, "RAM": 3, "Realism": 5}
     },
     TTS_ENGINES['GPTSOVITS']: {
         # runs in its own uv venv (lib/classes/tts_engines/venvs/gptsovits) behind a persistent

@@ -7,7 +7,7 @@
 
 import argparse, asyncio, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
 import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
-import traceback, socket, unicodedata, codecs, urllib.request, uuid, zipfile, multiprocessing
+import traceback, socket, unicodedata, codecs, urllib.request, uuid, zipfile, multiprocessing, ipaddress
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
 
@@ -50,7 +50,7 @@ from lib.classes.non_text_filter import NonTextFilter
 from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
 from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_audio_duration
-from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp
+from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp, gpu_fault, gpu_fault_alert
 
 from lib import *
 from lib.lang import legends, legends_langs, legends_iso1, ui_language, system_language
@@ -291,16 +291,16 @@ class SessionContext:
             "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
             "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
             ####### Zonos settings (ZONOS2)
-            "zonos_emotion_enabled": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled'],
-            "zonos_emotion_happy": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy'],
-            "zonos_emotion_sad": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad'],
-            "zonos_emotion_angry": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry'],
-            "zonos_emotion_surprised": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised'],
-            "zonos_emotion_valence": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence'],
-            "zonos_emotion_arousal": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal'],
-            "zonos_emotion_strength": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'],
-            "zonos_emotion_cfg_scale": default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'],
-            "zonos_speaking_rate": default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'],
+            "zonos_emotion_enabled": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_enabled'],
+            "zonos_emotion_happy": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['happy'],
+            "zonos_emotion_sad": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['sad'],
+            "zonos_emotion_angry": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['angry'],
+            "zonos_emotion_surprised": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['surprised'],
+            "zonos_emotion_valence": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['valence'],
+            "zonos_emotion_arousal": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['arousal'],
+            "zonos_emotion_strength": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength'],
+            "zonos_emotion_cfg_scale": default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale'],
+            "zonos_speaking_rate": default_engine_settings[TTS_ENGINES['ZONOS2']]['speaking_rate'],
             ####### GPT-SoVITS settings
             "gptsovits_speed": default_engine_settings[TTS_ENGINES['GPTSOVITS']]['speed'],
             "gptsovits_top_k": default_engine_settings[TTS_ENGINES['GPTSOVITS']]['top_k'],
@@ -461,8 +461,26 @@ def prepare_dirs(session_id:str)->bool:
             os.makedirs(session['interludes_dir'], exist_ok=True)
             return True
     except Exception as e:
-        DependencyError(e)
+        # host folders removed under the container are no e2a bug: no report, the caller tells the user how to recover
+        if get_deleted_host_dirs():
+            print(e)
+        else:
+            DependencyError(e)
         return False
+
+def get_deleted_host_dirs()->list:
+    # a folder bind-mounted from the host (full_docker: ./ebooks ./audiobooks ./models ./voices ./tmp) and removed there
+    # while the container runs: its path still exists in the container but no file nor folder can be created in it
+    # (FileNotFoundError) until the container restarts. An unlinked directory has no link left. Without a mount a
+    # removed folder does not resolve anymore and os.makedirs() creates it again
+    deleted = []
+    for path in [tmp_dir, models_dir, voices_dir, ebooks_dir, os.path.abspath('audiobooks')]:
+        try:
+            if os.stat(path).st_nlink == 0:
+                deleted.append(path)
+        except OSError:
+            pass
+    return deleted
 
 def check_programs(prog_name:str, command:str, options:str)->bool:
     try:
@@ -3412,6 +3430,11 @@ def convert_chapters2audio(session_id:str)->bool:
                 else:
                     legend = 'error_out_of_memory_gpu'
                 session['tts_init_error'] = legends[legend].format(engine=session['tts_engine'], device=session['device'])
+            else:
+                # GPU fault while loading (illegal memory access...): this process can no longer use the GPU
+                error = gpu_fault(e, session['device'])
+                if error is not None:
+                    session['tts_init_error'] = error
             return False
         blocks_current = session['blocks_current']
         blocks = blocks_current['blocks']
@@ -4817,6 +4840,10 @@ def convert_ebook(args:dict)->tuple:
                     engine_devices = default_engine_settings[session['tts_engine']]['devices']
                     if session['device'] not in engine_devices:
                         device_error = legends['error_device_engine'].format(engine=session['tts_engine'], device=session['device'].upper(), devices=', '.join(d.upper() for d in engine_devices))
+                    # a GPU fault earlier in this process (illegal memory access...) lost its GPU context: nothing loads
+                    # on that GPU before a restart, it would fail again with the same opaque error
+                    elif gpu_fault_alert(session['device']) is not None:
+                        device_error = gpu_fault_alert(session['device'])
                     elif session['device'] == devices['CUDA']['proc']:
                         if not devices['CUDA']['found']:
                             device_error = legends['error_device_not_supported'].format(device='CUDA', wiki=default_gpu_wiki)
@@ -4880,6 +4907,9 @@ def convert_ebook(args:dict)->tuple:
                             msg_extra += f"<br/>Free Memory available: {session['free_vram_gb']}GB"
                             if session['free_vram_gb'] < device_vram_required:
                                 msg_extra += f"<br/>Free Memory {session['free_vram_gb']}GB is lower than VRAM/RAM {device_vram_required}GB required!<br/>It will probably crash the conversion!"
+                                # why it is low when the detector knows (Windows commit limit reached with RAM shown free)
+                                if vram_dict.get('note'):
+                                    msg_extra += f"<br/>{vram_dict['note']}"
                             if session['free_vram_gb'] > 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'FALSE'
@@ -5079,7 +5109,8 @@ def convert_ebook(args:dict)->tuple:
                     else:
                         error = legends['error_not_enough_memory'].format(vram=total_vram_gb, engine=session['tts_engine'], required=device_vram_required)
                 else:
-                    error = legends['error_temp_dir_not_removed'].format(dir=session['process_dir'])
+                    deleted_dirs = get_deleted_host_dirs()
+                    error = legends['error_dirs_deleted_docker'].format(dirs='\n'.join(deleted_dirs)) if deleted_dirs else legends['error_temp_dir_not_removed'].format(dir=session['process_dir'])
         if session['cancellation_requested']:
             error = legends['msg_conversion_cancelled']
         return error, False
@@ -5145,6 +5176,9 @@ def finalize_audiobook(session_id:str)->tuple:
                 elif session.get('tts_init_error'):
                     error = session['tts_init_error']
                     session['tts_init_error'] = None
+                else:
+                    # a GPU fault during the conversion: what to do instead of the generic failure
+                    error = gpu_fault_alert(session['device']) or error
             return _fail(error)
         generate_interludes(session_id)
         show_alert(session_id, {'type': 'info', 'msg': legends['msg_combining_all']})
@@ -5153,17 +5187,16 @@ def finalize_audiobook(session_id:str)->tuple:
             return _fail('combine_audio_chapters() error: exported_files not created!')
         session['audiobook'] = exported_files[-1]
         if not session['is_gui_process'] and session['abs_url'] and session['abs_api_token'] and session['abs_library']:
-            from lib.classes.audiobookshelf import fetch_libraries, upload_to_abs
+            from lib.classes.audiobookshelf import fetch_libraries, upload_to_abs, get_abs_book_info
             try:
                 abs_libs = fetch_libraries(session['abs_url'], session['abs_api_token'])
                 if abs_libs:
                     abs_library_id = next((v for name, v in abs_libs if name == session['abs_library']), '')
                     if abs_library_id:
-                        a_title = Path(session['audiobook']).stem
-                        a_author = str(session.get('metadata', {}).get('creator') or '')
-                        a_series = str(session.get('metadata', {}).get('series') or '')
-                        a_series_index = str(session.get('metadata', {}).get('series_index') or '')
-                        ok, msg = upload_to_abs([session['audiobook']], a_title, a_author, session['abs_url'],  session['abs_api_token'], abs_library_id, series=a_series, series_index=a_series_index)
+                        # the file just made: its tags, else the metadata it was made from. Every part of a split book,
+                        # only the last one was sent
+                        a_title, a_author, a_series, a_series_index = get_abs_book_info(session['audiobook'], dict(session.get('metadata') or {}))
+                        ok, msg = upload_to_abs(exported_files, a_title, a_author, session['abs_url'],  session['abs_api_token'], abs_library_id, series=a_series, series_index=a_series_index)
                         if ok:
                             msg = legends['msg_abs_upload'].format(msg=msg)
                             print(msg)
@@ -5449,3 +5482,50 @@ def get_all_ip_addresses()->list:
             if address.family in [socket.AF_INET, socket.AF_INET6]:
                 ip_addresses.append(address.address)
     return ip_addresses
+
+def get_os_proxy_bypass()->list:
+    # the OS proxy bypass list (Windows ProxyOverride, macOS exceptions) in no_proxy form: urllib applies it only while no
+    # *_proxy env var is set, httpx never. 192.168.* / 169.254/16 -> ipv4 cidr (requests honors it, httpx skips it),
+    # *.corp.com -> .corp.com. <local> (dotless hosts) has no no_proxy form; an ipv6 network makes every httpx client raise
+    entries = []
+    try:
+        if sys.platform == 'win32':
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Internet Settings') as key:
+                entries = str(winreg.QueryValueEx(key, 'ProxyOverride')[0]).split(';')
+        elif sys.platform == 'darwin':
+            from _scproxy import _get_proxy_settings
+            entries = list(_get_proxy_settings().get('exceptions', []))
+    except (OSError, ImportError):
+        return []
+    hosts = []
+    for entry in [entry.strip() for entry in entries if entry.strip()]:
+        if entry.startswith('*.') and '*' not in entry[2:]:
+            hosts.append(entry[1:])
+        elif ':' not in entry and (entry.endswith('.*') or '/' in entry):
+            prefix, _, bits = entry.removesuffix('.*').partition('/')
+            octets = prefix.split('.')
+            try:
+                hosts.append(str(ipaddress.IPv4Network(f"{'.'.join(octets + ['0'] * (4 - len(octets)))}/{bits or 8 * len(octets)}", strict=False)))
+            except ValueError:
+                pass
+        elif '*' not in entry and '<' not in entry and '/' not in entry:
+            hosts.append(entry)
+    return hosts
+
+def set_no_proxy(hosts:list)->None:
+    # any *_proxy env var makes urllib/requests/httpx stop reading the OS proxy (Windows registry, macOS settings): a
+    # system proxy (Clash, v2rayN...) was dropped for HF downloads and pip once no_proxy got set. Carry it, and its
+    # bypass list, over to the env first. Merge, a user no_proxy (internal hosts) was overwritten
+    no_proxy = [host.strip() for host in os.environ.get('no_proxy', os.environ.get('NO_PROXY', '')).split(',') if host.strip()]
+    if not any(scheme in urllib.request.getproxies_environment() for scheme in ['http', 'https', 'all']):
+        os_proxies = urllib.request.getproxies()
+        for scheme in ['http', 'https']:
+            if os_proxies.get(scheme):
+                os.environ[f'{scheme}_proxy'] = os.environ[f'{scheme.upper()}_PROXY'] = os_proxies[scheme]
+        if os_proxies.get('http') or os_proxies.get('https'):
+            hosts = [*get_os_proxy_bypass(), *hosts]
+    for host in hosts:
+        if host not in no_proxy:
+            no_proxy.append(host)
+    os.environ['no_proxy'] = os.environ['NO_PROXY'] = ','.join(no_proxy)

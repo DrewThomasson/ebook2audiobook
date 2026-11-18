@@ -21,6 +21,38 @@ if TYPE_CHECKING:
     from torch.nn import Module
     from torchaudio.transforms import Resample
 
+# GPU faults that lose the device context of this process (CUDA/HIP sticky errors, Level Zero device lost): every later
+# kernel, copy or allocation on that GPU fails with the same error until the process exits. CUDA reports them at the
+# next call it checks, so the traceback names an innocent op (XTTS: the GELU of its GPT2). In-process engines (XTTS,
+# Bark...), the voice tools and onnxruntime share that context: each new conversion on the GPU failed again, at load
+# or at the first sentence, with the same opaque error until ebook2audiobook was restarted
+gpu_fault_re = re.compile(r'illegal memory access|illegal instruction|misaligned address|unspecified launch failure|device-side assert|hardware stack error|uncorrectable ECC|invalid program counter|launch timed out|UR_RESULT_ERROR_DEVICE_LOST', re.IGNORECASE)
+gpu_fault_state:dict = {'error': None}
+
+def gpu_fault(e:BaseException|None, device:str)->str|None:
+    # an exception chain holding a GPU fault raised in this process: the first one is kept for the life of the process
+    # and the alert asking to restart comes back. Worker engines return their errors as text, never through here
+    fault = None
+    seen = set()
+    while e is not None and id(e) not in seen:
+        seen.add(id(e))
+        if gpu_fault_re.search(str(e)):
+            # the deepest match is torch's own error, without the prefixes the engine wrappers add
+            fault = str(e).strip().splitlines()[0][:200]
+        e = e.__cause__ or e.__context__
+    if fault is None:
+        return None
+    if gpu_fault_state['error'] is None:
+        gpu_fault_state['error'] = fault
+    return gpu_fault_alert(device)
+
+def gpu_fault_alert(device:str)->str|None:
+    # the alert for a conversion on a torch GPU device of a process whose GPU context is lost, None otherwise. CPU and
+    # Vulkan (native engines in their own process, XTTS voice conversion on CPU) keep working in this process
+    if gpu_fault_state['error'] is None or device in [devices['CPU']['proc'], devices['VULKAN']['proc']]:
+        return None
+    return legends['error_gpu_fault'].format(error=gpu_fault_state['error'], device=device.upper())
+
 def format_timestamp(seconds:float)->str:
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
@@ -1040,9 +1072,11 @@ class TTSUtils:
             # ZONOS2 sliders: [emotion:sad] (full) or a mix [emotion:sad=0.7,angry=0.2], scaled by
             # 1/max(1, sum of |weights|) so a mix never adds up above full; Zonos v0.1 names work through
             # aliases / map (fear, disgust on the valence/arousal axes, neutral/other = plain voice)
-            names = TTS_SML['emotion']['values']
+            # zonos3 adds its own directions (scared, disgusted, calm, confused) and maps fear/disgust onto them
+            tts_engine = self.session.get('tts_engine')
+            names = TTS_SML['emotion']['values'] + TTS_SML['emotion'].get('engine_values', {}).get(tts_engine, [])
             aliases = TTS_SML['emotion']['aliases']
-            mapping = TTS_SML['emotion'].get('map', {})
+            mapping = {**TTS_SML['emotion'].get('map', {}), **TTS_SML['emotion'].get('engine_map', {}).get(tts_engine, {})}
             weights = {}
             for item in [p for p in re.split(r'[,\s]+', (value or '').strip().lower()) if p]:
                 key, _, weight = item.partition('=')
@@ -1105,5 +1139,10 @@ class TTSUtils:
     def log_exception(self,where:str, e:Exception)->str:
         import traceback
         traceback.print_exc()
-        bug_reporter.report(f'{where}: {e}', getattr(self, 'session', None))
+        session = getattr(self, 'session', None)
+        bug_reporter.report(f'{where}: {e}', session)
+        # a GPU fault here leaves the GPU unusable in this process: kept, so that the conversion ends on the alert
+        # asking to restart and the next one stops before loading anything on the GPU
+        if session is not None:
+            gpu_fault(e, session.get('device'))
         return f'{where}: {e}'
