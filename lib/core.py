@@ -2852,9 +2852,9 @@ def get_known_words(text:str)->set:
 
 def acronym2letters(text:str, lang:str, known_words:set|None=None)->str:
     # spell all caps acronyms letter by letter (CIA -> C I A) so the TTS does not read them as a word,
-    # all caps words (SECRET, AGENCY, TOWER) stay untouched. an all caps token is an acronym when the text
-    # never writes it in lowercase and it is unpronounceable (FBI, KGB, HTML, USSR) or short (CIA, OSS, UK)
-    # outside a caps passage. only cased scripts have acronyms to detect: latin, cyrillic, greek, armenian.
+    # all caps words (SECRET, AGENCY, TOWER) stay untouched. an all caps token is an acronym when it is short
+    # (CIA, OSS, US, IT) outside a caps passage, or when the text never writes it in lowercase and it is
+    # unpronounceable (HTML, USSR). only cased scripts have acronyms to detect: latin, cyrillic, greek, armenian.
 
     def _units(cluster:str)->list[str]:
         # consonant cluster to sounds: digraphs (sch, ch, th, sz, cz...) and doubled letters are one sound
@@ -2950,7 +2950,8 @@ def acronym2letters(text:str, lang:str, known_words:set|None=None)->str:
 
     def _repl(m:re.Match)->str:
         token, plural = m.group(1), m.group(2)
-        if word_key(token) in known_words:
+        # a short token in caps is an acronym even when it is also a word (US, IT, WHO), a long one is a word (SECRET)
+        if len(token) > short_max and word_key(token) in known_words:
             return m.group(0)
         # NOOO, HMMM, GRRR stretch their last letter, СССР does not
         if len(token) > 3 and re.search(r'(.)\1\1$', token):
