@@ -126,6 +126,12 @@ def main()->int:
                 nltk.download(package, download_dir=os.environ.get('NLTK_DATA'), quiet=True, force=refetch)
         import numpy as np
         import torch
+        # E2A_XPU_UNUSABLE: e2a found torch xpu cannot run on this Intel GPU (unsupported iGPU, driver too old). Its
+        # device count is a Windows access violation in the SYCL runtime, and transformers asks it at import, CPU
+        # sessions included. Set here too: a distro python's own sitecustomize.py comes first and hides the venv's copy
+        if os.environ.get('E2A_XPU_UNUSABLE') == '1' and hasattr(torch, 'xpu'):
+            torch.xpu.device_count = lambda: 0
+            torch.xpu.is_available = lambda: False
         import torch.distributed
         if not torch.distributed.is_available():
             # torch built without distributed support (USE_DISTRIBUTED=0: the jetson wheels, e2a's macOS +vulkan

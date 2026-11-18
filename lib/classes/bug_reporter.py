@@ -192,7 +192,7 @@ print(json.dumps(out))
                 error_type=title.split(':')[-1].strip(), error_message=title, root_type=None, root_message=None,
                 traceback=dump[:self.max_traceback], session={}
             )
-            threading.Thread(target=self.send, args=(payload, path), name='e2a-bug-report').start()
+            threading.Thread(target=self.send_native, args=(payload, path, title, sig, current is None), name='e2a-bug-report').start()
         try:
             self.fault_path = os.path.join(reports_dir, f'faulthandler-{os.getpid()}.log')
             self.fault_file = open(self.fault_path, 'w', encoding='utf-8')
@@ -684,6 +684,69 @@ print(json.dumps(out))
                 return True
             cur, depth = cur.__cause__ or cur.__context__, depth + 1
         return False
+
+    def windows_fault(self, path:str)->dict|None:
+        # the crash Windows Error Reporting logged for the process that wrote this faulthandler log (Application log,
+        # event 1000): the module it faulted in, its version, the offset and the exception code, which faulthandler's
+        # dump never says. {} when the log was read and that process did not crash, None when it cannot be told
+        if sys.platform != 'win32':
+            return None
+        try:
+            from xml.etree import ElementTree
+            def stamp(t:float)->str:
+                return datetime.fromtimestamp(t, timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            pid = int(os.path.basename(path)[13:-4])
+            stat = os.stat(path)
+            # from the log's creation (an older process with the same pid is not it) to a while after its last record
+            query = f"*[System[Provider[@Name='Application Error'] and EventID=1000 and TimeCreated[@SystemTime>='{stamp(getattr(stat, 'st_birthtime', stat.st_ctime) - 5)}' and @SystemTime<='{stamp(stat.st_mtime + 600)}']]]"
+            res = subprocess.run(['wevtutil', 'qe', 'Application', f'/q:{query}', '/f:xml', '/c:50'], capture_output=True, timeout=15)
+            if res.returncode != 0:
+                return None
+            raw = res.stdout
+            text = raw.decode('utf-16', errors='replace') if raw[:2] == b'\xff\xfe' or raw[1:2] == b'\x00' else raw.decode('utf-8', errors='replace')
+            ns = '{http://schemas.microsoft.com/win/2004/08/events/event}'
+            # named fields on recent Windows 11, the same ones in this order without names before
+            order = ['AppName', 'AppVersion', 'AppTimeStamp', 'ModuleName', 'ModuleVersion', 'ModuleTimeStamp', 'ExceptionCode', 'FaultingOffset', 'ProcessId']
+            for event in ElementTree.fromstring(f'<Events>{text}</Events>').iter(f'{ns}Event'):
+                data = event.findall(f'{ns}EventData/{ns}Data')
+                fields = {(d.get('Name') or (order[i] if i < len(order) else str(i))): (d.text or '').strip() for i, d in enumerate(data)}
+                try:
+                    if int(fields.get('ProcessId', ''), 16) != pid:
+                        continue
+                except ValueError:
+                    continue
+                return dict(
+                    module=fields.get('ModuleName') or '?', module_version=fields.get('ModuleVersion') or '?',
+                    offset=fields.get('FaultingOffset') or '?', code=f"0x{fields.get('ExceptionCode', '').lower().removeprefix('0x')}"
+                )
+            return {}
+        except Exception:
+            return None
+
+    def send_native(self, payload:dict, path:str, title:str, sig:list, native_thread:bool)->None:
+        # a native crash log left by an earlier run, checked against what Windows logged of that process. faulthandler's
+        # vectored handler logs the first-chance exceptions a native library catches itself too (driver probes...): with
+        # no crash logged for the process and no Python frame in the faulting thread, it is one of those. The process went
+        # on and was closed later without writing a note after it (an idle GUI whose window was closed): nothing to send
+        fault = self.windows_fault(path)
+        if fault is not None and not fault and native_thread:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+            return
+        if fault:
+            line = f"faulting module (Windows Application log, event 1000): {fault['module']} {fault['module_version']}, offset {fault['offset']}, exception {fault['code']}"
+            payload['fingerprint'] = hashlib.sha1('|'.join([title, fault['module']] + sig).encode('utf-8')).hexdigest()[:16]
+            if native_thread:
+                payload['location'] = f"{fault['module']}+{fault['offset']}"
+        elif fault is not None:
+            line = 'Windows Application log: no crash logged for this process, it may have survived this first-chance exception'
+        else:
+            line = None
+        if line:
+            payload['traceback'] = f"{line}\n\n{payload['traceback']}"
+        self.send(payload, path)
 
     def send(self, payload:dict, path:str|None=None)->None:
         if path is None:

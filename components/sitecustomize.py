@@ -11,6 +11,8 @@ This version is guaranteed build-safe for:
 It replaces torchaudio.load ONLY if/when torchaudio is imported (avoids torchcodec
 DLL load failures on PyTorch ROCm/Windows builds).
 It configures PyTorch safe globals for Coqui-TTS compatibility.
+It makes torch.xpu report no device when E2A_XPU_UNUSABLE=1 (Intel GPU torch xpu
+cannot run on: its device count is a Windows access violation).
 """
 
 import sys, os, importlib
@@ -68,6 +70,31 @@ def patch_torchaudio(mod: ModuleType)->None:
     mod.load = _load_via_soundfile
     warn('patched torchaudio.load → soundfile (bypass torchcodec)')
 
+def patch_torch_xpu(mod: ModuleType)->None:
+    """No XPU device, without asking the SYCL runtime, once DeviceInstaller set E2A_XPU_UNUSABLE=1.
+
+    It does when detect_gpu.py, in its own process, found torch xpu cannot run on the Intel GPU (unsupported iGPU,
+    driver too old). There torch.xpu.device_count() falls back to torch._C._xpu_getDeviceCount() when Level Zero
+    Sysman fails, and the SYCL runtime dies enumerating the GPU: a Windows access violation no except catches.
+    Third-party code asks it on its own, CPU sessions included: transformers at import (masking_utils ->
+    is_torch_xpu_available). torch.xpu.is_available() and torch.accelerator.device_count()/is_available() read
+    these attributes of the module, so they answer from here too."""
+    if os.environ.get('E2A_XPU_UNUSABLE') != '1':
+        return
+    xpu = getattr(mod, 'xpu', None)
+    if xpu is None or getattr(xpu.device_count, '__name__', '') == '_no_xpu_device_count':
+        return
+
+    def _no_xpu_device_count()->int:
+        return 0
+
+    def _no_xpu_is_available()->bool:
+        return False
+
+    xpu.device_count = _no_xpu_device_count
+    xpu.is_available = _no_xpu_is_available
+    warn('torch.xpu reports no device (E2A_XPU_UNUSABLE=1)')
+
 def patch_torch(mod: ModuleType)->None:
     """Allowlist Coqui-TTS classes for PyTorch 2.6+ weights_only=True loading."""
     try:
@@ -101,6 +128,8 @@ if patch_enabled:
             if name == 'torchaudio':
                 patch_torchaudio(module)
             elif name == 'torch':
+                # first, before patch_torch() runs any third-party import
+                patch_torch_xpu(module)
                 patch_torch(module)
 
     class LazyPatchHook:

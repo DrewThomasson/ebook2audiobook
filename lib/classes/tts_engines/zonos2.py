@@ -6,7 +6,7 @@ from lib.classes.tts_engines.common.hf_download import hf_download
 from lib.conf import systems
 from lib.lang import legends
 
-class Zonos(TTSUtils, TTSRegistry, name='zonos'):
+class Zonos2(TTSUtils, TTSRegistry, name='zonos2'):
     # GPU packages whose server died during a conversion, per e2a process: package -> crash count. One crash restarts
     # the same package (driver aborts can be rare), a second one drops it until e2a restarts (next GPU package, none
     # left stops the conversion)
@@ -14,7 +14,7 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
 
     def __init__(self, session:DictProxy):
         # ZONOS2 (Zyphra zonos2.cpp): a native zonos2-server package per platform (default_engine_settings
-        # ['packages']) plus the GGUF weights, driven by workers/zonos_worker.py. No torch and no venv.
+        # ['packages']) plus the GGUF weights, driven by workers/zonos2_worker.py. No torch and no venv.
         try:
             import platform, tarfile, zipfile, urllib.request
             self.session = session
@@ -49,15 +49,6 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
             fine_tuned = self.session.get('fine_tuned')
             show_alert = getattr(sys.modules.get('lib.core'), 'show_alert', None)
             progress_bar = getattr(sys.modules.get('lib.gradio'), 'progress_bar', None)
-            if fine_tuned == 'hybrid':
-                # Zonos v0.1's hybrid backbone has no ZONOS2 equivalent: sessions saved with it move to the default
-                fine_tuned = self.session['fine_tuned'] = 'internal'
-                self.session['model_cache'] = self.tts_key = f'{tts_engine}-{fine_tuned}'
-                msg = legends['msg_zonos2_hybrid_gone'].format(model=fine_tuned)
-                if show_alert is not None:
-                    show_alert(self.session['id'], {'type': 'warning', 'msg': msg})
-                else:
-                    print(msg)
             if fine_tuned not in self.models:
                 error = legends['error_invalid_fine_tuned'].format(model=fine_tuned, models=list(self.models.keys()))
                 raise ValueError(error)
@@ -113,6 +104,10 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
                 # Zyphra's Vulkan build stays the last resort with --cpu (needs vulkan-1.dll and AVX2)
                 # CUDA 13 then 12, own Vulkan build (SSE4.2 CPU part: CPUs without AVX2 too) then Zyphra's (AVX2)
                 candidates = (['windows-x64-cuda13', 'windows-x64-cuda12'] if self.device == devices['CUDA']['proc'] else []) + (['windows-x64-vulkan', 'windows-x64-vulkan-zyphra'] if gpu_wanted else []) + ['windows-x64-cpu-avx2', 'windows-x64-cpu-sse42', 'windows-x64-vulkan-zyphra']
+            elif sys.platform == systems['WINDOWS'] and machine in ('arm64', 'aarch64'):
+                # Windows arm64 (Snapdragon): own builds only, Vulkan on a GPU device (Adreno), then the dotprod CPU build,
+                # then the ARMv8.0 one. An x64 Python under emulation reports AMD64 and takes the x64 packages above
+                candidates = (['windows-arm64-vulkan'] if gpu_wanted else []) + ['windows-arm64-cpu-v82', 'windows-arm64-cpu']
             elif sys.platform == systems['MACOS']:
                 # arm64: own Metal build first, Zyphra's as the GPU fallback. x86_64: Vulkan (MoltenVK) build on a GPU device
                 candidates = ['macos-arm64', 'macos-arm64-metal', 'macos-arm64-cpu'] if machine == 'arm64' else (['macos-x86_64-vulkan'] if gpu_wanted else []) + ['macos-x86_64']
@@ -127,15 +122,16 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
             elif sys.platform == systems['WINDOWS']:
                 import ctypes
                 present = ctypes.windll.kernel32.IsProcessorFeaturePresent
-                # PF_SSE4_2_INSTRUCTIONS_AVAILABLE 38, PF_AVX2_INSTRUCTIONS_AVAILABLE 40 (AVX2 CPUs all have FMA, F16C, BMI2)
-                cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set())
+                # PF_SSE4_2_INSTRUCTIONS_AVAILABLE 38, PF_AVX2_INSTRUCTIONS_AVAILABLE 40 (AVX2 CPUs all have FMA, F16C, BMI2);
+                # arm64: PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE 43, the dot product, whose cores all have fp16 arithmetic too
+                cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set()) | ({'asimddp', 'asimdhp'} if present(43) else set())
             glibc = platform.libc_ver()
             glibc_version = tuple(int(x) for x in re.findall(r'\d+', glibc[1])[:2]) if glibc[0] == 'glibc' and glibc[1] else (0, 0)
             machine_desc = f'{sys.platform} {machine}' + (f' JetPack {jetpack}' if jetpack else '') + (f' sm_{board_sm}' if board_sm else '')
             usable = [
                 k for k in dict.fromkeys(candidates)
                 if k in packages and packages[k].get('enabled', True) and set(packages[k].get('cpu_flags', [])) <= cpu_flags
-                and Zonos.gpu_crashes.get(k, 0) < 2
+                and Zonos2.gpu_crashes.get(k, 0) < 2
                 and glibc_version >= tuple(int(x) for x in packages[k].get('glibc_min', '0.0').split('.'))
             ]
             if not usable:
@@ -199,11 +195,6 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
                 try:
                     engine_dir = os.path.dirname(os.path.abspath(__file__))
                     packages_dir = os.path.join(engine_dir, 'venvs', tts_engine)
-                    if os.path.exists(os.path.join(packages_dir, 'pyvenv.cfg')):
-                        # the Zonos v0.1 venv (torch, several GB) has no use with ZONOS2: replaced by its packages
-                        msg = legends['msg_zonos2_old_venv'].format(dir=packages_dir)
-                        print(msg)
-                        shutil.rmtree(packages_dir, ignore_errors=True)
                     package_dir = os.path.join(packages_dir, self.package_name)
                     marker_file = os.path.join(package_dir, '.e2a_installed.json')
                     # downloaded once: a package folder with its install record is used as it is from then on
@@ -367,7 +358,7 @@ class Zonos(TTSUtils, TTSRegistry, name='zonos'):
                             # provided after commit call"): restart it once, drop the package on its second death, and
                             # redo the whole sentence with a fresh engine (__init__ picks the next GPU package, none left
                             # stops the conversion)
-                            crashes = Zonos.gpu_crashes[self.package_name] = Zonos.gpu_crashes.get(self.package_name, 0) + 1
+                            crashes = Zonos2.gpu_crashes[self.package_name] = Zonos2.gpu_crashes.get(self.package_name, 0) + 1
                             # the worker's error carries the server's last log lines joined by ' | ': the last one is
                             # the cause (e.g. the Metal assertion), the rest is startup noise
                             error = str(reply.get('error') or '')

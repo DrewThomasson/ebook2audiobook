@@ -78,9 +78,14 @@ class DeviceInstaller():
     #      at import (torch.library.custom_op with string annotations, rejected by
     #      2.4's infer_schema), 5.9/5.10 fail too, 5.14 imports DTensor from its
     #      2.5-only public path. Verified on torch 2.4.1: 5.0.0 to 5.7.0 import and generate.
+    # 2.6: 5.20+ declares torch>=2.6 and disables PyTorch below it (cu121/rocm6.2 install
+    #      torch 2.5.1: "NameError: name 'nn' is not defined" importing core_model_loading).
+    #      The declared floor lies for 2.5 too: 5.19 calls torch.accelerator (2.6+) when
+    #      transformers.pipelines imports. Verified on torch 2.5.1: 5.18.0 imports, runs a
+    #      pipeline and generates with MusicGen loaded from safetensors.
     # add a row when a release raises the floor again, and test it: the declared
     # floor alone is not enough.
-    transformers_caps = {'2.4': '5.1', '2.5': '5.8'}
+    transformers_caps = {'2.4': '5.1', '2.5': '5.8', '2.6': '5.19'}
     # coqui-tts' own transformers floor (coqui-tts 0.28: transformers>=4.57). A bare 'transformers' keeps an older
     # release installed by hand, which coqui-tts does not run with: 4.46 imports torch.distributed.fsdp in generate()
     # and fails on torch builds without distributed (the +vulkan wheels)
@@ -203,6 +208,47 @@ class DeviceInstaller():
                 error = legends['error_symlink_libgomp'].format(file=libgomp_dst, error=e)
                 print(error)
 
+    def sync_sitecustomize(self, env_dir:str)->None:
+        # components/sitecustomize.py in an engine's venv (torchaudio.load -> soundfile, coqui's config allowlisted for
+        # torch.load, torch.xpu off under E2A_XPU_UNUSABLE). Copied when missing or different, an identical copy is left
+        # alone: cheap enough to run at every engine start, so a venv installed before gets the patches added since
+        sitecustomize_src = os.path.join(components_dir, 'sitecustomize.py')
+        if self.system == systems['WINDOWS']:
+            site_dirs = [os.path.join(env_dir, 'Lib', 'site-packages')]
+        else:
+            site_dirs = glob(os.path.join(env_dir, 'lib', 'python*', 'site-packages'))
+        try:
+            with open(sitecustomize_src, 'rb') as f:
+                content = f.read()
+        except OSError as e:
+            error = legends['error_sitecustomize_sync'].format(file=sitecustomize_src, error=e)
+            print(error)
+            return
+        for site_dir in site_dirs:
+            if not os.path.isdir(site_dir):
+                continue
+            sitecustomize_dst = os.path.join(site_dir, 'sitecustomize.py')
+            try:
+                with open(sitecustomize_dst, 'rb') as f:
+                    if f.read() == content:
+                        continue
+            except OSError:
+                pass
+            msg = legends['msg_sitecustomize_sync'].format(file=sitecustomize_dst)
+            print(msg)
+            try:
+                # the new copy replaces the old one in one step: a worker starting meanwhile reads either, never half
+                # of one. A copy left read-only (copy2 of a read-only source) would refuse the replace on Windows
+                if os.path.exists(sitecustomize_dst) and not os.access(sitecustomize_dst, os.W_OK):
+                    os.chmod(sitecustomize_dst, os.stat(sitecustomize_dst).st_mode | 0o200)
+                sitecustomize_tmp = f'{sitecustomize_dst}.e2a'
+                with open(sitecustomize_tmp, 'wb') as f:
+                    f.write(content)
+                os.replace(sitecustomize_tmp, sitecustomize_dst)
+            except OSError as e:
+                error = legends['error_sitecustomize_sync'].format(file=sitecustomize_dst, error=e)
+                print(error)
+
     def check_pyvenv(self, tag:str)->list:
         # fixed per device, the same rule the launchers create python_env with: jetson wheels are cp310 only
         # (min_python_version), every other device runs max_python_version, which all other prebuilt wheels (py-pkg
@@ -245,7 +291,9 @@ class DeviceInstaller():
                 # once the device is set to vulkan. The launchers run it like the cpu image on a host without /dev/dri
                 linux_arch = archs['X86_64'] if arch == archs['AMD64'] else arch
                 if self.vulkan_wheels_ok(tuple(pyvenv), f'{os_env}_{linux_arch}'):
-                    if name == devices['CPU']['proc']:
+                    # a macOS host takes vulkan for its Metal GPU through MoltenVK: the Linux container never sees it, and
+                    # 'Vulkan GPU Metal (MoltenVK)' in the image's device_info misled every bug report sent from it
+                    if name == devices['CPU']['proc'] or self.system == systems['MACOS']:
                         msg = legends['msg_vulkan_docker_image']
                     name = tag = devices['VULKAN']['proc']
                     arch = linux_arch
@@ -481,18 +529,22 @@ class DeviceInstaller():
                 key, msg = (devices['VULKAN']['proc'], devices['VULKAN']['proc']), None
             else:
                 continue
-            entry = ranked.setdefault(key, {'rank': (0 if card else 1, index), 'msg': msg, 'models': []})
+            entry = ranked.setdefault(key, {'rank': (0 if card else 1, index), 'msg': msg, 'models': [], 'notes': []})
             entry['rank'] = min(entry['rank'], (0 if card else 1, index))
             if model and model not in entry['models']:
                 entry['models'].append(model)
+            # Vulkan for a GPU whose vendor runtime answered without a torch tag: its note says why (an NVIDIA GPU on the
+            # +vulkan torch read only 'Vulkan Torch selected' in device_info, nothing told a missing runtime from a misread)
+            if msg is None and result and result[2] and result[2] not in entry['notes']:
+                entry['notes'].append(result[2])
         # a runtime that answered for a GPU missing from the listing (WSL2's CUDA: no PCI device) still counts, as a card
         for name, tag, msg in gpu_results.values():
             if tag and (name, tag) not in ranked:
-                ranked[(name, tag)] = {'rank': (0, len(gpus)), 'msg': msg, 'models': []}
+                ranked[(name, tag)] = {'rank': (0, len(gpus)), 'msg': msg, 'models': [], 'notes': []}
         candidates = []
         for (name, tag), entry in sorted(ranked.items(), key=lambda item: item[1]['rank']):
             models = ', '.join(entry['models'])
-            msg = entry['msg'] if entry['msg'] is not None else legends['msg_vulkan_selected'].format(gpu=models or devices['VULKAN']['proc'])
+            msg = entry['msg'] if entry['msg'] is not None else ' '.join(entry['notes'] + [legends['msg_vulkan_selected'].format(gpu=models or devices['VULKAN']['proc'])])
             candidates.append((name, tag, msg, models))
         return candidates
 
@@ -559,7 +611,10 @@ class DeviceInstaller():
                     shell = True,
                     stderr = subprocess.DEVNULL
                 )
-                return out.decode().lower()
+                # not strict UTF-8: Windows tools write the ANSI code page (GBK on a Chinese Windows), and nvidia-smi's
+                # table lists the processes using the GPU. One non-ASCII name raised UnicodeDecodeError, the whole output
+                # came back empty and step 4 lost the driver's CUDA version: the NVIDIA GPU fell to the +vulkan torch
+                return out.decode(errors='replace').lower()
             except Exception:
                 return ''
 
@@ -1228,8 +1283,10 @@ class DeviceInstaller():
                 # torch installed by an earlier run. Without it an NVIDIA GPU fell to the +vulkan torch below
                 if not devices['CUDA']['found'] and has_cmd('nvidia-smi'):
                     out = try_cmd('nvidia-smi')
-                    # Header line: '| NVIDIA-SMI ...  Driver Version: ...  CUDA Version: 12.4 |'
-                    m = re.search(r'cuda\s*version\s*:?\s*([0-9]+(?:\.[0-9]+)?)', out, re.IGNORECASE)
+                    # Header line: '| NVIDIA-SMI ...  Driver Version: ...  CUDA Version: 12.4 |', and from driver 620
+                    # '| NVIDIA-SMI ...  KMD Version: ...  CUDA UMD Version: 13.5 |': 'cuda version' alone missed it, the
+                    # NVIDIA GPU fell to the +vulkan torch. One word between 'cuda' and 'version' is accepted for that
+                    m = re.search(r'cuda(?:\s+[a-z]+)?\s*version\s*:?\s*([0-9]+(?:\.[0-9]+)?)', out, re.IGNORECASE)
                     if m:
                         smi_version = m.group(1)
                         cmp, current, min_tuple, max_tuple = version_classify(smi_version, cuda_version_range)
@@ -1864,24 +1921,41 @@ class DeviceInstaller():
             error = f'remove_unusable_torchcodec(): {e}'
             print(error)
 
+    def lacks_record_files(self, dist:Any)->bool:
+        # a code file RECORD lists is gone. RECORD itself: Distribution.files leaves out the entries whose file is gone
+        # (python >= 3.12)
+        code_suffixes = ('.py', '.so', '.pyd', '.dll', '.dylib')
+        for row in csv.reader((dist.read_text('RECORD') or '').splitlines()):
+            if row and row[0].endswith(code_suffixes) and not os.path.exists(dist.locate_file(row[0])):
+                return True
+        return False
+
+    def package_incomplete(self, pkg:str)->bool:
+        # pkg installed but some of its code files are gone (see repair_incomplete_packages())
+        try:
+            return self.lacks_record_files(distribution(pkg))
+        except PackageNotFoundError:
+            return False
+        except Exception as e:
+            error = f'package_incomplete({pkg}): {e}'
+            print(error)
+            return False
+
     def repair_incomplete_packages(self)->int:
         # an install cut short (closed terminal, antivirus, full disk) can leave a package with its metadata but not
         # all its files: the version checks and uv pip check pass and the import fails (gradio without
         # gradio/history.py: "cannot import name 'history' from partially initialized module 'gradio'"). RECORD lists
         # each package's files: the same version is reinstalled when code files are missing. Left out: the device
-        # step's packages (dependency_skip_re) and packages installed from a URL or a local path (direct_url.json)
-        code_suffixes = ('.py', '.so', '.pyd', '.dll', '.dylib')
+        # step's packages (dependency_skip_re, install_device_packages() repairs the torch family from its own wheels)
+        # and packages installed from a URL or a local path (direct_url.json)
         incomplete = {}
         try:
             for dist in distributions():
                 name = self.pkg_head(dist.metadata['Name'] or '')
                 if not name or name in incomplete or self.dependency_skip_re.match(name) or dist.read_text('direct_url.json'):
                     continue
-                # RECORD itself: Distribution.files leaves out the entries whose file is gone (python >= 3.12)
-                for row in csv.reader((dist.read_text('RECORD') or '').splitlines()):
-                    if row and row[0].endswith(code_suffixes) and not os.path.exists(dist.locate_file(row[0])):
-                        incomplete[name] = dist.version
-                        break
+                if self.lacks_record_files(dist):
+                    incomplete[name] = dist.version
         except Exception as e:
             error = f'repair_incomplete_packages(): {e}'
             print(error)
@@ -2145,10 +2219,10 @@ class DeviceInstaller():
                 # when the installed torch is below its floor, and transformers then disables
                 # PyTorch at import:
                 #   Disabling PyTorch because PyTorch >= 2.5 is required but found 2.2.2
-                # the torch floor is the only thing arbitrated here. The rest of what the
-                # older stacks need from transformers 5.x / huggingface_hub 1.x is patched at
-                # runtime by sitecustomize.py (check_torch_load_is_safe for torch<2.6,
-                # isin_mps_friendly for coqui-tts tortoise, use_auth_token for pyannote 3.4).
+                # the torch floor is the only thing arbitrated here. Nothing patches the rest
+                # anymore (sitecustomize.py only allowlists XttsConfig for torch.load): below
+                # torch 2.6 transformers also refuses torch.load, so a .bin checkpoint fails,
+                # the main env's transformers models load from safetensors.
                 # listed in device_pkgs so the cap rides along on every install call and
                 # coqui-tts cannot drag transformers back above it.
                 torch_version = self.get_package_version('torch') or ''
@@ -2321,6 +2395,18 @@ class DeviceInstaller():
             # torchcodec: presence only (when torch >= 2.9 needs it)
             if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and not self.get_package_version('torchcodec'):
                 return True
+            # the right versions with files gone (install cut short, antivirus): every check above passes and the first
+            # import fails (torch without torch/amp/: "cannot import name 'amp' from partially initialized module
+            # 'torch'"). repair_incomplete_packages() leaves the torch family to this step, which reinstalls it from the
+            # device's own wheels. torchcodec only where this step installs it
+            pkgs = ['torch', 'torchaudio']
+            if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and torchcodec_version_matrix:
+                pkgs.append('torchcodec')
+            incomplete = [pkg for pkg in pkgs if self.package_incomplete(pkg)]
+            if incomplete:
+                msg = legends['msg_reinstalling_incomplete'].format(pkgs=', '.join(incomplete))
+                print(msg)
+                return True
             # Windows +vulkan torch published without the OpenMP runtime it links: same version as the fixed wheel
             if device_info['name'] == devices['VULKAN']['proc'] and self.system == systems['WINDOWS']:
                 py_major, py_minor = device_info['pyvenv']
@@ -2486,6 +2572,9 @@ class DeviceInstaller():
                             print(error)
                             return 1
                     self.link_os_libgomp('python_env', device_info)
+                    # an inherited one would make sitecustomize.py answer 0 for torch in the probe too: it asks torch
+                    # itself, and the verdict below sets it again
+                    os.environ.pop('E2A_XPU_UNUSABLE', None)
                     gpu_info = _probe_gpus()
                     device_info_dict['gpu_count'] = gpu_info['count']
                     device_info_dict['gpu_backend'] = gpu_info['backend']
@@ -2496,9 +2585,13 @@ class DeviceInstaller():
                     # mean torch xpu runs on it: on an iGPU it does not support or an old driver, torch.xpu.is_available()
                     # answers 0 or kills the process (Windows access violation in device_count()). Only this probe, in
                     # its own process, can ask safely: XPU off, so nothing in the app (the device dropdown,
-                    # VoiceExtractor, the session device check) asks torch.xpu again
+                    # VoiceExtractor, the session device check) asks torch.xpu again. Third-party code still asks it
+                    # on its own (transformers at import, CPU conversions included): with E2A_XPU_UNUSABLE set,
+                    # components/sitecustomize.py makes torch.xpu report no device in this process, torch not imported
+                    # yet, and in every child that inherits it
                     if device_info['name'] == devices['XPU']['proc'] and gpu_info['count'] == 0 and gpu_info.get('probed'):
                         devices['XPU']['found'] = False
+                        os.environ['E2A_XPU_UNUSABLE'] = '1'
                         msg = legends['msg_xpu_unusable']
                         print(msg)
                     if gpu_info['count'] > 0:

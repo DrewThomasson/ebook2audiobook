@@ -1,5 +1,8 @@
 import os
 import re
+import json
+import shutil
+import subprocess
 import requests
 from pathlib import Path
 from lib.lang import legends
@@ -66,6 +69,38 @@ def _detect_folder_id(server_url:str, headers:dict, library_id:str)->str:
         error = legends['error_abs_folder_detect'].format(e=f'{type(e).__name__}: {e}')
         print(error)
     return ""
+
+
+def get_abs_book_info(file_path:str, metadata:dict|None)->tuple[str, str, str, str]:
+    # ABS files an upload under <author>/<series>/<title> from the form fields. The audiobook's own tags first: the
+    # GUI uploads any file of the list, and the session metadata was reset at the end of its conversion (the title was
+    # the file name, author and series none). One source only, an untagged file must not take another book's series.
+    # ogg/webm keep their tags upper case on the stream. The metadata only where it describes this file (headless)
+    tags:dict = {}
+    ffprobe = shutil.which('ffprobe')
+    if ffprobe:
+        try:
+            probe = subprocess.run(
+                [ffprobe, '-v', 'error', '-select_streams', 'a:0', '-show_entries', 'format_tags:stream_tags', '-of', 'json', file_path],
+                capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30
+            )
+            if probe.returncode == 0:
+                data = json.loads(probe.stdout or '{}')
+                for stream in data.get('streams', []):
+                    tags.update({str(k).lower(): str(v).strip() for k, v in (stream.get('tags') or {}).items()})
+                tags.update({str(k).lower(): str(v).strip() for k, v in (data.get('format', {}).get('tags') or {}).items()})
+        except (OSError, ValueError, subprocess.SubprocessError) as e:
+            print(f'get_abs_book_info(): {file_path}: {type(e).__name__}: {e}')
+    if tags.get('title'):
+        source = {'title': tags.get('title'), 'author': tags.get('artist') or tags.get('album_artist'), 'series': tags.get('series'), 'series_index': tags.get('series-part')}
+    else:
+        metadata = metadata or {}
+        source = {'title': metadata.get('title'), 'author': metadata.get('creator'), 'series': metadata.get('series'), 'series_index': metadata.get('series_index')}
+    title, author, series, series_index = (str(source[key]).strip() if source[key] else '' for key in ['title', 'author', 'series', 'series_index'])
+    if not title:
+        # the file is named after the sanitized ebook file name, _partN when split: the parts of a book go to one folder
+        title = re.sub(r'_part\d+$', '', Path(file_path).stem).replace('_', ' ').strip()
+    return title, author, series, series_index
 
 
 def upload_to_abs(

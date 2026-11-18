@@ -37,6 +37,22 @@ class VRAMDetector:
         mem = psutil.virtual_memory()
         return mem.available, mem.total
 
+    def _windows_commit_available(self)->int:
+        # bytes the system can still commit (RAM + pagefile). Windows refuses an allocation past the commit limit even with
+        # RAM shown free: other programs holding commit (a VM, an Android emulator) leave e2a less than psutil's available.
+        # XTTS then died in an access violation building its GPT on CPU, 3.9GB of commit left, 12GB RAM shown free
+        try:
+            import ctypes
+            class MemoryStatusEx(ctypes.Structure):
+                _fields_ = [('dwLength', ctypes.c_ulong), ('dwMemoryLoad', ctypes.c_ulong)] + [(name, ctypes.c_ulonglong) for name in ('ullTotalPhys', 'ullAvailPhys', 'ullTotalPageFile', 'ullAvailPageFile', 'ullTotalVirtual', 'ullAvailVirtual', 'ullAvailExtendedVirtual')]
+            status = MemoryStatusEx()
+            status.dwLength = ctypes.sizeof(MemoryStatusEx)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+                return int(status.ullAvailPageFile)
+        except Exception:
+            pass
+        return 0
+
     @staticmethod
     def _fmt(b:int)->float:
         if not b: return 0.0
@@ -182,15 +198,21 @@ class VRAMDetector:
             }
         else:
             mem = psutil.virtual_memory()
+            free = mem.available
+            commit = self._windows_commit_available() if self.system == 'windows' else 0
+            if 0 < commit < free:
+                free = commit
             info = {
                 "os": self.system,
                 "device_type": "cpu",
                 "device_name": "System RAM",
-                "free_bytes": mem.available,
+                "free_bytes": free,
                 "total_bytes": mem.total,
-                "free_vram_gb": self._ceil_gb(mem.available),
+                "free_vram_gb": self._ceil_gb(free),
                 "total_vram_gb": self._ceil_gb(mem.total),
             }
+            if free < mem.available:
+                info['note'] = f"Windows commit limit: {self._fmt(commit)}GB left of RAM + pagefile, {self._fmt(mem.available)}GB RAM free"
 
         if as_json:
             return json.dumps(info, indent=2)

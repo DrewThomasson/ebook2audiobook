@@ -142,6 +142,28 @@ def is_port_in_use(port:int)->bool:
         s.settimeout(2)
         return s.connect_ex((host,port))==0
 
+def port_bind_error(port:int)->str|None:
+    # the bind uvicorn makes under gradio's launch(): asyncio binds (interface_host, port) with SO_REUSEADDR on POSIX
+    # only. Gradio's own check binds 127.0.0.1 with SO_REUSEADDR, which Windows grants next to a listening socket: a
+    # port held where a loopback connect does not reach (another address, a server not accepting) passed both checks
+    # and only failed in uvicorn, as "Cannot find empty port" naming neither the holder nor the cause
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        if os.name != 'nt':
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind((interface_host or '0.0.0.0', port))
+        except OSError as e:
+            return str(e)
+    return None
+
+def port_error(port:int)->str|None:
+    if is_port_in_use(port):
+        return legends['error_port_in_use'].format(port=port)
+    bind_error = port_bind_error(port)
+    if bind_error is not None:
+        return legends['error_port_unavailable'].format(port=port, error=bind_error)
+    return None
+
 def kill_previous_instances(script_name: str):
     current_pid = os.getpid()
     this_script_path = os.path.realpath(script_name)
@@ -274,7 +296,7 @@ SML tags available:
 [pause] — silence (random range 1.0–1.6 sec.)
 [pause:N] — fixed pause (N sec.)
 [voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-[emotion:sad]...[/emotion] — Zonos only: emotion for a passage (happy, sad, angry, surprised, valence, arousal; also fear, disgust, neutral) or a mix like [emotion:sad=0.7,angry=0.2]; other engines ignore it
+[emotion:sad]...[/emotion] — Zonos2 and Zonos3 only: emotion for a passage (happy, sad, angry, surprised, valence, arousal; also fear, disgust, neutral; Zonos3 also calm, confused) or a mix like [emotion:sad=0.7,angry=0.2]; other engines ignore it
 ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
@@ -338,13 +360,13 @@ Default to config.json model.""")
 Default to config.json model.""")
     headless_optional_group.add_argument(cli_options[27], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model.
 Default to config.json model.""")
-    headless_optional_group.add_argument(cli_options[37], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'], help=f"""(zonos only, optional) Speaking rate: 0 lets the model pick its own pace,
-otherwise about 10 is slow, 15 is natural narration, 30 is very fast. Default {default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate']}.""")
-    headless_optional_group.add_argument(cli_options[38], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'], help=f"""(zonos only, optional) Emotion strength, multiplier on the emotion mix (0-2).
-Default {default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']}.""")
-    headless_optional_group.add_argument(cli_options[39], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'], help=f"""(zonos only, optional) Emotion guidance, 1.0 is off, about 1.5 makes the emotion clearer (1-3).
-Default {default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']}.""")
-    headless_optional_group.add_argument(cli_options[40], type=str, nargs='?', const=True, default=None, help=f"""(zonos only, optional) Enable emotion. Alone, every emotion is at 0 (the plain cloned voice);
+    headless_optional_group.add_argument(cli_options[37], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS2']]['speaking_rate'], help=f"""(zonos2, zonos3 only, optional) Speaking rate: 0 lets the model pick its own pace,
+otherwise about 10 is slow, 15 is natural narration, 30 is very fast. Default {default_engine_settings[TTS_ENGINES['ZONOS2']]['speaking_rate']}.""")
+    headless_optional_group.add_argument(cli_options[38], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength'], help=f"""(zonos2, zonos3 only, optional) Emotion strength, multiplier on the emotion mix (0-2).
+Default {default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength']}.""")
+    headless_optional_group.add_argument(cli_options[39], type=float, default=default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale'], help=f"""(zonos2, zonos3 only, optional) Emotion guidance, 1.0 is off, about 1.5 makes the emotion clearer (1-3).
+Default {default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale']}.""")
+    headless_optional_group.add_argument(cli_options[40], type=str, nargs='?', const=True, default=None, help=f"""(zonos2, zonos3 only, optional) Enable emotion. Alone, every emotion is at 0 (the plain cloned voice);
 followed by a mix like happy=0.5,sad=0.2 it uses that mix. Names: happy, sad, angry, surprised (0 to 1),
 valence, arousal (-1 to 1).""")
     headless_optional_group.add_argument(cli_options[28], type=str, help='Path to the output directory. Default is set in ./lib/conf.py')
@@ -391,9 +413,8 @@ valence, arousal (-1 to 1).""")
             error = legends['error_share_headless']
             print(error)
             sys.exit(1)
-        elif not args.get('headless', False) and is_port_in_use(interface_port):
+        elif not args.get('headless', False) and (error := port_error(interface_port)):
             # Check if the port is already in use to prevent multiple launches
-            error = legends['error_port_in_use'].format(port=interface_port)
             print(error)
             sys.exit(1)
 
@@ -432,7 +453,16 @@ valence, arousal (-1 to 1).""")
 ***********'''
             print(error)
             sys.exit(1)
-        c.context = c.SessionContext() if c.context is None else c.context
+        try:
+            c.context = c.SessionContext() if c.context is None else c.context
+        except PermissionError as e:
+            # the system refusing the pipe multiprocessing.Manager() opens to its server process ([WinError 5] in
+            # connection.Pipe(), the pipe e2a just created): a security program or sandbox restricting python, not a bug
+            error = f'''***********
+{legends['error_session_manager_denied'].format(error=e, python=sys.executable)}
+***********'''
+            print(error)
+            sys.exit(1)
         c.context_tracker = c.SessionTracker() if c.context_tracker is None else c.context_tracker
         c.active_sessions = set() if c.active_sessions is None else c.active_sessions
         error = ''
@@ -494,7 +524,7 @@ valence, arousal (-1 to 1).""")
                 args[f'csm_{key}'] = args[key] if option in sys.argv else default_engine_settings[TTS_ENGINES['CSM']][key]
             args['zonos_emotion_enabled'] = args.get('enable_emotion') is not None
             if args['zonos_emotion_enabled']:
-                emotion = {name: 0.0 for name in default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']}
+                emotion = {name: 0.0 for name in default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']}
                 if args['enable_emotion'] is not True:
                     # --enable_emotion happy=0.5,sad=0.2: named sliders, the others stay at 0
                     try:
@@ -653,10 +683,14 @@ valence, arousal (-1 to 1).""")
             allowed_arguments = {'--share', '--script_mode'}
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
+                app = None
                 try:
                     from lib.gradio import theme, header_css, build_interface
                     app = build_interface(args)
-                    if app is not None:
+                    # checked at start too, but before the installs, the model loading and this page: another instance
+                    # or another program (7860 is every gradio app's default) may hold the port by now
+                    error = port_error(interface_port) or ''
+                    if app is not None and not error:
                         gr_blocks_kwargs = {
                             "debug": bool(int(os.environ.get('GRADIO_DEBUG', '0'))),
                             "show_error": debug_mode,
@@ -674,10 +708,25 @@ valence, arousal (-1 to 1).""")
                         # replays each one in order: a background tab (throttled or frozen by the browser) piled them up and
                         # kept showing an old step long after the server had moved on. Set after queue(), which builds the queue
                         app._queue.progress_update_sleep_when_free = interface_progress_interval
-                        app.launch(**gr_blocks_kwargs)
+                        try:
+                            app.launch(**gr_blocks_kwargs)
+                        except ValueError as e:
+                            # after its startup-events request went through (server up, queue started: is_running) gradio
+                            # probes HEAD http://localhost:<port>/ once more with a 3s timeout and gives up on the first
+                            # timeout: on Windows localhost tries ::1 first (~2s refused, the server listens on ipv4), then
+                            # the first render of this big page. The app is served, only that probe failed: keep serving
+                            if 'localhost' in str(e).lower() and not args['share'] and getattr(app, 'is_running', False) and is_port_in_use(interface_port):
+                                print(f'[WARN] gradio localhost check failed ({e}) but the server answers on port {interface_port}, continuing.')
+                                app.block_thread()
+                            else:
+                                raise
                 except OSError as e:
-                    error = legends['error_connection'].format(e=e)
-                    c.exception_alert(None, error)
+                    # gradio could not bind (our server never started, so it is not the one answering): taken between
+                    # the check and the bind, not a bug to report
+                    error = port_error(interface_port) if app is not None and not getattr(app, 'is_running', False) else None
+                    if not error:
+                        error = legends['error_connection'].format(e=e)
+                        c.exception_alert(None, error)
                 except socket.error as e:
                     error = legends['error_socket'].format(e=e)
                     c.exception_alert(None, error)

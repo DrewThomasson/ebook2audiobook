@@ -254,25 +254,25 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=0.0,
                                 maximum=40.0,
                                 step=0.5,
-                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate']),
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS2']]['speaking_rate']),
                                 elem_id='gr_zonos_speaking_rate',
                                 info=legends['gr_zonos_speaking_rate_info']
                             )
                         with gr.Group(elem_id='gr_group_zonos_emotion', elem_classes=['gr-group']):
                             gr_zonos_emotion_enabled = gr.Checkbox(
                                 label=legends['gr_zonos_emotion_enabled'],
-                                value=bool(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled']),
+                                value=bool(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_enabled']),
                                 elem_id='gr_zonos_emotion_enabled',
                                 info=legends['gr_zonos_emotion_enabled_info']
                             )
                         # ZONOS2: every slider at 0 is the plain cloned voice, each one moves away from it
-                        with gr.Group(elem_id='gr_group_zonos_emotion_sliders', elem_classes=['gr-group'], visible=bool(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled'])) as gr_group_zonos_emotion_sliders:
+                        with gr.Group(elem_id='gr_group_zonos_emotion_sliders', elem_classes=['gr-group'], visible=bool(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_enabled'])) as gr_group_zonos_emotion_sliders:
                             gr_zonos_emotion_happy = gr.Slider(
                                 label=legends['gr_zonos_emotion_happy'],
                                 minimum=0.0,
                                 maximum=1.0,
                                 step=0.01,
-                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy']),
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['happy']),
                                 elem_id='gr_zonos_emotion_happy'
                             )
                             gr_zonos_emotion_sad = gr.Slider(
@@ -280,7 +280,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=0.0,
                                 maximum=1.0,
                                 step=0.01,
-                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad']),
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['sad']),
                                 elem_id='gr_zonos_emotion_sad'
                             )
                             gr_zonos_emotion_angry = gr.Slider(
@@ -288,7 +288,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=0.0,
                                 maximum=1.0,
                                 step=0.01,
-                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry']),
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['angry']),
                                 elem_id='gr_zonos_emotion_angry'
                             )
                             gr_zonos_emotion_surprised = gr.Slider(
@@ -296,7 +296,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=0.0,
                                 maximum=1.0,
                                 step=0.01,
-                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised']),
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['surprised']),
                                 elem_id='gr_zonos_emotion_surprised'
                             )
                             gr_zonos_emotion_valence = gr.Slider(
@@ -304,7 +304,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=-1.0,
                                 maximum=1.0,
                                 step=0.01,
-                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence']),
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['valence']),
                                 elem_id='gr_zonos_emotion_valence',
                                 info=legends['gr_zonos_emotion_valence_info']
                             )
@@ -313,7 +313,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=-1.0,
                                 maximum=1.0,
                                 step=0.01,
-                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal']),
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['arousal']),
                                 elem_id='gr_zonos_emotion_arousal',
                                 info=legends['gr_zonos_emotion_arousal_info']
                             )
@@ -322,7 +322,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=0.0,
                                 maximum=2.0,
                                 step=0.05,
-                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']),
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength']),
                                 elem_id='gr_zonos_emotion_strength',
                                 info=legends['gr_zonos_emotion_strength_info']
                             )
@@ -331,7 +331,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 minimum=1.0,
                                 maximum=3.0,
                                 step=0.05,
-                                value=float(default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']),
+                                value=float(default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale']),
                                 elem_id='gr_zonos_emotion_cfg_scale',
                                 info=legends['gr_zonos_emotion_cfg_scale_info']
                             )
@@ -994,7 +994,7 @@ def build_interface(args:dict)->gr.Blocks:
                             visible_xtts = visible_gr_tab_xtts_params
                         elif session['tts_engine'] == TTS_ENGINES['BARK']:
                             visible_bark = visible_gr_tab_bark_params
-                        elif session['tts_engine'] == TTS_ENGINES['ZONOS']:
+                        elif session['tts_engine'] in (TTS_ENGINES['ZONOS2'], TTS_ENGINES['ZONOS3']):
                             visible_zonos = visible_gr_tab_zonos_params
                         elif session['tts_engine'] == TTS_ENGINES['GPTSOVITS']:
                             visible_gptsovits = visible_gr_tab_gptsovits_params
@@ -1068,8 +1068,8 @@ def build_interface(args:dict)->gr.Blocks:
                             _search_abs_libraries(session_id, session.get('abs_url', ''), session.get('abs_api_token', '')),
                             gr.update(interactive=abs_upload_enabled),
                             gr.update(value=''),
-                            gr.update(value=bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled']))),
-                            gr.update(visible=bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled']))),
+                            gr.update(value=bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_enabled']))),
+                            gr.update(visible=bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_enabled']))),
                         )
                 except Exception as e:
                     error = f'_restore_interface(): {e}'
@@ -1235,12 +1235,11 @@ def build_interface(args:dict)->gr.Blocks:
                         return (gr.update(interactive=True), 'No audiobook file to upload!')
                     elif not os.path.isfile(str(audiobook)):
                         return (gr.update(interactive=True), 'Audiobook file does not exist!')
-                    from lib.classes.audiobookshelf import upload_to_abs
+                    from lib.classes.audiobookshelf import upload_to_abs, get_abs_book_info
                     from urllib.parse import urlparse
-                    title = Path(audiobook).stem
-                    author = str(session.get('metadata', {}).get('creator') or '')
-                    series = str(session.get('metadata', {}).get('series') or '')
-                    series_index = str(session.get('metadata', {}).get('series_index') or '')
+                    # any audiobook of the list, and the session metadata was reset at the end of the conversion: never
+                    # read it, only the file itself tells its title, author and series
+                    title, author, series, series_index = get_abs_book_info(str(audiobook), None)
                     if not url or not api_token or not library_id:
                         return (gr.update(interactive=True), 'Configure ABS settings first')
                     parsed = urlparse(url)
@@ -1293,7 +1292,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 visible_xtts = visible_gr_tab_xtts_params
                             elif session['tts_engine'] == TTS_ENGINES['BARK']:
                                 visible_bark = visible_gr_tab_bark_params
-                            elif session['tts_engine'] == TTS_ENGINES['ZONOS']:
+                            elif session['tts_engine'] in (TTS_ENGINES['ZONOS2'], TTS_ENGINES['ZONOS3']):
                                 visible_zonos = visible_gr_tab_zonos_params
                             elif session['tts_engine'] == TTS_ENGINES['GPTSOVITS']:
                                 visible_gptsovits = visible_gr_tab_gptsovits_params
@@ -2905,7 +2904,7 @@ def build_interface(args:dict)->gr.Blocks:
                             session['fine_tuned'] = default_fine_tuned
                             visible_xtts = visible_gr_tab_xtts_params if session['tts_engine'] == TTS_ENGINES['XTTS'] else False
                             visible_bark = visible_gr_tab_bark_params if session['tts_engine'] == TTS_ENGINES['BARK'] else False
-                            visible_zonos = visible_gr_tab_zonos_params if session['tts_engine'] == TTS_ENGINES['ZONOS'] else False
+                            visible_zonos = visible_gr_tab_zonos_params if session['tts_engine'] in (TTS_ENGINES['ZONOS2'], TTS_ENGINES['ZONOS3']) else False
                             visible_gptsovits = visible_gr_tab_gptsovits_params if session['tts_engine'] == TTS_ENGINES['GPTSOVITS'] else False
                             visible_orpheus = visible_gr_tab_orpheus_params if session['tts_engine'] == TTS_ENGINES['ORPHEUS'] else False
                             visible_sparktts = visible_gr_tab_sparktts_params if session['tts_engine'] == TTS_ENGINES['SPARKTTS'] else False
@@ -3065,7 +3064,7 @@ def build_interface(args:dict)->gr.Blocks:
                     _change_param('zonos_emotion_enabled', session_id, bool(val))
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        return (gr.update(visible=bool(val)), gr.update(value=float(session.get('zonos_emotion_happy', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy']))), gr.update(value=float(session.get('zonos_emotion_sad', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad']))), gr.update(value=float(session.get('zonos_emotion_angry', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry']))), gr.update(value=float(session.get('zonos_emotion_surprised', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised']))), gr.update(value=float(session.get('zonos_emotion_valence', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence']))), gr.update(value=float(session.get('zonos_emotion_arousal', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal']))), gr.update(value=float(session.get('zonos_emotion_strength', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']))), gr.update(value=float(session.get('zonos_emotion_cfg_scale', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']))))
+                        return (gr.update(visible=bool(val)), gr.update(value=float(session.get('zonos_emotion_happy', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['happy']))), gr.update(value=float(session.get('zonos_emotion_sad', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['sad']))), gr.update(value=float(session.get('zonos_emotion_angry', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['angry']))), gr.update(value=float(session.get('zonos_emotion_surprised', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['surprised']))), gr.update(value=float(session.get('zonos_emotion_valence', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['valence']))), gr.update(value=float(session.get('zonos_emotion_arousal', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['arousal']))), gr.update(value=float(session.get('zonos_emotion_strength', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength']))), gr.update(value=float(session.get('zonos_emotion_cfg_scale', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale']))))
                 except Exception as e:
                     error = f'_change_gr_zonos_emotion_enabled(): {e}'
                     exception_alert(session_id, error)
@@ -3075,8 +3074,8 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        enabled = bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled']))
-                        return (gr.update(value=enabled), gr.update(visible=enabled), gr.update(value=float(session.get('zonos_emotion_happy', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy']))), gr.update(value=float(session.get('zonos_emotion_sad', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad']))), gr.update(value=float(session.get('zonos_emotion_angry', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry']))), gr.update(value=float(session.get('zonos_emotion_surprised', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised']))), gr.update(value=float(session.get('zonos_emotion_valence', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence']))), gr.update(value=float(session.get('zonos_emotion_arousal', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal']))), gr.update(value=float(session.get('zonos_emotion_strength', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength']))), gr.update(value=float(session.get('zonos_emotion_cfg_scale', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale']))))
+                        enabled = bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_enabled']))
+                        return (gr.update(value=enabled), gr.update(visible=enabled), gr.update(value=float(session.get('zonos_emotion_happy', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['happy']))), gr.update(value=float(session.get('zonos_emotion_sad', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['sad']))), gr.update(value=float(session.get('zonos_emotion_angry', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['angry']))), gr.update(value=float(session.get('zonos_emotion_surprised', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['surprised']))), gr.update(value=float(session.get('zonos_emotion_valence', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['valence']))), gr.update(value=float(session.get('zonos_emotion_arousal', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['arousal']))), gr.update(value=float(session.get('zonos_emotion_strength', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength']))), gr.update(value=float(session.get('zonos_emotion_cfg_scale', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale']))))
                 except Exception as e:
                     error = f'_select_gr_tab_zonos_params(): {e}'
                     exception_alert(session_id, error)
@@ -3130,16 +3129,16 @@ def build_interface(args:dict)->gr.Blocks:
                                 "xtts_enable_text_splitting":bool(xtts_enable_text_splitting),
                                 "bark_text_temp": float(bark_text_temp),
                                 "bark_waveform_temp": float(bark_waveform_temp),
-                                "zonos_emotion_enabled": bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_enabled'])),
-                                "zonos_emotion_happy": float(session.get('zonos_emotion_happy', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['happy'])),
-                                "zonos_emotion_sad": float(session.get('zonos_emotion_sad', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['sad'])),
-                                "zonos_emotion_angry": float(session.get('zonos_emotion_angry', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['angry'])),
-                                "zonos_emotion_surprised": float(session.get('zonos_emotion_surprised', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['surprised'])),
-                                "zonos_emotion_valence": float(session.get('zonos_emotion_valence', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['valence'])),
-                                "zonos_emotion_arousal": float(session.get('zonos_emotion_arousal', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion']['arousal'])),
-                                "zonos_emotion_strength": float(session.get('zonos_emotion_strength', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_strength'])),
-                                "zonos_emotion_cfg_scale": float(session.get('zonos_emotion_cfg_scale', default_engine_settings[TTS_ENGINES['ZONOS']]['emotion_cfg_scale'])),
-                                "zonos_speaking_rate": float(session.get('zonos_speaking_rate', default_engine_settings[TTS_ENGINES['ZONOS']]['speaking_rate'])),
+                                "zonos_emotion_enabled": bool(session.get('zonos_emotion_enabled', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_enabled'])),
+                                "zonos_emotion_happy": float(session.get('zonos_emotion_happy', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['happy'])),
+                                "zonos_emotion_sad": float(session.get('zonos_emotion_sad', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['sad'])),
+                                "zonos_emotion_angry": float(session.get('zonos_emotion_angry', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['angry'])),
+                                "zonos_emotion_surprised": float(session.get('zonos_emotion_surprised', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['surprised'])),
+                                "zonos_emotion_valence": float(session.get('zonos_emotion_valence', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['valence'])),
+                                "zonos_emotion_arousal": float(session.get('zonos_emotion_arousal', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion']['arousal'])),
+                                "zonos_emotion_strength": float(session.get('zonos_emotion_strength', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_strength'])),
+                                "zonos_emotion_cfg_scale": float(session.get('zonos_emotion_cfg_scale', default_engine_settings[TTS_ENGINES['ZONOS2']]['emotion_cfg_scale'])),
+                                "zonos_speaking_rate": float(session.get('zonos_speaking_rate', default_engine_settings[TTS_ENGINES['ZONOS2']]['speaking_rate'])),
                                 "gptsovits_speed": float(session['gptsovits_speed']),
                                 "gptsovits_top_k": int(session['gptsovits_top_k']),
                                 "gptsovits_top_p": float(session['gptsovits_top_p']),
@@ -3278,17 +3277,24 @@ def build_interface(args:dict)->gr.Blocks:
                     nonlocal audiobook_options
                     session = context.get_session(session_id)
                     if session and session.get('id', False):
-                        if session['audiobooks_dir'] is not None:
-                            audiobook_options = [
-                                (f, os.path.join(session['audiobooks_dir'], str(f)))
-                                for f in os.listdir(session['audiobooks_dir'])
-                                if not f.lower().endswith(".vtt")
-                            ]
+                        # the folder, or a file in it, can go while the page is open (full_docker bind-mounts ./audiobooks,
+                        # cleaned on the host): list what is left, prepare_dirs() makes the folder again at the next conversion.
+                        # Always this session's own list: audiobook_options is shared by all the sessions
+                        entries = []
+                        try:
+                            names = os.listdir(session['audiobooks_dir']) if session['audiobooks_dir'] is not None else []
+                        except FileNotFoundError:
+                            names = []
+                        for f in names:
+                            if not f.lower().endswith('.vtt'):
+                                path = os.path.join(session['audiobooks_dir'], str(f))
+                                try:
+                                    entries.append((os.path.getmtime(path), f, path))
+                                except FileNotFoundError:
+                                    pass
+                        entries.sort(key=lambda x: x[0], reverse=True)
+                        audiobook_options = [(f, path) for mtime, f, path in entries]
                         if len(audiobook_options) > 0:
-                            audiobook_options.sort(
-                                key=lambda x: os.path.getmtime(x[1]),
-                                reverse=True
-                            )
                             session['audiobook'] = (
                                 session['audiobook']
                                 if session['audiobook'] in [option[1] for option in audiobook_options]
@@ -5042,7 +5048,9 @@ def build_interface(args:dict)->gr.Blocks:
             all_ips = get_all_ip_addresses()
             msg = legends['msg_ips_available'].format(ips=all_ips, port=interface_port)
             show_alert(None, {"type": "info", "msg": msg})
-            os.environ['no_proxy'] = ' ,'.join(all_ips)
+            # gradio probes its own server on http://localhost:<port>/ (server_name 0.0.0.0): without localhost here an
+            # HTTP(S)_PROXY caught that probe and launch failed with "When localhost is not accessible"
+            set_no_proxy(['localhost', '127.0.0.1', '::1', *all_ips])
             return app
     except Exception as e:
         traceback.print_exc()
