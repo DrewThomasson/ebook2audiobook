@@ -2765,6 +2765,11 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
+def is_roman_numeral(token:str)->bool:
+    # in prose only I V X numerals (II, XIV, VIII) or long ones (XLII, MCMXC) are numbers,
+    # a short one with L C D M is an acronym or a word (DC, CD, MD, CV, MIX, DI)
+    return bool(re.fullmatch(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})', token)) and (len(token) > 3 or not re.search(r'[LCDM]', token))
+
 def roman2number(text:str)->str:
 
     def _is_valid_roman(s:str)->bool:
@@ -2798,7 +2803,7 @@ def roman2number(text:str)->str:
 
     def _repl_word(m:re.Match)->str:
         roman = m.group(1)
-        if not _is_valid_roman(roman):
+        if not is_roman_numeral(roman):
             return m.group(0)
         return _to_int(roman)
 
@@ -2835,8 +2840,9 @@ def roman2number(text:str)->str:
         flags=re.MULTILINE
     )
     text = chapter_words_re.sub(_repl_chapter_single, text)
+    # in prose, also before a punctuation (World War II. Part IV;), not glued to a word, a digit or a range (CD-ROM, MI6, II/III)
     text = re.sub(
-        r'(?<!\S)([IVXLCDM]{2,})(?!\S)',
+        r"(?<![\w'’/-])([IVXLCDM]{2,})(?![\w'’/-])",
         _repl_word,
         text
     )
@@ -2958,8 +2964,8 @@ def acronym2letters(text:str, lang:str, known_words:set|None=None)->str:
             return m.group(0)
         start, end = m.start(), m.end()
         near_digit = (start > 0 and source[start - 1].isdigit()) or (end < len(source) and source[end].isdigit())
-        # roman numbers roman2number() left (II. CD,) keep their current reading, MI6 or CDs are not roman numbers
-        if not plural and not near_digit and valid_roman.fullmatch(token):
+        # roman numbers roman2number() left (XIV's) keep their current reading, MI6 or CDs are not roman numbers
+        if not plural and not near_digit and is_roman_numeral(token):
             return m.group(0)
         if _is_pronounceable(token) and (len(token) > short_max or caps_text or _in_caps_context(start)):
             return m.group(0)
@@ -2980,7 +2986,6 @@ def acronym2letters(text:str, lang:str, known_words:set|None=None)->str:
         'tch': 2, 'sch': 2, 'ch': 2, 'sh': 2, 'th': 2, 'ph': 2, 'gh': 2, 'kh': 2, 'zh': 2,
         'sz': 2, 'zs': 2, 'cs': 2, 'rz': 2, 'cz': 1, 'dz': 1, 'ck': 1, 'gn': 3, 'wh': 5, 'wr': 4, 'rh': 4,
     }
-    valid_roman = re.compile(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})')
     if known_words is None:
         known_words = get_known_words(text)
     short_max = 2 if lang in acronym_as_word_languages else 3
