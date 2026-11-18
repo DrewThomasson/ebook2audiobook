@@ -1647,14 +1647,18 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                 return []
             title = get_ebook_title(epubBook, all_docs)
             note_targets = get_note_targets(all_docs)
-            # words the whole book writes in lowercase or capitalized: an all caps word (SECRET) is not spelled like an acronym (CIA)
+            # words the whole book writes in lowercase or capitalized: an all caps word (SECRET) is not spelled like an acronym (CIA),
+            # and the roman numbers its titles count with (I, II, III): a title word made of roman letters (DIX, MIX) is not a number
             from html import unescape as html_unescape
             known_words = set()
+            doc_bodies = []
             for doc in all_docs:
                 doc_body = doc.get_body_content()
                 doc_body = doc_body.decode('utf-8', errors='replace') if isinstance(doc_body, bytes) else (doc_body or '')
-                doc_body = re.sub(r'<(script|style)\b.*?</\1\s*>|<[^>]+>', ' ', doc_body, flags=re.DOTALL | re.IGNORECASE)
-                known_words |= get_known_words(html_unescape(doc_body))
+                doc_body = re.sub(r'<(script|style)\b.*?</\1\s*>', ' ', doc_body, flags=re.DOTALL | re.IGNORECASE)
+                doc_bodies.append(doc_body)
+                known_words |= get_known_words(html_unescape(re.sub(r'<[^>]+>', ' ', doc_body)))
+            title_romans = get_title_romans(doc_bodies)
             blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
@@ -1701,7 +1705,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                     zip_names = set(zf.namelist())
                     zip_basenames = {os.path.basename(n): n for n in zip_names}
                     for doc_idx, doc in enumerate(all_docs):
-                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames, note_targets.get(posixpath.normpath(doc.get_name())), known_words)
+                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames, note_targets.get(posixpath.normpath(doc.get_name())), known_words, title_romans)
                         if text is None:
                             error = legends['error_doc_extract'].format(doc=doc_idx + 1)
                             show_alert(session_id, {"type": "warning", "msg": error})
@@ -1733,7 +1737,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None, note_targets:dict|None=None, known_words:set|None=None)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None, note_targets:dict|None=None, known_words:set|None=None, title_romans:set|None=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -1911,7 +1915,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             prev_typ = None
             for typ, payload in tuples_list:
                 if typ == 'heading':
-                    text_list.append(roman2number(payload.strip()))
+                    text_list.append(roman2number(payload.strip(), title_romans=title_romans))
                 elif typ in ('break', 'pause'):
                     # Original logic: add token if different from previous type
                     if prev_typ != typ:
@@ -1946,7 +1950,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                     text = payload.strip()
                     if text:
                         # a paragraph used as a title (CHAPTER IV) converts its roman number too
-                        text_list.append(roman2number(text, at_start=True))
+                        text_list.append(roman2number(text, at_start=True, title_romans=title_romans))
                 prev_typ = typ
             msg = legends['msg_flattening_raw']
             print(msg)
@@ -2768,40 +2772,76 @@ def is_roman_numeral(token:str)->bool:
     # a short one with L C D M is an acronym or a word (DC, CD, MD, CV, MIX, DI)
     return bool(re.fullmatch(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})', token)) and (len(token) > 3 or not re.search(r'[LCDM]', token))
 
-def roman2number(title:str, at_start:bool=False)->str:
-    # a title's roman number in caps is converted when no word is behind it and a word of chapter_word_mapping is in
-    # front of it (Chapter IV, CHAPTER XLI., Part II: The Return) or nothing is (IV, XII. The Return, IV: Exile).
-    # Louis XIV, Chapter IV The Return, I, Robot stay written.
-    # at_start: a paragraph used as a title must open with it (CHAPTER IV. THE RETURN) or be the numeral alone (IV.),
-    # so prose (as Chapter IV, shows / I, for one, agree) is left alone
+def roman_to_int(roman:str)->int|None:
+    # uppercase roman number to int, None when it is not a valid one (IIII, VX, LCD)
+    if not re.fullmatch(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})', roman):
+        return None
+    i = 0
+    result = 0
+    while i < len(roman):
+        for symbol, value in roman_numbers_tuples:
+            if roman.startswith(symbol, i):
+                result += value
+                i += len(symbol)
+                break
+    return result
 
-    def _to_int(s:str)->str:
-        i = 0
-        result = 0
-        while i < len(s):
-            for roman, value in roman_numbers_tuples:
-                if s[i:i + len(roman)] == roman:
-                    result += value
-                    i += len(roman)
-                    break
-            else:
-                return s
-        return str(result)
-
-    def _repl(m:re.Match)->str:
-        if not valid_roman.fullmatch(m.group(3)):
-            return m.group(0)
-        return f'{m.group(1)}{m.group(2)}{_to_int(m.group(3))}'
-
-    valid_roman = re.compile(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})')
+def get_title_roman_patterns()->dict:
+    # a title's roman number in caps with no word behind it, a chapter word or nothing in front of it
     chapter_words = '|'.join(map(re.escape, sorted({w for words in chapter_word_mapping.values() for w in words}, key=len, reverse=True)))
     word_first = r'((?i:' + chapter_words + r')\s+)([IVXLCDM]+)(?=\s*(?:$|[^\w\s\'’]))'
+    return dict(
+        # Chapter IV, CHAPTER XLI., Part II: The Return, anywhere in a heading
+        word_first=re.compile(r'(?<![\p{L}\p{M}])()' + word_first),
+        # CHAPTER IV. THE RETURN opening a paragraph used as a title
+        word_first_start=re.compile(r'^(\s*)' + word_first),
+        # IV, XII. The Return, IV: Exile opening a heading: a numbering mark may follow, not a comma (I, Robot)
+        bare_first=re.compile(r'^([\s\-–—~*]*)()([IVXLCDM]+)(?=\s*(?:$|[.:\-–—]))'),
+        # IV. standing alone in a paragraph used as a title, never prose (I, for one, agree)
+        bare_alone=re.compile(r'^([\s\-–—~*]*)()([IVXLCDM]+)(?=[\s.:\-–—~*]*$)'),
+    )
+
+def get_title_romans(doc_bodies:list[str])->set:
+    # roman numbers a book counts its titles with (I, II, III...): a title opening with a bare roman number is a number
+    # only when the book has the one before or after it too, so a title word made of roman letters (DIX, MIX, DC)
+    # or a lone I (a poem titled I) stays written
+    from html import unescape as html_unescape
+    patterns = get_title_roman_patterns()
+    found = set()
+    for body in doc_bodies:
+        headings = re.findall(r'<h[1-4]\b[^>]*>(.*?)</h[1-4]\s*>', body, flags=re.DOTALL | re.IGNORECASE)
+        pieces = [(patterns['bare_first'], piece) for heading in headings for piece in re.split(r'<[^>]+>', heading)]
+        pieces += [(patterns['bare_alone'], piece) for piece in re.split(r'<[^>]+>', body)]
+        for pattern, piece in pieces:
+            m = pattern.match(html_unescape(piece).strip())
+            if m and roman_to_int(m.group(3)) is not None:
+                found.add(m.group(3))
+    values = {roman_to_int(roman) for roman in found}
+    return {roman for roman in found if roman_to_int(roman) - 1 in values or roman_to_int(roman) + 1 in values}
+
+def roman2number(title:str, at_start:bool=False, title_romans:set|None=None)->str:
+    # a title's roman number in caps is converted when no word is behind it and a word of chapter_word_mapping is in
+    # front of it (Chapter IV, Part II: The Return), or nothing is and the book counts its titles with it (IV, XII. The Return).
+    # Louis XIV, Chapter IV The Return, I, Robot, DIX stay written.
+    # at_start: a paragraph used as a title must open with it (CHAPTER IV. THE RETURN) or be the numeral alone (IV.)
+
+    def _repl(m:re.Match)->str:
+        value = roman_to_int(m.group(3))
+        if value is None:
+            return m.group(0)
+        return f'{m.group(1)}{m.group(2)}{value}'
+
+    def _repl_bare(m:re.Match)->str:
+        if m.group(3) not in (title_romans or ()):
+            return m.group(0)
+        return _repl(m)
+
+    patterns = get_title_roman_patterns()
     if at_start:
-        title = re.sub(r'^(\s*)' + word_first, _repl, title, count=1)
-        return re.sub(r'^([\s\-–—~*]*)()([IVXLCDM]+)(?=[\s.:\-–—~*]*$)', _repl, title)
-    title = re.sub(r'(?<![\p{L}\p{M}])()' + word_first, _repl, title)
-    # no word in front: only a numbering mark may follow (IV. The Return), not a comma (I, Robot)
-    return re.sub(r'^([\s\-–—~*]*)()([IVXLCDM]+)(?=\s*(?:$|[.:\-–—]))', _repl, title)
+        title = patterns['word_first_start'].sub(_repl, title, count=1)
+        return patterns['bare_alone'].sub(_repl_bare, title)
+    title = patterns['word_first'].sub(_repl, title)
+    return patterns['bare_first'].sub(_repl_bare, title)
 
 def word_key(word:str)->str:
     # case and accent free form of a word: all caps often drop the accents (ETE/été, ΣΟΦΙΑ/Σοφία)
