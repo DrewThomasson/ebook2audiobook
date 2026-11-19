@@ -499,6 +499,7 @@ legends = {
     'msg_installing_missing_deps': 'మిస్ అయిన డిపెండెన్సీలను ఇన్‌స్టాల్ చేస్తోంది: {pkgs}',
     'msg_upgrading_outdated_deps': 'మరొక ప్యాకేజీ కంటే పాతవి అయిన డిపెండెన్సీలను అప్‌గ్రేడ్ చేయడానికి అవసరమైనవి: {pkgs}',
     'msg_vulkan_torch_libomp': 'ఇన్‌స్టాల్ చేసిన వల్కన్ టార్చ్‌లో {dll} లేదు మరియు లోడ్ చేయలేం: ప్రచురించిన వీల్ నుండి దానిని మళ్లీ ఇన్‌స్టాల్ చేయడం.',
+    'msg_vcredist_missing': 'హెచ్చరిక: {dlls} లేదు: Microsoft Visual C++ రీడిస్ట్రిబ్యుటబుల్ ఇన్‌స్టాల్ చేయబడలేదు, కాబట్టి torch లోడ్ అవ్వదు (WinError 126). దానిని {url} నుండి డౌన్‌లోడ్ చేసి, ఇన్‌స్టాల్ చేయండి, ఆపై ebook2audiobookని మళ్లీ ప్రారంభించండి.',
     'msg_reinstalling_incomplete': 'ఫైల్‌లు లేని ప్యాకేజీలను మళ్లీ ఇన్‌స్టాల్ చేస్తోంది: {pkgs}',
     'msg_install_lock_wait': 'మరొక ebook2audiobook {env}లో ప్యాకేజీలను ఇన్‌స్టాల్ చేస్తోంది, అది పూర్తయ్యే వరకు వేచి ఉంది…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version}ను తీసివేస్తోంది: torch {torch} (2.9 కంటే తక్కువ)తో torchcodec అమలు కావడం లేదు, pyannote దాని లేకుండా పనిచేస్తుంది.',

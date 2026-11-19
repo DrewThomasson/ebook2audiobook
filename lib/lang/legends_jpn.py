@@ -499,6 +499,7 @@ legends = {
     'msg_installing_missing_deps': '不足している依存関係をインストールしています：{pkgs}',
     'msg_upgrading_outdated_deps': '別のパッケージよりも古い依存関係をアップグレードするには、次のものが必要です：{pkgs}',
     'msg_vulkan_torch_libomp': 'インストールされているVulkanトーチに{dll}がなく、読み込めません。公開されているwheelから再インストールします。',
+    'msg_vcredist_missing': '警告：{dlls}が見つかりません。Microsoft Visual C++ 再頒布可能パッケージがインストールされていないため、torchを読み込めません（WinError 126）。{url}からダウンロードしてインストールし、ebook2audiobookを再度起動してください。',
     'msg_reinstalling_incomplete': 'ファイルが不足しているパッケージを再インストールしています：{pkgs}',
     'msg_install_lock_wait': '別の ebook2audiobook が {env} にパッケージをインストール中です。完了を待っています…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version}を削除しています：torch {torch}（2.9未満）ではtorchcodecは動作せず、pyannoteはtorchcodecなしで動作します。',

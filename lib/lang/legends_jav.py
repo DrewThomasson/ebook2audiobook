@@ -499,6 +499,7 @@ legends = {
     'msg_installing_missing_deps': 'Nginstal dependensi sing ora ana: {pkgs}',
     'msg_upgrading_outdated_deps': 'Nganyarke dependensi sing luwih lawas tinimbang paket liyane mbutuhake: {pkgs}',
     'msg_vulkan_torch_libomp': 'Vulkan torch sing wis diinstal ora duwe {dll} lan ora bisa dimuat: instal maneh saka wheel sing wis diterbitake.',
+    'msg_vcredist_missing': 'PÈNGET: {dlls} ora ana: Microsoft Visual C++ redistributable ora diinstal, mula torch ora bisa dimuat (WinError 126). Unduh lan instal saka {url}, banjur miwiti ebook2audiobook maneh.',
     'msg_reinstalling_incomplete': 'Nginstal maneh paket kanthi file sing ilang: {pkgs}',
     'msg_install_lock_wait': 'ebook2audiobook liyane lagi nginstal paket ing {env}, ngenteni nganti rampung…',
     'msg_removing_unusable_torchcodec': 'Mbusak torchcodec {version}: ora ana torchcodec sing mlaku karo torch {torch} (ngisor 2.9), pyannote bisa digunakake tanpa kuwi.',

@@ -499,6 +499,7 @@ legends = {
     'msg_installing_missing_deps': 'Installing missing dependencies: {pkgs}',
     'msg_upgrading_outdated_deps': 'Upgrading dependencies older than another package requires: {pkgs}',
     'msg_vulkan_torch_libomp': 'The installed Vulkan torch lacks {dll} and cannot load: reinstalling it from the published wheel.',
+    'msg_vcredist_missing': 'WARNING: {dlls} is missing: the Microsoft Visual C++ redistributable is not installed, so torch cannot load (WinError 126). Download and install it from {url}, then start ebook2audiobook again.',
     'msg_reinstalling_incomplete': 'Reinstalling packages with missing files: {pkgs}',
     'msg_install_lock_wait': 'Another ebook2audiobook is installing packages in {env}, waiting for it to finish…',
     'msg_removing_unusable_torchcodec': 'Removing torchcodec {version}: no torchcodec runs with torch {torch} (below 2.9), pyannote works without it.',

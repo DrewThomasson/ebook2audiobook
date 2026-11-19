@@ -499,6 +499,7 @@ legends = {
     'msg_installing_missing_deps': 'Instalando dependencias faltantes: {pkgs}',
     'msg_upgrading_outdated_deps': 'Para actualizar dependencias anteriores a otro paquete, se requiere: {pkgs}',
     'msg_vulkan_torch_libomp': 'A la antorcha Vulkan instalada le falta {dll} y no se puede cargar: reinstalándola desde la rueda publicada.',
+    'msg_vcredist_missing': 'ADVERTENCIA: Falta {dlls}: el componente redistribuible de Microsoft Visual C++ no está instalado, por lo que Torch no se puede cargar (WinError 126). Descárguelo e instálelo desde {url} y, a continuación, vuelva a iniciar ebook2audiobook.',
     'msg_reinstalling_incomplete': 'Reinstalando paquetes con archivos faltantes: {pkgs}',
     'msg_install_lock_wait': 'Otro ebook2audiobook está instalando paquetes en {env}, esperando a que termine…',
     'msg_removing_unusable_torchcodec': 'Eliminando torchcodec {version}: ningún torchcodec se ejecuta con torch {torch} (inferior a 2.9), pyannote funciona sin él.',
