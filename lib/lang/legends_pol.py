@@ -501,11 +501,7 @@ legends = {
     'msg_vulkan_torch_libomp': 'Zainstalowana pochodnia Vulkan nie ma {dll} i nie można jej załadować: trwa ponowna instalacja z opublikowanego koła.',
     'msg_vcredist_missing': 'OSTRZEŻENIE: Brakuje {dlls}: pakiet redystrybucyjny Microsoft Visual C++ nie jest zainstalowany, dlatego nie można załadować biblioteki Torch (WinError 126). Pobierz i zainstaluj go ze strony {url}, a następnie ponownie uruchom program ebook2audiobook.',
     'msg_probing_cuda_torch': 'Sprawdzanie, czy biblioteka torch {torch} ({tag}) działa z tym sterownikiem NVIDIA…',
-<<<<<<< HEAD
-    'msg_cuda_torch_unusable': '{tag} Torch ulega natywnej awarii z tym sterownikiem NVIDIA (naruszenie dostępu po uruchomieniu XTTS): zamiast tego instalowana jest starsza kompilacja {usable}. Decyzja pozostaje w mocy do czasu zmiany sterownika.',
-=======
     'msg_cuda_torch_unusable': '{tag} Torch ulega natywnej awarii z tym sterownikiem NVIDIA (naruszenie dostępu po uruchomieniu XTTS): zamiast tego instalowana jest niższa kompilacja {usable}. Decyzja pozostaje w mocy do czasu zmiany sterownika.',
->>>>>>> 3588b4408e4b66cbe39157553e6206aa03626940
     'msg_reinstalling_incomplete': 'Ponowna instalacja pakietów z brakującymi plikami: {pkgs}',
     'msg_install_lock_wait': 'Inny ebook2audiobook instaluje pakiety w {env}, oczekiwanie na zakończenie…',
     'msg_removing_unusable_torchcodec': 'Usuwanie torchcodec {version}: torchcodec nie działa z torch {torch} (poniżej 2.9), pyannote działa bez niego.',

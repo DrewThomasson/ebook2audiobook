@@ -501,11 +501,7 @@ legends = {
     'msg_vulkan_torch_libomp': 'Iná Vulkan tí a fi sori ẹrọ ko ni {dll} bẹ́ẹ̀ ni kò sì lè gba: a tún fi sori ẹrọ láti orí wheel tí a tẹ̀ jáde.',
     'msg_vcredist_missing': 'ÌKÌLỌ̀: {dlls} kò sí: Microsoft Visual C++ redistributable kò fi sí ẹ̀rọ náà, nítorí náà torch kò lè wọlé (WinError 126). Ṣe ìgbàsílẹ̀ kí o sì fi sílẹ̀ láti {url}, lẹ́yìn náà tún ebook2audiobook bẹ̀rẹ̀.',
     'msg_probing_cuda_torch': 'Ṣíṣe àyẹ̀wò bóyá torch {torch} ({tag}) ń ṣiṣẹ́ lórí awakọ̀ NVIDIA yìí…',
-<<<<<<< HEAD
-    'msg_cuda_torch_unusable': '{tag} torch náà kọ̀ ní ṣiṣẹ́ pẹ̀lú awakọ̀ NVIDIA yìí (ìrúfin ìwọlé ní kété tí xtts bá bẹ̀rẹ̀ sí ṣiṣẹ́): fífi {usable} build tí ó kéré sí i rọ́pò rẹ̀. A ó máa tọ́jú ìpinnu náà títí tí awakọ̀ náà yóò fi yí padà.',
-=======
     'msg_cuda_torch_unusable': '{tag} torch náà ń ṣubú ní ìbẹ̀rẹ̀ pẹ̀lú awakọ̀ NVIDIA yìí (ìrúfin ìwọlé ní kété tí xtts bá bẹ̀rẹ̀ sí ṣiṣẹ́): fífi {usable} build tí ó kéré sí i sórí rẹ̀ dípò. Ìpinnu náà wà títí tí awakọ̀ náà yóò fi yí padà.',
->>>>>>> 3588b4408e4b66cbe39157553e6206aa03626940
     'msg_reinstalling_incomplete': 'Fífi àwọn àkójọpọ̀ tí àwọn fáìlì wọn kò sí padà sí i: {pkgs}',
     'msg_install_lock_wait': 'ebook2audiobook mìíràn ń fi àwọn package sí {env}, à ń dúró kí ó parí…',
     'msg_removing_unusable_torchcodec': 'Yíyọ torchcodec {version} kúrò: kò sí torchcodec tí ó ń ṣiṣẹ́ pẹ̀lú torch {torch} (ní ìsàlẹ̀ 2.9), pyannote ń ṣiṣẹ́ láìsí i.',

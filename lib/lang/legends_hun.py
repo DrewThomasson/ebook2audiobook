@@ -500,13 +500,8 @@ legends = {
     'msg_upgrading_outdated_deps': 'A másik csomagnál régebbi függőségek frissítéséhez a következőkre van szükség: {pkgs}',
     'msg_vulkan_torch_libomp': 'A telepített Vulkan Torchből hiányzik a(z) {dll}, és nem lehet betölteni: telepítse újra a közzétett wheelből.',
     'msg_vcredist_missing': 'FIGYELMEZTETÉS: A(z) {dlls} hiányzik: a Microsoft Visual C++ újraterjeszthető csomag nincs telepítve, ezért a Torch nem tud betöltődni (WinError 126). Töltse le és telepítse a(z) {url} címről, majd indítsa el újra az ebook2audiobook alkalmazást.',
-<<<<<<< HEAD
-    'msg_probing_cuda_torch': 'Annak tesztelése, hogy a(z) {torch} ({tag}) torch fut-e ezen az NVIDIA-illesztőprogramon…',
-    'msg_cuda_torch_unusable': 'A(z) {tag} torch natív módon összeomlik ezzel az NVIDIA-illesztőprogrammal (hozzáférési hiba, amikor az xtts fut): ehelyett az alacsonyabb {usable} buildet telepítjük. A döntés mindaddig érvényben marad, amíg az illesztőprogram nem változik.',
-=======
     'msg_probing_cuda_torch': 'Annak tesztelése, hogy a(z) {torch} ({tag}) fáklya működik-e ezen az NVIDIA-illesztőprogramon…',
     'msg_cuda_torch_unusable': 'A(z) {tag} torch natív módon összeomlik ezzel az NVIDIA-illesztőprogrammal (hozzáférési hiba, amint az xtts fut): ehelyett az alacsonyabb {usable} build kerül telepítésre. A döntés mindaddig érvényben marad, amíg az illesztőprogram nem változik.',
->>>>>>> 3588b4408e4b66cbe39157553e6206aa03626940
     'msg_reinstalling_incomplete': 'Hiányzó fájlokat tartalmazó csomagok újratelepítése: {pkgs}',
     'msg_install_lock_wait': 'Egy másik ebook2audiobook csomagokat telepít ide: {env}, várakozás a befejezésére…',
     'msg_removing_unusable_torchcodec': 'A(z) {version} torchcodec eltávolítása: a torchcodec nem működik a(z) {torch} torch-csal (2.9 alatt), a pyannote nélküle működik.',
