@@ -1116,22 +1116,44 @@ class TTSUtils:
         if fmt not in formats:
             raise ValueError(f'audio_save: format {fmt!r} not in {tuple(formats)}')
         audio_np = segment_tensor.detach().cpu().numpy().squeeze(0)
+        # libsndfile truncates silently when the target filesystem fills up mid-write; soundfile then trips its own
+        # guard `assert written == len(data)` and raises a bare AssertionError(''), which reaches the bug tracker as
+        # an empty 'audio_save(...): '. write to a temp file in the same dir first, so the failure is caught before
+        # anything partial is left, and check the free space afterwards: a short write with little space left is a
+        # full disk, not a corrupt sample
+        # keep the extension: soundfile takes the container format from it when no format is passed
+        tmp_path = f'{path}.tmp{os.getpid()}{os.path.splitext(path)[1]}'
         try:
-            sf.write(path, audio_np, samplerate, subtype=formats[fmt])
-        except Exception as e:
-            # remove any partial file from a failed write
-            if os.path.exists(path):
+            try:
+                sf.write(tmp_path, audio_np, samplerate, subtype=formats[fmt])
+            except Exception as e:
+                # remove any partial file from a failed write
+                if os.path.exists(tmp_path):
+                    try:
+                        os.remove(tmp_path)
+                    except OSError:
+                        pass
+                # libsndfile reports a full disk as a bare "System error." or as a short write (the AssertionError
+                # above): tell it by the space left on the target drive (a sentence file is a few MB at most, so
+                # below 100 MB the write failed for lack of space)
                 try:
-                    os.remove(path)
+                    disk_full = shutil.disk_usage(os.path.dirname(path)).free < 100 * 1024 ** 2
+                except OSError:
+                    disk_full = False
+                if disk_full:
+                    raise OSError(errno.ENOSPC, legends['error_disk_full_audio'].format(dir=os.path.dirname(path))) from e
+                raise RuntimeError(f'audio_save({path}): {e}') from e
+            os.replace(tmp_path, path)
+        except OSError as e:
+            # the rename failing is still the save failing: keep the temp file cleanup and the same error classes
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
                 except OSError:
                     pass
-            # libsndfile reports a full disk as a bare "System error.": tell it by the space left on the target
-            # drive (a sentence file is a few MB at most, so below 100 MB the write failed for lack of space)
-            try:
-                disk_full = shutil.disk_usage(os.path.dirname(path)).free < 100 * 1024 ** 2
-            except OSError:
-                disk_full = False
-            if disk_full:
+            # ENOSPC can also hit on a filesystem with inodes/quota exhausted: keep it an OSError(ENOSPC) so the
+            # caller's disk-full handling (core.py catches errno.ENOSPC) still sees it
+            if e.errno == errno.ENOSPC:
                 raise OSError(errno.ENOSPC, legends['error_disk_full_audio'].format(dir=os.path.dirname(path))) from e
             raise RuntimeError(f'audio_save({path}): {e}') from e
         return True
