@@ -104,6 +104,9 @@ class DeviceInstaller():
     gpu_pci_vendors = {0x1002: devices['ROCM']['proc'], 0x10de: devices['CUDA']['proc'], 0x8086: devices['XPU']['proc']}
 
     uv_install_url = 'https://docs.astral.sh/uv/getting-started/installation/'
+    # official download page of the Microsoft Visual C++ redistributables (msvcp140/vcruntime140: absent from every
+    # torch wheel, installed by no launcher; without them import torch dies with WinError 126)
+    vcredist_url = 'https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist'
 
     def __init__(self):
         self.system = sys.platform
@@ -2300,6 +2303,30 @@ class DeviceInstaller():
             print(error)
             return 0
 
+    def system_dll_missing(self, name:str)->bool:
+        # True only when the file is nowhere on the DLL search path: not System32 (where the VC++ redistributables
+        # install), not next to the python.exe, and not loadable through the process' AddDllDirectory set. An existing
+        # file that fails to load stays False: something else is wrong then and vcredist would not help
+        if self.system != systems['WINDOWS']:
+            return False
+        try:
+            import ctypes
+            windir = os.environ.get('SystemRoot', r'C:\Windows')
+            if os.path.isfile(os.path.join(windir, 'System32', name)) or os.path.isfile(os.path.join(os.path.dirname(sys.executable), name)):
+                return False
+            kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+            kernel32.LoadLibraryExW.restype = ctypes.c_void_p
+            kernel32.LoadLibraryExW.argtypes = [ctypes.c_wchar_p, ctypes.c_void_p, ctypes.c_uint32]
+            LOAD_LIBRARY_AS_DATAFILE = 0x00000002
+            LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000
+            handle = kernel32.LoadLibraryExW(name, None, LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS)
+            if handle:
+                kernel32.FreeLibrary(ctypes.c_void_p(handle))
+                return False
+            return True
+        except Exception:
+            return False
+
     vulkan_libomp_marker = os.path.join(sys.prefix, '.e2a_vulkan_torch_libomp')
 
     def vulkan_torch_lacks_libomp(self, torch_url:str)->bool:
@@ -2407,6 +2434,14 @@ class DeviceInstaller():
                 msg = legends['msg_reinstalling_incomplete'].format(pkgs=', '.join(incomplete))
                 print(msg)
                 return True
+            # a system DLL the torch family links is absent (WinError 126 at import): the VC++ redistributable was
+            # never installed. No wheel carries these files, so reinstalling alone fixes nothing -- prompt for it
+            # first, then fall through to the reinstall that lets e2a boot once the user has installed it
+            if self.system == systems['WINDOWS']:
+                missing = sorted({dep.lower() for dep in ('msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') if self.system_dll_missing(dep)})
+                if missing:
+                    msg = legends['msg_vcredist_missing'].format(dlls=', '.join(missing), url=self.vcredist_url)
+                    print(msg)
             # Windows +vulkan torch published without the OpenMP runtime it links: same version as the fixed wheel
             if device_info['name'] == devices['VULKAN']['proc'] and self.system == systems['WINDOWS']:
                 py_major, py_minor = device_info['pyvenv']
