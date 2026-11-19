@@ -500,6 +500,8 @@ legends = {
     'msg_upgrading_outdated_deps': 'ارتقای وابستگی‌هایی که قدیمی‌تر از بسته دیگری هستند، مستلزم موارد زیر است: {pkgs}',
     'msg_vulkan_torch_libomp': 'مشعل Vulkan نصب‌شده فاقد {dll} است و نمی‌توان آن را بارگذاری کرد: در حال نصب مجدد آن از چرخ منتشر شده.',
     'msg_vcredist_missing': 'هشدار: {dlls} وجود ندارد: بسته قابل توزیع مجدد Microsoft Visual C++ نصب نیست، بنابراین torch نمی‌تواند بارگیری شود (WinError 126). آن را از {url} دانلود و نصب کنید، سپس ebook2audiobook را دوباره راه‌اندازی کنید.',
+    'msg_probing_cuda_torch': 'در حال بررسی اینکه آیا torch {torch} ({tag}) با این درایور NVIDIA کار می‌کند…',
+    'msg_cuda_torch_unusable': '{tag} torch به طور بومی با این درایور NVIDIA کرش می‌کند (نقض دسترسی پس از اجرای xtts): در عوض، نسخه {usable} پایین‌تر نصب می‌شود. این نتیجه تا زمان تغییر درایور حفظ می‌شود.',
     'msg_reinstalling_incomplete': 'نصب مجدد بسته‌های دارای فایل‌های ناقص: {pkgs}',
     'msg_install_lock_wait': 'یک ebook2audiobook دیگر در حال نصب بسته‌ها در {env} است، در انتظار پایان آن…',
     'msg_removing_unusable_torchcodec': 'در حال حذف torchcodec {version}: هیچ torchcodec با torch {torch} (کمتر از 2.9) اجرا نمی‌شود، pyannote بدون آن کار می‌کند.',

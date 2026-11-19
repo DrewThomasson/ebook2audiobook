@@ -2331,10 +2331,13 @@ class DeviceInstaller():
         # this driver and e2a must pick another row before installing anything. A probe that cannot run (no network,
         # download cut short) is not a crash: the normal install flow stands
         url = default_pytorch_url
-        tag_py = f'cp{py_major}{py_minor}'
+        # win-cuXYZ rows keep Windows torch apart in the matrix, their wheels live on the plain cuXYZ index
+        if tag_dir.startswith('win-'):
+            tag_dir = tag_dir[len('win-'):]
         with tempfile.TemporaryDirectory(prefix='e2a_probe_') as probe_dir:
+            # torchaudio_spec, not '==': at the ceiling no exact version exists (any 2.11.x patch is valid)
             cmd = self._uv_pip('install', '--target', probe_dir, '--no-cache', '--no-deps',
-                               f'torch=={torch_version_matrix}', f'torchaudio=={torchaudio_version_matrix}',
+                               f'torch=={torch_version_matrix}', self.torchaudio_spec(torch_version_matrix),
                                '--index-url', f'{url}/{tag_dir}', '--extra-index-url', f'{default_pytorch_nightly_url}/{tag_dir}',
                                '--index-strategy', 'unsafe-best-match')
             if subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
@@ -2352,6 +2355,36 @@ class DeviceInstaller():
             except json.JSONDecodeError:
                 return True
             return int(data.get('count') or 0) == 0
+
+    def usable_cuda_tag(self, tag:str, py_major:int, py_minor:int)->str:
+        # the CUDA row to install for this driver: 'tag' itself when its pinned torch works, otherwise the newest lower
+        # cuXYZ row whose wheels pass a crash probe. A cu132 build on a newer driver (e.g. CUDA 13.5) can corrupt memory
+        # natively once xtts runs -- 'Windows fatal exception: access violation' inside python312.dll, with no Python
+        # traceback to catch. Probing in a throwaway --target dir keeps the environment untouched; a crashed or
+        # device-less child means those wheels are unusable here and the next lower row must be tried. None when no probe
+        # could run at all (no network, download cut short): that says nothing about the wheels and must not be cached.
+        # The verdict goes to .device_info.json so later starts skip the (slow) probing, until the driver changes and
+        # check_device_info rewrites the file. Returns '' when every probed row crashed: keep the original tag rather
+        # than guess
+        rows = sorted({key for key in torch_matrix
+                       if re.fullmatch(r'(?:win-)?cu\d{3}', key)
+                       and tag in torch_matrix[key]['os']
+                       and self.detect_arch_tag() in torch_matrix[key]['arch']},
+                      key=lambda k: tuple(int(n) for n in re.search(r'cu(\d)(\d)', k).groups()))
+        idx = rows.index(tag) if tag in rows else len(rows)
+        probed = False
+        for candidate in rows[:idx + 1][::-1]:
+            versions = self._cuda_row_versions(candidate)
+            if not versions:
+                continue
+            torch_ver, torchaudio_ver = versions
+            msg = legends['msg_probing_cuda_torch'].format(tag=candidate, torch=torch_ver)
+            print(msg)
+            crashed = self.cuda_torch_crashes(candidate, torch_ver, torchaudio_ver, py_major, py_minor)
+            probed = True
+            if not crashed:
+                return candidate
+        return '' if probed else None
 
     def system_dll_missing(self, name:str)->bool:
         # True only when the file is nowhere on the DLL search path: not System32 (where the VC++ redistributables
@@ -2527,7 +2560,18 @@ class DeviceInstaller():
                         error = legends['error_no_torch_matrix'].format(tag=tag)
                         print(error)
                         return 1
-                    # one python per device (check_pyvenv), so one torch version per row: 'last'
+                    # one python per device (check_pyvenv), so one torch version per row: 'last'. A cached crash-probe
+                    # verdict ('usable', a lower cuXYZ row) replaces the detected tag before these versions are read,
+                    # so no code path can ever install the crashing row's wheels. The file keeps the detected tag: a
+                    # driver update rewrites it from detection and the probe runs again for the new state
+                    usable = device_info.get('usable')
+                    if (usable and usable != tag and tag.startswith(('cu', 'win-cu'))
+                            and device_info['name'] == devices['CUDA']['proc']):
+                        tag = usable
+                        matrix_entry = torch_matrix[tag]
+                    # the pinned versions of a lower row must be re-read after the switch: installing them under this
+                    # tag would leave '+cu130' in a wheel named for cu132 -- _tag_ok() then reports 'needs reinstall'
+                    # at every single start
                     torch_version_matrix = matrix_entry['last']
                     torchcodec_version_matrix = matrix_entry.get('codec') or ''
                     torch_version_current_full = self.get_package_version('torch')
@@ -2541,6 +2585,33 @@ class DeviceInstaller():
                         non_standard_tag = non_standard_match.group(0) if non_standard_match else None
                         torch_version_current_base = torch_version_current_full.split('+',1)[0]
                     if _needs_reinstall():
+                        # a cuXYZ torch that crashes natively on this driver (access violation in python312.dll once
+                        # xtts runs) must never be installed: probe the rows newest-first, the first passing row wins.
+                        # The verdict goes to .device_info.json ('usable'), so later starts skip the slow probing; a
+                        # driver update rewrites the file from detection and the probe runs again. A tag already usable
+                        # needs no probe either -- it is what the install below would pick anyway
+                        if (not device_info.get('usable')
+                                and tag.startswith(('cu', 'win-cu'))
+                                and not tag.endswith(('.1', '.2', '.3', '.4', '.5', '.6', '.7', '.8', '.9'))
+                                and device_info['name'] == devices['CUDA']['proc']):
+                            py_major, py_minor = device_info['pyvenv']
+                            usable = self.usable_cuda_tag(tag, py_major, py_minor)
+                            if usable is not None:
+                                # '' (every probed row crashed) keeps the original tag but is cached all the same:
+                                # re-probing at every start would change nothing until the driver changes
+                                device_info['usable'] = usable or tag
+                                try:
+                                    with open(device_info_json, 'w', encoding='utf-8') as f:
+                                        json.dump(device_info, f)
+                                except OSError:
+                                    pass
+                                if usable and usable != tag:
+                                    msg = legends['msg_cuda_torch_unusable'].format(tag=tag, usable=usable)
+                                    print(msg)
+                                    tag = usable
+                                    matrix_entry = torch_matrix[tag]
+                                    torch_version_matrix = matrix_entry['last']
+                                    torchcodec_version_matrix = matrix_entry.get('codec') or ''
                         try:
                             msg = legends['msg_installing_libs'].format(name=device_info['name'])
                             print(msg)

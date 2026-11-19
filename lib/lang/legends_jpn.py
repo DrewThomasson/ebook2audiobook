@@ -500,6 +500,8 @@ legends = {
     'msg_upgrading_outdated_deps': '別のパッケージよりも古い依存関係をアップグレードするには、次のものが必要です：{pkgs}',
     'msg_vulkan_torch_libomp': 'インストールされているVulkanトーチに{dll}がなく、読み込めません。公開されているwheelから再インストールします。',
     'msg_vcredist_missing': '警告：{dlls}が見つかりません。Microsoft Visual C++ 再頒布可能パッケージがインストールされていないため、torchを読み込めません（WinError 126）。{url}からダウンロードしてインストールし、ebook2audiobookを再度起動してください。',
+    'msg_probing_cuda_torch': 'torch {torch} ({tag})がこのNVIDIAドライバーで動作するかどうかをテストしています…',
+    'msg_cuda_torch_unusable': '{tag}のtorchは、このNVIDIAドライバーではネイティブにクラッシュします（xttsが実行されるとアクセス違反が発生します）。代わりに、より低い{usable}のビルドをインストールします。ドライバーが変更されるまで、この判定は維持されます。',
     'msg_reinstalling_incomplete': 'ファイルが不足しているパッケージを再インストールしています：{pkgs}',
     'msg_install_lock_wait': '別の ebook2audiobook が {env} にパッケージをインストール中です。完了を待っています…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version}を削除しています：torch {torch}（2.9未満）ではtorchcodecは動作せず、pyannoteはtorchcodecなしで動作します。',
