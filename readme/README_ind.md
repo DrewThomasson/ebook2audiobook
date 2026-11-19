@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Fitur
-- 🔧 **Mesin TTS yang didukung**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
+- 🔧 **Mesin TTS yang didukung**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos2, Zonos3, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Mengonversi berbagai format file**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Area Teks** untuk langsung mengonversi teks pendek menjadi audio
 - 🔍 **Pemindaian OCR** untuk file dengan halaman teks berupa gambar
@@ -166,7 +166,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — hening (rentang acak **1.0–1.6 sec.**)
 - `[pause:N]` — jeda tetap (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — alihkan suara dari suara default atau suara yang dipilih dari GUI/CLI
-- `[emotion:sadness]...[/emotion]` — Zona saja: emosi untuk suatu bagian (kebahagiaan, kesedihan, jijik, ketakutan, kejutan, kemarahan, lainnya, netral) atau campuran seperti `[emotion:sadness=0.7,neutral=0.3]`; mesin lain mengabaikannya
+- `[emotion:sadness]...[/emotion]` — Hanya Zonos2 dan Zonos3: emosi untuk suatu bagian (bahagia, sedih, jijik, takut, terkejut, marah, lainnya, netral; Zonos3 juga tenang, bingung) atau campuran seperti `[emotion:sadness=0.7,neutral=0.3]`; mesin lain mengabaikannya
 
 **Lihat repo kami yang lain yang didedikasikan untuk menambahkan SML secara otomatis di eBook Anda -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -456,7 +456,7 @@ SML tags available:
 	[pause] — silence (random range **1.0–1.6 sec.**)
 	[pause:N] — fixed pause (**N sec.**)
 	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
+	[emotion:sadness]...[/emotion] — Zonos2 and Zonos3 only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral; Zonos3 also calm, confused) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
 
 ```
 
@@ -524,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - CATATAN: MPS tidak tersedia di Docker sehingga CPU harus digunakan
-- CATATAN: volume bernama `e2a_venvs` menyimpan mesin TTS yang diinstal di venv-nya sendiri (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, dll.)
+- CATATAN: volume bernama `e2a_venvs` menyimpan mesin TTS yang diinstal di venv masing-masing (GPT-SoVITS, Zonos2, Zonos3, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM, dll.)
   di antara setiap kali kontainer dijalankan, sehingga tidak dipasang ulang setiap kali. Untuk meresetnya: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -563,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
-                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
-                        os,tessdata,jieba,voices
+                        urtts,piper,zonos2,zonos3,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoic
+                        e,orpheus,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,inter
+                        lude,argos,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -795,7 +795,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
 - [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] Kura - kura (https://github.com/neonbjb/tortoise-tts)[cite: 1]
-- [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
+- [x] Zonos2 (https://github.com/Zyphra/zonos2.cpp)[cite: 1]
+- [x] Zonos3 (https://github.com/Zyphra/ZONOS3-Mini)[cite: 1]
 - [x] Kulit kayu (https://github.com/suno-ai/bark)[cite: 1]
 - [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] Orpheus - tts (https://github.com/canopyai/Orpheus-TTS)
@@ -864,6 +865,7 @@ Kami menerima segala jenis perangkat keras untuk menguji pengembangan kami seper
 - [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Toolkit pembelajaran mendalam untuk Teks-ke-Ucapan, yang telah teruji dalam penelitian dan produksi.
 - [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Mesin teks-ke-ucapan neural yang cepat dan lokal.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- kode inferensi ggml untuk Zonos2.
+- [Zonos3.cpp](https://github.com/Zyphra/ZONOS3-Mini/tree/main/servers/ggml) -- kode inferensi ggml untuk ZONOS3-Mini.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Mesin inferensi C++ murni all - in - one untuk model audio, didukung oleh ggml.
 
 <a id="special-thanks"></a>
