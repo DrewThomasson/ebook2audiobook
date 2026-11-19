@@ -501,7 +501,11 @@ legends = {
     'msg_vulkan_torch_libomp': 'Takılı Vulkan torch\'ta {dll} yok ve yüklenemiyor: Yayınlanan wheel\'den yeniden yükleniyor.',
     'msg_vcredist_missing': 'UYARI: {dlls} eksik: Microsoft Visual C++ yeniden dağıtılabilir paketi yüklü değil, bu nedenle torch yüklenemiyor (WinError 126). {url} adresinden indirip yükleyin, ardından ebook2audiobook\'u tekrar başlatın.',
     'msg_probing_cuda_torch': '{torch} ({tag}) torch\'unun bu NVIDIA sürücüsü üzerinde çalışıp çalışmadığı test ediliyor…',
+<<<<<<< HEAD
     'msg_cuda_torch_unusable': '{tag} torch, bu NVIDIA sürücüsüyle yerel olarak çöküyor (xtts çalıştıktan sonra erişim ihlali): bunun yerine daha düşük {usable} sürümü yükleniyor. Karar, sürücü değişene kadar geçerliliğini korur.',
+=======
+    'msg_cuda_torch_unusable': '{tag} torch, bu NVIDIA sürücüsüyle yerel olarak çöküyor (xtts çalıştıktan sonra erişim ihlali): Bunun yerine daha düşük {usable} sürümü yükleniyor. Karar, sürücü değişene kadar geçerliliğini korur.',
+>>>>>>> 3588b4408e4b66cbe39157553e6206aa03626940
     'msg_reinstalling_incomplete': 'Eksik dosyaları olan paketler yeniden yükleniyor: {pkgs}',
     'msg_install_lock_wait': 'Başka bir ebook2audiobook {env} içine paket yüklüyor, bitmesi bekleniyor…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} kaldırılıyor: torchcodec, torch {torch} (2.9\'nin altında) ile çalışmaz, pyannote onsuz çalışır.',

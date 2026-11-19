@@ -500,7 +500,11 @@ legends = {
     'msg_upgrading_outdated_deps': 'Para actualizar dependencias anteriores a otro paquete, se requiere: {pkgs}',
     'msg_vulkan_torch_libomp': 'A la antorcha Vulkan instalada le falta {dll} y no se puede cargar: reinstalándola desde la rueda publicada.',
     'msg_vcredist_missing': 'ADVERTENCIA: Falta {dlls}: el componente redistribuible de Microsoft Visual C++ no está instalado, por lo que Torch no se puede cargar (WinError 126). Descárguelo e instálelo desde {url} y, a continuación, vuelva a iniciar ebook2audiobook.',
+<<<<<<< HEAD
     'msg_probing_cuda_torch': 'Comprobando si Torch {torch} ({tag}) funciona con este controlador NVIDIA…',
+=======
+    'msg_probing_cuda_torch': 'Comprobando si Torch {torch} ({tag}) funciona con este controlador de NVIDIA…',
+>>>>>>> 3588b4408e4b66cbe39157553e6206aa03626940
     'msg_cuda_torch_unusable': 'La antorcha {tag} se bloquea de forma nativa con este controlador de NVIDIA (violación de acceso una vez que se ejecuta xtts): en su lugar, se instalará la compilación {usable} inferior. El veredicto se mantiene hasta que cambie el controlador.',
     'msg_reinstalling_incomplete': 'Reinstalando paquetes con archivos faltantes: {pkgs}',
     'msg_install_lock_wait': 'Otro ebook2audiobook está instalando paquetes en {env}, esperando a que termine…',

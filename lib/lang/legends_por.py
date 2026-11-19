@@ -501,7 +501,11 @@ legends = {
     'msg_vulkan_torch_libomp': 'A Vulkan Torch instalada não tem {dll} e não pode ser carregada: reinstalando-a a partir do wheel publicado.',
     'msg_vcredist_missing': 'AVISO: {dlls} está faltando: o Microsoft Visual C++ Redistributable não está instalado, portanto, o Torch não pode ser carregado (WinError 126). Baixe e instale-o em {url} e, em seguida, inicie o ebook2audiobook novamente.',
     'msg_probing_cuda_torch': 'Testando se o Torch {torch} ({tag}) funciona com este driver da NVIDIA…',
+<<<<<<< HEAD
     'msg_cuda_torch_unusable': 'O torch {tag} trava nativamente com este driver da NVIDIA (violação de acesso quando o XTTS é executado): em vez disso, a compilação {usable} mais antiga será instalada. O veredicto é mantido até que o driver seja alterado.',
+=======
+    'msg_cuda_torch_unusable': 'O {tag} torch trava nativamente com este driver da NVIDIA (violação de acesso quando o xtts é executado): em vez disso, instale a compilação {usable} mais antiga. O veredito é mantido até que o driver seja alterado.',
+>>>>>>> 3588b4408e4b66cbe39157553e6206aa03626940
     'msg_reinstalling_incomplete': 'Reinstalando pacotes com arquivos ausentes: {pkgs}',
     'msg_install_lock_wait': 'Outro ebook2audiobook está instalando pacotes em {env}, aguardando a conclusão…',
     'msg_removing_unusable_torchcodec': 'Removendo o torchcodec {version}: nenhum torchcodec é executado com o torch {torch} (abaixo de 2.9), o pyannote funciona sem ele.',

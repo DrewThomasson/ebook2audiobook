@@ -501,7 +501,11 @@ legends = {
     'msg_vulkan_torch_libomp': '설치된 Vulkan 토치가 {dll}을(를) 갖추지 않아 로드할 수 없습니다. 게시된 휠에서 다시 설치합니다.',
     'msg_vcredist_missing': '경고: {dlls}이(가) 누락되었습니다. Microsoft Visual C++ 재배포 가능 패키지가 설치되어 있지 않아 torch를 로드할 수 없습니다(WinError 126). {url}에서 다운로드하여 설치한 다음 ebook2audiobook을 다시 시작하세요.',
     'msg_probing_cuda_torch': 'torch {torch}({tag})이(가) 이 NVIDIA 드라이버에서 실행되는지 테스트 중...',
+<<<<<<< HEAD
     'msg_cuda_torch_unusable': '{tag} torch가 이 NVIDIA 드라이버에서 네이티브로 충돌합니다(xtts가 실행되면 액세스 위반 발생). 대신 더 낮은 {usable} 빌드를 설치합니다. 드라이버가 변경될 때까지 이 결정이 유지됩니다.',
+=======
+    'msg_cuda_torch_unusable': '{tag} torch가 이 NVIDIA 드라이버와 함께 네이티브로 충돌합니다(xtts가 실행되면 액세스 위반 발생). 대신 이전 {usable} 빌드를 설치합니다. 드라이버가 변경될 때까지 이 결정이 유지됩니다.',
+>>>>>>> 3588b4408e4b66cbe39157553e6206aa03626940
     'msg_reinstalling_incomplete': '파일이 누락된 패키지 재설치 중: {pkgs}',
     'msg_install_lock_wait': '다른 ebook2audiobook이 {env}에 패키지를 설치하는 중입니다. 완료될 때까지 기다리는 중…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} 제거 중: torch {torch}(2.9 미만)에서는 torchcodec이 실행되지 않으며, pyannote는 torchcodec 없이 작동합니다.',
