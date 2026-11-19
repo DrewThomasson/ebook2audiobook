@@ -2147,43 +2147,43 @@ def build_interface(args:dict)->gr.Blocks:
                                 error = legends['error_edit_context_lost']
                             else:
                                 sentence_file = os.path.join(session['sentences_dir'], block_id, f'{sentence_idx}.{default_audio_proc_format}')
-                            backup_file = f'{sentence_file}.bak'
-                            chapter_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
-                            _take_lock(session_id)
-                            session['cancellation_requested'] = False
-                            try:
-                                msg = legends['msg_replacing_sentence'].format(sentence=sentence_idx, block=block_id)
-                                print(msg)
-                                progress_bar(0.0, desc=msg)
-                                os.replace(sentence_file, backup_file)
-                                os.replace(preview_file, sentence_file)
-                                session['audiobook_edit_preview'] = None
-                                if combine_audio_sentences(session_id, chapter_file, block_id, sentence_count):
-                                    # block_hash() covers the sentences: current and saved must get the very same
-                                    # edit, or the next resume sees a changed block and reconverts it
-                                    blocks_current = session['blocks_current']
-                                    for blocks_data in (blocks_saved, blocks_current):
-                                        for b in blocks_data.get('blocks', []):
-                                            if b['id'] == block_id:
-                                                sentences = list(b.get('sentences', []))
-                                                if sentence_idx < len(sentences):
-                                                    old_sentence = sentences[sentence_idx]
-                                                    sentences[sentence_idx] = text
-                                                    b['sentences'] = sentences
-                                                    if old_sentence and b.get('text', '').count(old_sentence) == 1:
-                                                        b['text'] = b['text'].replace(old_sentence, text, 1)
-                                                break
-                                    session['blocks_saved'] = blocks_saved
-                                    session['blocks_current'] = blocks_current
-                                    save_db_blocks(session_id)
-                                    save_json_blocks(session_id, 'blocks_saved')
-                                    os.unlink(backup_file)
-                                else:
-                                    os.replace(backup_file, sentence_file)
-                                    combine_audio_sentences(session_id, chapter_file, block_id, sentence_count)
-                                    error = 'combine_audio_sentences() failed! original sentence restored.'
-                            finally:
-                                _release_lock(session_id)
+                                backup_file = f'{sentence_file}.bak'
+                                chapter_file = os.path.join(session['chapters_dir'], f'{block_id}.{default_audio_proc_format}')
+                                _take_lock(session_id)
+                                session['cancellation_requested'] = False
+                                try:
+                                    msg = legends['msg_replacing_sentence'].format(sentence=sentence_idx, block=block_id)
+                                    print(msg)
+                                    progress_bar(0.0, desc=msg)
+                                    os.replace(sentence_file, backup_file)
+                                    os.replace(preview_file, sentence_file)
+                                    session['audiobook_edit_preview'] = None
+                                    if combine_audio_sentences(session_id, chapter_file, block_id, sentence_count):
+                                        # block_hash() covers the sentences: current and saved must get the very same
+                                        # edit, or the next resume sees a changed block and reconverts it
+                                        blocks_current = session['blocks_current']
+                                        for blocks_data in (blocks_saved, blocks_current):
+                                            for b in blocks_data.get('blocks', []):
+                                                if b['id'] == block_id:
+                                                    sentences = list(b.get('sentences', []))
+                                                    if sentence_idx < len(sentences):
+                                                        old_sentence = sentences[sentence_idx]
+                                                        sentences[sentence_idx] = text
+                                                        b['sentences'] = sentences
+                                                        if old_sentence and b.get('text', '').count(old_sentence) == 1:
+                                                            b['text'] = b['text'].replace(old_sentence, text, 1)
+                                                    break
+                                        session['blocks_saved'] = blocks_saved
+                                        session['blocks_current'] = blocks_current
+                                        save_db_blocks(session_id)
+                                        save_json_blocks(session_id, 'blocks_saved')
+                                        os.unlink(backup_file)
+                                    else:
+                                        os.replace(backup_file, sentence_file)
+                                        combine_audio_sentences(session_id, chapter_file, block_id, sentence_count)
+                                        error = 'combine_audio_sentences() failed! original sentence restored.'
+                                finally:
+                                    _release_lock(session_id)
                             if error is None:
                                 Path(os.path.join(session['process_dir'], f"__edit_pending_{session['final_name']}")).touch()
                                 session['audiobook_edit_pending'] = True
