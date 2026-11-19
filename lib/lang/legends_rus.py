@@ -500,6 +500,8 @@ legends = {
     'msg_upgrading_outdated_deps': 'Для обновления зависимостей, более старых, чем другой пакет, требуется: {pkgs}',
     'msg_vulkan_torch_libomp': 'В установленном факеле Vulkan отсутствует {dll}, и его нельзя загрузить: выполните повторную установку из опубликованного пакета wheel.',
     'msg_vcredist_missing': 'ВНИМАНИЕ: отсутствует {dlls}: распространяемый пакет Microsoft Visual C++ не установлен, поэтому Torch не может загрузиться (WinError 126). Загрузите и установите его с {url}, а затем снова запустите ebook2audiobook.',
+    'msg_probing_cuda_torch': 'Проверка того, работает ли torch {torch} ({tag}) с этим драйвером NVIDIA…',
+    'msg_cuda_torch_unusable': '{tag} torch дает сбой нативно с этим драйвером NVIDIA (нарушение доступа при запуске xtts): вместо этого устанавливается более ранняя сборка {usable}. Решение остается в силе до тех пор, пока не будет изменен драйвер.',
     'msg_reinstalling_incomplete': 'Повторная установка пакетов с отсутствующими файлами: {pkgs}',
     'msg_install_lock_wait': 'Другой ebook2audiobook устанавливает пакеты в {env}, ожидание завершения…',
     'msg_removing_unusable_torchcodec': 'Удаление torchcodec {version}: torchcodec не работает с torch {torch} (ниже 2.9), pyannote работает без него.',

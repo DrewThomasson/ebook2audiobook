@@ -500,6 +500,8 @@ legends = {
     'msg_upgrading_outdated_deps': 'Nganyarke dependensi sing luwih lawas tinimbang paket liyane mbutuhake: {pkgs}',
     'msg_vulkan_torch_libomp': 'Vulkan torch sing wis diinstal ora duwe {dll} lan ora bisa dimuat: instal maneh saka wheel sing wis diterbitake.',
     'msg_vcredist_missing': 'PÈNGET: {dlls} ora ana: Microsoft Visual C++ redistributable ora diinstal, mula torch ora bisa dimuat (WinError 126). Unduh lan instal saka {url}, banjur miwiti ebook2audiobook maneh.',
+    'msg_probing_cuda_torch': 'Nglakokake tes apa torch {torch} ({tag}) bisa digunakake ing driver NVIDIA iki…',
+    'msg_cuda_torch_unusable': '{tag} torch krasa crash kanthi alami karo driver NVIDIA iki (langgaran akses sawise xtts mlaku): nginstal build {usable} sing luwih ngisor minangka gantine. Putusan kasebut ditindakake nganti driver diganti.',
     'msg_reinstalling_incomplete': 'Nginstal maneh paket kanthi file sing ilang: {pkgs}',
     'msg_install_lock_wait': 'ebook2audiobook liyane lagi nginstal paket ing {env}, ngenteni nganti rampung…',
     'msg_removing_unusable_torchcodec': 'Mbusak torchcodec {version}: ora ana torchcodec sing mlaku karo torch {torch} (ngisor 2.9), pyannote bisa digunakake tanpa kuwi.',

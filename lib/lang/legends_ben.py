@@ -500,6 +500,8 @@ legends = {
     'msg_upgrading_outdated_deps': 'অন্য প্যাকেজের চেয়ে পুরনো ডিপেন্ডেন্সিগুলি আপগ্রেড করার জন্য প্রয়োজন: {pkgs}',
     'msg_vulkan_torch_libomp': 'ইনস্টল করা Vulkan টর্চে {dll} নেই এবং এটি লোড করা যাচ্ছে না: প্রকাশিত হুইল থেকে এটি পুনরায় ইনস্টল করা হচ্ছে।',
     'msg_vcredist_missing': 'সতর্কতা: {dlls} অনুপস্থিত: Microsoft Visual C++ রিডিস্ট্রিবিউটেবল ইনস্টল করা নেই, তাই torch লোড করতে পারছে না (WinError 126)। {url} থেকে এটি ডাউনলোড করে ইনস্টল করুন, তারপর আবার ebook2audiobook চালু করুন।',
+    'msg_probing_cuda_torch': 'এই NVIDIA ড্রাইভারটিতে torch {torch} ({tag}) কাজ করে কিনা তা পরীক্ষা করা হচ্ছে…',
+    'msg_cuda_torch_unusable': 'এই NVIDIA ড্রাইভারের সাথে {tag} টর্চ নেটিভভাবে ক্র্যাশ করে (xtts চালানোর পরে অ্যাক্সেস লঙ্ঘন): এর পরিবর্তে নিচের {usable} বিল্ডটি ইনস্টল করা হচ্ছে। ড্রাইভার পরিবর্তন না হওয়া পর্যন্ত এই সিদ্ধান্ত বজায় রাখা হবে।',
     'msg_reinstalling_incomplete': 'যেসব প্যাকেজে ফাইল নেই সেগুলি পুনরায় ইনস্টল করা হচ্ছে: {pkgs}',
     'msg_install_lock_wait': 'আরেকটি ebook2audiobook {env}-এ প্যাকেজ ইনস্টল করছে, এটি শেষ হওয়ার জন্য অপেক্ষা করা হচ্ছে…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} অপসারণ করা হচ্ছে: torch {torch} (2.9 এর নিচে) এর সাথে কোনও torchcodec চলে না, pyannote এটি ছাড়াই কাজ করে।',

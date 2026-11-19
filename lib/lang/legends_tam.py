@@ -500,6 +500,8 @@ legends = {
     'msg_upgrading_outdated_deps': 'மற்றொரு தொகுப்பை விடப் பழமையான சார்புகளை மேம்படுத்த, இவற்றைச் செய்ய வேண்டும்: {pkgs}',
     'msg_vulkan_torch_libomp': 'நிறுவப்பட்ட Vulkan டார்ச்-இல் {dll} இல்லை, மேலும் அதை ஏற்ற முடியவில்லை: வெளியிடப்பட்ட வீலில் இருந்து அதை மீண்டும் நிறுவவும்.',
     'msg_vcredist_missing': 'எச்சரிக்கை: {dlls} இல்லை: Microsoft Visual C++ மறுவிநியோகக் கூறு நிறுவப்படவில்லை, எனவே torch ஐ ஏற்ற முடியாது (WinError 126). அதை {url} இலிருந்து பதிவிறக்கம் செய்து நிறுவி, பின்னர் ebook2audiobook ஐ மீண்டும் தொடங்கவும்.',
+    'msg_probing_cuda_torch': 'இந்த NVIDIA இயக்கியில் torch {torch} ({tag}) இயங்குகிறதா என்பதைச் சோதிக்கிறது…',
+    'msg_cuda_torch_unusable': '{tag} torch ஆனது இந்த NVIDIA இயக்கியுடன் இயல்பாகவே செயலிழக்கிறது (xtts இயங்கியவுடன் அணுகல் மீறல் ஏற்படுகிறது): அதற்குப் பதிலாகக் குறைந்த {usable} बिल्டை நிறுவுகிறது. ஓட்டுநர் மாற்றப்படும் வரை தீர்ப்பு அப்படியே இருக்கும்.',
     'msg_reinstalling_incomplete': 'கோப்புகள் இல்லாத தொகுப்புகளை மீண்டும் நிறுவுகிறது: {pkgs}',
     'msg_install_lock_wait': 'மற்றொரு ebook2audiobook {env} இல் தொகுப்புகளை நிறுவுகிறது, அது முடியும் வரை காத்திருக்கிறது…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} ஐ அகற்றுதல்: torch {torch} உடன் torchcodec இயங்காது (2.9 க்கு கீழே), pyannote அது இல்லாமல் இயங்கும்.',
