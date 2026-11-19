@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Özellikler
-- 🔧 **Desteklenen TTS motorları**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
+- 🔧 **Desteklenen TTS motorları**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos2, Zonos3, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Birden fazla dosya biçimini dönüştürme**: , , , , , , , , , , , , , , , , , , , , , , `.epub` `.mobi` `.azw3` `.fb2` `.lrf` `.rb` `.snb` `.tcr` `.pdf` `.txt` `.rtf` `.doc` `.docx` `.html` `.odt` `.azw` `.tiff` `.tif` `.png` `.jpg` `.jpeg` `.bmp` `.zip`
 - 💻 **Metin Alanı** kısa bir metni doğrudan sese dönüştürmek için
 - 🔍 **OCR taraması** metin sayfaları görüntü olan dosyalar için
@@ -166,7 +166,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — sessizlik (rastgele aralık **1.0–1.6 sec.**)
 - `[pause:N]` — sabit duraklama (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — varsayılan sesten veya GUI/CLI'den seçilen sesten ses değiştirme
-- `[emotion:sadness]...[/emotion]` — Yalnızca Zonos: Bir pasaj için duygu (mutluluk, üzüntü, tiksinme, korku, şaşkınlık, öfke, diğer, nötr) veya `[emotion:sadness=0.7,neutral=0.3]` gibi bir karışım; diğer motorlar bunu dikkate almaz
+- `[emotion:sadness]...[/emotion]` — Yalnızca Zonos2 ve Zonos3: Bir pasaj için duygu (mutluluk, üzüntü, tiksinme, korku, şaşırma, öfke, diğer, nötr; Zonos3 ayrıca sakin, şaşkın) veya `[emotion:sadness=0.7,neutral=0.3]` gibi bir karışım; diğer motorlar bunu dikkate almaz
 
 **E-kitabınıza otomatik olarak SML eklemeye adanmış diğer deposumuza göz atın -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -456,7 +456,7 @@ SML tags available:
 	[pause] — silence (random range **1.0–1.6 sec.**)
 	[pause:N] — fixed pause (**N sec.**)
 	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
+	[emotion:sadness]...[/emotion] — Zonos2 and Zonos3 only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral; Zonos3 also calm, confused) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
 
 ```
 
@@ -524,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - NOT: MPS Docker içinde kullanıma açık değildir, bu yüzden CPU kullanılmalıdır
-- NOT: Belirtilen birim `e2a_venvs`, TTS motorlarını kendi sanal ortamlarında (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM vb.) yüklü hâlde tutar.
+- NOT: Adı geçen `e2a_venvs` birimi, TTS motorlarını kendi sanal ortamlarında (GPT-SoVITS, Zonos2, Zonos3, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM vb.) yüklü hâlde tutar.
   konteyner çalıştırmaları arasında korur, böylece her seferinde yeniden kurulmazlar. Sıfırlamak için: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -563,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
-                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
-                        os,tessdata,jieba,voices
+                        urtts,piper,zonos2,zonos3,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoic
+                        e,orpheus,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,inter
+                        lude,argos,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -795,7 +795,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
 - [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] Kaplumbağa (https://github.com/neonbjb/tortoise-tts)[cite: 1]
-- [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1]
+- [x] Zonos2 (https://github.com/Zyphra/zonos2.cpp)[cite: 1]
+- [x] Zonos3 (https://github.com/Zyphra/ZONOS3-Mini)[cite: 1]
 - [x] Kabuk (https://github.com/suno-ai/bark)[cite: 1]
 - [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
@@ -864,6 +865,7 @@ Geliştirmemizi test etmek için her türlü donanımı kabul ediyoruz, örneği
 - [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Araştırma ve üretimde kendini kanıtlamış, metinden konuşmaya yönelik bir derin öğrenme araç seti.
 - [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Hızlı ve yerel sinir ağı tabanlı metinden konuşmaya dönüştürme motoru.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2 için ggml çıkarım kodu.
+- [Zonos3.cpp](https://github.com/Zyphra/ZONOS3-Mini/tree/main/servers/ggml) -- ZONOS3-Mini için ggml çıkarım kodu.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Ggml ile çalışan, ses modelleri için hepsi bir arada, saf C++ çıkarım motoru.
 
 <a id="special-thanks"></a>

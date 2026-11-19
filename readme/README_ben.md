@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## বৈশিষ্ট্য
-- 🔧 **TTS ইঞ্জিন সমর্থিত**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
+- 🔧 **TTS ইঞ্জিন সমর্থিত**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos2, Zonos3, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **একাধিক ফাইল ফরম্যাট রূপান্তর করুন**: , , , , , , , , , , , , , , , , , , , , , , `.epub` `.mobi` `.azw3` `.fb2` `.lrf` `.rb` `.snb` `.tcr` `.pdf` `.txt` `.rtf` `.doc` `.docx` `.html` `.odt` `.azw` `.tiff` `.tif` `.png` `.jpg` `.jpeg` `.bmp` `.zip`
 - 💻 সংক্ষিপ্ত টেক্সট সরাসরি অডিওতে রূপান্তর করার জন্য **টেক্সট এরিয়া**
 - 🔍 ছবি হিসেবে টেক্সট পৃষ্ঠা সহ ফাইলের জন্য **OCR স্ক্যানিং**
@@ -166,7 +166,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — নীরবতা (এলোমেলো পরিসর **1.0–1.6 sec.**)
 - `[pause:N]` — নির্দিষ্ট বিরতি (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — ডিফল্ট বা GUI/CLI থেকে নির্বাচিত ভয়েস থেকে ভয়েস পরিবর্তন করুন
-- `[emotion:sadness]...[/emotion]` — শুধুমাত্র Zonos: একটি অংশের জন্য আবেগ (আনন্দ, দুঃখ, ঘৃণা, ভয়, বিস্ময়, রাগ, অন্যান্য, নিরপেক্ষ) বা `[emotion:sadness=0.7,neutral=0.3]`-এর মতো একটি মিশ্রণ; অন্যান্য ইঞ্জিন এটি উপেক্ষা করে
+- `[emotion:sadness]...[/emotion]` — শুধুমাত্র Zonos2 এবং Zonos3-এর জন্য: একটি অনুচ্ছেদের আবেগ (আনন্দ, দুঃখ, ঘৃণা, ভয়, বিস্ময়, রাগ, অন্যান্য, নিরপেক্ষ; Zonos3-এর ক্ষেত্রে শান্ত, বিভ্রান্তও); `[emotion:sadness=0.7,neutral=0.3]`-এর মতো একটি মিশ্রণ; অন্যান্য ইঞ্জিন এটি উপেক্ষা করে
 
 **আপনার ই-বুকে স্বয়ংক্রিয়ভাবে SML যোগ করার জন্য নিবেদিত আমাদের অন্য রেপোটি দেখুন -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -456,7 +456,7 @@ SML tags available:
 	[pause] — silence (random range **1.0–1.6 sec.**)
 	[pause:N] — fixed pause (**N sec.**)
 	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
+	[emotion:sadness]...[/emotion] — Zonos2 and Zonos3 only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral; Zonos3 also calm, confused) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
 
 ```
 
@@ -524,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - নোট: Docker-এ MPS উন্মুক্ত নয়, তাই CPU ব্যবহার করতে হবে
-- দ্রষ্টব্য: উল্লিখিত ভলিউম `e2a_venvs` TTS ইঞ্জিনগুলিকে তাদের নিজস্ব venv-এ ইনস্টল করা অবস্থায় রাখে (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM ইত্যাদি।)
+- দ্রষ্টব্য: উল্লিখিত ভলিউম `e2a_venvs` TTS ইঞ্জিনগুলিকে তাদের নিজস্ব venv-এ ইনস্টল করা রাখে (GPT-SoVITS, Zonos2, Zonos3, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM ইত্যাদি।)
   কন্টেইনারের প্রতিটি রানের মধ্যে সংরক্ষণ করে, তাই প্রতিবার আবার ইনস্টল করতে হয় না। সেগুলো রিসেট করতে: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -563,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
-                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
-                        os,tessdata,jieba,voices
+                        urtts,piper,zonos2,zonos3,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoic
+                        e,orpheus,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,inter
+                        lude,argos,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -795,7 +795,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
 - [x] ট্যাকোট্রন2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] কচ্ছপ (https://github.com/neonbjb/tortoise-tts)[cite: 1]
-- [x] জোনোস (https://github.com/Zyphra/Zonos)[cite: 1]
+- [x] Zonos2 (https://github.com/Zyphra/zonos2.cpp)[cite: 1]
+- [x] Zonos3 (https://github.com/Zyphra/ZONOS3-Mini)[cite: 1]
 - [x] বার্ক (https://github.com/suno-ai/bark)[cite: 1]
 - [x] আপনারTTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] অর্ফিয়াস-টিটিএস (https://github.com/canopyai/Orpheus-TTS)
@@ -864,6 +865,7 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- টেক্সট-টু-স্পিচের জন্য একটি ডিপ লার্নিং টুলকিট, গবেষণা ও প্রোডাকশনে পরীক্ষিত।
 - [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- দ্রুত ও লোকাল নিউরাল টেক্সট-টু-স্পিচ ইঞ্জিন।
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- Zonos2-এর জন্য ggml ইনফারেন্স কোড।
+- [Zonos3.cpp](https://github.com/Zyphra/ZONOS3-Mini/tree/main/servers/ggml) -- ZONOS3-Mini-এর জন্য ggml ইনফারেন্স কোড।
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- ggml-চালিত অডিও মডেলের জন্য একটি অল-ইন-ওয়ান, বিশুদ্ধ C++ ইনফারেন্স ইঞ্জিন।
 
 <a id="special-thanks"></a>
