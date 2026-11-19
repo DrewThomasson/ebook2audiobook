@@ -1267,7 +1267,17 @@ def convert2epub(session_id:str)->bool:
             elif file_ext == '.docx':
                 from docx import Document as DocxDocument
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
-                docx_doc = DocxDocument(file_input)
+                try:
+                    docx_doc = DocxDocument(file_input)
+                except KeyError as e:
+                    # a .docx whose [Content_Types].xml lacks the officeDocument relationship: not a real
+                    # OOXML document (often another format renamed to .docx). User error, not a crash to report
+                    if 'officeDocument' in str(e):
+                        error = legends['error_invalid_docx'].format(name=os.path.basename(file_input))
+                        print(error)
+                        show_alert(session_id, {"type": "error", "msg": error})
+                        return False
+                    raise
                 all_text = ''.join(p.text.strip() for p in docx_doc.paragraphs)
                 if not all_text:
                     for table in docx_doc.tables:
@@ -5481,6 +5491,72 @@ def exception_alert(session_id:str|None, error:str|None)->None:
                 session['status'] = status_tags['READY']
                 if session['is_gui_process']:
                     raise gr.Error(error)
+
+def _is_ipv6_literal(host:str)->bool:
+    try:
+        return isinstance(ipaddress.ip_address(host.strip('[]')), ipaddress.IPv6Address)
+    except ValueError:
+        return False
+
+def proxy_env_error()->str|None:
+    # validate the *_proxy env vars before anything imports httpx/gradio. gradio's processing_utils builds an
+    # httpx.Client at import time, whose default mounts parse every proxy pattern: a bracketed ipv6 literal
+    # without port ('http://[::1]') parses there as port ':1]' and raised an uncaught InvalidURL that killed
+    # app.py at import. Wrap bare ipv6 hosts in brackets, reject what stays invalid with a clear message
+    candidates = {f'{s}_{d}': v for s in ('http', 'https', 'all') for d in ('proxy', 'PROXY')
+                  for v in [os.environ.get(f'{s}_{d}', '')] if v}
+    for name, value in candidates.items():
+        cleaned = sanitize_proxy_url(value)
+        scheme, sep, rest = cleaned.partition('://')
+        _, _, hostport = rest.rpartition('@')
+        hostport = hostport.split('/')[0].split('?')[0].split('#')[0]
+        if not sep or scheme not in ('http', 'https', 'socks5', 'socks5h') or not _hostport_valid(hostport):
+            return legends['error_invalid_proxy'].format(scheme=name, value=value)
+        if cleaned != value:
+            os.environ[name] = cleaned
+    return None
+
+def sanitize_proxy_url(value:str)->str:
+    value = value.strip()
+    if '://' not in value:
+        value = f'http://{value}'
+    scheme, sep, rest = value.partition('://')
+    if not sep:
+        return value
+    creds, _, hostport = rest.rpartition('@')
+    prefix = f'{scheme}://{creds + "@" if creds else ""}'
+    tail = ''
+    for delim in ('/', '?', '#'):
+        i = hostport.find(delim)
+        if i != -1:
+            tail = hostport[i:] + tail
+            hostport = hostport[:i]
+    rebuild = lambda hp: f'{prefix}{hp}{tail}'
+    if hostport.startswith('['):
+        return rebuild(hostport)  # already bracketed
+    host, colon, port = hostport.rpartition(':')
+    if colon and port.isdigit():
+        return rebuild(f'[{host}]:{port}') if _is_ipv6_literal(host) else rebuild(hostport)
+    if _is_ipv6_literal(hostport):
+        return rebuild(f'[{hostport}]')
+    return rebuild(hostport)
+
+def _hostport_valid(hostport:str)->bool:
+    # httpx URLPattern/normalize_port form: host[:port], an ipv6 literal wrapped in brackets
+    if not hostport:
+        return False
+    if hostport.startswith('['):
+        host, sep, rest = hostport[1:].partition(']')
+        if not sep or not re.fullmatch(r'[0-9A-Fa-f:.%]+', host):
+            return False
+        return rest == '' or (rest.startswith(':') and rest[1:].isdigit() and 0 < int(rest[1:]) <= 65535)
+    host, colon, port = hostport.rpartition(':')
+    if colon:
+        if ':' in host or not port.isdigit() or not 0 < int(port) <= 65535:
+            return False
+    elif ':' in hostport:
+        return False
+    return bool(host)
 
 def get_all_ip_addresses()->list:
     ip_addresses = []
