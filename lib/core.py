@@ -3031,67 +3031,95 @@ def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
         return f"[{tag}:{value}]"
     return f"[{tag}]"
 
-def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
-
-    def _replace(match:re.Match)->str:
-        token = match.group(1)
-        for k, expansion in mapping.items():
-            if token.lower() == k.lower():
-                return expansion
-        return token  # fallback
-            
+@functools.lru_cache(maxsize=None)
+def _normalize_text_tables(lang:str)->tuple:
+    # compile-once tables for normalize_text(): every pattern below depends only on static data
+    # (and lang for the abbreviation/specialchar maps), but rebuilding them per call meant paying
+    # the compile cost once per chapter block of a book.
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
-    text = emoji_pattern.sub('', text)
+    # abbreviations: sort keys by descending length so longer ones match first
     if lang in abbreviations_mapping:
         mapping = abbreviations_mapping[lang]
-        # Sort keys by descending length so longer ones match first
-        keys = sorted(mapping.keys(), key=len, reverse=True)
-        # Build a regex that only matches whole “words” (tokens) exactly
-        pattern = re.compile(
-            r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
+        lookup = {k.lower(): v for k, v in mapping.items()}
+        abbr_pattern = re.compile(
+            r'(?<!\w)(' + '|'.join(re.escape(k) for k in sorted(mapping.keys(), key=len, reverse=True)) + r')(?!\w)',
             flags=re.IGNORECASE
         )
-        text = pattern.sub(_replace, text)
-    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc…
-    pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
-    # uppercase acronyms
-    text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
-    # romanize foreign words
-    if language_mapping[lang]['script'] == 'latin':
-        text = foreign2latin(text, lang)
+    else:
+        lookup = None
+        abbr_pattern = None
+    # uppercase acronyms: matches sequences like a., c.i.a., f.d.a., m.c., etc...
+    acronym_pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a [pause] 1.4sec
-    pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, f" {sml_token('pause')} ", text)
+    pause_pattern = re.compile(r'(?:\r\n|\r|\n){2,}')
+    pause_repl = f" {sml_token('pause')} "
     # Replace single newlines ("\n" or "\r") with spaces
-    text = re.sub(r'\r\n|\r|\n', ' ', text)
+    newline_pattern = re.compile(r'\r\n|\r|\n')
     # Replace punctuations causing hallucinations
-    pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
-    text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
+    switch_pattern = re.compile(f"[{''.join(map(re.escape, punctuation_switch.keys()))}]")
     # remove unwanted chars
     chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
-    text = text.translate(chars_remove_table)
     # replace double quotes by a comma if no punctuation precedes it
-    text = re.sub(r'\s*"\s*', '"', text)
-    text = re.sub(r'(?<=[\p{L}\p{N}])"(?=[\p{L}\p{N}]|$)', ', ', text)
-    text = re.sub(r'"', '', text)
-    # Replace multiple and spaces with single space
-    text = re.sub(r'\s+', ' ', text)
-    # Replace ok by 'Owkey'
-    text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
-    # Escape special characters in the punctuation list for regex
-    pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
-    # Reduce multiple consecutive punctuations hard
-    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
-    # Escape special characters in the punctuation list for regex
-    pattern = '|'.join(map(re.escape, punctuation_split_soft_set))
-    # Reduce multiple consecutive punctuations soft
-    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
-    # Pattern 1: Add a space between UTF-8 characters and numbers
-    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+    quote_norm_pattern = re.compile(r'\s*"\s*')
+    quote_comma_pattern = re.compile(r'(?<=[\p{L}\p{N}])"(?=[\p{L}\p{N}]|$)')
+    # Replace multiple spaces with single space
+    spaces_pattern = re.compile(r'\s+')
+    # Replace ok by 'Okay'
+    ok_pattern = re.compile(r'\bok\b', flags=re.IGNORECASE)
+    # Reduce multiple consecutive punctuations hard/soft (non-capturing alternation keeps \2 correct)
+    hard_pattern = re.compile(r'(\s*((?:' + '|'.join(map(re.escape, punctuation_split_hard_set)) + r'))\s*)+')
+    soft_pattern = re.compile(r'(\s*((?:' + '|'.join(map(re.escape, punctuation_split_soft_set)) + r'))\s*)+')
+    # Add a space between UTF-8 characters and numbers
+    letterdigit_pattern = re.compile(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])')
     # Replace special chars with words
     specialchars = specialchars_mapping.get(lang, specialchars_mapping.get(default_language_code, specialchars_mapping['eng']))
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
+    return (emoji_pattern, abbr_pattern, lookup, acronym_pattern, pause_pattern, pause_repl,
+            newline_pattern, switch_pattern, chars_remove_table, quote_norm_pattern, quote_comma_pattern,
+            spaces_pattern, ok_pattern, hard_pattern, soft_pattern, letterdigit_pattern, specialchars_table)
+
+def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
+
+    (emoji_pattern, abbr_pattern, lookup, acronym_pattern, pause_pattern, pause_repl,
+     newline_pattern, switch_pattern, chars_remove_table, quote_norm_pattern, quote_comma_pattern,
+     spaces_pattern, ok_pattern, hard_pattern, soft_pattern, letterdigit_pattern,
+     specialchars_table) = _normalize_text_tables(lang)
+
+    def _replace(match:re.Match)->str:
+        # case-insensitive dict lookup; same semantics as the old linear scan over mapping.items()
+        return lookup.get(match.group(1).lower(), match.group(1))
+
+    # Remove emojis
+    text = emoji_pattern.sub('', text)
+    if abbr_pattern is not None:
+        text = abbr_pattern.sub(_replace, text)
+    # uppercase acronyms
+    text = acronym_pattern.sub(lambda m: m.group().replace('.', '').upper(), text)
+    # romanize foreign words
+    if language_mapping[lang]['script'] == 'latin':
+        text = foreign2latin(text, lang)
+    # Replace multiple newlines with a [pause] 1.4sec, then single newlines with spaces
+    text = pause_pattern.sub(pause_repl, text)
+    text = newline_pattern.sub(' ', text)
+    # Replace punctuations causing hallucinations
+    text = switch_pattern.sub(lambda match: punctuation_switch.get(match.group(), match.group()), text)
+    # remove unwanted chars
+    text = text.translate(chars_remove_table)
+    # replace double quotes by a comma if no punctuation precedes it
+    text = quote_norm_pattern.sub('"', text)
+    text = quote_comma_pattern.sub(', ', text)
+    text = text.replace('"', '')
+    # Replace multiple spaces with single space
+    text = spaces_pattern.sub(' ', text)
+    # Replace ok by 'Okay'
+    text = ok_pattern.sub('Okay', text)
+    # Reduce multiple consecutive punctuations hard, then soft
+    text = hard_pattern.sub(r'\2 ', text).strip()
+    text = soft_pattern.sub(r'\2 ', text).strip()
+    # Add a space between UTF-8 characters and numbers
+    text = letterdigit_pattern.sub(' ', text)
+    # Replace special chars with words
     text = text.translate(specialchars_table)
     text = ' '.join(text.split())
     return text
