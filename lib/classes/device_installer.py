@@ -603,6 +603,13 @@ class DeviceInstaller():
         m = platform.machine().upper()
         return archs.get(m, 'unknown')
 
+    def _cuda_row_versions(self, tag:str)->Union[tuple, None]:
+        # (torch, torchaudio) versions the cuXYZ matrix row installs, None when the row is unknown
+        entry = torch_matrix.get(tag)
+        if not entry:
+            return None
+        return (entry['last'], self.torchaudio_version(entry['last']))
+
     def detect_device(self, mode:str=NATIVE)->tuple:
         def has_cmd(cmd:str)->bool:
             return shutil.which(cmd) is not None
@@ -2302,6 +2309,49 @@ class DeviceInstaller():
             error = f'finalize_exclusive_packages() error: {e}'
             print(error)
             return 0
+
+    def torch_probe_child(self)->Union[dict, None]:
+        # run components/detect_gpu.py in a child process and parse its json line: None when the child could not run to
+        # its end (missing python, timeout, unreadable output). Used before installing a GPU torch at all -- an access
+        # violation inside python312.dll kills the child without any usable traceback, so only a probe that runs early
+        # can tell a working wheel from one that crashes natively on this driver
+        try:
+            proc = subprocess.run([python_exec, detect_gpu_script], capture_output=True, text=True, timeout=60)
+            if proc.returncode != 0:
+                return None
+            data = json.loads(proc.stdout.strip() or '{}')
+            return data if isinstance(data, dict) else None
+        except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError, ValueError):
+            return None
+
+    def cuda_torch_crashes(self, tag_dir:str, torch_version_matrix:str, torchaudio_version_matrix:str, py_major:int, py_minor:int)->bool:
+        # a cuXYZ torch build whose kernels predate the installed CUDA driver can corrupt memory natively instead of
+        # failing cleanly: 'Windows fatal exception: access violation' inside python312.dll once xtts runs. When the
+        # exact pinned versions import fine but no device answers (or the child dies), those wheels are unusable with
+        # this driver and e2a must pick another row before installing anything. A probe that cannot run (no network,
+        # download cut short) is not a crash: the normal install flow stands
+        url = default_pytorch_url
+        tag_py = f'cp{py_major}{py_minor}'
+        with tempfile.TemporaryDirectory(prefix='e2a_probe_') as probe_dir:
+            cmd = self._uv_pip('install', '--target', probe_dir, '--no-cache', '--no-deps',
+                               f'torch=={torch_version_matrix}', f'torchaudio=={torchaudio_version_matrix}',
+                               '--index-url', f'{url}/{tag_dir}', '--extra-index-url', f'{default_pytorch_nightly_url}/{tag_dir}',
+                               '--index-strategy', 'unsafe-best-match')
+            if subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
+                return False
+            env = {**os.environ, 'PYTHONPATH': probe_dir + os.pathsep + os.environ.get('PYTHONPATH', '')}
+            try:
+                proc = subprocess.run([python_exec, detect_gpu_script], capture_output=True, text=True, timeout=120, env=env)
+            except (subprocess.TimeoutExpired, OSError):
+                return False
+            if proc.returncode != 0:
+                # nonzero exit: an import error prints it, a native crash (access violation) leaves nothing but the code
+                return True
+            try:
+                data = json.loads(proc.stdout.strip() or '{}')
+            except json.JSONDecodeError:
+                return True
+            return int(data.get('count') or 0) == 0
 
     def system_dll_missing(self, name:str)->bool:
         # True only when the file is nowhere on the DLL search path: not System32 (where the VC++ redistributables
