@@ -2331,7 +2331,9 @@ class DeviceInstaller():
         # this driver and e2a must pick another row before installing anything. A probe that cannot run (no network,
         # download cut short) is not a crash: the normal install flow stands
         url = default_pytorch_url
-        tag_py = f'cp{py_major}{py_minor}'
+        # win-cuXYZ rows keep Windows torch apart in the matrix, their wheels live on the plain cuXYZ index
+        if tag_dir.startswith('win-'):
+            tag_dir = tag_dir[len('win-'):]
         with tempfile.TemporaryDirectory(prefix='e2a_probe_') as probe_dir:
             # torchaudio_spec, not '==': at the ceiling no exact version exists (any 2.11.x patch is valid)
             cmd = self._uv_pip('install', '--target', probe_dir, '--no-cache', '--no-deps',
