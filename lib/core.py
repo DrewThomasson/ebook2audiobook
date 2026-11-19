@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
-import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
+import functools, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
 import traceback, socket, unicodedata, codecs, urllib.request, uuid, zipfile, multiprocessing, ipaddress
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
@@ -129,6 +129,10 @@ footnote_href_re = re.compile(r'#[^#]*(?:note|fn|ftn|edn)', re.IGNORECASE)
 number_token_pattern = r'\d+(?:(?:[.,]|[ \u00A0\u202F](?=\d{3}(?!\d)))\d+)*'
 # word chars that cannot touch a number, CJK scripts excluded as they never put spaces around numbers
 number_glue_class = r'[^\W\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]'
+
+# SML escape codepoints are private-use characters: any char >= this value is part of an escaped SML tag run.
+# precomputed once so the hot text-splitting loops avoid the global module lookup (lib/__init__.py re-exports it)
+_sml_escape_tag = sml_escape_tag
 
 ########### Classes
 
@@ -2096,11 +2100,11 @@ def get_sentences(session_id:str, text:str)->list|None:
                 i = m.end()
                 last = i
                 continue
-            if ord(sentence[i]) >= sml_escape_tag:
+            if ord(sentence[i]) >= _sml_escape_tag:
                 if i > last:
                     parts.append(sentence[last:i])
                 j = i
-                while j < n and ord(sentence[j]) >= sml_escape_tag:
+                while j < n and ord(sentence[j]) >= _sml_escape_tag:
                     j += 1
                 parts.append(sentence[i:j])
                 i = j
@@ -2112,17 +2116,30 @@ def get_sentences(session_id:str, text:str)->list|None:
         return parts
 
     def _strip_escaped_sml(s:str)->str:
-        return ''.join(c for c in s if ord(c) < sml_escape_tag)
+        return ''.join(c for c in s if ord(c) < _sml_escape_tag)
 
     def _clean_len(s:str)->int:
         return len(_strip_escaped_sml(s))
 
+    # precompiled once at import: these ran re.match/re.search with a string pattern (implicit cache
+    # lookup on every call) for every ideogram token of CJK/Thai texts
+    if not hasattr(get_sentences, '_latin_only_cache'):
+        get_sentences._nonword_re = re.compile(r'[^\w\s]', flags=re.UNICODE)
+        get_sentences._latin_re = re.compile(r'[A-Za-z]')
+        get_sentences._nonlatin_re = re.compile(r'[^\x00-\x7F]')
+        get_sentences._latin_only_cache = {}
+    _latin_only_cache = get_sentences._latin_only_cache
+
     def _is_latin_only(s:str)->bool:
-        s = _strip_escaped_sml(s)
-        s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
-        has_latin = bool(re.search(r'[A-Za-z]', s))
-        has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
-        return has_latin and not has_nonlatin
+        cached = _latin_only_cache.get(s)
+        if cached is None:
+            stripped = _strip_escaped_sml(s)
+            cleaned = get_sentences._nonword_re.sub('', stripped)
+            cached = bool(get_sentences._latin_re.search(cleaned)) and not get_sentences._nonlatin_re.search(cleaned)
+            if len(_latin_only_cache) > 65536:
+                _latin_only_cache.clear()
+            _latin_only_cache[s] = cached
+        return cached
 
     def _segment_ideogramms(text:str)->list[str]:
         result = []
@@ -2152,13 +2169,19 @@ def get_sentences(session_id:str, text:str)->list|None:
             return [text]
 
     def _join_ideogramms(idg_list:list[str])->str:
+        # precompiled once at import (string patterns were re-looked-up on the regex cache per token)
+        if not hasattr(get_sentences, '_idg_start_latin'):
+            get_sentences._idg_start_latin = re.compile(r'[A-Za-z0-9]')
+            get_sentences._idg_start_nonlatin = re.compile(r'[^\x00-\x7F]')
+            get_sentences._idg_end_latin = re.compile(r'[A-Za-z0-9]$')
+            get_sentences._idg_end_nonlatin = re.compile(r'[^\x00-\x7F]$')
         try:
             buffer = ''
             prev_latin = False
             prev_nonlatin = False
             for token in idg_list:
-                cur_starts_latin = bool(re.match(r'[A-Za-z0-9]', token))
-                cur_starts_nonlatin = bool(re.match(r'[^\x00-\x7F]', token))
+                cur_starts_latin = bool(get_sentences._idg_start_latin.match(token))
+                cur_starts_nonlatin = bool(get_sentences._idg_start_nonlatin.match(token))
                 if buffer:
                     if (prev_latin and (cur_starts_latin or cur_starts_nonlatin)) or (prev_nonlatin and cur_starts_latin):
                         buffer += ' '
@@ -2166,8 +2189,8 @@ def get_sentences(session_id:str, text:str)->list|None:
                         yield buffer
                         buffer = ''
                 buffer += token
-                prev_latin = bool(re.search(r'[A-Za-z0-9]$', token))
-                prev_nonlatin = bool(re.search(r'[^\x00-\x7F]$', token))
+                prev_latin = bool(get_sentences._idg_end_latin.search(token))
+                prev_nonlatin = bool(get_sentences._idg_end_nonlatin.search(token))
             if buffer:
                 yield buffer
         except Exception as e:
@@ -2176,23 +2199,27 @@ def get_sentences(session_id:str, text:str)->list|None:
                 yield buffer
 
     def _is_pure_escaped_sml(s:str)->bool:
-        return bool(s) and all(ord(c) >= sml_escape_tag for c in s)
+        return bool(s) and all(ord(c) >= _sml_escape_tag for c in s)
 
     def _strip_leading_noise(s:str)->str:
         i = 0
         n = len(s)
         while i < n:
             c = s[i]
-            if c.isalnum() or c == '_' or c.isspace() or ord(c) >= sml_escape_tag:
+            if c.isalnum() or c == '_' or c.isspace() or ord(c) >= _sml_escape_tag:
                 break
             i += 1
         return s[i:].lstrip()
 
+    # frozen sets built once per call instead of a tuple() copy on every _force_split_segment() call
+    _hard_punct_set = frozenset(punctuation_split_hard_set)
+    _soft_punct_set = frozenset(punctuation_split_soft_set)
+
     def _force_split_segment(segment:str)->list[str]:
         results = []
         rest = segment
-        hard_set = tuple(punctuation_split_hard_set)
-        soft_set = tuple(punctuation_split_soft_set)
+        hard_set = _hard_punct_set
+        soft_set = _soft_punct_set
         while rest:
             if _clean_len(rest) <= max_chars:
                 results.append(rest.strip())
@@ -2220,7 +2247,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             if best_idx <= 0:
                 best_idx = max_chars
             # Safety: never cut inside an SML group
-            while best_idx < len(rest) and ord(rest[best_idx]) >= sml_escape_tag:
+            while best_idx < len(rest) and ord(rest[best_idx]) >= _sml_escape_tag:
                 best_idx += 1
             left = rest[:best_idx].strip()
             right = rest[best_idx:].strip()
@@ -2252,12 +2279,12 @@ def get_sentences(session_id:str, text:str)->list|None:
         current_text = []
         while idx < tlen:
             c = text[idx]
-            if ord(c) >= sml_escape_tag:
+            if ord(c) >= _sml_escape_tag:
                 if current_text:
                     segments.append(('text', ''.join(current_text)))
                     current_text = []
                 start = idx
-                while idx < tlen and ord(text[idx]) >= sml_escape_tag:
+                while idx < tlen and ord(text[idx]) >= _sml_escape_tag:
                     idx += 1
                 segments.append(('sml', text[start:idx]))
             else:
@@ -2285,7 +2312,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             cut_idx = -1
             j = len(combined) - 1
             while j >= 0:
-                if ord(combined[j]) >= sml_escape_tag:
+                if ord(combined[j]) >= _sml_escape_tag:
                     cut_idx = j + 1
                     break
                 j -= 1
@@ -2347,8 +2374,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                     # Trailing pure-SML — attach to last sentence, no standalone
                     final_list[-1] = final_list[-1].rstrip() + ' ' + combined
 
-        final_list = [_strip_leading_noise(s) for s in final_list if s.strip()]
-        final_list = [s for s in final_list if s]
+        final_list = [n for n in (_strip_leading_noise(s) for s in final_list if s.strip()) if n]
         # Merge orphan-short sentences. A sentence below max_chars/2 is "too short";
         # absorb it into the previous (preferred) or next sentence when that fits.
         merge_threshold = max_chars // 2
@@ -2988,15 +3014,15 @@ def escape_sml(text:str)->tuple[str, list[str]]:
 
     def _replace(m:re.Match[str])->str:
         sml_blocks.append(m.group(0))
-        return chr(sml_escape_tag + len(sml_blocks) - 1)
+        return chr(_sml_escape_tag + len(sml_blocks) - 1)
 
     return SML_TAG_PATTERN.sub(_replace, text), sml_blocks
 
 def restore_sml(text:str, sml_blocks:list[str])->str:
-    n = enumerate(sml_blocks)
-    for i, block in n:
-        text = text.replace(chr(sml_escape_tag + i), block)
-    return text
+    # single C-level pass with a translate table instead of one full-string replace per escaped tag
+    if not sml_blocks:
+        return text
+    return text.translate(str.maketrans({chr(_sml_escape_tag + i): block for i, block in enumerate(sml_blocks)}))
 
 def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
     if close:
