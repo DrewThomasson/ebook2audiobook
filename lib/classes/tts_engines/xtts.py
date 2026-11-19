@@ -196,6 +196,21 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                             self.cleanup_memory()
                             error = f'convert() error at {e} segment: {part}'
                             return False, error
+                        except RuntimeError as e:
+                            # degenerate GPT output (e.g., stop token emitted immediately for a
+                            # very short part) makes F.interpolate fail with output size 0:
+                            # "Input and output sizes should be greater than 0, but got input (W: 1)
+                            # and output (W: 0)". Such a part carries no speech, so skip it
+                            # instead of aborting the whole conversion.
+                            if 'interpolate' in str(e).lower() or 'greater than 0' in str(e):
+                                msg = f'{self.__class__.__name__}.convert(): skipped empty-synthesis part: {part[:80]!r} ({e})'
+                                print(msg)
+                                self.cleanup_memory()
+                                continue
+                            # free the failed part's tensors before returning False;
+                            # core.py then unloads the engine via unload_tts_manager().
+                            self.cleanup_memory()
+                            return False, self.log_exception(f'{self.__class__.__name__}.convert() part loop', e)
                         except Exception as e:
                             # free the failed part's tensors before returning False;
                             # core.py then unloads the engine via unload_tts_manager().

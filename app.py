@@ -164,6 +164,77 @@ def port_error(port:int)->str|None:
         return legends['error_port_unavailable'].format(port=port, error=bind_error)
     return None
 
+def _is_ipv6_literal(host:str)->bool:
+    import ipaddress
+    try:
+        return isinstance(ipaddress.ip_address(host.strip('[]')), ipaddress.IPv6Address)
+    except ValueError:
+        return False
+
+def sanitize_proxy_url(value:str)->str:
+    # httpx parses proxy URLs with its own URLPattern/normalize_port and raises InvalidURL on what urllib
+    # accepted: a bare ipv6 host ('http://::1', 'http://[fe80::1%eth0]') makes the port parse as ':1]'.
+    # Wrap any ipv6 literal in brackets (keeping zone ids), leave everything else untouched
+    value = value.strip()
+    if '://' not in value:
+        value = f'http://{value}'
+    scheme, sep, rest = value.partition('://')
+    if not sep:
+        return value
+    creds, _, hostport = rest.rpartition('@')
+    prefix = f'{scheme}://{creds + "@" if creds else ""}'
+    tail = ''
+    for delim in ('/', '?', '#'):  # path/query/fragment after the authority stays untouched
+        i = hostport.find(delim)
+        if i != -1:
+            tail = hostport[i:] + tail
+            hostport = hostport[:i]
+    rebuild = lambda hp: f'{prefix}{hp}{tail}'
+    if hostport.startswith('['):
+        return rebuild(hostport)  # already bracketed
+    host, colon, port = hostport.rpartition(':')
+    if colon and port.isdigit():
+        return rebuild(f'[{host}]:{port}') if _is_ipv6_literal(host) else rebuild(hostport)
+    if _is_ipv6_literal(hostport):
+        return rebuild(f'[{hostport}]')
+    return rebuild(hostport)
+
+def _hostport_valid(hostport:str)->bool:
+    # the form httpx normalize_port accepts: host[:port], an ipv6 literal wrapped in brackets. A trailing
+    # ':' or a non-numeric port ('[::1]:1]' style leftovers) is invalid there and would raise InvalidURL
+    if not hostport:
+        return False
+    if hostport.startswith('['):
+        host, sep, rest = hostport[1:].partition(']')
+        if not sep or not re.fullmatch(r'[0-9A-Fa-f:.%]+', host):
+            return False
+        return rest == '' or (rest.startswith(':') and rest[1:].isdigit() and 0 < int(rest[1:]) <= 65535)
+    host, colon, port = hostport.rpartition(':')
+    if colon:
+        if ':' in host or not port.isdigit() or not 0 < int(port) <= 65535:
+            return False
+    elif ':' in hostport:
+        return False
+    return bool(host)
+
+def proxy_error()->str|None:
+    # validate the *_proxy env vars before anything imports httpx/gradio. gradio's processing_utils builds an
+    # httpx.Client at import time whose default mounts parse every proxy pattern: one bad entry raised an
+    # uncaught InvalidURL ("Invalid port: ':1]'") that killed app.py at import. Repairable values (bare ipv6
+    # hosts) get rewritten in place, what stays invalid returns a clear message instead of a crash report
+    candidates = {f'{s}_{d}': v for s in ('http', 'https', 'all') for d in ('proxy', 'PROXY')
+                  for v in [os.environ.get(f'{s}_{d}', '')] if v}
+    for name, value in candidates.items():
+        cleaned = sanitize_proxy_url(value)
+        scheme, sep, rest = cleaned.partition('://')
+        _, _, hostport = rest.rpartition('@')
+        hostport = hostport.split('/')[0].split('?')[0].split('#')[0]
+        if not sep or scheme not in ('http', 'https', 'socks5', 'socks5h') or not _hostport_valid(hostport):
+            return legends['error_invalid_proxy'].format(scheme=name, value=value)
+        if cleaned != value:
+            os.environ[name] = cleaned
+    return None
+
 def kill_previous_instances(script_name: str):
     current_pid = os.getpid()
     this_script_path = os.path.realpath(script_name)
@@ -405,6 +476,12 @@ valence, arousal (-1 to 1).""")
         if args['script_mode'] in [NATIVE, FULL_DOCKER]:
             from lib.classes.bug_reporter import bug_reporter
             bug_reporter.install(bug_report_url, prog_version, args['script_mode'], bug_reports_dir, voices_dir, bug_report_enabled and not bug_report_env_opt_out)
+        # a malformed *_proxy env var (e.g. an ipv6 literal httpx cannot parse, 'http://[::1]') crashes every
+        # httpx client at gradio's import time: check it here, on stdlib only, before anything imports them
+        error = proxy_error()
+        if error:
+            print(error)
+            sys.exit(1)
         args['share'] =  args['share'] if args['share'] else False
         args['ebook_mode'] = 'single'
         args['ebook_list'] = None

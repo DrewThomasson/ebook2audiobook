@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': 'Hiányzó szükséges fájlok: {files}',
     'msg_required_files_empty': '0 KB méretű szükséges fájlok: {files}',
     'error_invalid_zip': 'A fájl nem érvényes ZIP-archívum.',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': 'Hiba történt: {e}',
     'msg_extracting_files': 'Fájlok kibontása ide: {path}…',
     'msg_normalizing_ref_wav': 'A ref.wav normalizálása…',

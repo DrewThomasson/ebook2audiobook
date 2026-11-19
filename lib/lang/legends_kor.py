@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': '필수 파일이 없습니다: {files}',
     'msg_required_files_empty': '크기가 0KB인 필수 파일: {files}',
     'error_invalid_zip': '파일이 유효한 ZIP 압축 파일이 아닙니다.',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': '오류가 발생했습니다: {e}',
     'msg_extracting_files': '{path}에 파일을 압축 해제하는 중…',
     'msg_normalizing_ref_wav': 'ref.wav 정규화 중…',

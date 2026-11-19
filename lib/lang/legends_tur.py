@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': 'Eksik gerekli dosyalar: {files}',
     'msg_required_files_empty': '0 KB boyutundaki gerekli dosyalar: {files}',
     'error_invalid_zip': 'Dosya geçerli bir ZIP arşivi değil.',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': 'Bir hata oluştu: {e}',
     'msg_extracting_files': 'Dosyalar {path} konumuna çıkarılıyor…',
     'msg_normalizing_ref_wav': 'ref.wav normalleştiriliyor…',
