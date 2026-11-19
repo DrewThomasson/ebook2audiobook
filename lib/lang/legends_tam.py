@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': 'தேவையான கோப்புகள் இல்லை: {files}',
     'msg_required_files_empty': '0 KB அளவுள்ள தேவையான கோப்புகள்: {files}',
     'error_invalid_zip': 'கோப்பு செல்லுபடியான ZIP காப்பகம் அல்ல.',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': 'பிழை ஏற்பட்டது: {e}',
     'msg_extracting_files': 'கோப்புகள் {path} இல் பிரித்தெடுக்கப்படுகின்றன…',
     'msg_normalizing_ref_wav': 'ref.wav இயல்பாக்கப்படுகிறது…',

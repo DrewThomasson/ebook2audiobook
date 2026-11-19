@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': 'প্রয়োজনীয় ফাইল নেই: {files}',
     'msg_required_files_empty': '0 KB আকারের প্রয়োজনীয় ফাইল: {files}',
     'error_invalid_zip': 'ফাইলটি বৈধ ZIP আর্কাইভ নয়।',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': 'একটি ত্রুটি ঘটেছে: {e}',
     'msg_extracting_files': 'ফাইলগুলো {path}-এ বের করা হচ্ছে…',
     'msg_normalizing_ref_wav': 'ref.wav স্বাভাবিক করা হচ্ছে…',

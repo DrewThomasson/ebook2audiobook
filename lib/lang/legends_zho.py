@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': '缺少必需文件：{files}',
     'msg_required_files_empty': '大小为 0 KB 的必需文件：{files}',
     'error_invalid_zip': '该文件不是有效的 ZIP 压缩包。',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': '发生错误：{e}',
     'msg_extracting_files': '正在将文件解压到 {path}…',
     'msg_normalizing_ref_wav': '正在标准化 ref.wav…',

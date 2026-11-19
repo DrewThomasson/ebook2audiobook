@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': 'అవసరమైన ఫైల్‌లు లేవు: {files}',
     'msg_required_files_empty': '0 KB పరిమాణం ఉన్న అవసరమైన ఫైల్‌లు: {files}',
     'error_invalid_zip': 'ఫైల్ చెల్లుబాటు అయ్యే ZIP ఆర్కైవ్ కాదు.',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': 'లోపం సంభవించింది: {e}',
     'msg_extracting_files': 'ఫైల్‌లు {path}కి సంగ్రహించబడుతున్నాయి…',
     'msg_normalizing_ref_wav': 'ref.wav సాధారణీకరించబడుతోంది…',

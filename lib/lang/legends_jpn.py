@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': '必要なファイルが不足しています: {files}',
     'msg_required_files_empty': 'サイズが 0 KB の必須ファイル: {files}',
     'error_invalid_zip': 'このファイルは有効な ZIP アーカイブではありません。',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': 'エラーが発生しました: {e}',
     'msg_extracting_files': 'ファイルを {path} に展開中…',
     'msg_normalizing_ref_wav': 'ref.wav を正規化中…',

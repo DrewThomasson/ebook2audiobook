@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': 'فایل‌های لازمِ ناموجود: {files}',
     'msg_required_files_empty': 'فایل‌های لازم با حجم ۰ کیلوبایت: {files}',
     'error_invalid_zip': 'فایل یک بایگانی ZIP معتبر نیست.',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': 'خطایی رخ داد: {e}',
     'msg_extracting_files': 'در حال استخراج فایل‌ها در {path}…',
     'msg_normalizing_ref_wav': 'در حال نرمال‌سازی ref.wav…',

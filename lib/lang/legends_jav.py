@@ -224,6 +224,8 @@ legends = {
     'msg_missing_required_files': 'Berkas wajib sing ilang: {files}',
     'msg_required_files_empty': 'Berkas wajib ukuran 0 KB: {files}',
     'error_invalid_zip': 'Berkas iki dudu arsip ZIP sing valid.',
+    'error_invalid_docx': 'The file {name} is not a valid .docx document (it may be another format renamed to .docx).',
+    'error_invalid_proxy': 'Invalid proxy configuration for {scheme}: "{value}". Check your *_proxy environment variables or system proxy settings.',
     'error_occurred': 'Ana kesalahan: {e}',
     'msg_extracting_files': 'Ngekstrak berkas menyang {path}…',
     'msg_normalizing_ref_wav': 'Normalisasi ref.wav…',
