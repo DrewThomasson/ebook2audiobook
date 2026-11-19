@@ -500,6 +500,8 @@ legends = {
     'msg_upgrading_outdated_deps': '升级比另一个软件包更旧的依赖项需要：{pkgs}',
     'msg_vulkan_torch_libomp': '已安装的Vulkan Torch缺少{dll}，无法加载：请从发布的wheel重新安装。',
     'msg_vcredist_missing': '警告：缺少{dlls}：未安装 Microsoft Visual C++ 可再发行软件包，因此无法加载 Torch（WinError 126）。请从{url}下载并安装，然后重新启动 ebook2audiobook。',
+    'msg_probing_cuda_torch': '正在测试Torch {torch} ({tag})是否在此NVIDIA驱动程序上运行……',
+    'msg_cuda_torch_unusable': '{tag} torch在此NVIDIA驱动程序下发生原生崩溃（xtts运行后出现访问冲突）：改为安装较低的{usable}版本。该判定将一直保留，直至驱动程序发生变化。',
     'msg_reinstalling_incomplete': '正在重新安装缺少文件的软件包：{pkgs}',
     'msg_install_lock_wait': '另一个 ebook2audiobook 正在 {env} 中安装软件包，正在等待其完成…',
     'msg_removing_unusable_torchcodec': '正在移除 torchcodec {version}：没有 torchcodec 与 torch {torch}（低于 2.9）一起运行，pyannote 在没有它时也能正常工作。',
