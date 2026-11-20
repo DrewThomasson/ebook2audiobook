@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': '输入一个从 0 到 {last} 的数字： ',
     'msg_gpu_choice_done': '已选择 GPU {device} ({tag})。要重新选择，请删除{file}或设置DEVICE_TAG。',
     'msg_gpu_choice_default': '此处有多个 GPU 可以运行 e2a ({devices})，无应答：使用{device} ({tag})。要进行选择，请删除{file}，然后从终端再次运行e2a，或设置DEVICE_TAG。',
+    'msg_gpu_choice_reconciled': '已安装的设备是{old}，但此机器还具有一个附加 GPU：现在已将{device}选为默认选项。要重新选择，请删除{file}。',
     'error_device_engine': '{engine}无法在{device}上运行（{engine}在{devices}上运行）。<br/>选择其他设备或TTS引擎进行转换。',
     'msg_device_reset': '{engine}无法在此计算机上的{device}上运行：设备已设置为{new_device}。',
     'error_device_not_supported_vulkan': '在此系统上未找到 Vulkan 加载器！<br/>读取{wiki}<br/>选择其他设备进行转换。',

@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': 'اكتب رقمًا من 0 إلى {last}: ',
     'msg_gpu_choice_done': 'تم اختيار وحدة معالجة الرسومات {device} ({tag}). للاختيار مرة أخرى، احذف {file} أو اضبط DEVICE_TAG.',
     'msg_gpu_choice_default': 'يمكن للعديد من وحدات معالجة الرسومات (GPU) تشغيل e2a هنا ({devices})، لا توجد إجابة: يتم استخدام {device} ({tag}). للاختيار، احذف {file} وشغّل e2a مرة أخرى من طرفية، أو اضبط DEVICE_TAG.',
+    'msg_gpu_choice_reconciled': 'كان الجهاز المثبت هو {old}، ولكن هذا الجهاز يحتوي أيضًا على وحدة معالجة رسومات إضافية: تم الآن تحديد {device} كإعداد افتراضي. للاختيار مرة أخرى، احذف {file}.',
     'error_device_engine': 'لا يمكن تشغيل {engine} على {device} (يتم تشغيل {engine} على {devices}).<br/>حدد جهازًا آخر أو محرك تحويل النص إلى كلام (TTS) للتحويل.',
     'msg_device_reset': 'لا يمكن تشغيل {engine} على {device} على هذا الجهاز: الجهاز مضبوط على {new_device}.',
     'error_device_not_supported_vulkan': 'لم يتم العثور على برنامج تحميل Vulkan على هذا النظام!<br/>قراءة {wiki}<br/>تحديد جهاز آخر للتحويل.',

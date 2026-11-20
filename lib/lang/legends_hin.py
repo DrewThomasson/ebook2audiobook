@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': '0 से {last} तक कोई संख्या टाइप करें: ',
     'msg_gpu_choice_done': 'GPU {device} ({tag}) चुना गया। फिर से चुनने के लिए, {file} को डिलीट करें या DEVICE_TAG सेट करें।',
     'msg_gpu_choice_default': 'यहाँ कई GPU e2a चला सकते हैं ({devices}), कोई जवाब नहीं: {device} ({tag}) का इस्तेमाल किया जाता है। चुनने के लिए, {file} को डिलीट करें और टर्मिनल से फिर से e2a चलाएँ या DEVICE_TAG सेट करें।',
+    'msg_gpu_choice_reconciled': 'इंस्टॉल किया गया डिवाइस {old} था, लेकिन इस मशीन में एक ऐड-इन GPU भी है: अब {device} को डिफ़ॉल्ट के रूप में चुना गया है। फिर से चुनने के लिए, {file} को डिलीट करें।',
     'error_device_engine': '{engine} {device} पर नहीं चल सकता ({engine} {devices} पर चलता है)।<br/>कन्वर्ट करने के लिए कोई दूसरा डिवाइस या TTS इंजन चुनें।',
     'msg_device_reset': '{engine} इस मशीन पर {device} पर नहीं चल सकता: डिवाइस {new_device} पर सेट है।',
     'error_device_not_supported_vulkan': 'इस सिस्टम पर कोई Vulkan लोडर नहीं मिला!<br/>पढ़ें {wiki}<br/>कन्वर्ट करने के लिए कोई दूसरा डिवाइस चुनें।',

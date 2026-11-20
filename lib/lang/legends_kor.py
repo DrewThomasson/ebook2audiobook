@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': '0~{last} 사이의 숫자를 입력하세요. ',
     'msg_gpu_choice_done': 'GPU {device}({tag})이(가) 선택되었습니다. 다시 선택하려면 {file}을(를) 삭제하거나 DEVICE_TAG을(를) 설정하세요.',
     'msg_gpu_choice_default': '여기({devices})에서 여러 GPU가 e2a를 실행할 수 있습니다. 응답 없음: {device}({tag})이(가) 사용됩니다. 선택하려면 {file}을(를) 삭제하고 터미널에서 e2a를 다시 실행하거나 DEVICE_TAG을(를) 설정하세요.',
+    'msg_gpu_choice_reconciled': '설치된 장치는 {old}이었지만, 이 기기에는 추가 GPU도 있습니다. 이제 {device}이(가) 기본값으로 선택되었습니다. 다시 선택하려면 {file}을(를) 삭제하세요.',
     'error_device_engine': '{engine}은(는) {device}에서 실행할 수 없습니다({engine}은(는) {devices}에서 실행됨).<br/>변환할 다른 장치 또는 TTS 엔진을 선택하세요.',
     'msg_device_reset': '{engine}은(는) 이 기기의 {device}에서 실행할 수 없습니다. 장치가 {new_device}(으)로 설정되어 있습니다.',
     'error_device_not_supported_vulkan': '이 시스템에서 Vulkan 로더를 찾을 수 없습니다!<br/>읽기 {wiki}<br/>변환할 다른 장치를 선택하세요.',
