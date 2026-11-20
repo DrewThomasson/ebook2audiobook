@@ -66,7 +66,7 @@ set "PY_CMD=python"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=cmake rustup calibre ffmpeg-shared mediainfo nodejs espeak-ng sox tesseract"
+set "HOST_PROGRAMS=cmake rustup calibre ffmpeg mediainfo nodejs espeak-ng sox tesseract"
 :: tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_PROGRAMS=curl ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
@@ -94,9 +94,12 @@ set "PHONEMIZER_ESPEAK_LIBRARY=%SCOOP_HOME%\apps\espeak-ng\current\libespeak-ng.
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
 set "TESSDATA_BASE_URL=https://github.com/tesseract-ocr/tessdata_best/raw/main"
+:: on windows arm64 the main bucket only ships amd64 builds of ffmpeg/ffmpeg-shared (emulated)
+:: -> use ffmpeg-nightly from the versions bucket which has native winarm64 builds (BtbN FFmpeg-Builds)
+set "FFMPEG_PKG=ffmpeg-shared"
 set "FFMPEG_BIN=%USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
-set "FFMPEG_VARIANT=none"
 set "PATH=%UV_INSTALL_DIR%;%SCOOP_SHIMS%;%SCOOP_APPS%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
+call :resolve_ffmpeg_variant
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
@@ -432,7 +435,7 @@ for %%p in (%HOST_PROGRAMS%) do (
 	set "_found=0"
 	if "%%p"=="nodejs"  set "prog=node"
 	if "%%p"=="calibre" set "prog=ebook-convert"
-	if "%%p"=="ffmpeg-shared" set "prog=ffmpeg"
+	if "%%p"=="ffmpeg" set "prog=ffmpeg"
 	if "%%p"=="rustup" (
 		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_found=1"
 	)
@@ -441,8 +444,8 @@ for %%p in (%HOST_PROGRAMS%) do (
 		if errorlevel 1 (
 			set "missing_prog_array=!missing_prog_array! %%p"
 		) else (
-			if "%%p"=="ffmpeg-shared" (
-				call :check_ffmpeg_shared
+			if "%%p"=="ffmpeg" (
+				call :check_ffmpeg_variant
 			)
 		)
 	)
@@ -484,12 +487,12 @@ if not "%missing_prog_array%"=="" (
 		if "%%p"=="nodejs" (
 			set "prog=node"
 		)
-		if "%%p"=="ffmpeg-shared" (
+		if "%%p"=="ffmpeg" (
 			set "prog=ffmpeg"
-			if exist "%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin\ffmpeg.exe" (
-				set "_FFMPEG_PATH=%SAFE_USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
-				echo !PATH! | findstr /i /c:"!_FFMPEG_PATH!" >nul 2>&1 || (
-					set "PATH=!_FFMPEG_PATH!;!PATH!"
+			call :resolve_ffmpeg_variant
+			if exist "!FFMPEG_BIN!\ffmpeg.exe" (
+				echo !PATH! | findstr /i /c:"!FFMPEG_BIN!" >nul 2>&1 || (
+					set "PATH=!FFMPEG_BIN!;!PATH!"
 				)
 			)
 		)
@@ -525,27 +528,44 @@ if exist "%_RUSTUP_DIR%\.cargo\bin\rustup.exe" where.exe /Q cargo >nul 2>&1 || s
 set "_RUSTUP_DIR="
 exit /b 0
 
-:check_ffmpeg_shared
-setlocal
+:resolve_ffmpeg_variant
+:: picks the scoop ffmpeg package matching the host architecture:
+:: amd64 -> ffmpeg-shared (main bucket) / arm64 -> ffmpeg-nightly (versions bucket, native winarm64)
+if /i "%ARCH%"=="ARM64" (
+	set "FFMPEG_PKG=ffmpeg-nightly"
+) else (
+	set "FFMPEG_PKG=ffmpeg-shared"
+)
+set "FFMPEG_BIN=%SCOOP_HOME%\apps\%FFMPEG_PKG%\current\bin"
+exit /b 0
+
+:check_ffmpeg_variant
+setlocal EnableDelayedExpansion
+call :resolve_ffmpeg_variant
 set "ffmpeg_pkg=none"
 set "tmp_file=%INSTALLED_LOG%.tmp"
-if exist "%SCOOP_HOME%\apps\ffmpeg-shared\current\bin\avcodec-*.dll" (
+if exist "%SCOOP_HOME%\apps\!FFMPEG_PKG!\current\bin\avcodec-*.dll" (
 	set "ffmpeg_pkg=shared"
+) else if exist "%SCOOP_HOME%\apps\!FFMPEG_PKG!\current\bin\ffmpeg.exe" (
+	set "ffmpeg_pkg=static"
 ) else if exist "%SCOOP_HOME%\apps\ffmpeg\current\bin\ffmpeg.exe" (
 	set "ffmpeg_pkg=static"
 ) else (
+	endlocal
 	exit /b 0
 )
 if "%ffmpeg_pkg%"=="static" (
-	echo Static ffmpeg detected, swapping to ffmpeg-shared…
-	call scoop uninstall ffmpeg || (echo [xx] uninstall failed & exit /b 1)
-	call scoop install ffmpeg-shared || (echo [xx] install failed & exit /b 1)
- 	if exist "%INSTALLED_LOG%" (
- 		findstr /v /x /c:"ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%" 2>nul
- 	) else (
- 		type nul > "%tmp_file%"
- 	)
-	>>"%tmp_file%" echo ffmpeg-shared
+	echo Static ffmpeg detected, swapping to !FFMPEG_PKG!...
+	for %%a in (ffmpeg ffmpeg-shared ffmpeg-nightly) do (
+		if exist "%SCOOP_HOME%\apps\%%a\current" call scoop uninstall %%a >nul 2>&1
+	)
+	call scoop install !FFMPEG_PKG! || (echo [xx] install failed & exit /b 1)
+	if exist "%INSTALLED_LOG%" (
+		findstr /v /i /r /c:"^ffmpeg" "%INSTALLED_LOG%" > "%tmp_file%" 2>nul
+	) else (
+		type nul > "%tmp_file%"
+	)
+	>>"%tmp_file%" echo !FFMPEG_PKG!
 	move /y "%tmp_file%" "%INSTALLED_LOG%" >nul
 	echo swap complete, .installed updated.
 )
