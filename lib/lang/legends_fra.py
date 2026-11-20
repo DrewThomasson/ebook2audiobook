@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': 'Saisissez un nombre compris entre 0 et {last} : ',
     'msg_gpu_choice_done': 'GPU {device} ({tag}) choisi. Pour choisir à nouveau, supprimez {file} ou définissez DEVICE_TAG.',
     'msg_gpu_choice_default': 'Plusieurs GPU peuvent exécuter e2a ici ({devices}), pas de réponse : {device} ({tag}) est utilisé. Pour choisir, supprimez {file} et exécutez à nouveau e2a depuis un terminal, ou définissez DEVICE_TAG.',
+    'msg_gpu_choice_reconciled': 'Le périphérique installé était {old}, mais cette machine dispose également d’un GPU complémentaire : {device} est maintenant sélectionné par défaut. Pour choisir à nouveau, supprimez {file}.',
     'error_device_engine': '{engine} ne peut pas fonctionner sur {device} ({engine} fonctionne sur {devices}).<br/>Sélectionnez un autre appareil ou un autre moteur de synthèse vocale à convertir.',
     'msg_device_reset': '{engine} ne peut pas fonctionner sur {device} sur cet appareil : l\'appareil est configuré sur {new_device}.',
     'error_device_not_supported_vulkan': 'Aucun chargeur Vulkan n’a été trouvé sur ce système !<br/>Lire {wiki}<br/>Sélectionner un autre appareil à convertir.',

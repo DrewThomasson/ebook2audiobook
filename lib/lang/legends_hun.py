@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': 'Írjon be egy számot 0 és {last} között: ',
     'msg_gpu_choice_done': 'A(z) {device} ({tag}) GPU kiválasztva. Az újbóli kiválasztáshoz törölje a következőt: {file}, vagy állítsa be a következőt: DEVICE_TAG.',
     'msg_gpu_choice_default': 'Itt több GPU is futtathatja az e2a-t ({devices}), nincs válasz: a(z) {device} ({tag}) van használatban. A kiválasztáshoz törölje a következőt: {file}, és futtassa újra az e2a parancsot egy terminálból, vagy állítsa be a következőt: DEVICE_TAG.',
+    'msg_gpu_choice_reconciled': 'A telepített eszköz a(z) {old} volt, de ezen a gépen van egy kiegészítő GPU is: most a(z) {device} van kiválasztva alapértelmezettként. Az újbóli kiválasztáshoz törölje a következőt: {file}.',
     'error_device_engine': 'A(z) {engine} nem futtatható a következőn: {device} (a(z) {engine} a következőn fut: {devices}).<br/>Válasszon ki egy másik eszközt vagy TTS-motort a konvertáláshoz.',
     'msg_device_reset': 'A(z) {engine} nem futtatható a(z) {device} rendszeren ezen a gépen: az eszköz a következőre van beállítva: {new_device}.',
     'error_device_not_supported_vulkan': 'Nem található Vulkan-betöltő ezen a rendszeren!<br/>Olvasás {wiki}<br/>Válasszon ki egy másik eszközt a konvertáláshoz.',

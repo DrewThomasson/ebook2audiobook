@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': 'Tẹ nọ́ḿbà kan láti 0 sí {last}: ',
     'msg_gpu_choice_done': 'A ti yan GPU {device} ({tag}). Láti yan lẹ́ẹ̀kan síi, pa {file} rẹ́ tàbí ṣètò DEVICE_TAG.',
     'msg_gpu_choice_default': 'Ọ̀pọ̀lọpọ̀ GPU lè ṣiṣẹ́ e2a níbí ({devices}), kò sí ìdáhùn: {device} ({tag}) ni a ń lò. Láti yan, pa {file} rẹ́ kí o sì ṣiṣẹ́ e2a lẹ́ẹ̀kan síi láti inú èrọ, tàbí ṣètò DEVICE_TAG.',
+    'msg_gpu_choice_reconciled': 'Ẹrọ tí a fi sori ẹrọ náà ni {old}, ṣùgbọ́n ẹ̀rọ yìí tún ní GPU àfikún: {device} ni a ti yan báyìí gẹ́gẹ́ bí àtòkọ. Láti tún yan, pa {file} rẹ́.',
     'error_device_engine': '{engine} kò lè ṣiṣẹ́ lórí {device} ({engine} ń ṣiṣẹ́ lórí {devices}).<br/>Yan ẹ̀rọ mìíràn tàbí ẹ̀rọ TTS láti yí padà.',
     'msg_device_reset': '{engine} kò lè ṣiṣẹ́ lórí {device} lórí ẹ̀rọ yìí: a ti ṣètò ẹ̀rọ náà sí {new_device}.',
     'error_device_not_supported_vulkan': 'A kò rí olùgbé Vulkan kankan lórí ẹ̀rọ yìí!<br/>Ka {wiki}<br/>Yan ẹ̀rọ mìíràn láti yí padà.',

@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': 'Geben Sie eine Zahl von 0 bis {last} ein: ',
     'msg_gpu_choice_done': 'GPU {device} ({tag}) ausgewählt. Um erneut auszuwählen, löschen Sie {file} oder stellen Sie DEVICE_TAG ein.',
     'msg_gpu_choice_default': 'Hier können mehrere GPUs e2a ausführen ({devices}), keine Antwort: {device} ({tag}) wird verwendet. Um eine Auswahl zu treffen, löschen Sie {file} und führen Sie e2a erneut über ein Terminal aus oder legen Sie DEVICE_TAG fest.',
+    'msg_gpu_choice_reconciled': 'Das installierte Gerät war {old}, aber dieser Computer verfügt auch über eine Zusatz-GPU: {device} ist jetzt als Standard ausgewählt. Um erneut auszuwählen, löschen Sie {file}.',
     'error_device_engine': '{engine} kann nicht auf {device} ausgeführt werden ({engine} wird auf {devices} ausgeführt).<br/>Wählen Sie ein anderes Gerät oder eine andere TTS-Engine für die Konvertierung aus.',
     'msg_device_reset': '{engine} kann auf diesem Computer nicht auf {device} ausgeführt werden: Das Gerät ist auf {new_device} eingestellt.',
     'error_device_not_supported_vulkan': 'Auf diesem System wurde kein Vulkan-Loader gefunden!<br/>Lesen {wiki}<br/>Wählen Sie ein anderes Gerät zum Konvertieren aus.',

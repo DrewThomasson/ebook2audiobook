@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': 'Ketik angka dari 0 hingga {last}: ',
     'msg_gpu_choice_done': 'GPU {device} ({tag}) dipilih. Untuk memilih lagi, hapus {file} atau atur DEVICE_TAG.',
     'msg_gpu_choice_default': 'Beberapa GPU dapat menjalankan e2a di sini ({devices}), tidak ada jawaban: {device} ({tag}) digunakan. Untuk memilih, hapus {file} dan jalankan e2a lagi dari terminal, atau atur DEVICE_TAG.',
+    'msg_gpu_choice_reconciled': 'Perangkat yang diinstal adalah {old}, tetapi mesin ini juga memiliki GPU tambahan: {device} sekarang dipilih sebagai default. Untuk memilih lagi, hapus {file}.',
     'error_device_engine': '{engine} tidak dapat dijalankan di {device} ({engine} dijalankan di {devices}).<br/>Pilih perangkat atau mesin TTS lain untuk dikonversi.',
     'msg_device_reset': '{engine} tidak dapat dijalankan di {device} pada komputer ini: perangkat diatur ke {new_device}.',
     'error_device_not_supported_vulkan': 'Tidak ada pemuat Vulkan yang ditemukan di sistem ini!<br/>Baca {wiki}<br/>Pilih perangkat lain untuk dikonversi.',

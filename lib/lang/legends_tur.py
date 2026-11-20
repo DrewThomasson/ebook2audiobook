@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': '0 ile {last} arasında bir sayı girin: ',
     'msg_gpu_choice_done': '{device} ({tag}) numaralı GPU seçildi. Tekrar seçmek için {file} öğesini silin veya DEVICE_TAG öğesini ayarlayın.',
     'msg_gpu_choice_default': 'Burada birden fazla GPU e2a\'yı çalıştırabilir ({devices}), yanıt yok: {device} ({tag}) kullanılıyor. Seçmek için {file} öğesini silin ve e2a\'yı bir terminalden tekrar çalıştırın veya DEVICE_TAG öğesini ayarlayın.',
+    'msg_gpu_choice_reconciled': 'Yüklü cihaz {old} idi, ancak bu makinede ayrıca bir eklenti GPU\'su da var: {device} artık varsayılan olarak seçildi. Tekrar seçmek için {file} öğesini silin.',
     'error_device_engine': '{engine}, {device} üzerinde çalışamaz ({engine}, {devices} üzerinde çalışır).<br/>Dönüştürmek için başka bir cihaz veya TTS motoru seçin.',
     'msg_device_reset': '{engine}, bu makinede {device} üzerinde çalışamaz: Cihaz {new_device} olarak ayarlanmıştır.',
     'error_device_not_supported_vulkan': 'Bu sistemde Vulkan yükleyici bulunamadı!<br/>Oku {wiki}<br/>Dönüştürmek için başka bir cihaz seçin.',

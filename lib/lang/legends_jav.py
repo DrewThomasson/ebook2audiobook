@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': 'Ketik nomer saka 0 nganti {last}: ',
     'msg_gpu_choice_done': 'GPU {device} ({tag}) dipilih. Kanggo milih maneh, busak {file} utawa setel DEVICE_TAG.',
     'msg_gpu_choice_default': 'Sawetara GPU bisa mbukak e2a ing kene ({devices}), ora ana jawaban: {device} ({tag}) digunakake. Kanggo milih, busak {file} lan lakokna e2a maneh saka terminal, utawa setel DEVICE_TAG.',
+    'msg_gpu_choice_reconciled': 'Piranti sing dipasang yaiku {old}, nanging mesin iki uga duwe GPU tambahan: {device} saiki dipilih minangka standar. Kanggo milih maneh, busak {file}.',
     'error_device_engine': '{engine} ora bisa mlaku ing {device} ({engine} mlaku ing {devices}).<br/>Pilih piranti utawa mesin TTS liyane kanggo dikonversi.',
     'msg_device_reset': '{engine} ora bisa mlaku ing {device} ing komputer iki: piranti disetel dadi {new_device}.',
     'error_device_not_supported_vulkan': 'Ora ana loader Vulkan sing ditemokake ing sistem iki!<br/>Waca {wiki}<br/>Pilih piranti liyane kanggo dikonversi.',
