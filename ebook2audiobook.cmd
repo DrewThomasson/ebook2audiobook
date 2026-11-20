@@ -66,7 +66,7 @@ set "PY_CMD=python"
 set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
-set "HOST_PROGRAMS=cmake rustup calibre ffmpeg mediainfo nodejs espeak-ng sox tesseract"
+set "HOST_PROGRAMS=cmake rustup calibre %FFMPEG_PKG% mediainfo nodejs espeak-ng sox tesseract"
 :: tesseract-ocr-[lang] and calibre are hardcoded in Dockerfile
 set "DOCKER_PROGRAMS=curl ffmpeg mediainfo nodejs espeak-ng sox tesseract-ocr"
 set "DOCKER_CALIBRE_INSTALLER_URL=https://download.calibre-ebook.com/linux-installer.sh"
@@ -95,11 +95,10 @@ set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 set "TESSDATA_PREFIX=%SAFE_SCRIPT_DIR%\models\tessdata"
 set "TESSDATA_BASE_URL=https://github.com/tesseract-ocr/tessdata_best/raw/main"
 :: on windows arm64 the main bucket only ships amd64 builds of ffmpeg/ffmpeg-shared (emulated)
-:: -> use ffmpeg-nightly from the versions bucket which has native winarm64 builds (BtbN FFmpeg-Builds)
-set "FFMPEG_PKG=ffmpeg-shared"
-set "FFMPEG_BIN=%USERPROFILE%\scoop\apps\ffmpeg-shared\current\bin"
-set "PATH=%UV_INSTALL_DIR%;%SCOOP_SHIMS%;%SCOOP_APPS%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
+:: and scoop fails to even extract them there (null 7zip path) -> ffmpeg-nightly from the
+:: versions bucket provides native winarm64 shared builds (BtbN FFmpeg-Builds)
 call :resolve_ffmpeg_variant
+set "PATH=%UV_INSTALL_DIR%;%SCOOP_SHIMS%;%SCOOP_APPS%;%NODE_PATH%;%FFMPEG_BIN%;%PATH%"
 set "INSTALLED_LOG=%SAFE_SCRIPT_DIR%\.installed"
 set "UNINSTALLER=%SAFE_SCRIPT_DIR%\uninstall.cmd"
 set "BROWSER_HELPER=%SAFE_SCRIPT_DIR%\.bh.ps1"
@@ -435,7 +434,7 @@ for %%p in (%HOST_PROGRAMS%) do (
 	set "_found=0"
 	if "%%p"=="nodejs"  set "prog=node"
 	if "%%p"=="calibre" set "prog=ebook-convert"
-	if "%%p"=="ffmpeg" set "prog=ffmpeg"
+	if "%%p"=="!FFMPEG_PKG!" set "prog=ffmpeg"
 	if "%%p"=="rustup" (
 		if exist "%SAFE_USERPROFILE%\scoop\apps\rustup\current\.cargo\bin\rustup.exe" set "_found=1"
 	)
@@ -444,7 +443,7 @@ for %%p in (%HOST_PROGRAMS%) do (
 		if errorlevel 1 (
 			set "missing_prog_array=!missing_prog_array! %%p"
 		) else (
-			if "%%p"=="ffmpeg" (
+			if "%%p"=="!FFMPEG_PKG!" (
 				call :check_ffmpeg_variant
 			)
 		)
@@ -487,7 +486,7 @@ if not "%missing_prog_array%"=="" (
 		if "%%p"=="nodejs" (
 			set "prog=node"
 		)
-		if "%%p"=="ffmpeg" (
+		if "%%p"=="!FFMPEG_PKG!" (
 			set "prog=ffmpeg"
 			call :resolve_ffmpeg_variant
 			if exist "!FFMPEG_BIN!\ffmpeg.exe" (
