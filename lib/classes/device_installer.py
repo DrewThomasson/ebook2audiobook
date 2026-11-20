@@ -265,6 +265,9 @@ class DeviceInstaller():
     def check_device_info(self, mode:str)->str:
         if mode == NATIVE:
             previous = self.load_device_info()
+            # an install that never got the GPU question may sit on the integrated / virtual adapter by default:
+            # point it at the add-in card before anything loads a model onto the wrong device
+            self.reconcile_gpu_choice(previous)
             name, tag, msg = self.check_hardware
             pyvenv = self.check_pyvenv(tag)
             arch = archs['AARCH64'] if name in [devices['JETSON']['proc']] else self.arch
@@ -467,20 +470,41 @@ class DeviceInstaller():
         except OSError:
             return None
 
+    @staticmethod
+    def _virtual_gpu(name:str)->bool:
+        # display-only / virtual adapters never run torch, but they occupy a slot in every enumeration (Windows reports
+        # them through WMI even when Vulkan does not see them): Remote Desktop's 'Microsoft Remote Display Adapter',
+        # TeamViewer's 'Meta Virtual Monitor', ToDesk / Virtual Desktop mirrors, VMware SVAs, basic VGA drivers... The
+        # names all contain 'virtual' or 'display', or are one of the plain framebuffer stubs listed here. A name with a
+        # vendor GPU word in it stays real: 'NVIDIA GeForce RTX 3060 Laptop GPU' contains none, 'Intel(R) UHD Graphics
+        # 770' does ('graphics' alone must not hide an iGPU, it only ever ranks last). The guard words stay narrow so a
+        # virtual mirror named after its host GPU ('GameViewer Virtual Display Adapter' on an AMD box) is still dropped
+        lowered = name.lower()
+        if any(word in lowered for word in ('nvidia', 'geforce', 'quadro', 'tesla', 'rtx', 'gtx', 'radeon rx', 'arc a')) and 'virtual' not in lowered:
+            return False
+        if 'virtual' in lowered or 'display' in lowered:
+            return True
+        return any(word in lowered for word in ('vmware svga', 'basic render', 'llvmpipe', 'v3d', 'vc4', 'simple-framebuffer'))
+
     def system_gpus(self, vk_devices:list)->list:
         # the GPUs in the OS's own numbering, GPU 0 first, as (PCI vendor id, model, add-in card). Windows: adapter order,
         # which the Vulkan loader enumerates in (DXGI order), WMI without a loader. Linux: PCI bus order. Model and card
         # come from the Vulkan device of the same vendor (deviceType discrete); without one the card is guessed: Intel's
-        # integrated GPU is 00:02.0 on the PCI bus (on Windows: any Intel), NVIDIA and AMD count as cards
+        # integrated GPU is 00:02.0 on the PCI bus (on Windows: any Intel), NVIDIA and AMD count as cards. Virtual
+        # display adapters (_virtual_gpu) are dropped: they hold no compute memory, and counting them shifted the CUDA
+        # index reported to the user (bug reports showed 'gpu 0' while nvidia-smi said gpu 1)
         if self.system == systems['WINDOWS'] and vk_devices:
-            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices]
-        pci = []  # (vendor id, PCI address)
+            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._virtual_gpu(model)]
+        pci = []  # (vendor id, name)
         if self.system == systems['WINDOWS']:
             try:
-                out = subprocess.run(['powershell', '-NoProfile', '-Command', 'Get-CimInstance Win32_VideoController | ForEach-Object { $_.PNPDeviceID }'], capture_output=True, text=True, errors='replace', timeout=20).stdout
+                out = subprocess.run(['powershell', '-NoProfile', '-Command', "Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name + '|' + $_.PNPDeviceID }"], capture_output=True, text=True, errors='replace', timeout=20).stdout
             except (OSError, subprocess.TimeoutExpired):
                 out = ''
-            pci = [(int(vendor_id, 16), '') for vendor_id in re.findall(r'VEN_([0-9A-F]{4})', out, re.IGNORECASE)]
+            # one line per adapter, in the OS's order; a virtual display adapter drops both its fields
+            for name, vendor_id in re.findall(r'(?m)^(.*?)\|.*VEN_([0-9A-F]{4})', out, re.IGNORECASE):
+                if not self._virtual_gpu(name):
+                    pci.append((int(vendor_id, 16), name.strip()))
         else:
             sysfs = '/sys/bus/pci/devices'
             if os.path.isdir(sysfs):
@@ -490,7 +514,22 @@ class DeviceInstaller():
                             if not f.read().strip().startswith(('0x0300', '0x0302')):
                                 continue
                         with open(os.path.join(sysfs, dev, 'vendor')) as f:
-                            pci.append((int(f.read().strip(), 16), dev))
+                            vendor_id = int(f.read().strip(), 16)
+                        # the modalias DB names the card ('Vega 10 [Radeon RX Vega]'), no lspci needed; missing on
+                        # stripped kernels: an unknown name stays real, only the listed stubs are dropped
+                        name = ''
+                        modalias = os.path.join(sysfs, dev, 'modalias')
+                        if os.path.isfile(modalias):
+                            try:
+                                with open(modalias) as f:
+                                    pci_ids = f.read().strip().split(':', 1)[-1]
+                                out = subprocess.run(['modprobe', '-wqb', '--install', f'pci:{pci_ids}:@echo %k'], capture_output=True, text=True, errors='replace', timeout=20).stdout
+                                name = next((line.strip() for line in out.splitlines() if line.strip()), '')
+                            except (OSError, subprocess.TimeoutExpired):
+                                name = ''
+                        if self._virtual_gpu(name):
+                            continue
+                        pci.append((vendor_id, name))
                     except (OSError, ValueError):
                         continue
             if not pci and shutil.which('lspci'):
@@ -498,23 +537,36 @@ class DeviceInstaller():
                     out = subprocess.run(['lspci', '-nn'], capture_output=True, text=True, errors='replace', timeout=20).stdout
                 except (OSError, subprocess.TimeoutExpired):
                     out = ''
-                for address, vendor_id in re.findall(r'^(\S+) .*\[030[02]\].*\[([0-9a-f]{4}):[0-9a-f]{4}\]', out, re.IGNORECASE | re.MULTILINE):
-                    pci.append((int(vendor_id, 16), address if address.count(':') == 2 else f'0000:{address}'))
+                for description, vendor_id in re.findall(r'^\S+ (.*?\[030[02]\].*?\[([0-9a-f]{4}):[0-9a-f]{4}\])', out, re.IGNORECASE | re.MULTILINE):
+                    if self._virtual_gpu(description):
+                        continue
+                    pci.append((int(vendor_id, 16), description))
         if not pci:
-            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices]
+            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._virtual_gpu(model)]
         unmatched = list(vk_devices)
         gpus = []
-        for vendor_id, address in pci:
-            card = vendor_id != 0x8086 or (bool(address) and not address.endswith(':00:02.0'))
-            same = [device for device in unmatched if device[0] == vendor_id]
+        for vendor_id, name in pci:
+            # integrated when the name says so ('UHD Graphics', 'onboard', ...); an unnamed PCI device keeps the
+            # old guess: Intel at 00:02.0 is the iGPU, NVIDIA and AMD count as add-in cards
+            lowered = name.lower()
+            if any(word in lowered for word in ('uhd graphics', 'hd graphics', 'iris', 'onboard', 'integrated')):
+                card = False
+            elif any(word in lowered for word in ('geforce', 'rtx', 'gtx', 'quadro', 'tesla', 'radeon rx', 'arc a')):
+                card = True
+            elif vendor_id != 0x8086:
+                card = True
+            else:
+                address = next((device[3] for device in vk_devices if device[0] == vendor_id and len(device) > 3), '')
+                card = bool(address) and not address.endswith(':00:02.0')
+            same = [device for device in unmatched if device[0] == vendor_id and not self._virtual_gpu(device[1])]
             device = next((device for device in same if (device[2] == 2) == card), same[0] if same else None)
             if device:
                 unmatched.remove(device)
                 gpus.append((vendor_id, device[1], device[2] == 2))
             else:
-                gpus.append((vendor_id, '', card))
-        # Vulkan GPUs not on the PCI list (virtual GPUs) come last
-        return gpus + [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in unmatched]
+                gpus.append((vendor_id, name, card))
+        # Vulkan GPUs not on the PCI list come last; the virtual ones are never listed at all
+        return gpus + [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in unmatched if not self._virtual_gpu(model)]
 
     def gpu_candidates(self, gpu_results:dict)->list:
         # each way e2a can run a GPU here, as (name, tag, msg, models): a vendor runtime detect_device() found (cuda,
@@ -589,6 +641,49 @@ class DeviceInstaller():
             msg = legends['msg_gpu_choice_default'].format(devices=', '.join(names), device=name, tag=tag, file=gpu_choice_file)
         print(msg, file=sys.stderr)
         return candidates[choice][:3]
+
+    def reconcile_gpu_choice(self, previous:Union[dict, None])->None:
+        # an installation made before the GPU question existed, or whose saved pick went impossible, runs on whatever
+        # detect_device() decided by default -- which used to count virtual display adapters as GPUs and rank the
+        # integrated one first: bug reports showed CUDA_VISIBLE_DEVICES=0 aimed at 'Microsoft Remote Display Adapter'
+        # (every kernel op then died with 'CUDA driver error: unknown error' from cuMemSetAccess) and ROCm boxes picking
+        # the iGPU under a wrong HSA_OVERRIDE_GFX_VERSION (a native segfault inside stanza). When the installed GPU
+        # torch answers for more than one device and the machine has both an add-in card and an integrated GPU, the
+        # default was picked blindly: write the card's vendor as the user's choice so this start, and every start after
+        # it, targets the slot GPU. Only ever adds a choice that matches what gpu_candidates() ranks first today, and
+        # only once: after the rewrite choose_gpu() honors it, and deleting .gpu_choice returns control to the user
+        if self.system == systems['MACOS'] or not previous or os.path.isfile(gpu_choice_file):
+            return
+        name, tag = previous.get('name'), previous.get('tag')
+        if name not in (devices['CUDA']['proc'], devices['ROCM']['proc']):
+            return
+        try:
+            proc = subprocess.run([python_exec, '-c', 'import torch; print(torch.cuda.device_count())'], capture_output=True, text=True, timeout=120)
+            count = int(proc.stdout.strip())
+        except (OSError, ValueError, subprocess.TimeoutExpired):
+            return
+        if count < 2:
+            return
+        gpus = self.system_gpus(self.vulkan_devices())
+        cards = [vendor_id for vendor_id, _, card in gpus if card]
+        integrated = [vendor_id for vendor_id, _, card in gpus if not card]
+        if not cards or not integrated:
+            return
+        vendors = {self.gpu_pci_vendors.get(vendor_id) for vendor_id, _, _ in gpus}
+        if name not in vendors:
+            return
+        card_vendor = next((self.gpu_pci_vendors.get(vendor_id) for vendor_id in cards if self.gpu_pci_vendors.get(vendor_id) in vendors), None)
+        # the saved default only switches when a real add-in card of another vendor exists: an NVIDIA-only box whose
+        # second cuda device is a virtual adapter (a Remote Display under WSL, a vGPU) keeps its working choice
+        if card_vendor is None or card_vendor != devices['CUDA']['proc'] and card_vendor != devices['ROCM']['proc']:
+            return
+        try:
+            with open(gpu_choice_file, 'w', encoding='utf-8') as f:
+                f.write(card_vendor)
+        except OSError:
+            return
+        msg = legends['msg_gpu_choice_reconciled'].format(device=card_vendor, old=name)
+        print(msg, file=sys.stderr)
 
     def detect_platform_tag(self)->str:
         if self.system == systems['WINDOWS']:
