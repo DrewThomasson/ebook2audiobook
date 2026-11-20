@@ -1988,6 +1988,26 @@ class DeviceInstaller():
         importlib.invalidate_caches()
         return 0
 
+    # module name -> the distribution that provides it, for imports uv pip check cannot see: a package loaded
+    # only deep inside another one's pipeline (stanza/pipeline/langid_processor.py importing emoji), so an env
+    # missing it passes 'uv pip check' clean and every start dies at import with ModuleNotFoundError (bug 1f67b34e99d8a2c1)
+    import_probes = {
+        'emoji': 'stanza',
+    }
+
+    def probe_missing_imports(self)->list:
+        # returns the requirements specs of the probed modules absent from the env, [] when all importable
+        import importlib.util
+        missing = []
+        for module_name, provider in self.import_probes.items():
+            try:
+                version(provider)
+            except PackageNotFoundError:
+                continue  # the provider itself is not installed: its install line reports it, do not chase its deps
+            if importlib.util.find_spec(module_name) is None:
+                missing.append(module_name)
+        return missing
+
     def pinned_heads(self)->set:
         # the packages requirements.txt pins or caps (==, <, ~=): their version is e2a's choice, never raised for another
         heads = set()
@@ -2016,6 +2036,11 @@ class DeviceInstaller():
         missing = []
         for req in re.findall(r"requires `([^`]+)`, but it's not installed", output):
             if not self.dependency_skip_re.match(self.pkg_head(req)) and req not in missing:
+                missing.append(req)
+        # uv pip check only reads dist-info metadata: an import buried inside another package's pipeline (emoji via
+        # stanza/pipeline/langid_processor.py) stays invisible there, and the env crashes at 'import lib.core' instead
+        for req in self.probe_missing_imports():
+            if req not in missing:
                 missing.append(req)
         # a dependency below a floor another package declares (anyio 4.16 needs typing_extensions>=4.16, an older one
         # installed since fails at import): raised when only a floor is asked for and e2a neither pins it
