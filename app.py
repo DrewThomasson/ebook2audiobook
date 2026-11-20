@@ -258,6 +258,8 @@ def kill_previous_instances(script_name: str):
 def register_dlls()->str|bool:
     candidates = [
         Path(os.environ['USERPROFILE']) / 'scoop' / 'apps' / 'ffmpeg-shared' / 'current' / 'bin',
+        # windows arm64 installs ffmpeg-nightly (native winarm64 shared build) instead of ffmpeg-shared
+        Path(os.environ['USERPROFILE']) / 'scoop' / 'apps' / 'ffmpeg-nightly' / 'current' / 'bin',
         Path(os.environ.get('PROGRAMFILES', r'C:\Program Files')) / 'ffmpeg' / 'bin',
         Path(os.environ.get('LOCALAPPDATA', '')) / 'Microsoft' / 'WinGet' / 'Links',
     ]
