@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': 'Escriba un número del 0 al {last}: ',
     'msg_gpu_choice_done': 'GPU {device} ({tag}) seleccionada. Para volver a elegir, elimine {file} o establezca DEVICE_TAG.',
     'msg_gpu_choice_default': 'Varias GPU pueden ejecutar e2a aquí ({devices}), sin respuesta: se utiliza {device} ({tag}). Para elegir, elimine {file} y ejecute e2a de nuevo desde un terminal, o establezca DEVICE_TAG.',
+    'msg_gpu_choice_reconciled': 'El dispositivo instalado era {old}, pero este equipo también tiene una GPU adicional: {device} está ahora seleccionada como predeterminada. Para volver a elegir, elimine {file}.',
     'error_device_engine': '{engine} no se puede ejecutar en {device} ({engine} se ejecuta en {devices}).<br/>Seleccione otro dispositivo o motor de TTS para convertir.',
     'msg_device_reset': '{engine} no puede ejecutarse en {device} en este equipo: el dispositivo está configurado para {new_device}.',
     'error_device_not_supported_vulkan': '¡No se ha encontrado ningún cargador Vulkan en este sistema!<br/>Leer {wiki}<br/>Seleccionar otro dispositivo para convertir.',

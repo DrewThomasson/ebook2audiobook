@@ -608,6 +608,7 @@ legends = {
     'msg_gpu_choice_invalid': 'Wpisz liczbę od 0 do {last}: ',
     'msg_gpu_choice_done': 'Wybrano procesor graficzny {device} ({tag}). Aby wybrać ponownie, usuń {file} lub ustaw DEVICE_TAG.',
     'msg_gpu_choice_default': 'W tym miejscu e2a może być uruchomione na kilku procesorach graficznych ({devices}). Brak odpowiedzi: używany jest {device} ({tag}). Aby wybrać, usuń {file} i uruchom ponownie e2a z terminala lub ustaw DEVICE_TAG.',
+    'msg_gpu_choice_reconciled': 'Zainstalowanym urządzeniem było {old}, ale ten komputer ma również dodatkowy procesor graficzny: {device} jest teraz wybrany jako domyślny. Aby wybrać ponownie, usuń {file}.',
     'error_device_engine': '{engine} nie może działać na {device} ({engine} działa na {devices}).<br/>Wybierz inne urządzenie lub silnik TTS do konwersji.',
     'msg_device_reset': '{engine} nie może działać na {device} na tym komputerze: urządzenie jest ustawione na {new_device}.',
     'error_device_not_supported_vulkan': 'W tym systemie nie znaleziono ładowacza Vulkan!<br/>Przeczytaj {wiki}<br/>Wybierz inne urządzenie do konwersji.',
