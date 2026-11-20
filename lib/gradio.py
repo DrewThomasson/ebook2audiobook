@@ -3622,6 +3622,11 @@ def build_interface(args:dict)->gr.Blocks:
                 try:
                     nonlocal models
                     msg = legends['msg_session_load_error']
+                    # header.js returns null when its try block fails (eg, JSON.parse over a corrupted localStorage
+                    # 'data' key), so data arrives None here: start a fresh session instead of crashing on data.get().
+                    # json.loads may also return a non-dict (a str/number/list stored under 'data')
+                    if not isinstance(data, dict):
+                        data = {}
                     # a task still holds this session (reload during a conversion, second tab...): set_session() below
                     # would replace it under the task, so wait until the task has ended
                     if data.get('id', False) and context_tracker.is_busy(data.get('id')):
