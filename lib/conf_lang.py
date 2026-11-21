@@ -699,14 +699,14 @@ chapter_word_mapping = {
     "deu": ["Kapitel", "Teil", "Psalm", "Abschnitt", "Absatz", "Artikel", "Band"],
     "ita": ["capitolo", "parte", "salmo", "sezione", "paragrafo", "articolo", "tomo"],
     "rus": ["глава", "часть", "псалом", "раздел", "параграф", "статья", "том"],
-    "zho": ["章节", "部分", "诗篇", "节", "段落", "条款", "卷"],
-    "jpn": ["章", "部", "詩編", "節", "段落", "条項", "巻"],
-    "kor": ["장", "부분", "시편", "절", "단락", "조항", "권"],
+    "zho": ["章节", "部分", "诗篇", "节", "段落", "条款", "卷", "章", "部", "篇", "回", "節"],
+    "jpn": ["章", "部", "詩編", "節", "段落", "条項", "巻", "話"],
+    "kor": ["장", "부분", "시편", "절", "단락", "조항", "권", "부", "편", "화"],
     "por": ["capítulo", "parte", "salmo", "seção", "parágrafo", "artigo", "tomo"],
     "tur": ["bölüm", "parça", "mezmur", "kısım", "paragraf", "madde", "cilt"],
     "hin": ["अध्याय", "भाग", "भजन", "अनुभाग", "अनुच्छेद", "धारा", "खंड"],
     "ben": ["অধ্যায়", "অংশ", "গীত", "অনুচ্ছেদ", "ধারা", "ধারা", "খণ্ড"],
-    "ara": ["فصل", "جزء", "مزمور", "قسم", "فقرة", "مادة", "مجلد"],
+    "ara": ["فصل", "جزء", "مزمور", "قسم", "فقرة", "مادة", "مجلد", "الفصل", "الجزء", "المزمور", "القسم", "الفقرة", "المادة", "المجلد"],
     "fas": ["فصل", "بخش", "مزمور", "قسمت", "بند", "ماده", "جلد"],
     "hun": ["fejezet", "rész", "zsoltár", "szakasz", "bekezdés", "cikk", "kötet"],
     "pol": ["rozdział", "część", "psalm", "sekcja", "akapit", "artykuł", "tom"],
@@ -714,7 +714,35 @@ chapter_word_mapping = {
     "jav": ["bab", "bagean", "mazmur", "bagéan", "paragraf", "artikel", "jilid"],
     "tam": ["அத்தியாயம்", "பகுதி", "சங்கீதம்", "பிரிவு", "பத்தி", "அம்சம்", "தொகுதி"],
     "tel": ["అధ్యాయం", "భాగం", "కీర్తన", "విభాగం", "పేరా", "ఆర్టికల్", "ఖండం"],
-    "yor": ["ori", "apa", "orin", "ipin", "abala", "abala", "iwe"]
+    "yor": ["ori", "apa", "orin", "ipin", "abala", "abala", "iwe"],
+    "ces": ["kapitola", "část", "žalm", "oddíl", "odstavec", "článek", "svazek", "díl"],
+    "slk": ["kapitola", "časť", "žalm", "oddiel", "odsek", "článok", "zväzok", "diel"],
+    "hrv": ["poglavlje", "dio", "psalam", "odjeljak", "odlomak", "članak", "svezak"],
+    "srp": ["поглавље", "глава", "део", "псалам", "одељак", "пасус", "члан", "том", "poglavlje", "glava", "deo", "psalam", "odeljak", "pasus", "član", "tom"],
+    "bul": ["глава", "част", "псалм", "раздел", "параграф", "член", "том"],
+    "ukr": ["розділ", "глава", "частина", "псалом", "підрозділ", "параграф", "стаття", "том"],
+    "bel": ["раздзел", "глава", "частка", "псальм", "падраздзел", "параграф", "артыкул", "том"],
+    "ron": ["capitolul", "capitol", "partea", "parte", "psalmul", "secțiunea", "secţiunea", "paragraful", "articolul", "volumul"],
+    "cat": ["capítol", "part", "salm", "secció", "paràgraf", "article", "volum"],
+    "glg": ["capítulo", "parte", "salmo", "sección", "parágrafo", "artigo", "tomo"],
+    "nld": ["hoofdstuk", "deel", "psalm", "sectie", "paragraaf", "artikel", "boek"],
+    "swe": ["kapitel", "del", "psalm", "avsnitt", "stycke", "artikel", "band"],
+    "dan": ["kapitel", "del", "salme", "afsnit", "stykke", "artikel", "bind"],
+    "nob": ["kapittel", "del", "salme", "avsnitt", "ledd", "artikkel", "bind"],
+    "fin": ["luku", "osa", "psalmi", "jakso", "kappale", "artikla", "nide"],
+    "est": ["peatükk", "osa", "psalm", "jagu", "lõik", "artikkel", "köide"],
+    "lav": ["nodaļa", "daļa", "psalms", "sadaļa", "rindkopa", "pants", "sējums"],
+    "lit": ["skyrius", "dalis", "psalmė", "skirsnis", "pastraipa", "straipsnis", "tomas"],
+    "ell": ["κεφάλαιο", "μέρος", "ψαλμός", "ενότητα", "παράγραφος", "άρθρο", "τόμος"]
+}
+
+# characters written for a roman number, read as the latin letters inside a numeral only (never in a word):
+# unicode roman numerals (Ⅳ, Ⅻ), fullwidth letters (ＩＶ), cyrillic lookalikes typed on a cyrillic keyboard (ХІІ)
+roman_lookalikes = {
+    'Ⅰ': 'I', 'Ⅱ': 'II', 'Ⅲ': 'III', 'Ⅳ': 'IV', 'Ⅴ': 'V', 'Ⅵ': 'VI', 'Ⅶ': 'VII', 'Ⅷ': 'VIII',
+    'Ⅸ': 'IX', 'Ⅹ': 'X', 'Ⅺ': 'XI', 'Ⅻ': 'XII', 'Ⅼ': 'L', 'Ⅽ': 'C', 'Ⅾ': 'D', 'Ⅿ': 'M',
+    'Ｉ': 'I', 'Ｖ': 'V', 'Ｘ': 'X', 'Ｌ': 'L', 'Ｃ': 'C', 'Ｄ': 'D', 'Ｍ': 'M',
+    'І': 'I', 'Х': 'X', 'С': 'C', 'М': 'M'
 }
 
 specialchars_mapping = {

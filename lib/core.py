@@ -1915,7 +1915,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             prev_typ = None
             for typ, payload in tuples_list:
                 if typ == 'heading':
-                    text_list.append(roman2number(payload.strip(), title_romans=title_romans))
+                    text_list.append(roman2number(payload.strip(), lang, title_romans=title_romans))
                 elif typ in ('break', 'pause'):
                     # Original logic: add token if different from previous type
                     if prev_typ != typ:
@@ -1950,7 +1950,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                     text = payload.strip()
                     if text:
                         # a paragraph used as a title (CHAPTER IV) converts its roman number too
-                        text_list.append(roman2number(text, at_start=True, title_romans=title_romans))
+                        text_list.append(roman2number(text, lang, at_start=True, title_romans=title_romans))
                 prev_typ = typ
             msg = legends['msg_flattening_raw']
             print(msg)
@@ -2786,27 +2786,55 @@ def roman_to_int(roman:str)->int|None:
                 break
     return result
 
-def get_title_roman_patterns()->dict:
-    # a title's roman number in caps with no word behind it, a chapter word or nothing in front of it
-    chapter_words = '|'.join(map(re.escape, sorted({w for words in chapter_word_mapping.values() for w in words}, key=len, reverse=True)))
-    word_first = r'((?i:' + chapter_words + r')\s+)([IVXLCDM]+)(?=\s*(?:$|[^\w\s\'’]))'
-    return dict(
-        # Chapter IV, CHAPTER XLI., Part II: The Return, anywhere in a heading
-        word_first=re.compile(r'(?<![\p{L}\p{M}])()' + word_first),
+title_roman_patterns_cache:dict = {}
+
+def get_title_roman_patterns(lang:str|None=None)->dict:
+    # a title's roman number in caps, next to a chapter word of the book's language (all languages when it has none)
+    # or opening the title. a CJK chapter word needs no space (第Ⅳ章, 제IV장), all caps may drop accents (CAPITULO, ΚΕΦΑΛΑΙΟ, KISIM).
+    # built once per language: roman2number() runs on every heading and paragraph
+
+    def _alt(words:list[str])->str:
+        return '|'.join(map(re.escape, sorted(words, key=len, reverse=True)))
+
+    if lang in title_roman_patterns_cache:
+        return title_roman_patterns_cache[lang]
+    words = chapter_word_mapping.get(lang) or [w for ws in chapter_word_mapping.values() for w in ws]
+    words = set(words) | {word_key(w).replace('ı', 'i') for w in words}
+    glued = [w for w in words if re.search(r'[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]$', w)]
+    spaced = [w for w in words if w not in glued]
+    numeral = r'(?P<num>[IVXLCDM' + re.escape(''.join(roman_lookalikes)) + r']+)'
+    # no word behind the numeral: the end of the title or a punctuation, not a contraction (Part I'm Back)
+    no_word = r'(?=\s*(?:$|[^\w\s\'’]))'
+    word_first = r'(?<![\p{L}\p{M}])(?i:' + _alt(spaced) + r')\s+)' + numeral + no_word
+    behind = []
+    if spaced:
+        behind.append(r'(?:\.\s*|\s+)(?i:' + _alt(spaced) + r')(?![\p{L}\p{M}])')
+    if glued:
+        behind.append(r'\s*(?:' + _alt(glued) + r')')
+    word_after = numeral + r'(?=' + '|'.join(behind) + r')'
+    title_start = r'(?P<pre>^[\s\-–—~*]*)'
+    title_roman_patterns_cache[lang] = dict(
+        # Chapter IV, Глава XII, Part II: The Return, anywhere in a heading
+        word_first=re.compile(r'(?P<pre>' + word_first),
         # CHAPTER IV. THE RETURN opening a paragraph used as a title
-        word_first_start=re.compile(r'^(\s*)' + word_first),
+        word_first_start=re.compile(r'(?P<pre>^\s*' + word_first),
+        # IV. fejezet, IV luku, XII. Bölüm, 第Ⅳ章, 제IV장: the chapter word behind, anywhere in a heading
+        word_after=re.compile(r'(?P<pre>)(?<![\p{Latin}\p{Cyrillic}\p{Greek}\p{Armenian}\p{Nd}\p{M}])' + word_after),
+        word_after_start=re.compile(title_start + word_after),
         # IV, XII. The Return, IV: Exile opening a heading: a numbering mark may follow, not a comma (I, Robot)
-        bare_first=re.compile(r'^([\s\-–—~*]*)()([IVXLCDM]+)(?=\s*(?:$|[.:\-–—]))'),
+        bare_first=re.compile(title_start + numeral + r'(?=\s*(?:$|[.:\-–—]))'),
         # IV. standing alone in a paragraph used as a title, never prose (I, for one, agree)
-        bare_alone=re.compile(r'^([\s\-–—~*]*)()([IVXLCDM]+)(?=[\s.:\-–—~*]*$)'),
+        bare_alone=re.compile(title_start + numeral + r'(?=[\s.:\-–—~*]*$)'),
     )
+    return title_roman_patterns_cache[lang]
 
 def get_title_romans(doc_bodies:list[str])->set:
     # roman numbers a book counts its titles with (I, II, III...): a title opening with a bare roman number is a number
     # only when the book has the one before or after it too, so a title word made of roman letters (DIX, MIX, DC)
-    # or a lone I (a poem titled I) stays written
+    # or a lone I (a poem titled I) stays written. the same in every language: it only reads the book's own titles
     from html import unescape as html_unescape
     patterns = get_title_roman_patterns()
+    lookalikes = str.maketrans(roman_lookalikes)
     found = set()
     for body in doc_bodies:
         headings = re.findall(r'<h[1-4]\b[^>]*>(.*?)</h[1-4]\s*>', body, flags=re.DOTALL | re.IGNORECASE)
@@ -2814,33 +2842,38 @@ def get_title_romans(doc_bodies:list[str])->set:
         pieces += [(patterns['bare_alone'], piece) for piece in re.split(r'<[^>]+>', body)]
         for pattern, piece in pieces:
             m = pattern.match(html_unescape(piece).strip())
-            if m and roman_to_int(m.group(3)) is not None:
-                found.add(m.group(3))
+            if m:
+                roman = m.group('num').translate(lookalikes)
+                if roman_to_int(roman) is not None:
+                    found.add(roman)
     values = {roman_to_int(roman) for roman in found}
     return {roman for roman in found if roman_to_int(roman) - 1 in values or roman_to_int(roman) + 1 in values}
 
-def roman2number(title:str, at_start:bool=False, title_romans:set|None=None)->str:
-    # a title's roman number in caps is converted when no word is behind it and a word of chapter_word_mapping is in
-    # front of it (Chapter IV, Part II: The Return), or nothing is and the book counts its titles with it (IV, XII. The Return).
-    # Louis XIV, Chapter IV The Return, I, Robot, DIX stay written.
+def roman2number(title:str, lang:str|None=None, at_start:bool=False, title_romans:set|None=None)->str:
+    # a title's roman number in caps is converted when a chapter word of the book's language is next to it: in front with
+    # no word behind (Chapter IV, Part II: The Return) or behind (IV. fejezet, IV luku, 第Ⅳ章), or when it opens the title
+    # and the book counts its titles with it (IV, XII. The Return). Louis XIV, Chapter IV The Return, I, Robot, DIX stay written.
     # at_start: a paragraph used as a title must open with it (CHAPTER IV. THE RETURN) or be the numeral alone (IV.)
 
     def _repl(m:re.Match)->str:
-        value = roman_to_int(m.group(3))
+        value = roman_to_int(m.group('num').translate(lookalikes))
         if value is None:
             return m.group(0)
-        return f'{m.group(1)}{m.group(2)}{value}'
+        return f"{m.group('pre')}{value}"
 
     def _repl_bare(m:re.Match)->str:
-        if m.group(3) not in (title_romans or ()):
+        if m.group('num').translate(lookalikes) not in (title_romans or ()):
             return m.group(0)
         return _repl(m)
 
-    patterns = get_title_roman_patterns()
+    lookalikes = str.maketrans(roman_lookalikes)
+    patterns = get_title_roman_patterns(lang)
     if at_start:
         title = patterns['word_first_start'].sub(_repl, title, count=1)
+        title = patterns['word_after_start'].sub(_repl, title, count=1)
         return patterns['bare_alone'].sub(_repl_bare, title)
     title = patterns['word_first'].sub(_repl, title)
+    title = patterns['word_after'].sub(_repl, title)
     return patterns['bare_first'].sub(_repl_bare, title)
 
 def word_key(word:str)->str:
@@ -3184,6 +3217,8 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str, known_word
             flags=re.IGNORECASE
         )
         text = pattern.sub(_replace, text)
+    # unicode roman numerals (Ⅳ, ⅻ) to letters the TTS can read, titles were converted to numbers before
+    text = re.sub(r'[\u2160-\u217F]+', lambda m: unicodedata.normalize('NFKC', m.group()), text)
     # dotted letters like a., c.i.a., F.B.I., U.S.A, С.С.С.Р.: an acronym is always spelled, one letter per word
     pattern = r'(?<![\p{L}\p{M}\p{N}])(?:(?:[a-zA-Z]|\p{Lu})\.)+(?:[a-zA-Z]|\p{Lu})?(?![\p{L}\p{M}\p{N}])(?:\.(?![\p{L}\p{N}]))?'
     text = re.sub(pattern, _dotted, text)

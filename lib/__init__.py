@@ -17,7 +17,7 @@ from .conf import (
 
 from .conf_lang import (
     abbreviations_mapping, chapter_word_mapping, default_language_code, language_separator,
-    roman_numbers_tuples, emojis_list, install_info, session_info, ipa_mapping, language_mapping,
+    roman_numbers_tuples, roman_lookalikes, emojis_list, install_info, session_info, ipa_mapping, language_mapping,
     language_math_phonemes, language_clock, punctuation_list, 
     punctuation_list_set, punctuation_split_hard, punctuation_split_hard_set,
     punctuation_split_soft, punctuation_split_soft_set, punctuation_switch,
@@ -59,7 +59,7 @@ __all__ = [
 
     # from conf_lang
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code", "language_separator",
-    "roman_numbers_tuples", "emojis_list", "install_info", "session_info", "ipa_mapping", "language_mapping",
+    "roman_numbers_tuples", "roman_lookalikes", "emojis_list", "install_info", "session_info", "ipa_mapping", "language_mapping",
     "language_math_phonemes", "language_clock", "punctuation_list", 
     "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
     "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
