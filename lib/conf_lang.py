@@ -736,6 +736,19 @@ chapter_word_mapping = {
     "ell": ["κεφάλαιο", "μέρος", "ψαλμός", "ενότητα", "παράγραφος", "άρθρο", "τόμος"]
 }
 
+# languages reading a roman number before a chapter word as an ordinal (IV. Kapitel = viertes Kapitel,
+# IV. fejezet = negyedik fejezet, IV luku = neljäs luku). num2words gives the masculine ordinal, 'endings' turn it
+# into the gender of the chapter word listed in 'genders' (any other word keeps the masculine one)
+language_ordinal_before = {
+    "deu": {"endings": {"m": [("e", "er")], "n": [("e", "es")]}, "genders": {"kapitel": "n", "teil": "m", "psalm": "m", "abschnitt": "m", "absatz": "m", "artikel": "m", "band": "m"}},
+    "ces": {"endings": {"f": [("ý", "á")], "n": [("ý", "é")]}, "genders": {"kapitola": "f", "část": "f"}},
+    "slk": {"endings": {"f": [("ý", "á"), ("y", "a")], "n": [("ý", "é"), ("y", "e")]}, "genders": {"kapitola": "f", "časť": "f"}},
+    "hrv": {"endings": {"f": [("i", "a")], "n": [("i", "o")]}, "genders": {"poglavlje": "n"}},
+    "lav": {"endings": {"f": [("ais", "ā")]}, "genders": {"nodaļa": "f", "daļa": "f", "sadaļa": "f", "rindkopa": "f"}},
+    "lit": {"endings": {"f": [("as", "a")]}, "genders": {"dalis": "f", "psalmė": "f", "pastraipa": "f"}},
+    "hun": {}, "tur": {}, "fin": {}, "est": {}, "dan": {}, "nob": {}
+}
+
 # characters written for a roman number, read as the latin letters inside a numeral only (never in a word):
 # unicode roman numerals (Ⅳ, Ⅻ), fullwidth letters (ＩＶ), cyrillic lookalikes typed on a cyrillic keyboard (ХІІ)
 roman_lookalikes = {

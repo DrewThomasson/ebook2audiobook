@@ -1915,7 +1915,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             prev_typ = None
             for typ, payload in tuples_list:
                 if typ == 'heading':
-                    text_list.append(roman2number(payload.strip(), lang, title_romans=title_romans))
+                    text_list.append(roman2number(payload.strip(), lang, lang_iso1, title_romans=title_romans))
                 elif typ in ('break', 'pause'):
                     # Original logic: add token if different from previous type
                     if prev_typ != typ:
@@ -1950,7 +1950,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                     text = payload.strip()
                     if text:
                         # a paragraph used as a title (CHAPTER IV) converts its roman number too
-                        text_list.append(roman2number(text, lang, at_start=True, title_romans=title_romans))
+                        text_list.append(roman2number(text, lang, lang_iso1, at_start=True, title_romans=title_romans))
                 prev_typ = typ
             msg = legends['msg_flattening_raw']
             print(msg)
@@ -2806,12 +2806,14 @@ def get_title_roman_patterns(lang:str|None=None)->dict:
     # no word behind the numeral: the end of the title or a punctuation, not a contraction (Part I'm Back)
     no_word = r'(?=\s*(?:$|[^\w\s\'’]))'
     word_first = r'(?<![\p{L}\p{M}])(?i:' + _alt(spaced) + r')\s+)' + numeral + no_word
+    # the dot and space after the numeral are taken (an ordinal replaces them), the chapter word is kept
     behind = []
     if spaced:
-        behind.append(r'(?:\.\s*|\s+)(?i:' + _alt(spaced) + r')(?![\p{L}\p{M}])')
+        behind.append(r'(?P<sep>\.\s*|\s+)(?=(?P<word>(?i:' + _alt(spaced) + r'))(?![\p{L}\p{M}]))')
     if glued:
-        behind.append(r'\s*(?:' + _alt(glued) + r')')
-    word_after = numeral + r'(?=' + '|'.join(behind) + r')'
+        behind.append(r'(?P<gsep>\s*)(?=' + _alt(glued) + r')')
+    word_after = numeral + r'(?:' + '|'.join(behind) + r')'
+    edge = r'\p{Latin}\p{Cyrillic}\p{Greek}\p{Armenian}\p{Nd}\p{M}'
     title_start = r'(?P<pre>^[\s\-–—~*]*)'
     title_roman_patterns_cache[lang] = dict(
         # Chapter IV, Глава XII, Part II: The Return, anywhere in a heading
@@ -2819,12 +2821,14 @@ def get_title_roman_patterns(lang:str|None=None)->dict:
         # CHAPTER IV. THE RETURN opening a paragraph used as a title
         word_first_start=re.compile(r'(?P<pre>^\s*' + word_first),
         # IV. fejezet, IV luku, XII. Bölüm, 第Ⅳ章, 제IV장: the chapter word behind, anywhere in a heading
-        word_after=re.compile(r'(?P<pre>)(?<![\p{Latin}\p{Cyrillic}\p{Greek}\p{Armenian}\p{Nd}\p{M}])' + word_after),
+        word_after=re.compile(r'(?P<pre>)(?<![' + edge + r'])' + word_after),
         word_after_start=re.compile(title_start + word_after),
         # IV, XII. The Return, IV: Exile opening a heading: a numbering mark may follow, not a comma (I, Robot)
         bare_first=re.compile(title_start + numeral + r'(?=\s*(?:$|[.:\-–—]))'),
         # IV. standing alone in a paragraph used as a title, never prose (I, for one, agree)
         bare_alone=re.compile(title_start + numeral + r'(?=[\s.:\-–—~*]*$)'),
+        # any numeral of a CJK text, not glued to latin letters or digits (ロッキーIV, Ⅳ 旅立ち)
+        cjk_any=re.compile(r'(?P<pre>)(?<![' + edge + r'])' + numeral + r'(?![' + edge + r'])'),
     )
     return title_roman_patterns_cache[lang]
 
@@ -2849,11 +2853,19 @@ def get_title_romans(doc_bodies:list[str])->set:
     values = {roman_to_int(roman) for roman in found}
     return {roman for roman in found if roman_to_int(roman) - 1 in values or roman_to_int(roman) + 1 in values}
 
-def roman2number(title:str, lang:str|None=None, at_start:bool=False, title_romans:set|None=None)->str:
+def roman2number(title:str, lang:str|None=None, lang_iso1:str|None=None, at_start:bool=False, title_romans:set|None=None)->str:
     # a title's roman number in caps is converted when a chapter word of the book's language is next to it: in front with
     # no word behind (Chapter IV, Part II: The Return) or behind (IV. fejezet, IV luku, 第Ⅳ章), or when it opens the title
     # and the book counts its titles with it (IV, XII. The Return). Louis XIV, Chapter IV The Return, I, Robot, DIX stay written.
+    # before a chapter word, language_ordinal_before reads it as an ordinal: IV. Kapitel -> viertes Kapitel.
+    # in a CJK text any latin capitals making a roman number are one, titles or not (ロッキーIV).
     # at_start: a paragraph used as a title must open with it (CHAPTER IV. THE RETURN) or be the numeral alone (IV.)
+
+    def _inflect(word:str, endings:list)->str:
+        for old, new in endings:
+            if word.endswith(old):
+                return word[:-len(old)] + new
+        return word
 
     def _repl(m:re.Match)->str:
         value = roman_to_int(m.group('num').translate(lookalikes))
@@ -2866,15 +2878,45 @@ def roman2number(title:str, lang:str|None=None, at_start:bool=False, title_roman
             return m.group(0)
         return _repl(m)
 
+    def _repl_after(m:re.Match)->str:
+        value = roman_to_int(m.group('num').translate(lookalikes))
+        if value is None:
+            return m.group(0)
+        # a language may have only spaced (Kapitel) or only CJK (章) chapter words, so some groups may not exist
+        groups = m.groupdict()
+        word = groups.get('word')
+        if word and ordinal_rules is not None and lang_iso1:
+            try:
+                ordinal = num2words(value, lang=lang_iso1, to='ordinal')
+                endings = ordinal_rules.get('endings', {}).get(genders.get(word_key(word)), [])
+                # the ordinal takes the numeral and its dot: IV. Kapitel -> viertes Kapitel
+                return f"{m.group('pre')}{' '.join(_inflect(w, endings) for w in ordinal.split())} "
+            except Exception:
+                pass
+        return f"{m.group('pre')}{value}{groups.get('sep') or groups.get('gsep') or ''}"
+
+    def _repl_cjk(m:re.Match)->str:
+        # unicode numerals always (Ⅳ), latin letters from 2 letters read as a number alone (IV, XII), not CD, CM, DC, X線, Vサイン
+        num = m.group('num')
+        if not re.search(r'[\u2160-\u216F]', num) and (len(num) < 2 or not is_roman_numeral(num.translate(lookalikes))):
+            return m.group(0)
+        return _repl(m)
+
     lookalikes = str.maketrans(roman_lookalikes)
     patterns = get_title_roman_patterns(lang)
+    ordinal_rules = language_ordinal_before.get(lang)
+    genders = {word_key(w): g for w, g in (ordinal_rules or {}).get('genders', {}).items()}
     if at_start:
         title = patterns['word_first_start'].sub(_repl, title, count=1)
-        title = patterns['word_after_start'].sub(_repl, title, count=1)
-        return patterns['bare_alone'].sub(_repl_bare, title)
-    title = patterns['word_first'].sub(_repl, title)
-    title = patterns['word_after'].sub(_repl, title)
-    return patterns['bare_first'].sub(_repl_bare, title)
+        title = patterns['word_after_start'].sub(_repl_after, title, count=1)
+        title = patterns['bare_alone'].sub(_repl_bare, title)
+    else:
+        title = patterns['word_first'].sub(_repl, title)
+        title = patterns['word_after'].sub(_repl_after, title)
+        title = patterns['bare_first'].sub(_repl_bare, title)
+    if language_mapping.get(lang, {}).get('script') in ('chinese', 'japanese', 'hangul'):
+        title = patterns['cjk_any'].sub(_repl_cjk, title)
+    return title
 
 def word_key(word:str)->str:
     # case and accent free form of a word: all caps often drop the accents (ETE/été, ΣΟΦΙΑ/Σοφία)
