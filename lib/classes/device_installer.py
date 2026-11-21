@@ -1102,29 +1102,15 @@ class DeviceInstaller():
             # ============================================================
             if not tegra and has_rocm() and has_amd_gpu_pci():
                 name, tag, msg = None, None, ''
-                # HSA_OVERRIDE_GFX_VERSION is read once, when this process first initializes the HSA runtime:
-                # the ctypes hipGetDeviceCount() below does it, and torch later reuses that loaded libhsa-runtime64.so.1,
-                # so the override must be in os.environ before it. detect_gpu.py inherits it and reports it back unchanged.
-                if os.name == 'posix' and not os.environ.get('HSA_OVERRIDE_GFX_VERSION'):
-                    sys_path = list(sys.path)
-                    try:
-                        import importlib.util
-                        spec = importlib.util.spec_from_file_location('detect_gpu', detect_gpu_script)
-                        detect_gpu = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(detect_gpu)
-                        detect_gpu.handle_rocm_override()
-                    except Exception:
-                        pass  # never block device detection
-                    finally:
-                        sys.path[:] = sys_path  # handle_rocm_override() puts components/ first on sys.path
                 version = ()
                 msg = ''
                 hip_device_count = 0
                 # 1) HIP runtime detection via ctypes (primary)
                 try:
                     import ctypes
-                    libhip = None
+                    runtime_version = None
                     if os.name == 'nt':
+                        libhip = None
                         hip_path = os.environ.get('HIP_PATH', '')
                         candidates = ['amdhip64.dll']
                         if hip_path:
@@ -1135,6 +1121,13 @@ class DeviceInstaller():
                                 break
                             except OSError:
                                 continue
+                        if libhip:
+                            device_count = ctypes.c_int()
+                            if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
+                                hip_device_count = device_count.value
+                            v_int = ctypes.c_int()
+                            if libhip.hipRuntimeGetVersion(ctypes.byref(v_int)) == 0:
+                                runtime_version = v_int.value
                     else:
                         candidates = ['libamdhip64.so']
                         min_major, _ = rocm_version_range['min']
@@ -1157,34 +1150,32 @@ class DeviceInstaller():
                                             candidates.append(os.path.join(d, f))
                                 except OSError:
                                     pass
-                        for lib_name in candidates:
-                            try:
-                                libhip = ctypes.CDLL(lib_name)
-                                break
-                            except OSError:
-                                continue
-                    if libhip:
-                        device_count = ctypes.c_int()
-                        if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
-                            hip_device_count = device_count.value
-                        v_int = ctypes.c_int()
-                        if libhip.hipRuntimeGetVersion(ctypes.byref(v_int)) == 0:
-                            v = v_int.value
-                            if v >= 10000000:
-                                major = v // 10000000
-                                minor = (v % 10000000) // 100000
-                                patch = v % 100000
-                            elif v >= 100:
-                                major = v // 100
-                                minor = (v % 100) // 10
-                                patch = 0
-                            else:
-                                major, minor, patch = v, 0, 0
-                            if hip_device_count > 0:
-                                version = (major, minor, patch)
-                            else:
-                                ver_disp = f'{major}.{minor}.{patch}' if patch else f'{major}.{minor}'
-                                msg = legends['msg_hip_no_devices'].format(version=ver_disp)
+                        # asked in a child (detect_gpu.py --hip-runtime), not loaded here: a libamdhip64 loaded in this
+                        # process stays, and torch imported later binds its ROCm libraries to it by soname
+                        # (libamdhip64.so.7). torch built for ROCm 7.14 then ran on the system's 7.16 runtime, under the
+                        # HSA_OVERRIDE_GFX_VERSION picked for this probe, while detect_gpu.py had checked torch on its
+                        # own stack (crash report ec3a0208c4c44215: segfault at the first tensor stanza moved to the GPU).
+                        # The override torch runs under comes from detect_gpu.py's verdict alone (install_device_packages)
+                        answer = self.hip_runtime_child(candidates)
+                        hip_device_count = answer.get('count') or 0
+                        runtime_version = answer.get('version')
+                    if runtime_version is not None:
+                        v = runtime_version
+                        if v >= 10000000:
+                            major = v // 10000000
+                            minor = (v % 10000000) // 100000
+                            patch = v % 100000
+                        elif v >= 100:
+                            major = v // 100
+                            minor = (v % 100) // 10
+                            patch = 0
+                        else:
+                            major, minor, patch = v, 0, 0
+                        if hip_device_count > 0:
+                            version = (major, minor, patch)
+                        else:
+                            ver_disp = f'{major}.{minor}.{patch}' if patch else f'{major}.{minor}'
+                            msg = legends['msg_hip_no_devices'].format(version=ver_disp)
                 except (OSError, AttributeError):
                     pass
                 # 2) hipcc fallback
@@ -2455,6 +2446,21 @@ class DeviceInstaller():
             print(error)
             return 0
 
+    def hip_runtime_child(self, candidates:list)->dict:
+        # {'count', 'version'} of the system HIP runtime, read by components/detect_gpu.py --hip-runtime in a child so
+        # the system libamdhip64 never loads in e2a's own process (check_hardware). {} when no candidate loads or the
+        # child does not answer
+        try:
+            proc = subprocess.run([python_exec, detect_gpu_script, '--hip-runtime', json.dumps(candidates)], capture_output=True, text=True, timeout=60)
+        except (subprocess.TimeoutExpired, OSError):
+            return {}
+        answer = next((line.strip() for line in reversed(proc.stdout.splitlines()) if line.strip().startswith('{')), None)
+        try:
+            data = json.loads(answer) if proc.returncode == 0 and answer else {}
+        except json.JSONDecodeError:
+            return {}
+        return data if isinstance(data, dict) else {}
+
     def probe_gpus(self)->dict:
         # torch's own GPU count, read by components/detect_gpu.py in a child process: a GPU torch can die natively in
         # it. 'probed': the child ran to its end (or died in torch), so a count of 0 is torch's own answer. A probe that
@@ -2911,25 +2917,30 @@ class DeviceInstaller():
                         os.environ['E2A_XPU_UNUSABLE'] = '1'
                         msg = legends['msg_xpu_unusable'] if gpu_info.get('probed') else legends['msg_xpu_probe_no_answer']
                         print(msg)
-                    # read back with a native crash of this process (bug_reporter.note()): which way the probe went and
-                    # whether the XPU guard is on, which the report of the next launch cannot tell otherwise
-                    if device_info['name'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['XPU']['proc']]:
-                        from lib.classes.bug_reporter import bug_reporter
-                        answer = 'answered' if gpu_info.get('probed') else 'no answer'
-                        guard = os.environ.get('E2A_XPU_UNUSABLE', '0')
-                        bug_reporter.fact('gpu_probe', f"{device_info['name']} count {gpu_info['count']} ({answer}), E2A_XPU_UNUSABLE={guard}")
                     if gpu_info['count'] > 0:
                         idx = ','.join(str(i) for i in range(gpu_info['count']))
                         if gpu_info['backend'] == 'cuda':
                             os.environ['CUDA_VISIBLE_DEVICES'] = idx
                         elif gpu_info['backend'] == 'rocm':
                             os.environ['HIP_VISIBLE_DEVICES'] = idx
-                            # detect_gpu.py resolved it in its own child process, count > 0 means torch found the GPU under it
+                            # detect_gpu.py resolved it in its own child process against the installed torch's GPU
+                            # targets, count > 0 means torch found the GPU under it. The only override this process gets
                             if gpu_info.get('hsa_override') and not os.environ.get('HSA_OVERRIDE_GFX_VERSION'):
                                 os.environ['HSA_OVERRIDE_GFX_VERSION'] = gpu_info['hsa_override']
                         elif gpu_info['backend'] == 'xpu':
                             os.environ['ONEAPI_DEVICE_SELECTOR'] = f'level_zero:{idx}'
                             os.environ['ZE_AFFINITY_MASK'] = idx
+                    # read back with a native crash of this process (bug_reporter.note()): which way the probe went and
+                    # what torch runs under (XPU guard, HSA override), which the report of the next launch cannot tell
+                    if device_info['name'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['XPU']['proc']]:
+                        from lib.classes.bug_reporter import bug_reporter
+                        answer = 'answered' if gpu_info.get('probed') else 'no answer'
+                        probe = f"{device_info['name']} count {gpu_info['count']} ({answer})"
+                        if device_info['name'] == devices['XPU']['proc']:
+                            probe += f", E2A_XPU_UNUSABLE={os.environ.get('E2A_XPU_UNUSABLE', '0')}"
+                        elif device_info['name'] == devices['ROCM']['proc']:
+                            probe += f", HSA_OVERRIDE_GFX_VERSION={os.environ.get('HSA_OVERRIDE_GFX_VERSION') or 'unset'}"
+                        bug_reporter.fact('gpu_probe', probe)
                     return 0
                 else:
                     error = 'install_device_packages() error: json.loads() could not decode device_info_str'

@@ -1686,7 +1686,11 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                         except Exception:
                             pass
                         stanza_processors = 'tokenize,mwt,ner' if stanza_has_mwt else 'tokenize,ner'
+                        # the first model of a conversion on the GPU: a native crash here reported 'where: -' (crash
+                        # report ec3a0208c4c44215), the note says what ran and carries the GPU probe's verdict
+                        bug_reporter.note(f"loading {stanza_model} on {session['device'] if use_gpu else devices['CPU']['proc']}", ram=True)
                         stanza_nlp = stanza.Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
+                        bug_reporter.note(f'{stanza_model} loaded')
                         if stanza_nlp:
                             session['stanza_cache'] = stanza_model
                             loaded_tts[stanza_model] = stanza_nlp
