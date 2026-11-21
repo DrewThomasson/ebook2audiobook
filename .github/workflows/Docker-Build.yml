@@ -159,21 +159,91 @@ jobs:
             docker buildx imagetools create -t "$TAG" "$CPU_AMD64_TAG" "$CPU_ARM64_TAG"
           done
 
-      # ==================== CUDA 13.0 Build (linux/amd64 only) ====================
-      - name: Build and Push CUDA 13.0 Docker Image
+      # ==================== CUDA 13.2 Build (linux/amd64 only) ====================
+      - name: Build and Push CUDA 13.2 Docker Image
         run: |
           cd ~/E2ADockerBuild/ebook2audiobook
-          CUDA_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cu130"
-          CUDA_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cu130"
-          CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu130"
+          CUDA_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cu132"
+          CUDA_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cu132"
+          CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu132"
           CUDA_TAG_4="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest"
           docker buildx build --pull --platform linux/amd64 \
-            --build-arg DEVICE_TAG=cu130 \
-            --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu130", "note": "CUDA 13.0"}' \
+            --build-arg DEVICE_TAG=cu132 \
+            --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu132", "note": "CUDA 13.2"}' \
             -t "$CUDA_TAG_1" \
             -t "$CUDA_TAG_2" \
             -t "$CUDA_TAG_3" \
             -t "$CUDA_TAG_4" \
+            --push .
+
+      # ==================== CUDA 13.4 Build (linux/amd64 only) ====================
+      # torch 2.15.0 stable, torchcodec 0.18.0 from the nightly tree until it is published: every rebuild takes the
+      # stable build once it is out. continue-on-error: a broken nightly day must not stop the stable images below
+      - name: Build and Push CUDA 13.4 Docker Image
+        continue-on-error: true
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          CUDA_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cu134"
+          CUDA_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cu134"
+          CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu134"
+          docker buildx build --pull --platform linux/amd64 \
+            --build-arg DEVICE_TAG=cu134 \
+            --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu134", "note": "CUDA 13.4"}' \
+            -t "$CUDA_TAG_1" \
+            -t "$CUDA_TAG_2" \
+            -t "$CUDA_TAG_3" \
+            --push .
+
+      # ==================== CUDA 13.5 Build (linux/amd64 only) ====================
+      # torch 2.16.0 / torchaudio 2.11.x / torchcodec 0.18.0 from the nightly tree until they are published: every
+      # rebuild takes the stable builds once they are out. continue-on-error: a broken nightly day must not stop the
+      # stable images below
+      - name: Build and Push CUDA 13.5 Docker Image
+        continue-on-error: true
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          CUDA_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-cu135"
+          CUDA_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-cu135"
+          CUDA_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:cu135"
+          docker buildx build --pull --platform linux/amd64 \
+            --build-arg DEVICE_TAG=cu135 \
+            --build-arg DOCKER_DEVICE_STR='{"name": "cuda", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cu135", "note": "CUDA 13.5"}' \
+            -t "$CUDA_TAG_1" \
+            -t "$CUDA_TAG_2" \
+            -t "$CUDA_TAG_3" \
+            --push .
+
+      # ==================== ROCm 7.2 Build (linux/amd64 only) ====================
+      # amd64 only: torch_matrix has no aarch64 ROCm row. At run time the host passes /dev/kfd and /dev/dri (compose
+      # profile rocm, ebook2audiobook.sh --device flags)
+      - name: Build and Push ROCm 7.2 Docker Image
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          ROCM_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-rocm7.2"
+          ROCM_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-rocm7.2"
+          ROCM_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:rocm7.2"
+          docker buildx build --pull --platform linux/amd64 \
+            --build-arg DEVICE_TAG=rocm7.2 \
+            --build-arg DOCKER_DEVICE_STR='{"name": "rocm", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "rocm7.2", "note": "ROCm 7.2"}' \
+            -t "$ROCM_TAG_1" \
+            -t "$ROCM_TAG_2" \
+            -t "$ROCM_TAG_3" \
+            --push .
+
+      # ==================== Intel XPU Build (linux/amd64 only) ====================
+      # amd64 only: Intel NEO / IGC / GMM release debs pulled by the Dockerfile xpu block are amd64 builds
+      - name: Build and Push XPU Docker Image
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          XPU_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-xpu"
+          XPU_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-xpu"
+          XPU_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:xpu"
+          docker buildx build --pull --platform linux/amd64 \
+            --build-arg DEVICE_TAG=xpu \
+            --build-arg DOCKER_DEVICE_STR='{"name": "xpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "xpu", "note": "Intel XPU"}' \
+            -t "$XPU_TAG_1" \
+            -t "$XPU_TAG_2" \
+            -t "$XPU_TAG_3" \
             --push .
 
       # ==================== Huggingface Docker Build (linux/amd64 only) ====================

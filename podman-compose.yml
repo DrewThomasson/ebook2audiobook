@@ -1,11 +1,20 @@
 # podman-compose.yml — universal across cpu / cuda / rocm / xpu (+ jetson),
 # on both amd64 and arm64. Pick the accelerator with --profile.
 #
-# LOCAL BUILD ONLY — the app image is never pulled from a registry. Two things
-# guarantee that under podman: the `localhost/` prefix on the image name (a
-# fully-qualified local reference podman will never resolve against a registry)
-# and `pull_policy: never`. Only the FROM base
-# (docker.io/library/python:<ver>-slim-bookworm) still comes from a registry.
+# LOCAL BUILD BY DEFAULT — the app image is not pulled from a registry. Two
+# things guarantee that under podman: the `localhost/` prefix on the image name
+# (a fully-qualified local reference podman will never resolve against a
+# registry: `podman build -t athomasson2/ebook2audiobook:<tag>` stores exactly
+# that name) and `pull_policy: never`. Only the FROM base
+# (docker.io/library/python:<ver>-slim-trixie) still comes from a registry.
+#
+# Published image instead of a local build: set both E2A_IMAGE and
+# E2A_PULL_POLICY (missing: only when the tag is not there yet, always: at
+# every up). Docker Hub carries cpu (amd64 + arm64), cu132, cu134, cu135,
+# rocm7.2 and xpu (amd64):
+#   E2A_IMAGE=docker.io/athomasson2/ebook2audiobook E2A_PULL_POLICY=missing DEVICE_TAG=cu135 podman-compose -f podman-compose.yml --profile cuda up
+# The docker.io name never collides with a local build (localhost/...). Set
+# neither variable when building.
 #
 # On Linux/macOS the image is built by ebook2audiobook.command --script_mode
 # build_docker with DOCKER_MODE=podman, which calls plain `podman build` with
@@ -33,8 +42,9 @@
 #   (add HSA_OVERRIDE_GFX_VERSION=x.y.z in front when the launcher printed one)
 #   DEVICE_TAG=xpu      podman-compose -f podman-compose.yml --profile xpu    up
 #
-# If your podman-compose rejects `pull_policy: never`, drop the line — the
-# localhost/ prefix already makes a registry pull impossible.
+# If your podman-compose rejects `pull_policy`, drop the line — the localhost/
+# prefix already makes a registry pull impossible, and with E2A_IMAGE set podman
+# pulls a missing image by itself.
 #
 # Architecture (amd64 vs arm64) is NOT a profile. It is decided by the host you
 # build on plus the matching DEVICE_TAG — there is deliberately no `platform:`
@@ -44,13 +54,13 @@
 #   DEVICE_TAG=rocm podman-compose --profile rocm config
 
 x-common: &common
-  image: localhost/athomasson2/ebook2audiobook:${DEVICE_TAG:-cpu}
-  pull_policy: never
+  image: ${E2A_IMAGE:-localhost/athomasson2/ebook2audiobook}:${DEVICE_TAG:-cpu}
+  pull_policy: ${E2A_PULL_POLICY:-never}
   build:
     context: .
     dockerfile: Dockerfile
     args:
-      APP_VERSION: ${APP_VERSION:-26.11.17}
+      APP_VERSION: ${APP_VERSION:-26.11.22}
       DEVICE_TAG: ${DEVICE_TAG:-cpu}
       # A null value means "resolve from the environment at build time, and if
       # unset leave the Dockerfile default alone". These are exactly the vars

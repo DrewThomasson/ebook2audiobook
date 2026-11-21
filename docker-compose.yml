@@ -1,11 +1,20 @@
 # docker-compose.yml — universal across cpu / cuda / rocm / xpu (+ jetson),
 # on both amd64 and arm64. Pick the accelerator with --profile.
 #
-# LOCAL BUILD ONLY — the app image is never pulled from a registry:
+# LOCAL BUILD BY DEFAULT — the app image is not pulled from a registry:
 # `pull_policy: never` means `up` uses the local image or fails loudly. The
 # image is produced by ebook2audiobook.command --script_mode build_docker
 # (DOCKER_MODE=compose runs `docker compose build` against the build: block
 # below). Only the FROM base (python:<ver>-slim-trixie) is fetched remotely.
+#
+# Published image instead of a local build: E2A_PULL_POLICY lets compose pull
+# it (missing: only when the tag is not there yet, always: at every up), and
+# E2A_IMAGE names another repository if needed (default
+# athomasson2/ebook2audiobook, which docker reads as docker.io/...). Docker Hub
+# carries cpu (amd64 + arm64), cu132, cu134, cu135, rocm7.2 and xpu (amd64):
+#   E2A_PULL_POLICY=missing DEVICE_TAG=cu135 docker compose --profile cuda up
+# A local build gets the same name: `always` replaces it with the published
+# image of that tag. Set neither variable when building.
 #
 # The build context is the WHOLE repo, not just the Dockerfile: the Dockerfile
 # does `COPY . /app` and then runs
@@ -39,13 +48,13 @@
 services:
   # --- shared base: exists only for extends, never runs (dummy _base profile)
   ebook2audiobook-base:
-    image: athomasson2/ebook2audiobook:${DEVICE_TAG:-cpu}
-    pull_policy: never
+    image: ${E2A_IMAGE:-athomasson2/ebook2audiobook}:${DEVICE_TAG:-cpu}
+    pull_policy: ${E2A_PULL_POLICY:-never}
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.11.17}
+        APP_VERSION: ${APP_VERSION:-26.11.22}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
         # A null value means "resolve from the environment at build time, and
         # if unset leave the Dockerfile default alone". These are exactly the

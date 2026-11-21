@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Àwọn Ẹ̀yà
-- 🔧 **Àwọn Ẹ̀rọ TTS tí a ṣe àtìlẹyìn**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
+- 🔧 **Àwọn Ẹ̀rọ TTS tí a ṣe àtìlẹyìn**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos2, Zonos3, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Yí àwọn ọ̀nà fáìlì púpọ̀ padà**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Agbègbè Ọ̀rọ̀** láti yí ọ̀rọ̀ kúkúrú padà tààrà sí ohùn
 - 🔍 **Àyẹ̀wò OCR** fún àwọn fáìlì tó ní àwọn ojú-ìwé ọ̀rọ̀ gẹ́gẹ́ bí àwòrán
@@ -166,7 +166,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — ìdákẹ́jẹ́ẹ́ (àyè àìròtẹ́lẹ̀ **1.0–1.6 sec.**)
 - `[pause:N]` — ìdúró tí a gbé kalẹ̀ (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — yí ohùn padà láti ohùn àpẹẹrẹ tàbí èyí tí a yàn láti GUI/CLI
-- `[emotion:sadness]...[/emotion]` — Zonos nìkan: ìmọ̀lára fún ìrìn-àjò kan (ìdùnnú, ìbànújẹ́, ìkórìíra, ìbẹ̀rù, ìyanu, ìbínú, òmíràn, àìdáa) tàbí ìdàpọ̀ bíi `[emotion:sadness=0.7,neutral=0.3]`; àwọn ẹ̀rọ mìíràn ṣàìgbọràn sí i
+- `[emotion:sadness]...[/emotion]` — Zonos2 àti Zonos3 nìkan: ẹ̀mí fún ìpín (ayọ̀, ìbànújẹ́, ìkórìíra, ìbẹ̀rù, ìyàlẹ́nu, ìbínú, mìíràn, àìlẹ́gbẹ́; Zonos3 tún jẹ́ ìdẹ̀ra, ìdààmú) tàbí àdàlú bíi `[emotion:sadness=0.7,neutral=0.3]`; àwọn ẹ̀rọ mìíràn kò kà á sí
 
 **Wo repo wa míràn tí a yà sọ́tọ̀ fún àfikún SML lọ́nà aládàáṣiṣẹ́ nínú eBook rẹ -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -456,7 +456,7 @@ SML tags available:
 	[pause] — silence (random range **1.0–1.6 sec.**)
 	[pause:N] — fixed pause (**N sec.**)
 	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
+	[emotion:sadness]...[/emotion] — Zonos2 and Zonos3 only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral; Zonos3 also calm, confused) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
 
 ```
 
@@ -524,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - ÀKÍYÈSÍ: MPS kò sí ní àrọ́wọ́tó nínú Docker, nítorí náà a gbọ́dọ̀ lo CPU
-- ÀKÍYÉSÍ: ààyè `e2a_venvs` tí a dárúkọ ń tọ́jú àwọn ẹ̀rọ TTS tí a fi sori ẹrọ ní venv tiwọn (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM àti bẹ́ẹ̀ bẹ́ẹ̀ lọ)
+- ÀKÍYÉSÍ: ìwọ̀n `e2a_venvs` tí a dárúkọ máa ń tọ́jú àwọn ẹ̀rọ TTS tí a fi sori ẹrọ ní venv tiwọn (GPT-SoVITS, Zonos2, Zonos3, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM àti bẹ́ẹ̀ bẹ́ẹ̀ lọ.)
   láti ìgbà kan tí container bá ṣiṣẹ́ sí òmíràn, kí a má baà tún wọn fi sori ẹ̀rọ ní gbogbo ìgbà. Láti tún wọn ṣètò: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -563,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
-                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
-                        os,tessdata,jieba,voices
+                        urtts,piper,zonos2,zonos3,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoic
+                        e,orpheus,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,inter
+                        lude,argos,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -795,7 +795,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1)
 - [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1)
 - [x] Tortoise (https://github.com/neonbjb/tortoise-tts)[cite: 1)
-- [x] Zonos (https://github.com/Zyphra/Zonos)[cite: 1)
+- [x] Zonos2 (https://github.com/Zyphra/zonos2.cpp)[cite: 1]
+- [x] Zonos3 (https://github.com/Zyphra/ZONOS3-Mini)[cite: 1]
 - [x] Bark (https://github.com/suno-ai/bark)[cite: 1)
 - [x] YourTTS (https://github.com/Edresson/YourTTS)[cite: 1)
 - [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
@@ -864,6 +865,7 @@ A gba irú ohun-èlò èyíkéyìí láti dán ìdàgbàsókè wa wò bíi:
 - [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Ohun èlò ìkẹ́kọ̀ọ́ tó jinlẹ̀ fún Text-to-Speech, tí a dán wò nínú ìwádìí àti ìṣẹ̀dá.
 - [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Ẹ̀rọ ọ̀rọ̀-sí-ọ̀rọ̀ sísọ tí ó yá tí ó sì wà ní agbègbè.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml kóódù ìfihàn fún Zonos2.
+- [Zonos3.cpp](https://github.com/Zyphra/ZONOS3-Mini/tree/main/servers/ggml) -- koodu ìfọkànsìn ggml fún ZONOS3-Mini.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) - Ẹrọ ìfihàn C++ tí ó mọ́ fún àwọn àwòṣe ohùn, tí ggml ń lò.
 
 <a id="special-thanks"></a>

@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, difflib, errno, fnmatch, sqlite3, hashlib, io, json, math, os, gc
-import random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
+import functools, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn, copy, base64, posixpath
 import traceback, socket, unicodedata, codecs, urllib.request, uuid, zipfile, multiprocessing, ipaddress
 import ebooklib, psutil, requests, stanza, importlib, queue, pykakasi
 import regex as re, gradio as gr
@@ -129,6 +129,10 @@ footnote_href_re = re.compile(r'#[^#]*(?:note|fn|ftn|edn)', re.IGNORECASE)
 number_token_pattern = r'\d+(?:(?:[.,]|[ \u00A0\u202F](?=\d{3}(?!\d)))\d+)*'
 # word chars that cannot touch a number, CJK scripts excluded as they never put spaces around numbers
 number_glue_class = r'[^\W\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]'
+
+# SML escape codepoints are private-use characters: any char >= this value is part of an escaped SML tag run.
+# precomputed once so the hot text-splitting loops avoid the global module lookup (lib/__init__.py re-exports it)
+_sml_escape_tag = sml_escape_tag
 
 ########### Classes
 
@@ -1267,7 +1271,17 @@ def convert2epub(session_id:str)->bool:
             elif file_ext == '.docx':
                 from docx import Document as DocxDocument
                 filename_noext = os.path.splitext(os.path.basename(session['ebook']))[0]
-                docx_doc = DocxDocument(file_input)
+                try:
+                    docx_doc = DocxDocument(file_input)
+                except KeyError as e:
+                    # a .docx whose [Content_Types].xml lacks the officeDocument relationship: not a real
+                    # OOXML document (often another format renamed to .docx). User error, not a crash to report
+                    if 'officeDocument' in str(e):
+                        error = legends['error_invalid_docx'].format(name=os.path.basename(file_input))
+                        print(error)
+                        show_alert(session_id, {"type": "error", "msg": error})
+                        return False
+                    raise
                 all_text = ''.join(p.text.strip() for p in docx_doc.paragraphs)
                 if not all_text:
                     for table in docx_doc.tables:
@@ -1684,7 +1698,11 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                         except Exception:
                             pass
                         stanza_processors = 'tokenize,mwt,ner' if stanza_has_mwt else 'tokenize,ner'
+                        # the first model of a conversion on the GPU: a native crash here reported 'where: -' (crash
+                        # report ec3a0208c4c44215), the note says what ran and carries the GPU probe's verdict
+                        bug_reporter.note(f"loading {stanza_model} on {session['device'] if use_gpu else devices['CPU']['proc']}", ram=True)
                         stanza_nlp = stanza.Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
+                        bug_reporter.note(f'{stanza_model} loaded')
                         if stanza_nlp:
                             session['stanza_cache'] = stanza_model
                             loaded_tts[stanza_model] = stanza_nlp
@@ -2096,11 +2114,11 @@ def get_sentences(session_id:str, text:str)->list|None:
                 i = m.end()
                 last = i
                 continue
-            if ord(sentence[i]) >= sml_escape_tag:
+            if ord(sentence[i]) >= _sml_escape_tag:
                 if i > last:
                     parts.append(sentence[last:i])
                 j = i
-                while j < n and ord(sentence[j]) >= sml_escape_tag:
+                while j < n and ord(sentence[j]) >= _sml_escape_tag:
                     j += 1
                 parts.append(sentence[i:j])
                 i = j
@@ -2112,17 +2130,30 @@ def get_sentences(session_id:str, text:str)->list|None:
         return parts
 
     def _strip_escaped_sml(s:str)->str:
-        return ''.join(c for c in s if ord(c) < sml_escape_tag)
+        return ''.join(c for c in s if ord(c) < _sml_escape_tag)
 
     def _clean_len(s:str)->int:
         return len(_strip_escaped_sml(s))
 
+    # precompiled once at import: these ran re.match/re.search with a string pattern (implicit cache
+    # lookup on every call) for every ideogram token of CJK/Thai texts
+    if not hasattr(get_sentences, '_latin_only_cache'):
+        get_sentences._nonword_re = re.compile(r'[^\w\s]', flags=re.UNICODE)
+        get_sentences._latin_re = re.compile(r'[A-Za-z]')
+        get_sentences._nonlatin_re = re.compile(r'[^\x00-\x7F]')
+        get_sentences._latin_only_cache = {}
+    _latin_only_cache = get_sentences._latin_only_cache
+
     def _is_latin_only(s:str)->bool:
-        s = _strip_escaped_sml(s)
-        s = re.sub(r'[^\w\s]', '', s, flags=re.UNICODE)
-        has_latin = bool(re.search(r'[A-Za-z]', s))
-        has_nonlatin = bool(re.search(r'[^\x00-\x7F]', s))
-        return has_latin and not has_nonlatin
+        cached = _latin_only_cache.get(s)
+        if cached is None:
+            stripped = _strip_escaped_sml(s)
+            cleaned = get_sentences._nonword_re.sub('', stripped)
+            cached = bool(get_sentences._latin_re.search(cleaned)) and not get_sentences._nonlatin_re.search(cleaned)
+            if len(_latin_only_cache) > 65536:
+                _latin_only_cache.clear()
+            _latin_only_cache[s] = cached
+        return cached
 
     def _segment_ideogramms(text:str)->list[str]:
         result = []
@@ -2152,13 +2183,19 @@ def get_sentences(session_id:str, text:str)->list|None:
             return [text]
 
     def _join_ideogramms(idg_list:list[str])->str:
+        # precompiled once at import (string patterns were re-looked-up on the regex cache per token)
+        if not hasattr(get_sentences, '_idg_start_latin'):
+            get_sentences._idg_start_latin = re.compile(r'[A-Za-z0-9]')
+            get_sentences._idg_start_nonlatin = re.compile(r'[^\x00-\x7F]')
+            get_sentences._idg_end_latin = re.compile(r'[A-Za-z0-9]$')
+            get_sentences._idg_end_nonlatin = re.compile(r'[^\x00-\x7F]$')
         try:
             buffer = ''
             prev_latin = False
             prev_nonlatin = False
             for token in idg_list:
-                cur_starts_latin = bool(re.match(r'[A-Za-z0-9]', token))
-                cur_starts_nonlatin = bool(re.match(r'[^\x00-\x7F]', token))
+                cur_starts_latin = bool(get_sentences._idg_start_latin.match(token))
+                cur_starts_nonlatin = bool(get_sentences._idg_start_nonlatin.match(token))
                 if buffer:
                     if (prev_latin and (cur_starts_latin or cur_starts_nonlatin)) or (prev_nonlatin and cur_starts_latin):
                         buffer += ' '
@@ -2166,8 +2203,8 @@ def get_sentences(session_id:str, text:str)->list|None:
                         yield buffer
                         buffer = ''
                 buffer += token
-                prev_latin = bool(re.search(r'[A-Za-z0-9]$', token))
-                prev_nonlatin = bool(re.search(r'[^\x00-\x7F]$', token))
+                prev_latin = bool(get_sentences._idg_end_latin.search(token))
+                prev_nonlatin = bool(get_sentences._idg_end_nonlatin.search(token))
             if buffer:
                 yield buffer
         except Exception as e:
@@ -2176,23 +2213,27 @@ def get_sentences(session_id:str, text:str)->list|None:
                 yield buffer
 
     def _is_pure_escaped_sml(s:str)->bool:
-        return bool(s) and all(ord(c) >= sml_escape_tag for c in s)
+        return bool(s) and all(ord(c) >= _sml_escape_tag for c in s)
 
     def _strip_leading_noise(s:str)->str:
         i = 0
         n = len(s)
         while i < n:
             c = s[i]
-            if c.isalnum() or c == '_' or c.isspace() or ord(c) >= sml_escape_tag:
+            if c.isalnum() or c == '_' or c.isspace() or ord(c) >= _sml_escape_tag:
                 break
             i += 1
         return s[i:].lstrip()
 
+    # frozen sets built once per call instead of a tuple() copy on every _force_split_segment() call
+    _hard_punct_set = frozenset(punctuation_split_hard_set)
+    _soft_punct_set = frozenset(punctuation_split_soft_set)
+
     def _force_split_segment(segment:str)->list[str]:
         results = []
         rest = segment
-        hard_set = tuple(punctuation_split_hard_set)
-        soft_set = tuple(punctuation_split_soft_set)
+        hard_set = _hard_punct_set
+        soft_set = _soft_punct_set
         while rest:
             if _clean_len(rest) <= max_chars:
                 results.append(rest.strip())
@@ -2220,7 +2261,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             if best_idx <= 0:
                 best_idx = max_chars
             # Safety: never cut inside an SML group
-            while best_idx < len(rest) and ord(rest[best_idx]) >= sml_escape_tag:
+            while best_idx < len(rest) and ord(rest[best_idx]) >= _sml_escape_tag:
                 best_idx += 1
             left = rest[:best_idx].strip()
             right = rest[best_idx:].strip()
@@ -2252,12 +2293,12 @@ def get_sentences(session_id:str, text:str)->list|None:
         current_text = []
         while idx < tlen:
             c = text[idx]
-            if ord(c) >= sml_escape_tag:
+            if ord(c) >= _sml_escape_tag:
                 if current_text:
                     segments.append(('text', ''.join(current_text)))
                     current_text = []
                 start = idx
-                while idx < tlen and ord(text[idx]) >= sml_escape_tag:
+                while idx < tlen and ord(text[idx]) >= _sml_escape_tag:
                     idx += 1
                 segments.append(('sml', text[start:idx]))
             else:
@@ -2285,7 +2326,7 @@ def get_sentences(session_id:str, text:str)->list|None:
             cut_idx = -1
             j = len(combined) - 1
             while j >= 0:
-                if ord(combined[j]) >= sml_escape_tag:
+                if ord(combined[j]) >= _sml_escape_tag:
                     cut_idx = j + 1
                     break
                 j -= 1
@@ -2347,8 +2388,7 @@ def get_sentences(session_id:str, text:str)->list|None:
                     # Trailing pure-SML — attach to last sentence, no standalone
                     final_list[-1] = final_list[-1].rstrip() + ' ' + combined
 
-        final_list = [_strip_leading_noise(s) for s in final_list if s.strip()]
-        final_list = [s for s in final_list if s]
+        final_list = [n for n in (_strip_leading_noise(s) for s in final_list if s.strip()) if n]
         # Merge orphan-short sentences. A sentence below max_chars/2 is "too short";
         # absorb it into the previous (preferred) or next sentence when that fits.
         merge_threshold = max_chars // 2
@@ -2786,8 +2826,7 @@ def roman_to_int(roman:str)->int|None:
                 break
     return result
 
-title_roman_patterns_cache:dict = {}
-
+@functools.lru_cache(maxsize=None)
 def get_title_roman_patterns(lang:str|None=None)->dict:
     # a title's roman number in caps, next to a chapter word of the book's language (all languages when it has none)
     # or opening the title. a CJK chapter word needs no space (第Ⅳ章, 제IV장), all caps may drop accents (CAPITULO, ΚΕΦΑΛΑΙΟ, KISIM).
@@ -2796,8 +2835,6 @@ def get_title_roman_patterns(lang:str|None=None)->dict:
     def _alt(words:list[str])->str:
         return '|'.join(map(re.escape, sorted(words, key=len, reverse=True)))
 
-    if lang in title_roman_patterns_cache:
-        return title_roman_patterns_cache[lang]
     words = chapter_word_mapping.get(lang) or [w for ws in chapter_word_mapping.values() for w in ws]
     words = set(words) | {word_key(w).replace('ı', 'i') for w in words}
     glued = [w for w in words if re.search(r'[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]$', w)]
@@ -2815,7 +2852,7 @@ def get_title_roman_patterns(lang:str|None=None)->dict:
     word_after = numeral + r'(?:' + '|'.join(behind) + r')'
     edge = r'\p{Latin}\p{Cyrillic}\p{Greek}\p{Armenian}\p{Nd}\p{M}'
     title_start = r'(?P<pre>^[\s\-–—~*]*)'
-    title_roman_patterns_cache[lang] = dict(
+    return dict(
         # Chapter IV, Глава XII, Part II: The Return, anywhere in a heading
         word_first=re.compile(r'(?P<pre>' + word_first),
         # CHAPTER IV. THE RETURN opening a paragraph used as a title
@@ -2830,7 +2867,6 @@ def get_title_roman_patterns(lang:str|None=None)->dict:
         # any numeral of a CJK text, not glued to latin letters or digits (ロッキーIV, Ⅳ 旅立ち)
         cjk_any=re.compile(r'(?P<pre>)(?<![' + edge + r'])' + numeral + r'(?![' + edge + r'])'),
     )
-    return title_roman_patterns_cache[lang]
 
 def get_title_romans(doc_bodies:list[str])->set:
     # roman numbers a book counts its titles with (I, II, III...): a title opening with a bare roman number is a number
@@ -3213,15 +3249,15 @@ def escape_sml(text:str)->tuple[str, list[str]]:
 
     def _replace(m:re.Match[str])->str:
         sml_blocks.append(m.group(0))
-        return chr(sml_escape_tag + len(sml_blocks) - 1)
+        return chr(_sml_escape_tag + len(sml_blocks) - 1)
 
     return SML_TAG_PATTERN.sub(_replace, text), sml_blocks
 
 def restore_sml(text:str, sml_blocks:list[str])->str:
-    n = enumerate(sml_blocks)
-    for i, block in n:
-        text = text.replace(chr(sml_escape_tag + i), block)
-    return text
+    # single C-level pass with a translate table instead of one full-string replace per escaped tag
+    if not sml_blocks:
+        return text
+    return text.translate(str.maketrans({chr(_sml_escape_tag + i): block for i, block in enumerate(sml_blocks)}))
 
 def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
     if close:
@@ -3230,14 +3266,66 @@ def sml_token(tag:str, value:str|None=None, close:bool=False)->str:
         return f"[{tag}:{value}]"
     return f"[{tag}]"
 
+@functools.lru_cache(maxsize=None)
+def _normalize_text_tables(lang:str)->tuple:
+    # compile-once tables for normalize_text(): every pattern below depends only on static data
+    # (and lang for the abbreviation/specialchar maps), but rebuilding them per call meant paying
+    # the compile cost once per chapter block of a book.
+    # Remove emojis
+    emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
+    # abbreviations: sort keys by descending length so longer ones match first
+    if lang in abbreviations_mapping:
+        mapping = abbreviations_mapping[lang]
+        lookup = {k.lower(): v for k, v in mapping.items()}
+        abbr_pattern = re.compile(
+            r'(?<!\w)(' + '|'.join(re.escape(k) for k in sorted(mapping.keys(), key=len, reverse=True)) + r')(?!\w)',
+            flags=re.IGNORECASE
+        )
+    else:
+        lookup = None
+        abbr_pattern = None
+    # unicode roman numerals (Ⅳ, ⅻ) to letters the TTS can read, titles were converted to numbers before
+    unicode_roman_pattern = re.compile(r'[\u2160-\u217F]+')
+    # dotted letters like a., c.i.a., F.B.I., U.S.A, С.С.С.Р.: an acronym is always spelled, one letter per word
+    acronym_pattern = re.compile(r'(?<![\p{L}\p{M}\p{N}])(?:(?:[a-zA-Z]|\p{Lu})\.)+(?:[a-zA-Z]|\p{Lu})?(?![\p{L}\p{M}\p{N}])(?:\.(?![\p{L}\p{N}]))?')
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a [pause] 1.4sec
+    pause_pattern = re.compile(r'(?:\r\n|\r|\n){2,}')
+    pause_repl = f" {sml_token('pause')} "
+    # Replace single newlines ("\n" or "\r") with spaces
+    newline_pattern = re.compile(r'\r\n|\r|\n')
+    # Replace punctuations causing hallucinations
+    switch_pattern = re.compile(f"[{''.join(map(re.escape, punctuation_switch.keys()))}]")
+    # remove unwanted chars
+    chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
+    # replace double quotes by a comma if no punctuation precedes it
+    quote_norm_pattern = re.compile(r'\s*"\s*')
+    quote_comma_pattern = re.compile(r'(?<=[\p{L}\p{N}])"(?=[\p{L}\p{N}]|$)')
+    # Replace multiple spaces with single space
+    spaces_pattern = re.compile(r'\s+')
+    # Replace ok by 'Okay'
+    ok_pattern = re.compile(r'\bok\b', flags=re.IGNORECASE)
+    # Reduce multiple consecutive punctuations hard/soft (non-capturing alternation keeps \2 correct)
+    hard_pattern = re.compile(r'(\s*((?:' + '|'.join(map(re.escape, punctuation_split_hard_set)) + r'))\s*)+')
+    soft_pattern = re.compile(r'(\s*((?:' + '|'.join(map(re.escape, punctuation_split_soft_set)) + r'))\s*)+')
+    # Add a space between UTF-8 characters and numbers
+    letterdigit_pattern = re.compile(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])')
+    # Replace special chars with words
+    specialchars = specialchars_mapping.get(lang, specialchars_mapping.get(default_language_code, specialchars_mapping['eng']))
+    specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
+    return (emoji_pattern, abbr_pattern, lookup, unicode_roman_pattern, acronym_pattern, pause_pattern, pause_repl,
+            newline_pattern, switch_pattern, chars_remove_table, quote_norm_pattern, quote_comma_pattern,
+            spaces_pattern, ok_pattern, hard_pattern, soft_pattern, letterdigit_pattern, specialchars_table)
+
 def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str, known_words:set|None=None)->str:
 
+    (emoji_pattern, abbr_pattern, lookup, unicode_roman_pattern, acronym_pattern, pause_pattern, pause_repl,
+     newline_pattern, switch_pattern, chars_remove_table, quote_norm_pattern, quote_comma_pattern,
+     spaces_pattern, ok_pattern, hard_pattern, soft_pattern, letterdigit_pattern,
+     specialchars_table) = _normalize_text_tables(lang)
+
     def _replace(match:re.Match)->str:
-        token = match.group(1)
-        for k, expansion in mapping.items():
-            if token.lower() == k.lower():
-                return expansion
-        return token  # fallback
+        # case-insensitive dict lookup; same semantics as the old linear scan over mapping.items()
+        return lookup.get(match.group(1).lower(), match.group(1))
 
     def _dotted(match:re.Match)->str:
         letters = match.group().replace('.', '')
@@ -3247,60 +3335,39 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str, known_word
         return ' '.join(letters.upper())
 
     # Remove emojis
-    emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     text = emoji_pattern.sub('', text)
-    if lang in abbreviations_mapping:
-        mapping = abbreviations_mapping[lang]
-        # Sort keys by descending length so longer ones match first
-        keys = sorted(mapping.keys(), key=len, reverse=True)
-        # Build a regex that only matches whole “words” (tokens) exactly
-        pattern = re.compile(
-            r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
-            flags=re.IGNORECASE
-        )
-        text = pattern.sub(_replace, text)
-    # unicode roman numerals (Ⅳ, ⅻ) to letters the TTS can read, titles were converted to numbers before
-    text = re.sub(r'[\u2160-\u217F]+', lambda m: unicodedata.normalize('NFKC', m.group()), text)
-    # dotted letters like a., c.i.a., F.B.I., U.S.A, С.С.С.Р.: an acronym is always spelled, one letter per word
-    pattern = r'(?<![\p{L}\p{M}\p{N}])(?:(?:[a-zA-Z]|\p{Lu})\.)+(?:[a-zA-Z]|\p{Lu})?(?![\p{L}\p{M}\p{N}])(?:\.(?![\p{L}\p{N}]))?'
-    text = re.sub(pattern, _dotted, text)
+    if abbr_pattern is not None:
+        text = abbr_pattern.sub(_replace, text)
+    # unicode roman numerals to letters the TTS can read
+    text = unicode_roman_pattern.sub(lambda m: unicodedata.normalize('NFKC', m.group()), text)
+    # dotted acronyms are always spelled
+    text = acronym_pattern.sub(_dotted, text)
     # Replace ok by 'Okay' before the acronyms so OK is not spelled
-    text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
+    text = ok_pattern.sub('Okay', text)
     # spell all caps acronyms (CIA -> C I A), keep all caps words (SECRET, TOWER)
     text = acronym2letters(text, lang, known_words)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a [pause] 1.4sec
-    pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, f" {sml_token('pause')} ", text)
-    # Replace single newlines ("\n" or "\r") with spaces
-    text = re.sub(r'\r\n|\r|\n', ' ', text)
+    # Replace multiple newlines with a [pause] 1.4sec, then single newlines with spaces
+    text = pause_pattern.sub(pause_repl, text)
+    text = newline_pattern.sub(' ', text)
     # Replace punctuations causing hallucinations
-    pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
-    text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
+    text = switch_pattern.sub(lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # remove unwanted chars
-    chars_remove_table = str.maketrans({ch: ' ' for ch in chars_remove})
     text = text.translate(chars_remove_table)
     # replace double quotes by a comma if no punctuation precedes it
-    text = re.sub(r'\s*"\s*', '"', text)
-    text = re.sub(r'(?<=[\p{L}\p{N}])"(?=[\p{L}\p{N}]|$)', ', ', text)
-    text = re.sub(r'"', '', text)
-    # Replace multiple and spaces with single space
-    text = re.sub(r'\s+', ' ', text)
-    # Escape special characters in the punctuation list for regex
-    pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
-    # Reduce multiple consecutive punctuations hard
-    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
-    # Escape special characters in the punctuation list for regex
-    pattern = '|'.join(map(re.escape, punctuation_split_soft_set))
-    # Reduce multiple consecutive punctuations soft
-    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
-    # Pattern 1: Add a space between UTF-8 characters and numbers
-    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+    text = quote_norm_pattern.sub('"', text)
+    text = quote_comma_pattern.sub(', ', text)
+    text = text.replace('"', '')
+    # Replace multiple spaces with single space
+    text = spaces_pattern.sub(' ', text)
+    # Reduce multiple consecutive punctuations hard, then soft
+    text = hard_pattern.sub(r'\2 ', text).strip()
+    text = soft_pattern.sub(r'\2 ', text).strip()
+    # Add a space between UTF-8 characters and numbers
+    text = letterdigit_pattern.sub(' ', text)
     # Replace special chars with words
-    specialchars = specialchars_mapping.get(lang, specialchars_mapping.get(default_language_code, specialchars_mapping['eng']))
-    specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
     text = text.translate(specialchars_table)
     text = ' '.join(text.split())
     return text
@@ -3855,6 +3922,13 @@ def combine_audio_sentences(session_id:str, file:str, block_id:str, sentence_cou
             return False
         if sentence_count == 0:
             error = legends['error_no_sentences_to_combine'].format(block=block_id)
+            print(error)
+            return False
+        # an edit session restored from a preset (or a tab reload after the ebook was switched) can reach here
+        # with sentences_dir still None: reset_ebook_session() clears it, presets are saved without the ebook keys.
+        # Without a sentences dir there is nothing to concat: fail as a plain message, not a TypeError in pathlib
+        if not session.get('sentences_dir'):
+            error = legends['error_edit_context_lost']
             print(error)
             return False
         block_dir = Path(session['sentences_dir']) / block_id
@@ -5719,6 +5793,72 @@ def exception_alert(session_id:str|None, error:str|None)->None:
                 session['status'] = status_tags['READY']
                 if session['is_gui_process']:
                     raise gr.Error(error)
+
+def _is_ipv6_literal(host:str)->bool:
+    try:
+        return isinstance(ipaddress.ip_address(host.strip('[]')), ipaddress.IPv6Address)
+    except ValueError:
+        return False
+
+def proxy_env_error()->str|None:
+    # validate the *_proxy env vars before anything imports httpx/gradio. gradio's processing_utils builds an
+    # httpx.Client at import time, whose default mounts parse every proxy pattern: a bracketed ipv6 literal
+    # without port ('http://[::1]') parses there as port ':1]' and raised an uncaught InvalidURL that killed
+    # app.py at import. Wrap bare ipv6 hosts in brackets, reject what stays invalid with a clear message
+    candidates = {f'{s}_{d}': v for s in ('http', 'https', 'all') for d in ('proxy', 'PROXY')
+                  for v in [os.environ.get(f'{s}_{d}', '')] if v}
+    for name, value in candidates.items():
+        cleaned = sanitize_proxy_url(value)
+        scheme, sep, rest = cleaned.partition('://')
+        _, _, hostport = rest.rpartition('@')
+        hostport = hostport.split('/')[0].split('?')[0].split('#')[0]
+        if not sep or scheme not in ('http', 'https', 'socks5', 'socks5h') or not _hostport_valid(hostport):
+            return legends['error_invalid_proxy'].format(scheme=name, value=value)
+        if cleaned != value:
+            os.environ[name] = cleaned
+    return None
+
+def sanitize_proxy_url(value:str)->str:
+    value = value.strip()
+    if '://' not in value:
+        value = f'http://{value}'
+    scheme, sep, rest = value.partition('://')
+    if not sep:
+        return value
+    creds, _, hostport = rest.rpartition('@')
+    prefix = f'{scheme}://{creds + "@" if creds else ""}'
+    tail = ''
+    for delim in ('/', '?', '#'):
+        i = hostport.find(delim)
+        if i != -1:
+            tail = hostport[i:] + tail
+            hostport = hostport[:i]
+    rebuild = lambda hp: f'{prefix}{hp}{tail}'
+    if hostport.startswith('['):
+        return rebuild(hostport)  # already bracketed
+    host, colon, port = hostport.rpartition(':')
+    if colon and port.isdigit():
+        return rebuild(f'[{host}]:{port}') if _is_ipv6_literal(host) else rebuild(hostport)
+    if _is_ipv6_literal(hostport):
+        return rebuild(f'[{hostport}]')
+    return rebuild(hostport)
+
+def _hostport_valid(hostport:str)->bool:
+    # httpx URLPattern/normalize_port form: host[:port], an ipv6 literal wrapped in brackets
+    if not hostport:
+        return False
+    if hostport.startswith('['):
+        host, sep, rest = hostport[1:].partition(']')
+        if not sep or not re.fullmatch(r'[0-9A-Fa-f:.%]+', host):
+            return False
+        return rest == '' or (rest.startswith(':') and rest[1:].isdigit() and 0 < int(rest[1:]) <= 65535)
+    host, colon, port = hostport.rpartition(':')
+    if colon:
+        if ':' in host or not port.isdigit() or not 0 < int(port) <= 65535:
+            return False
+    elif ':' in hostport:
+        return False
+    return bool(host)
 
 def get_all_ip_addresses()->list:
     ip_addresses = []

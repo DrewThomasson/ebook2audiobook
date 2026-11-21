@@ -118,7 +118,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 <a id="features"></a>
 ## Funktionen
-- 🔧 **Unterstützte TTS-Engines**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
+- 🔧 **Unterstützte TTS-Engines**: `XTTSv2, Bark, Fairseq, VITS, Tacotron2, Tortoise, GlowTTS, YourTTS, Piper, Zonos2, Zonos3, GPT-SoVITS, OmniVoice, Breeze TTS, Chatterbox, Confucius4 TTS, CosyVoice3, Dots TTS, DramaBox, FireRed Audio, FireRedTTS3, Fish Audio, Higgs Audio TTS, Index TTS2, Irodori TTS, Kokoro TTS, KugelAudio, Magpie TTS, Maya1, MioTTS, Moss TTS Local, Moss TTS Nano, NeuTTS, Pocket TTS, Qwen3 TTS, Supertonic, VibeVoice, VoxCPM2, Voxtral TTS, F5-TTS, Orpheus-TTS, ChatTTS, Spark-TTS, OpenVoice, MeloTTS, ZipVoice (LuxTTS)`
 - 📚 **Mehrere Dateiformate konvertieren**: `.epub`, `.mobi`, `.azw3`, `.fb2`, `.lrf`, `.rb`, `.snb`, `.tcr`, `.pdf`, `.txt`, `.rtf`, `.doc`, `.docx`, `.html`, `.odt`, `.azw`, `.tiff`, `.tif`, `.png`, `.jpg`, `.jpeg`, `.bmp`, `.zip`
 - 💻 **Textbereich** zum direkten Umwandeln eines kurzen Texts in Audio
 - 🔍 **OCR-Erkennung** für Dateien mit Textseiten als Bilder
@@ -166,7 +166,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - `[pause]` — Stille (zufälliger Bereich **1.0–1.6 sec.**)
 - `[pause:N]` — feste Pause (**N sec.**)
 - `[voice:/path/to/voice/file]...[/voice]` — Stimme von der Standard- oder in der GUI/CLI ausgewählten Stimme wechseln
-- `[emotion:sadness]...[/emotion]` — Nur Zonos: Emotion für eine Passage (Glück, Traurigkeit, Ekel, Angst, Überraschung, Wut, andere, neutral) oder eine Mischung wie `[emotion:sadness=0.7,neutral=0.3]`; andere Motoren ignorieren es
+- `[emotion:sadness]...[/emotion]` – nur Zonos2 und Zonos3: Emotion für eine Passage (Freude, Traurigkeit, Ekel, Angst, Überraschung, Wut, Sonstiges, neutral; Zonos3 auch ruhig, verwirrt) oder eine Mischung wie `[emotion:sadness=0.7,neutral=0.3]`; andere Engines ignorieren dies
 
 **Sehen Sie sich unser anderes Repo an, das dem automatischen Hinzufügen von SML in Ihrem E-Book gewidmet ist -> [E2A-SML](https://github.com/DrewThomasson/E2A-SML)**
 
@@ -456,7 +456,7 @@ SML tags available:
 	[pause] — silence (random range **1.0–1.6 sec.**)
 	[pause:N] — fixed pause (**N sec.**)
 	[voice:/path/to/voice/file]...[/voice] — switch voice from default or selected voice from GUI/CLI
-	[emotion:sadness]...[/emotion] — Zonos only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
+	[emotion:sadness]...[/emotion] — Zonos2 and Zonos3 only: emotion for a passage (happiness, sadness, disgust, fear, surprise, anger, other, neutral; Zonos3 also calm, confused) or a mix like [emotion:sadness=0.7,neutral=0.3]; other engines ignore it
 
 ```
 
@@ -524,7 +524,7 @@ Podman Compose (i.e. cuda 12.8:
                DEVICE_TAG=cu128 podman-compose -f podman-compose.yml --profile cuda run --rm ebook2audiobook-cuda --headless --ebook "/app/ebooks/myfile.pdf" --voice /app/voices/eng/adult/female/some_voice.wav etc..
 ```
 - HINWEIS: MPS wird in Docker nicht bereitgestellt, daher muss die CPU verwendet werden
-- HINWEIS: Das genannte Volume `e2a_venvs` bewahrt die TTS-Engines in ihrer eigenen venv auf (GPT-SoVITS, Zonos, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM usw.)
+- HINWEIS: Das genannte Volume `e2a_venvs` bewahrt die TTS-Engines in ihrer eigenen venv auf (GPT-SoVITS, Zonos2, Zonos3, OmniVoice, F5-TTS, ZipVoice, Orpheus, Spark-TTS, ChatTTS, OpenVoice, MeloTTS, CSM usw.)
   über Containerläufe hinweg, so dass sie nicht jedes Mal neu installiert werden. So setzen Sie sie zurück: `docker volume rm e2a_venvs`
 
 <a id="tools"></a>
@@ -563,9 +563,9 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --only ONLY           Comma list of categories: common,xtts,bark,tortoise,vits,fairseq,glowtts,tacotron,yo
-                        urtts,piper,zonos,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoice,orpheu
-                        s,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,interlude,arg
-                        os,tessdata,jieba,voices
+                        urtts,piper,zonos2,zonos3,audiocpp,audiocpp_server,gptsovits,f5tts,zipvoice,omnivoic
+                        e,orpheus,sparktts,chattts,csm,openvoice,melotts,phonon,stanza,pyannote,demucs,inter
+                        lude,argos,tessdata,jieba,voices
   --skip SKIP           Comma list of categories to leave out
   --languages LANGUAGES
                         Comma list of e2a ISO-639-3 codes (eng,fra,ita...): single-language models and fine-
@@ -795,7 +795,8 @@ git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v2
 - [x] GlowTTS (https://github.com/jaywalnut330/glow-tts)[cite: 1]
 - [x] Tacotron2 (https://github.com/NVIDIA/Tacotron2)[cite: 1]
 - [x] Schildkröte (https://github.com/neonbjb/tortoise-tts)[cite: 1]
-- [x] Zonen (https://github.com/Zyphra/Zonos)[cite: 1]
+- [x] Zonen2 (https://github.com/Zyphra/zonos2.cpp)[cite: 1]
+- [x] Zonos3 (https://github.com/Zyphra/ZONOS3-Mini)[cite: 1]
 - [x] Rinde (https://github.com/suno-ai/bark)[cite: 1]
 - [x] IhrTTS (https://github.com/Edresson/YourTTS)[cite: 1]
 - [x] Orpheus-TTS (https://github.com/canopyai/Orpheus-TTS)
@@ -864,6 +865,7 @@ Wir nehmen jede Art von Hardware an, um unsere Entwicklung zu testen, wie zum Be
 - [Coqui-tts](https://github.com/idiap/coqui-ai-TTS) -- Ein Deep-Learning-Toolkit für Text-to-Speech, kampferprobt in Forschung und Produktion.
 - [Piper-tts](https://github.com/OHF-Voice/piper1-gpl) -- Schnelle und lokale neuronale Text-zu-Sprache-Engine.
 - [Zonos2.cpp](https://github.com/Zyphra/zonos2.cpp) -- ggml-Inferenzcode für Zonos2.
+- [Zonos3.cpp](https://github.com/Zyphra/ZONOS3-Mini/tree/main/servers/ggml) – ggml-Inferenzcode für ZONOS3-Mini.
 - [Audio.cpp](https://github.com/0xShug0/audio.cpp) -- Eine All-in-One, reine C++ Inferenz-Engine für Audiomodelle, angetrieben von ggml.
 
 <a id="special-thanks"></a>
