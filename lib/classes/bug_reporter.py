@@ -83,6 +83,8 @@ print(json.dumps(out))
         self.voices_dir = ''
         self.fault_path = ''
         self.fault_file = None
+        # startup facts every note() carries (the GPU probe verdict), see fact()
+        self.facts = {}
         self.system = None
         self.ctx = None
         self.rules = []
@@ -415,12 +417,19 @@ print(json.dumps(out))
         try:
             if ram:
                 text = f"{text} | ram {json.dumps(self.ram_state(), separators=(',', ':'))}"
+            for key, value in self.facts.items():
+                text = f'{text} | {key} {value}'
             with self.lock:
                 # flushed at once: faulthandler writes to the same descriptor, past what is already there
                 self.fault_file.write(f"{self.note_prefix}{text.replace(chr(10), ' ')}\n")
                 self.fault_file.flush()
         except Exception:
             pass
+
+    def fact(self, key:str, value:str)->None:
+        # a startup fact every later note() carries (the GPU probe verdict, whether the XPU guard is on): a native crash
+        # reaches the report through the last note written before it only, and the env the next launch reports is its own
+        self.facts[key] = value.replace(chr(10), ' ')
 
     def ram_state(self)->dict:
         # host RAM at a failed CPU allocation: the system's, the commit limit (Windows refuses an allocation once RAM +
@@ -736,7 +745,8 @@ print(json.dumps(out))
                 pass
             return
         if fault:
-            line = f"faulting module (Windows Application log, event 1000): {fault['module']} {fault['module_version']}, offset {fault['offset']}, exception {fault['code']}"
+            # 'v' glued to the version: a bare dotted 4-part version (ze_loader.dll 1.21.6.0) is what the <ip> rule matches
+            line = f"faulting module (Windows Application log, event 1000): {fault['module']} v{fault['module_version']}, offset {fault['offset']}, exception {fault['code']}"
             payload['fingerprint'] = hashlib.sha1('|'.join([title, fault['module']] + sig).encode('utf-8')).hexdigest()[:16]
             if native_thread:
                 payload['location'] = f"{fault['module']}+{fault['offset']}"
