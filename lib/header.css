@@ -238,17 +238,14 @@ span[data-testid="block-info"] {
 	height: 60px !important;
 	background: var(--block-background-fill) !important;
 }
-#gr_row_language,
-#gr_row_tts_engine {
+#gr_row_language {
 	align-items: stretch !important;
 }
-#gr_row_language > *,
-#gr_row_tts_engine > * {
+#gr_row_language > * {
 	margin-top: 0 !important;
 	margin-bottom: 0 !important;
 }
-#gr_translate_enabled,
-#gr_verify_sentences {
+#gr_translate_enabled {
 	display: flex !important;
 	align-items: center !important;
 	justify-content: center !important;
@@ -256,10 +253,7 @@ span[data-testid="block-info"] {
 }
 #gr_translate_enabled > *,
 #gr_translate_enabled label,
-#gr_translate_enabled .wrap,
-#gr_verify_sentences > *,
-#gr_verify_sentences label,
-#gr_verify_sentences .wrap {
+#gr_translate_enabled .wrap {
 	margin: 0 !important;
 	padding: 0 !important;
 	display: flex !important;

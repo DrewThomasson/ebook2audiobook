@@ -31,8 +31,7 @@ cli_options = [
     '--waveform_temp', '--output_dir', 
     '--abs_url', '--abs_api_token', '--abs_library', '--enable_interlude',
     '--version', '--workflow', '--docker_device', '--help',
-    '--speaking_rate', '--emotion_strength', '--emotion_cfg_scale', '--enable_emotion',
-    '--verify_sentences'
+    '--speaking_rate', '--emotion_strength', '--emotion_cfg_scale', '--enable_emotion'
 ]
 
 workflow_id = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce'

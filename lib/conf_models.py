@@ -194,57 +194,6 @@ audiocpp_packages = {
 audiocpp_asr = {"family": "qwen3_asr", "files": ["Qwen3-ASR-0.6B-GGUF/qwen3-asr-0.6b-q8_0.gguf"]}
 audiocpp_repo = "audio-cpp/audio.cpp-gguf"
 
-# --verify_sentences: each converted sentence is checked against its text and generated again when it fails. MMS
-# transcribes the take (CTC, 1162 languages, writes what it hears: no language model to put back a word the TTS skipped,
-# as Whisper does), both texts romanized by uroman are compared letter by letter (CER), any script, spaces or not.
-# Limits follow the book (median of the first takes) since names, foreign words or a weak MMS language raise the CER of
-# good takes too. Short sentences, digits normalize_text() could not spell (their reading is not known) and languages
-# MMS does not know get the length check only.
-#   segment_gap: silence (seconds) where a take is cut before MMS, each part transcribed on its own
-#   levels: the text of each take, the best one is kept when all of them fail. 0 the text as it is, 1 less punctuation
-#     (commas and the end mark kept), 2 none but the end mark. Takes of the same level in a row are new draws, left
-#     out once the engine gives the same audio for the same text (deterministic), only the punctuation changes then
-#   warmup: first takes measured before the book's own medians replace the warmup limits
-#   min_letters: below it (romanized letters) a sentence gets the length check only, one wrong letter weighs too much
-#   rate_min_letters: shorter sentences are left out of the speaking rate median (the silence around them weighs too much)
-#   burst_factor / burst_floor: longest run of wrong, missing or extra letters (one chance match inside does not end
-#     it), limit = max(burst_floor, burst_factor * median burst), burst_warmup until warmup. The local check: babble or
-#     a skipped phrase in a long sentence is a long run but barely moves its CER, a hard name stays a short one
-#   edge_factor / edge_floor: extra letters heard before the text starts or after it ends, limit = max(edge_floor,
-#     edge_factor * median), edge_warmup until warmup. Trailing mumble ("sleeping ana dan") stays under the burst
-#     limit, a misheard name cannot reach an edge: 0 in 56 of 57 real XTTS takes, 6 for that one
-#   cer_factor / cer_floor: CER limit = max(cer_floor, cer_factor * median CER), cer_warmup until warmup. The backstop
-#     for a take wrong all along, high enough for sentences full of names (CER up to 0.43 with good audio)
-#   length_factor / length_slack: duration limit = median s/letter * letters * length_factor + length_slack (seconds)
-#   length_warmup_rate / length_warmup_slack: duration limit until warmup, letters * rate + slack (seconds)
-#   short_factor: below median s/letter * letters * short_factor the take is cut (rate_min_letters and more only)
-#   lang_alias: e2a code -> MMS code where the ISO-639-3 macrolanguage lookup would pick another language first
-default_verify_settings = {
-    "asr_model": "facebook/mms-1b-all",
-    "samplerate": 16000,
-    "segment_gap": 0.6,
-    "levels": [0, 0, 1, 2],
-    "warmup": 20,
-    "samples_max": 500,
-    "min_letters": 10,
-    "rate_min_letters": 20,
-    "cer_factor": 2.5,
-    "burst_factor": 3.0,
-    "burst_floor": 9,
-    "burst_warmup": 9,
-    "cer_floor": 0.5,
-    "edge_factor": 3.0,
-    "edge_floor": 3,
-    "edge_warmup": 3,
-    "cer_warmup": 0.6,
-    "length_factor": 2.0,
-    "length_slack": 1.5,
-    "length_warmup_rate": 0.25,
-    "length_warmup_slack": 4.0,
-    "short_factor": 0.35,
-    "lang_alias": {"zho": "cmn", "nor": "nob"}
-}
-
 max_custom_model = 100
 max_custom_voices = 1000
 

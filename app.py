@@ -352,7 +352,6 @@ valence, arousal (-1 to 1).""")
     headless_optional_group.add_argument(cli_options[30], type=str, default='', help='Audiobookshelf API token.')
     headless_optional_group.add_argument(cli_options[31], type=str, default='', help='Audiobookshelf library ID.')
     headless_optional_group.add_argument(cli_options[32], action='store_true', help='Add MusicGen music before the first chapter, between chapters, and at the end of the audiobook. Settings are in ./lib/conf_interlude.py')
-    headless_optional_group.add_argument(cli_options[41], action='store_true', help='Check each converted sentence against its text (speech recognition with facebook/mms-1b-all, 1162 languages, plus a length check) and generate it again when it fails. The best take is kept and listed at the end when all retries fail. Settings are in ./lib/conf_models.py')
     headless_optional_group.add_argument(cli_options[33], action='version', version=f'ebook2audiobook version {prog_version}', help='Show the version of the script and exit')
 
     internal_group = parser.add_argument_group(argparse.SUPPRESS)
@@ -459,7 +458,6 @@ valence, arousal (-1 to 1).""")
             args['is_gui_process'] = False
             args['blocks_preview'] = False
             args['interlude_enabled'] = bool(args.get('enable_interlude'))
-            args['verify_sentences'] = bool(args.get('verify_sentences'))
             args['device'] = devices.get(args['device'].upper(), {}).get('proc') or devices['CPU']['proc']
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
