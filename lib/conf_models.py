@@ -200,6 +200,7 @@ audiocpp_repo = "audio-cpp/audio.cpp-gguf"
 # Limits follow the book (median of the first takes) since names, foreign words or a weak MMS language raise the CER of
 # good takes too. Short sentences, digits normalize_text() could not spell (their reading is not known) and languages
 # MMS does not know get the length check only.
+#   segment_gap: silence (seconds) where a take is cut before MMS, each part transcribed on its own
 #   levels: the text of each take, the best one is kept when all of them fail. 0 the text as it is, 1 less punctuation
 #     (commas and the end mark kept), 2 none but the end mark. Takes of the same level in a row are new draws, left
 #     out once the engine gives the same audio for the same text (deterministic), only the punctuation changes then
@@ -221,6 +222,7 @@ audiocpp_repo = "audio-cpp/audio.cpp-gguf"
 default_verify_settings = {
     "asr_model": "facebook/mms-1b-all",
     "samplerate": 16000,
+    "segment_gap": 0.6,
     "levels": [0, 0, 1, 2],
     "warmup": 20,
     "samples_max": 500,

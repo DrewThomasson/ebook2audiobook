@@ -205,18 +205,51 @@ class SentenceVerifier:
         edge = max(self._tail_extra(dist[rows]), self._tail_extra(self._distances(ref[::-1], hyp[::-1])[rows]))
         return dist[rows][cols] / rows, max((len(b.replace('M', '')) for b in bursts), default=0), edge
 
-    def _transcribe(self, audio:Any, samplerate:int)->str:
+    def _speech_segments(self, audio:Any, samplerate:int)->list:
+        # the take cut at its long silences ([pause], [break]): MMS on the whole take drops a short part followed by a
+        # long silence, a chapter title before its [pause] in most languages, while it hears it on its own
+        import numpy as np
+        frame = int(samplerate * 0.02)
+        count = len(audio) // frame
+        if count == 0:
+            return [audio]
+        rms = np.sqrt(np.mean(audio[:count * frame].reshape(count, frame) ** 2, axis=1))
+        silent = rms < max(0.002, 0.03 * float(rms.max()))
+        gap = int(self.settings['segment_gap'] / 0.02)
+        pad = int(0.1 / 0.02)
+        segments = []
+        start = None
+        run = 0
+        for i, quiet in enumerate(silent):
+            if not quiet:
+                if start is None:
+                    start = i
+                run = 0
+            elif start is not None:
+                run += 1
+                if run >= gap:
+                    segments.append((max(0, start - pad), i - run + 1 + pad))
+                    start = None
+                    run = 0
+        if start is not None:
+            segments.append((max(0, start - pad), count))
+        return [audio[a * frame:b * frame] for a, b in segments] or [audio]
+
+    def _transcribe(self, audio:Any, samplerate:int, segmented:bool=False)->str:
         import torch
         import torchaudio
         target_sr = self.settings['samplerate']
         wav = torch.from_numpy(audio)
         if samplerate != target_sr:
             wav = torchaudio.functional.resample(wav, samplerate, target_sr)
-        inputs = self.processor(wav.numpy(), sampling_rate=target_sr, return_tensors='pt')
-        values = inputs['input_values'].to(self.device, dtype=next(self.model.parameters()).dtype)
-        with torch.inference_mode():
-            logits = self.model(values).logits
-        return self.processor.decode(torch.argmax(logits, dim=-1)[0].cpu())
+        texts = []
+        for segment in (self._speech_segments(wav.numpy(), target_sr) if segmented else [wav.numpy()]):
+            inputs = self.processor(segment, sampling_rate=target_sr, return_tensors='pt')
+            values = inputs['input_values'].to(self.device, dtype=next(self.model.parameters()).dtype)
+            with torch.inference_mode():
+                logits = self.model(values).logits
+            texts.append(self.processor.decode(torch.argmax(logits, dim=-1)[0].cpu()))
+        return ' '.join(text for text in texts if text)
 
     def _limit(self, samples:deque, name:str)->float:
         # max(floor, factor * the book's median), the warmup value until the median is known
@@ -267,10 +300,17 @@ class SentenceVerifier:
             # them is not known, the length check is all that is left
             if not self.asr_enabled or letters < self.settings['min_letters'] or digits or not self._load():
                 return result
-            cer, burst, edge = self._compare(ref, self._letters(self._transcribe(audio, samplerate)))
             cer_limit = self._limit(self.cer_samples, 'cer')
             burst_limit = self._limit(self.burst_samples, 'burst')
             edge_limit = self._limit(self.edge_samples, 'edge')
+            cer, burst, edge = self._compare(ref, self._letters(self._transcribe(audio, samplerate)))
+            # failed on the whole take: again part by part (cut at its long silences), the better of both is kept.
+            # Babble is in the audio, both hear it; MMS drops a short part before a long silence (a chapter title
+            # before its [pause]) on the whole take only. Cut every time, short parts like "Hm" come out noisier
+            if (edge > edge_limit or burst > burst_limit or cer > cer_limit) and len(self._speech_segments(audio, samplerate)) > 1:
+                parts = self._compare(ref, self._letters(self._transcribe(audio, samplerate, segmented=True)))
+                if parts[0] + (parts[1] + parts[2]) / letters < cer + (burst + edge) / letters:
+                    cer, burst, edge = parts
             if first_take:
                 self.cer_samples.append(cer)
                 self.burst_samples.append(burst)
