@@ -481,6 +481,7 @@ legends = {
     'msg_intel_l0_no_device': 'GPU اینتل به {kmd} متصل است اما Level Zero دستگاهی گزارش نمی‌کند ({status}). intel-level-zero-gpu و intel-opencl-icd را نصب و دوباره اجرا کنید. تغییر به CPU.',
     'msg_xpu_fallback': 'XPU از طریق مسیر جایگزین PyTorch شناسایی شد.',
     'msg_xpu_unusable': 'GPU اینتل یافت شد اما torch نمی‌تواند روی آن اجرا شود (GPU پشتیبانی نمی‌شود یا درایور خیلی قدیمی است). XPU غیرفعال است، برای استفاده از آن درایور گرافیک Intel را به‌روزرسانی کنید.',
+    'msg_xpu_probe_no_answer': 'پردازنده گرافیکی Intel یافت شد اما torch پاسخی نداد که آیا می‌تواند روی آن اجرا شود یا خیر. XPU برای این اجرا غیرفعال شده است تا تبدیل‌های CPU ایمن بمانند، در شروع بعدی دوباره بررسی می‌شود.',
     'msg_gpu_runtime_silent': 'هیچ بک‌اند GPU مطابقت نداشت. GPU {gpus} روی PCI هست اما محیط اجرای آن پاسخ نداد. تغییر به CPU.',
     'msg_no_gpu_pci': 'هیچ GPU روی گذرگاه PCI پیدا نشد. تغییر به CPU.',
     'error_requirements_missing': 'هشدار: فایل {file} پیدا نشد. بررسی بسته‌ها رد شد.',

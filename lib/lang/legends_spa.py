@@ -481,6 +481,7 @@ legends = {
     'msg_intel_l0_no_device': 'GPU Intel vinculada a {kmd} pero Level Zero no informa ningún dispositivo ({status}). Instale intel-level-zero-gpu e intel-opencl-icd y vuelva a ejecutar. Cambiando a la CPU.',
     'msg_xpu_fallback': 'XPU detectada mediante el respaldo de PyTorch.',
     'msg_xpu_unusable': 'Se ha encontrado una GPU Intel, pero Torch no puede ejecutarse en ella (la GPU no es compatible o el controlador es demasiado antiguo). XPU desactivada. Actualice el controlador de gráficos Intel para usarla.',
+    'msg_xpu_probe_no_answer': 'Se ha encontrado una GPU Intel, pero Torch no ha indicado si puede ejecutarse en ella. La XPU se ha desactivado para esta ejecución con el fin de garantizar la seguridad de las conversiones de la CPU. Se volverá a comprobar en el próximo inicio.',
     'msg_gpu_runtime_silent': 'Ningún backend de GPU coincide. GPU {gpus} en el bus PCI pero su runtime no respondió. Cambiando a la CPU.',
     'msg_no_gpu_pci': 'No se encontró ninguna GPU en el bus PCI. Cambiando a la CPU.',
     'error_requirements_missing': 'Advertencia: no se encontró el archivo {file}. Se omite la comprobación de paquetes.',

@@ -481,6 +481,7 @@ legends = {
     'msg_intel_l0_no_device': 'Intel GPU a(z) {kmd} illesztőhöz kötve, de a Level Zero nem jelez eszközt ({status}). Telepítse az intel-level-zero-gpu és intel-opencl-icd csomagot, majd futtassa újra. Váltás CPU-ra.',
     'msg_xpu_fallback': 'XPU észlelve a PyTorch tartalékmódjával.',
     'msg_xpu_unusable': 'Intel GPU található, de a Torch nem futtatható rajta (a GPU nincs támogatva, vagy a meghajtó túl régi). Az XPU le van tiltva. Frissítse az Intel grafikus illesztőprogramot a használatához.',
+    'msg_xpu_probe_no_answer': 'Intel GPU-t találtunk, de a Torch nem adott választ arra, hogy futtatható-e rajta. Az XPU le van tiltva ehhez a futtatáshoz a CPU-konverziók biztonsága érdekében, és a következő indításkor újra ellenőrizve lesz.',
     'msg_gpu_runtime_silent': 'Egyik GPU-háttérrendszer sem illeszkedik. {gpus} GPU a PCI-buszon, de a futtatókörnyezete nem válaszolt. Váltás CPU-ra.',
     'msg_no_gpu_pci': 'Nem található GPU a PCI-buszon. Váltás CPU-ra.',
     'error_requirements_missing': 'Figyelem: a(z) {file} fájl nem található. A csomagellenőrzés kimarad.',

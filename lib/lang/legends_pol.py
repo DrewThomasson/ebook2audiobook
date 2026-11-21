@@ -481,6 +481,7 @@ legends = {
     'msg_intel_l0_no_device': 'GPU Intel powiązane z {kmd}, ale Level Zero nie zgłasza urządzenia ({status}). Zainstaluj intel-level-zero-gpu i intel-opencl-icd, a następnie uruchom ponownie. Przełączanie na CPU.',
     'msg_xpu_fallback': 'Wykryto XPU przez mechanizm zapasowy PyTorch.',
     'msg_xpu_unusable': 'Znaleziono procesor graficzny Intel, ale nie można na nim uruchomić biblioteki Torch (procesor graficzny nie jest obsługiwany lub sterownik jest zbyt stary). XPU jest wyłączone. Aby móc z niego korzystać, zaktualizuj sterownik karty graficznej Intel.',
+    'msg_xpu_probe_no_answer': 'Znaleziono procesor graficzny Intel, ale biblioteka Torch nie udzieliła odpowiedzi, czy może na nim działać. XPU zostało wyłączone na potrzeby tego uruchomienia, aby zapewnić bezpieczeństwo konwersji CPU. Zostanie ono ponownie sprawdzone przy następnym uruchomieniu.',
     'msg_gpu_runtime_silent': 'Żaden backend GPU nie pasuje. GPU {gpus} na magistrali PCI, ale jego środowisko nie odpowiedziało. Przełączanie na CPU.',
     'msg_no_gpu_pci': 'Nie znaleziono GPU na magistrali PCI. Przełączanie na CPU.',
     'error_requirements_missing': 'Uwaga: nie znaleziono pliku {file}. Pomijanie sprawdzania pakietów.',

@@ -481,6 +481,7 @@ legends = {
     'msg_intel_l0_no_device': 'GPU Intel terikat ke {kmd} tetapi Level Zero tidak melaporkan perangkat ({status}). Pasang intel-level-zero-gpu dan intel-opencl-icd lalu jalankan ulang. Beralih ke CPU.',
     'msg_xpu_fallback': 'XPU terdeteksi lewat fallback PyTorch.',
     'msg_xpu_unusable': 'GPU Intel ditemukan, tetapi torch tidak dapat berjalan di dalamnya (GPU tidak didukung atau driver terlalu lama). XPU dinonaktifkan, perbarui driver grafis Intel untuk menggunakannya.',
+    'msg_xpu_probe_no_answer': 'GPU Intel ditemukan, tetapi torch tidak memberikan jawaban apakah GPU tersebut dapat dijalankan. XPU dinonaktifkan untuk proses ini agar konversi CPU tetap aman, XPU akan diperiksa lagi pada saat memulai berikutnya.',
     'msg_gpu_runtime_silent': 'Tidak ada backend GPU yang cocok. GPU {gpus} ada di PCI tetapi runtime-nya tidak merespons. Beralih ke CPU.',
     'msg_no_gpu_pci': 'Tidak ada GPU di bus PCI. Beralih ke CPU.',
     'error_requirements_missing': 'Peringatan: berkas {file} tidak ditemukan. Pemeriksaan paket dilewati.',

@@ -481,6 +481,7 @@ legends = {
     'msg_intel_l0_no_device': 'GPU Intel kaiket menyang {kmd} nanging Level Zero ora nglaporake piranti ({status}). Pasang intel-level-zero-gpu lan intel-opencl-icd, banjur lakokake manèh. Pindhah menyang CPU.',
     'msg_xpu_fallback': 'XPU kadeteksi liwat fallback PyTorch.',
     'msg_xpu_unusable': 'GPU Intel ditemokake nanging torch ora bisa mlaku ing GPU kasebut (GPU ora didhukung utawa driver wis lawas banget). XPU dipateni, nganyari driver grafis Intel kanggo nggunakake.',
+    'msg_xpu_probe_no_answer': 'GPU Intel ditemokake nanging torch ora menehi jawaban apa bisa mlaku ing GPU kasebut. XPU dipateni kanggo eksekusi iki supaya konversi CPU tetep aman, bakal dipriksa maneh ing wiwitan sabanjure.',
     'msg_gpu_runtime_silent': 'Ora ana backend GPU sing cocog. GPU {gpus} ana ing PCI nanging runtime-né ora mangsuli. Pindhah menyang CPU.',
     'msg_no_gpu_pci': 'Ora ana GPU ing bus PCI. Pindhah menyang CPU.',
     'error_requirements_missing': 'Pénget: berkas {file} ora ditemokake. Pamriksan paket dilewati.',
