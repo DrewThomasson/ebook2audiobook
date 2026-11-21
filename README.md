@@ -695,12 +695,13 @@ in `<audiobook>.check.json`.
      ```
    - A folder checks every audiobook in it that has its `.vtt` (all the parts of a split audiobook).
    - `--language` is needed for a translated book: its language tag keeps the ebook's language.
-   - **Speed**: 7.6 minutes of audio took 2.3 to 5.4 minutes on 4 CPU cores, a GPU (`--device cuda`, the default
-     when there is one) is the way for a whole book.
+   - **Device**: `--device` takes e2a's names, `cpu`, `cuda`, `rocm`, `xpu`, `mps` or `jetson` (half precision on
+     the GPUs but MPS). By default it is the one e2a was installed for, and cpu when that one cannot be used.
+   - **Speed**: 7.6 minutes of audio took 2.3 to 5.4 minutes on 4 CPU cores, a GPU is the way for a whole book.
 
 ```bash
 usage: check_audiobook_hallucinations.py [-h] [-l LANGUAGE] [--vtt VTT] [-o OUTPUT]
-                                         [--device {auto,cpu,cuda}] [--all]
+                                         [--device {auto,cpu,cuda,rocm,xpu,mps,jetson}] [--all]
                                          audiobooks [audiobooks ...]
 
 Report the sentences of an e2a audiobook that do not say their text: babble, a word or a phrase
@@ -724,8 +725,9 @@ options:
   --vtt VTT             Subtitles of the audiobook, single audiobook only (default: <audiobook>.vtt)
   -o OUTPUT, --output OUTPUT
                         Report file, single audiobook only (default: <audiobook>.check.json beside it)
-  --device {auto,cpu,cuda}
-                        Device the speech recognizer runs on (default: cuda when there is one)
+  --device {auto,cpu,cuda,rocm,xpu,mps,jetson}
+                        Device the speech recognizer runs on, named as in e2a (default: the one e2a was
+                        installed for, cpu when it cannot be used)
   --all                 Print every sentence with its measures, not only the flagged ones
 
 examples:

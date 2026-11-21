@@ -27,7 +27,7 @@ parser.add_argument('audiobooks', nargs='+', help='Audiobook files (m4b, mp3, fl
 parser.add_argument('-l', '--language', default='', help="Language spoken, e2a ISO-639-3 code (default: the audiobook's language tag; set it for a translated book, its tag keeps the ebook's language)")
 parser.add_argument('--vtt', default='', help='Subtitles of the audiobook, single audiobook only (default: <audiobook>.vtt)')
 parser.add_argument('-o', '--output', default='', help='Report file, single audiobook only (default: <audiobook>.check.json beside it)')
-parser.add_argument('--device', choices=['auto', 'cpu', 'cuda'], default='auto', help='Device the speech recognizer runs on (default: cuda when there is one)')
+parser.add_argument('--device', choices=['auto', 'cpu', 'cuda', 'rocm', 'xpu', 'mps', 'jetson'], default='auto', help='Device the speech recognizer runs on, named as in e2a (default: the one e2a was installed for, cpu when it cannot be used)')
 parser.add_argument('--all', action='store_true', help='Print every sentence with its measures, not only the flagged ones')
 args = parser.parse_args()
 start_dir = os.getcwd()
@@ -47,6 +47,9 @@ settings = dict(
     length_factor=2.0, length_slack=1.5, length_default_rate=0.25, length_default_slack=4.0, short_factor=0.35,
     lang_alias=dict(zho='cmn', nor='nob'),
 )
+# e2a device -> torch device: ROCm and Jetson builds of torch run through torch.cuda. Half precision on GPUs but MPS
+torch_devices = dict(cpu='cpu', cuda='cuda', rocm='cuda', jetson='cuda', xpu='xpu', mps='mps')
+half_devices = ['cuda', 'xpu']
 audio_exts = ['.m4b', '.m4a', '.mp4', '.mp3', '.aac', '.flac', '.wav', '.ogg', '.oga', '.opus', '.webm', '.mka', '.mkv', '.mov']
 
 def to_abs(path:str)->str:
@@ -127,6 +130,36 @@ def decode(path:str, start:float, duration:float)->Any:
     cmd = [shutil.which('ffmpeg'), '-nostdin', '-v', 'error', '-ss', f'{start:.3f}', '-t', f'{duration:.3f}', '-i', path, '-ac', '1', '-ar', str(settings['samplerate']), '-f', 'f32le', '-']
     return np.frombuffer(subprocess.run(cmd, capture_output=True, check=True).stdout, dtype=np.float32)
 
+def installed_device()->str:
+    # the device e2a's installer set python_env up for, cpu when unknown or vulkan (torch has no vulkan device)
+    try:
+        with open(os.path.join(root_dir, '.device_info.json'), encoding='utf-8') as f:
+            name = str(json.load(f).get('name', 'cpu'))
+    except Exception:
+        name = 'cpu'
+    return name if name in torch_devices else 'cpu'
+
+def device_available(name:str)->bool:
+    import torch
+    try:
+        if torch_devices[name] == 'cuda':
+            return torch.cuda.is_available()
+        if name == 'xpu':
+            # probed only when xpu is asked for or installed: on some Intel GPUs the probe itself crashes
+            return hasattr(torch, 'xpu') and torch.xpu.is_available()
+        if name == 'mps':
+            return torch.backends.mps.is_available()
+    except Exception:
+        return False
+    return True
+
+def pick_device(requested:str)->str:
+    name = installed_device() if requested == 'auto' else requested
+    if name != 'cpu' and not device_available(name):
+        print(f'{name}: not available with this python_env, the speech recognizer runs on cpu')
+        return 'cpu'
+    return name
+
 def stamp(seconds:float)->str:
     m, s = divmod(seconds, 60)
     h, m = divmod(m, 60)
@@ -135,7 +168,9 @@ def stamp(seconds:float)->str:
 class Checker:
 
     def __init__(self, device:str)->None:
-        self.device = device
+        import torch
+        self.device = torch_devices[device]
+        self.dtype = torch.float16 if self.device in half_devices else torch.float32
         self.language = None
         self.asr_language = None
         self.model = None
@@ -182,8 +217,15 @@ class Checker:
             # the head is sized per language, the one in model.safetensors is english: replaced by the adapter's
             self.model = Wav2Vec2ForCTC.from_pretrained(settings['asr_model'], target_lang=self.asr_language, ignore_mismatched_sizes=True, cache_dir=tts_dir)
             self.model.eval()
-            if self.device == 'cuda':
-                self.model = self.model.half().to('cuda')
+            if self.device != 'cpu':
+                try:
+                    self.model = self.model.to(self.device, dtype=self.dtype)
+                except RuntimeError as e:
+                    # not enough memory on the GPU most of the time: slower, but the check goes on
+                    print(f'{self.device}: {e}, the speech recognizer runs on cpu')
+                    self.device, self.dtype = 'cpu', torch.float32
+                    self.model = self.model.float().to('cpu')
+            print(f'Speech recognizer on {self.device} ({str(self.dtype).removeprefix("torch.")})')
         else:
             self.processor.tokenizer.set_target_lang(self.asr_language)
             self.model.load_adapter(self.asr_language)
@@ -407,15 +449,13 @@ def print_report(report:dict)->None:
     print(f"  {report['flagged']} sentence(s) flagged")
 
 def main()->int:
-    import torch
     found = find_audiobooks(args.audiobooks)
     if not found:
         return 1
     if len(found) > 1 and (args.vtt or args.output):
         print('--vtt and --output take a single audiobook')
         return 1
-    device = 'cuda' if args.device == 'cuda' or (args.device == 'auto' and torch.cuda.is_available()) else 'cpu'
-    checker = Checker(device)
+    checker = Checker(pick_device(args.device))
     for audiobook, vtt in found:
         report = check_audiobook(checker, audiobook, vtt)
         if report is None:
