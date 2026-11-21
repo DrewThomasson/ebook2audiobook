@@ -90,6 +90,11 @@ class DeviceInstaller():
     # release installed by hand, which coqui-tts does not run with: 4.46 imports torch.distributed.fsdp in generate()
     # and fails on torch builds without distributed (the +vulkan wheels)
     transformers_min = '4.57'
+    # the last coqui-tts release python 3.10 gets, whatever requirements.txt pins for the others. 3.10 is Jetson's
+    # python_env (min_python_version: its torch wheels are cp310 only), and a coqui-tts release dropping 3.10 (EOL since
+    # 2026-10) would not install there. 0.28.0 declares >=3.10,<3.15; it predates transformers 5.24's cache rename, so
+    # transformers_workarounds.patch_coqui_gpt_cache() stays while 3.10 is on it
+    coqui_tts_py310_max = '0.28.0'
     exclusive_pkgs = {
         'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }
@@ -1823,6 +1828,13 @@ class DeviceInstaller():
                     head = re.sub(r'[-_.]+', '-', re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower())
                     if head in {'torch', 'torchaudio'} or head in self.device_pkgs:
                         continue
+                    # python 3.10 keeps coqui-tts at coqui_tts_py310_max: the line's extras and marker stay, its version
+                    # goes. An installed release above it violates the pin and is put back at the next start
+                    if head == 'coqui-tts' and self.python_version < (3, 11):
+                        spec, _, marker = pkg.partition(';')
+                        pkg = re.split(r'[<>=!~]', spec, maxsplit=1)[0].strip() + f'=={self.coqui_tts_py310_max}'
+                        if marker.strip():
+                            pkg += f'; {marker.strip()}'
                     if head in overrides:
                         if overrides[head] is None:
                             continue

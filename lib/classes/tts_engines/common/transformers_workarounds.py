@@ -25,6 +25,8 @@ def patch_coqui_gpt_cache()->int:
     wrapper passes everything through. A forward() that declares cache itself (a fixed coqui-tts) is left alone.
     Class level and idempotent: safe at every engine load. Only modules already imported are touched: the engine that
     uses one has imported it, and VITS and the other Coqui models do not pay a transformers import for it.
+    Remove it once no python_env runs a coqui-tts without the fix: python 3.10 (Jetson) stays on 0.28.0
+    (DeviceInstaller.coqui_tts_py310_max) after requirements.txt moves to a fixed release.
     Returns the number of classes wrapped by this call"""
     patched = 0
     for module_name, class_name in coqui_gpt_inference_models:
