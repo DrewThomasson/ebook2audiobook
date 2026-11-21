@@ -12,8 +12,8 @@ from lib.lang import legends
 
 class SentenceVerifier:
     # --verify_sentences: checks a converted sentence against its text (settings and reasons in conf_models.py).
-    # Every take gets the length check, then MMS transcribes it and the letters of both texts, romanized by uroman, are
-    # compared (CER). A failure here never stops the conversion: speech recognition is turned off, the length check
+    # Every take gets the length check, then MMS transcribes it and the letters of both texts, romanized by uroman
+    # (pykakasi for Japanese), are compared (CER). A failure here never stops the conversion: speech recognition is turned off, the length check
     # goes on and the take is kept
 
     def __init__(self, session:Any)->None:
@@ -31,6 +31,7 @@ class SentenceVerifier:
         self.model = None
         self.processor = None
         self.uroman = None
+        self.kakasi = None
         self.device = devices['CPU']['proc']
         self.asr_enabled = True
         self.asr_language = self._asr_language(self.language)
@@ -102,6 +103,12 @@ class SentenceVerifier:
             return False
 
     def _romanize(self, text:str)->str:
+        if self.language == 'jpn':
+            # uroman reads kanji with their chinese readings: the bursts of a good take reached the burst limit
+            if self.kakasi is None:
+                import pykakasi
+                self.kakasi = pykakasi.kakasi()
+            return ' '.join(item['hepburn'] for item in self.kakasi.convert(text))
         if self.uroman is None:
             import uroman
             self.uroman = uroman.Uroman()
