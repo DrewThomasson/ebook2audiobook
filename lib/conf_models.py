@@ -913,6 +913,9 @@ default_engine_settings = {
         "gpt_cond_len": 512,
         "gpt_batch_size": 1,
         "enable_text_splitting": False,
+        # a part under this share of the language's XTTS char limit (en 250: 15 chars, ja 71: 4) is sent without its end
+        # mark: one-word lines with a period made XTTS babble for seconds, without it they stayed under 2.5 s
+        "short_part_ratio": 0.06,
         "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav'],
         "voice": default_speaker,
         "voices": {

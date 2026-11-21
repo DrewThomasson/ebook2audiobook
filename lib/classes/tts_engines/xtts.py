@@ -116,6 +116,16 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
+    def _short_part(self, part:str)->str:
+        # XTTS babbles after a one-word part ending with a period ("No." alone: up to 9 s of noise in the tests).
+        # A part shorter than short_part_ratio of its language's char limit loses its end mark, a question mark stays
+        char_limits = getattr(getattr(self.engine, 'tokenizer', None), 'char_limits', {})
+        limit = char_limits.get(str(self.language_iso1).split('-')[0], 250)
+        stripped = re.sub(r'[\s.!…;:,。！、，]+$', '', part)
+        if stripped and len(stripped) < max(3, round(limit * default_engine_settings[TTS_ENGINES['XTTS']]['short_part_ratio'])):
+            return stripped
+        return part
+
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
             import torch
@@ -146,7 +156,8 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                         trim_audio_buffer = 0.01
                         if part.endswith("'"):
                             part = part[:-1]
-                        part = part.replace('.', ' ;\n')
+                        # the trim and the silence after the part below still follow its own end mark
+                        text = self._short_part(part).replace('.', ' ;\n')
                         if self.params['current_voice'] is not None and self.params['current_voice'] in self.params['latent_embedding'].keys():
                             self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['latent_embedding'][self.params['current_voice']]
                         else:
@@ -162,7 +173,7 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
                             with torch.inference_mode():
                                 with torch.autocast(self.device, dtype=self.amp_dtype, enabled=(self.amp_dtype != torch.float32)):
                                     result = self.engine.inference(
-                                        text=part,
+                                        text=text,
                                         language=self.language_iso1,
                                         gpt_cond_latent=self.params['gpt_cond_latent'],
                                         speaker_embedding=self.params['speaker_embedding'],
