@@ -116,15 +116,60 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
             error = f'load_engine() error: {e}'
             raise RuntimeError(error) from e
 
+    def _char_limit(self)->int:
+        char_limits = getattr(getattr(self.engine, 'tokenizer', None), 'char_limits', {})
+        return char_limits.get(str(self.language_iso1).split('-')[0], 250)
+
     def _short_part(self, part:str)->str:
         # XTTS babbles after a one-word part ending with a period ("No." alone: up to 9 s of noise in the tests).
         # A part shorter than short_part_ratio of its language's char limit loses its end mark, a question mark stays
-        char_limits = getattr(getattr(self.engine, 'tokenizer', None), 'char_limits', {})
-        limit = char_limits.get(str(self.language_iso1).split('-')[0], 250)
         stripped = re.sub(r'[\s.!…;:,。！、，]+$', '', part)
-        if stripped and len(stripped) < max(3, round(limit * default_engine_settings[TTS_ENGINES['XTTS']]['short_part_ratio'])):
+        if stripped and len(stripped) < max(3, round(self._char_limit() * default_engine_settings[TTS_ENGINES['XTTS']]['short_part_ratio'])):
             return stripped
         return part
+
+    def _merge_short_parts(self, parts:list[str])->list[str]:
+        # merge_short_parts languages (hi, ko) babble around any short part generated alone, end mark or not. A part
+        # under merge_short_ratio of the char limit joins the next text part, else the previous one, over the [break]
+        # and [pause] between them (their silence is lost) as long as both fit in the char limit
+        settings = default_engine_settings[TTS_ENGINES['XTTS']]
+        if str(self.language_iso1).split('-')[0] not in settings['merge_short_parts']:
+            return parts
+        limit = self._char_limit()
+        gaps = {TTS_SML['break']['static'], TTS_SML['pause']['static']}
+
+        def is_text(p:str)->bool:
+            return any(c.isalnum() for c in p) and not SML_TAG_PATTERN.fullmatch(p.strip())
+
+        def neighbour(i:int, step:int)->int|None:
+            # the nearest text part with only [break], [pause] or blanks between
+            j = i + step
+            while 0 <= j < len(parts):
+                if is_text(parts[j]):
+                    return j
+                if SML_TAG_PATTERN.fullmatch(parts[j].strip()) and re.sub(r'\s+', '', parts[j]).lower() not in gaps:
+                    return None
+                j += step
+            return None
+
+        merged = True
+        while merged:
+            merged = False
+            for i, part in enumerate(parts):
+                if not is_text(part) or len(part.strip()) >= limit * settings['merge_short_ratio']:
+                    continue
+                for j in (neighbour(i, 1), neighbour(i, -1)):
+                    if j is None:
+                        continue
+                    a, b = sorted((i, j))
+                    text = f'{parts[a].strip()} {parts[b].strip()}'
+                    if len(text) <= limit:
+                        parts = parts[:a] + [text] + parts[b + 1:]
+                        merged = True
+                        break
+                if merged:
+                    break
+        return parts
 
     def convert(self, sentence_file:str, sentence:str, **kwargs)->tuple:
         try:
@@ -132,7 +177,7 @@ class XTTS(TTSUtils, TTSRegistry, name='xtts'):
             import numpy as np
             from lib.classes.tts_engines.common.audio import trim_audio, is_audio_data_valid
             if self.engine:
-                sentence_parts = self._split_sentence_on_sml(sentence)
+                sentence_parts = self._merge_short_parts(self._split_sentence_on_sml(sentence))
                 self.params['block_voice'] = kwargs.get('block_voice', self.session['voice'])
                 if self.params.get('inline_voice'):
                     self.params['current_voice'] = self.params['inline_voice']

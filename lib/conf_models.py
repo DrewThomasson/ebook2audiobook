@@ -917,6 +917,10 @@ default_engine_settings = {
         # mark: one-word lines with a period made XTTS babble up to 8.7 s, without it none did in 15 languages (hi and
         # ko babble after any short part, end mark or not)
         "short_part_ratio": 0.06,
+        # in these languages a part under merge_short_ratio of the char limit (hi 45 chars, ko 28) is merged with its
+        # neighbour over the [break]/[pause] between: alone it babbled (parts up to 16 chars), merged it never did
+        "merge_short_parts": ['hi', 'ko'],
+        "merge_short_ratio": 0.3,
         "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav'],
         "voice": default_speaker,
         "voices": {
