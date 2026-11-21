@@ -5,15 +5,15 @@ root_dir = str(Path(__file__).resolve().parents[1])
 python_env_dir = os.path.join(root_dir, 'python_env')
 python_env_exec = os.path.join(python_env_dir, 'Scripts', 'python.exe') if sys.platform == 'win32' else os.path.join(python_env_dir, 'bin', 'python')
 # runs on e2a's python_env (torch, transformers, uroman, pykakasi): started by another interpreter, it starts again with python_env's
-if os.path.isfile(python_env_exec) and os.path.normcase(os.path.realpath(sys.prefix)) != os.path.normcase(os.path.realpath(python_env_dir)) and not os.environ.get('E2A_CHECK_SENTENCES'):
+if os.path.isfile(python_env_exec) and os.path.normcase(os.path.realpath(sys.prefix)) != os.path.normcase(os.path.realpath(python_env_dir)) and not os.environ.get('E2A_CHECK_AUDIOBOOK_HALLUCINATIONS'):
     try:
-        sys.exit(subprocess.run([python_env_exec, os.path.abspath(__file__), *sys.argv[1:]], env={**os.environ, 'E2A_CHECK_SENTENCES': '1'}).returncode)
+        sys.exit(subprocess.run([python_env_exec, os.path.abspath(__file__), *sys.argv[1:]], env={**os.environ, 'E2A_CHECK_AUDIOBOOK_HALLUCINATIONS': '1'}).returncode)
     except KeyboardInterrupt:
         sys.exit(130)
 examples = '''examples:
-  check_sentences.py audiobooks/cli/book.m4b
-  check_sentences.py audiobooks/cli/book.m4b --language fra --device cuda
-  check_sentences.py audiobooks/cli --all'''
+  check_audiobook_hallucinations.py audiobooks/cli/book.m4b
+  check_audiobook_hallucinations.py audiobooks/cli/book.m4b --language fra --device cuda
+  check_audiobook_hallucinations.py audiobooks/cli --all'''
 description = '''Report the sentences of an e2a audiobook that do not say their text: babble, a word or a phrase
 said twice or skipped, mumble before or after the text, a sentence too long or too short for its text.
 Report only: the audiobook is not changed.
@@ -22,7 +22,7 @@ facebook/mms-1b-all (1162 languages, downloaded into models/tts on first use) an
 both texts, romanized (uroman, pykakasi for Japanese). The limits come from the book itself, from the
 medians of all its sentences: names or a hard text raise them for the whole book, a hallucination stands out.
 The report is printed and saved as <audiobook>.check.json.'''
-parser = argparse.ArgumentParser(prog='check_sentences.py', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=examples, description=description)
+parser = argparse.ArgumentParser(prog='check_audiobook_hallucinations.py', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=examples, description=description)
 parser.add_argument('audiobooks', nargs='+', help='Audiobook files (m4b, mp3, flac...) with their .vtt beside them, or folders holding them')
 parser.add_argument('-l', '--language', default='', help="Language spoken, e2a ISO-639-3 code (default: the audiobook's language tag; set it for a translated book, its tag keeps the ebook's language)")
 parser.add_argument('--vtt', default='', help='Subtitles of the audiobook, single audiobook only (default: <audiobook>.vtt)')

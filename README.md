@@ -102,7 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
-  - [Check an audiobook for hallucinations](#check-sentences)
+  - [Check an audiobook for hallucinations](#check-audiobook-hallucinations)
   
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
@@ -673,8 +673,8 @@ examples:
   translate_ebook.py --list --from eng
 ```
 
-<a id="check-sentences"></a>
-### Check an audiobook for hallucinations: `tools/check_sentences.py`
+<a id="check-audiobook-hallucinations"></a>
+### Check an audiobook for hallucinations: `tools/check_audiobook_hallucinations.py`
 Lists the sentences of a finished e2a audiobook that do not say their text: babble, a word or a phrase said twice
 or skipped, mumble before or after the text, a sentence far too long or too short for its text (XTTS and the other
 autoregressive engines do it now and then). Report only: the audiobook is not changed, you decide what to redo.
@@ -687,11 +687,11 @@ The flagged sentences are printed with their number, time and chapter, and every
 in `<audiobook>.check.json`.
    - **Linux/MacOS**
      ```bash
-     ./python_env/bin/python tools/check_sentences.py audiobooks/cli/book.m4b
+     ./python_env/bin/python tools/check_audiobook_hallucinations.py audiobooks/cli/book.m4b
      ```
    - **Windows**
      ```bash
-     python_env\Scripts\python.exe tools\check_sentences.py audiobooks\cli\book.m4b
+     python_env\Scripts\python.exe tools\check_audiobook_hallucinations.py audiobooks\cli\book.m4b
      ```
    - A folder checks every audiobook in it that has its `.vtt` (all the parts of a split audiobook).
    - `--language` is needed for a translated book: its language tag keeps the ebook's language.
@@ -699,8 +699,9 @@ in `<audiobook>.check.json`.
      when there is one) is the way for a whole book.
 
 ```bash
-usage: check_sentences.py [-h] [-l LANGUAGE] [--vtt VTT] [-o OUTPUT] [--device {auto,cpu,cuda}] [--all]
-                          audiobooks [audiobooks ...]
+usage: check_audiobook_hallucinations.py [-h] [-l LANGUAGE] [--vtt VTT] [-o OUTPUT]
+                                         [--device {auto,cpu,cuda}] [--all]
+                                         audiobooks [audiobooks ...]
 
 Report the sentences of an e2a audiobook that do not say their text: babble, a word or a phrase
 said twice or skipped, mumble before or after the text, a sentence too long or too short for its text.
@@ -728,9 +729,9 @@ options:
   --all                 Print every sentence with its measures, not only the flagged ones
 
 examples:
-  check_sentences.py audiobooks/cli/book.m4b
-  check_sentences.py audiobooks/cli/book.m4b --language fra --device cuda
-  check_sentences.py audiobooks/cli --all
+  check_audiobook_hallucinations.py audiobooks/cli/book.m4b
+  check_audiobook_hallucinations.py audiobooks/cli/book.m4b --language fra --device cuda
+  check_audiobook_hallucinations.py audiobooks/cli --all
 ```
 
 <a id="cloned-voices"></a>
