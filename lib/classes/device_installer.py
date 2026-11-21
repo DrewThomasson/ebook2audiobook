@@ -90,12 +90,6 @@ class DeviceInstaller():
     # release installed by hand, which coqui-tts does not run with: 4.46 imports torch.distributed.fsdp in generate()
     # and fails on torch builds without distributed (the +vulkan wheels)
     transformers_min = '4.57'
-    # the first transformers release coqui-tts 0.28 does not run with, whatever the torch. 5.24 renamed the generation
-    # cache argument past_key_values -> cache: generate() hands GPT2InferenceModel.forward() (XTTS, Tortoise) the cache
-    # as cache=, its past_key_values stays None and the first decoding step dies on past_key_values.get_seq_length()
-    # (crash report db80ee0ce029d98b). Verified with coqui-tts 0.28.0's XTTS GPT on torch 2.14.1: 5.23.0 generates,
-    # 5.24.0 raises that AttributeError. Raise it once a coqui-tts release passes the cache under its new name
-    transformers_max = '5.24'
     exclusive_pkgs = {
         'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }
@@ -2377,13 +2371,12 @@ class DeviceInstaller():
                 # the main env's transformers models load from safetensors.
                 # listed in device_pkgs so the cap rides along on every install call and
                 # coqui-tts cannot drag transformers back above it.
-                # transformers_max on top: an installed 5.24+ violates it and is put back below it at the next start
                 torch_version = self.get_package_version('torch') or ''
                 if torch_version:
                     for torch_floor, transformers_cap in self.transformers_caps.items():
                         if self.version_tuple(torch_version, 2) < self.version_tuple(torch_floor, 2):
                             return f'transformers>={self.transformers_min},<{transformers_cap}'
-                return f'transformers>={self.transformers_min},<{self.transformers_max}'
+                return f'transformers>={self.transformers_min}'
             case _:
                 raise ValueError(f'select_pkg(): no rule for {pkg}')
 

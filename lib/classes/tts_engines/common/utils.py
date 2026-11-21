@@ -542,6 +542,9 @@ class TTSUtils:
                 from lib.classes.tts_engines.common.xpu_workarounds import patch_coqui_hifigan_for_xpu
                 engine = patch_coqui_hifigan_for_xpu(engine)
                 # ----------------------------------
+                # coqui-tts' GPT inference (Tortoise here) on transformers >= 5.24: the cache under its new name
+                from lib.classes.tts_engines.common.transformers_workarounds import patch_coqui_gpt_cache
+                patch_coqui_gpt_cache()
                 vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                 self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                 models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
@@ -683,6 +686,9 @@ class TTSUtils:
                     from lib.classes.tts_engines.common.xpu_workarounds import patch_coqui_hifigan_for_xpu
                     engine = patch_coqui_hifigan_for_xpu(engine)
                     # ----------------------------------
+                    # coqui-tts' GPT inference (XTTS here) on transformers >= 5.24: the cache under its new name
+                    from lib.classes.tts_engines.common.transformers_workarounds import patch_coqui_gpt_cache
+                    patch_coqui_gpt_cache()
                     vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                     self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
