@@ -481,6 +481,7 @@ legends = {
     'msg_intel_l0_no_device': 'Intel GPU bound to {kmd} but Level Zero reports no device ({status}). Install intel-level-zero-gpu and intel-opencl-icd, then re-run. Falling back to CPU.',
     'msg_xpu_fallback': 'XPU detected via PyTorch fallback.',
     'msg_xpu_unusable': 'Intel GPU found but torch cannot run on it (GPU not supported or driver too old). XPU disabled, update the Intel graphics driver to use it.',
+    'msg_xpu_probe_no_answer': 'Intel GPU found but torch gave no answer whether it can run on it. XPU disabled for this run to keep CPU conversions safe, it is probed again at the next start.',
     'msg_gpu_runtime_silent': 'No GPU backend matched. {gpus} GPU on PCI but its runtime did not answer. Falling back to CPU.',
     'msg_no_gpu_pci': 'No GPU found on the PCI bus. Falling back to CPU.',
     'error_requirements_missing': 'Warning: File {file} not found. Skipping package check.',

@@ -102,6 +102,11 @@ class DeviceInstaller():
     gpu_choice_timeout = 60
     # PCI vendor id -> the device its runtime serves, for the GPU choice
     gpu_pci_vendors = {0x1002: devices['ROCM']['proc'], 0x10de: devices['CUDA']['proc'], 0x8086: devices['XPU']['proc']}
+    # PCI vendors whose display adapters never run torch (_not_gpu): server BMC VGA (ASPEED, Matrox G200, Huawei iBMC),
+    # emulated / paravirtual VGA (QEMU-Bochs, virtio-gpu, QXL, VMware SVGA, VirtualBox, Hyper-V, Parallels, Xen, Cirrus,
+    # S3 Trio) and Silicon Motion's embedded / USB graphics. A BMC VGA counted as an add-in card stopped
+    # reconcile_gpu_choice() from moving a server's default onto its real GPU
+    display_vendors = {0x1a03, 0x102b, 0x19e5, 0x1234, 0x1af4, 0x1b36, 0x15ad, 0x80ee, 0x1414, 0x1ab8, 0x5853, 0x1013, 0x5333, 0x126f}
 
     uv_install_url = 'https://docs.astral.sh/uv/getting-started/installation/'
     # official download page of the Microsoft Visual C++ redistributables (msvcp140/vcruntime140: absent from every
@@ -471,18 +476,32 @@ class DeviceInstaller():
             return None
 
     @staticmethod
-    def _virtual_gpu(name:str)->bool:
-        # display-only / virtual adapters never run torch, but they occupy a slot in every enumeration (Windows reports
-        # them through WMI even when Vulkan does not see them): Remote Desktop's 'Microsoft Remote Display Adapter',
-        # TeamViewer's 'Meta Virtual Monitor', ToDesk / Virtual Desktop mirrors, VMware SVAs, basic VGA drivers... The
-        # names all contain 'virtual' or 'display', or are one of the plain framebuffer stubs listed here. A name with a
-        # vendor GPU word in it stays real: 'NVIDIA GeForce RTX 3060 Laptop GPU' contains none, 'Intel(R) UHD Graphics
-        # 770' does ('graphics' alone must not hide an iGPU, it only ever ranks last). The guard words stay narrow so a
-        # virtual mirror named after its host GPU ('GameViewer Virtual Display Adapter' on an AMD box) is still dropped
+    def _not_gpu(name:str, vendor_id:int=0, pnp_id:str='')->bool:
+        # display-only adapters never run torch, but they occupy a slot in every enumeration (Windows reports them through
+        # WMI even when Vulkan does not see them), shift the GPU index shown to the user and can leave a lone real GPU
+        # looking like one choice among several. Dropped, so a machine with one real GPU selects it by default:
+        # - Windows device not on a GPU bus (pnp_id): USB graphics (DisplayLink, MCT Trigger, Silicon Motion: USB\),
+        #   indirect / virtual displays (Remote Desktop, Parsec, spacedesk, IddSampleDriver, Citrix: SWD\ or ROOT\),
+        #   mirror drivers (ROOT\), Hyper-V synthetic video (VMBUS\). A real GPU sits on PCI\ (ACPI\ on Snapdragon)
+        # - PCI vendor of display-only chips (display_vendors): server BMC VGA, emulated / paravirtual VGA
+        # - name: 'virtual', 'display' and the stubs listed here ('Microsoft Remote Display Adapter', TeamViewer's
+        #   'Meta Virtual Monitor', VMware SVGA, basic VGA drivers...)
+        # A name with a vendor GPU word in it stays real whatever its bus: 'NVIDIA GeForce RTX 3060 Laptop GPU' (a GPU-PV
+        # adapter in a VM included). 'Intel(R) UHD Graphics 770' has none ('graphics' alone must not hide an iGPU, it
+        # only ever ranks last). The guard words stay narrow so a virtual mirror named after its host GPU ('GameViewer
+        # Virtual Display Adapter' on an AMD box) is still dropped
         lowered = name.lower()
         if any(word in lowered for word in ('nvidia', 'geforce', 'quadro', 'tesla', 'rtx', 'gtx', 'radeon rx', 'arc a')) and 'virtual' not in lowered:
             return False
+        if vendor_id in DeviceInstaller.display_vendors:
+            return True
+        if pnp_id.upper().startswith(('USB\\', 'SWD\\', 'ROOT\\', 'VMBUS\\')):
+            return True
         if 'virtual' in lowered or 'display' in lowered:
+            return True
+        # bus and display-only words, no chip vendor: display_vendors has those by id, and a name match would drop the
+        # Vulkan device of a VM ('Virtio-GPU Venus (AMD Radeon 780M)': the host GPU) or a board-maker's Arc card
+        if re.search(r'\b(?:usb|mirror|indirect|remote|hyper-v|spacedesk|parsec|idd\w*)\b', lowered):
             return True
         return any(word in lowered for word in ('vmware svga', 'basic render', 'llvmpipe', 'v3d', 'vc4', 'simple-framebuffer'))
 
@@ -491,20 +510,23 @@ class DeviceInstaller():
         # which the Vulkan loader enumerates in (DXGI order), WMI without a loader. Linux: PCI bus order. Model and card
         # come from the Vulkan device of the same vendor (deviceType discrete); without one the card is guessed: Intel's
         # integrated GPU is 00:02.0 on the PCI bus (on Windows: any Intel), NVIDIA and AMD count as cards. Virtual
-        # display adapters (_virtual_gpu) are dropped: they hold no compute memory, and counting them shifted the CUDA
+        # display adapters (_not_gpu) are dropped: they hold no compute memory, and counting them shifted the CUDA
         # index reported to the user (bug reports showed 'gpu 0' while nvidia-smi said gpu 1)
         if self.system == systems['WINDOWS'] and vk_devices:
-            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._virtual_gpu(model)]
+            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._not_gpu(model, vendor_id)]
         pci = []  # (vendor id, name)
         if self.system == systems['WINDOWS']:
             try:
                 out = subprocess.run(['powershell', '-NoProfile', '-Command', "Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name + '|' + $_.PNPDeviceID }"], capture_output=True, text=True, errors='replace', timeout=20).stdout
             except (OSError, subprocess.TimeoutExpired):
                 out = ''
-            # one line per adapter, in the OS's order; a virtual display adapter drops both its fields
-            for name, vendor_id in re.findall(r'(?m)^(.*?)\|.*VEN_([0-9A-F]{4})', out, re.IGNORECASE):
-                if not self._virtual_gpu(name):
-                    pci.append((int(vendor_id, 16), name.strip()))
+            # one line per adapter, in the OS's order, 'Name|PNPDeviceID'. Only a PCI vendor id counts (VEN_xxxx): a
+            # USB, software or root device has none, and _not_gpu() drops the display-only ones that do
+            for line in out.splitlines():
+                name, _, pnp_id = line.strip().partition('|')
+                vendor = re.search(r'VEN_([0-9A-F]{4})', pnp_id, re.IGNORECASE)
+                if vendor and not self._not_gpu(name, int(vendor.group(1), 16), pnp_id):
+                    pci.append((int(vendor.group(1), 16), name.strip()))
         else:
             sysfs = '/sys/bus/pci/devices'
             if os.path.isdir(sysfs):
@@ -527,7 +549,7 @@ class DeviceInstaller():
                                 name = next((line.strip() for line in out.splitlines() if line.strip()), '')
                             except (OSError, subprocess.TimeoutExpired):
                                 name = ''
-                        if self._virtual_gpu(name):
+                        if self._not_gpu(name, vendor_id):
                             continue
                         pci.append((vendor_id, name))
                     except (OSError, ValueError):
@@ -538,11 +560,11 @@ class DeviceInstaller():
                 except (OSError, subprocess.TimeoutExpired):
                     out = ''
                 for description, vendor_id in re.findall(r'^\S+ (.*?\[030[02]\].*?\[([0-9a-f]{4}):[0-9a-f]{4}\])', out, re.IGNORECASE | re.MULTILINE):
-                    if self._virtual_gpu(description):
+                    if self._not_gpu(description, int(vendor_id, 16)):
                         continue
                     pci.append((int(vendor_id, 16), description))
         if not pci:
-            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._virtual_gpu(model)]
+            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._not_gpu(model, vendor_id)]
         unmatched = list(vk_devices)
         gpus = []
         for vendor_id, name in pci:
@@ -558,15 +580,15 @@ class DeviceInstaller():
             else:
                 address = next((device[3] for device in vk_devices if device[0] == vendor_id and len(device) > 3), '')
                 card = bool(address) and not address.endswith(':00:02.0')
-            same = [device for device in unmatched if device[0] == vendor_id and not self._virtual_gpu(device[1])]
+            same = [device for device in unmatched if device[0] == vendor_id and not self._not_gpu(device[1], device[0])]
             device = next((device for device in same if (device[2] == 2) == card), same[0] if same else None)
             if device:
                 unmatched.remove(device)
                 gpus.append((vendor_id, device[1], device[2] == 2))
             else:
                 gpus.append((vendor_id, name, card))
-        # Vulkan GPUs not on the PCI list come last; the virtual ones are never listed at all
-        return gpus + [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in unmatched if not self._virtual_gpu(model)]
+        # Vulkan GPUs not on the PCI list come last; the display-only ones are never listed at all
+        return gpus + [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in unmatched if not self._not_gpu(model, vendor_id)]
 
     def gpu_candidates(self, gpu_results:dict)->list:
         # each way e2a can run a GPU here, as (name, tag, msg, models): a vendor runtime detect_device() found (cuda,
@@ -1080,29 +1102,15 @@ class DeviceInstaller():
             # ============================================================
             if not tegra and has_rocm() and has_amd_gpu_pci():
                 name, tag, msg = None, None, ''
-                # HSA_OVERRIDE_GFX_VERSION is read once, when this process first initializes the HSA runtime:
-                # the ctypes hipGetDeviceCount() below does it, and torch later reuses that loaded libhsa-runtime64.so.1,
-                # so the override must be in os.environ before it. detect_gpu.py inherits it and reports it back unchanged.
-                if os.name == 'posix' and not os.environ.get('HSA_OVERRIDE_GFX_VERSION'):
-                    sys_path = list(sys.path)
-                    try:
-                        import importlib.util
-                        spec = importlib.util.spec_from_file_location('detect_gpu', detect_gpu_script)
-                        detect_gpu = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(detect_gpu)
-                        detect_gpu.handle_rocm_override()
-                    except Exception:
-                        pass  # never block device detection
-                    finally:
-                        sys.path[:] = sys_path  # handle_rocm_override() puts components/ first on sys.path
                 version = ()
                 msg = ''
                 hip_device_count = 0
                 # 1) HIP runtime detection via ctypes (primary)
                 try:
                     import ctypes
-                    libhip = None
+                    runtime_version = None
                     if os.name == 'nt':
+                        libhip = None
                         hip_path = os.environ.get('HIP_PATH', '')
                         candidates = ['amdhip64.dll']
                         if hip_path:
@@ -1113,6 +1121,13 @@ class DeviceInstaller():
                                 break
                             except OSError:
                                 continue
+                        if libhip:
+                            device_count = ctypes.c_int()
+                            if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
+                                hip_device_count = device_count.value
+                            v_int = ctypes.c_int()
+                            if libhip.hipRuntimeGetVersion(ctypes.byref(v_int)) == 0:
+                                runtime_version = v_int.value
                     else:
                         candidates = ['libamdhip64.so']
                         min_major, _ = rocm_version_range['min']
@@ -1135,34 +1150,32 @@ class DeviceInstaller():
                                             candidates.append(os.path.join(d, f))
                                 except OSError:
                                     pass
-                        for lib_name in candidates:
-                            try:
-                                libhip = ctypes.CDLL(lib_name)
-                                break
-                            except OSError:
-                                continue
-                    if libhip:
-                        device_count = ctypes.c_int()
-                        if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
-                            hip_device_count = device_count.value
-                        v_int = ctypes.c_int()
-                        if libhip.hipRuntimeGetVersion(ctypes.byref(v_int)) == 0:
-                            v = v_int.value
-                            if v >= 10000000:
-                                major = v // 10000000
-                                minor = (v % 10000000) // 100000
-                                patch = v % 100000
-                            elif v >= 100:
-                                major = v // 100
-                                minor = (v % 100) // 10
-                                patch = 0
-                            else:
-                                major, minor, patch = v, 0, 0
-                            if hip_device_count > 0:
-                                version = (major, minor, patch)
-                            else:
-                                ver_disp = f'{major}.{minor}.{patch}' if patch else f'{major}.{minor}'
-                                msg = legends['msg_hip_no_devices'].format(version=ver_disp)
+                        # asked in a child (detect_gpu.py --hip-runtime), not loaded here: a libamdhip64 loaded in this
+                        # process stays, and torch imported later binds its ROCm libraries to it by soname
+                        # (libamdhip64.so.7). torch built for ROCm 7.14 then ran on the system's 7.16 runtime, under the
+                        # HSA_OVERRIDE_GFX_VERSION picked for this probe, while detect_gpu.py had checked torch on its
+                        # own stack (crash report ec3a0208c4c44215: segfault at the first tensor stanza moved to the GPU).
+                        # The override torch runs under comes from detect_gpu.py's verdict alone (install_device_packages)
+                        answer = self.hip_runtime_child(candidates)
+                        hip_device_count = answer.get('count') or 0
+                        runtime_version = answer.get('version')
+                    if runtime_version is not None:
+                        v = runtime_version
+                        if v >= 10000000:
+                            major = v // 10000000
+                            minor = (v % 10000000) // 100000
+                            patch = v % 100000
+                        elif v >= 100:
+                            major = v // 100
+                            minor = (v % 100) // 10
+                            patch = 0
+                        else:
+                            major, minor, patch = v, 0, 0
+                        if hip_device_count > 0:
+                            version = (major, minor, patch)
+                        else:
+                            ver_disp = f'{major}.{minor}.{patch}' if patch else f'{major}.{minor}'
+                            msg = legends['msg_hip_no_devices'].format(version=ver_disp)
                 except (OSError, AttributeError):
                     pass
                 # 2) hipcc fallback
@@ -2254,7 +2267,7 @@ class DeviceInstaller():
             return False
         cmd = [
             'powershell', '-NoProfile', '-NonInteractive', '-Command',
-            'Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name'
+            "Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name + '|' + $_.PNPDeviceID }"
         ]
         try:
             out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=30).decode(errors='ignore').lower()
@@ -2262,11 +2275,14 @@ class DeviceInstaller():
             error = f'has_directml_gpu(): {e}'
             print(error)
             return False
-        blacklist = ('microsoft basic display', 'remote display', 'standard vga', 'virtual', 'vmware', 'parallels', 'citrix')
+        # the same display-only filter as system_gpus(), so a DisplayLink dock or a virtual monitor never passes for a
+        # DirectML GPU. A Snapdragon Adreno has no PCI vendor id (ACPI\QCOM...): its name decides
+        blacklist = ('standard vga', 'parallels', 'citrix')
         vendors = ('nvidia', 'amd', 'radeon', 'intel', 'arc', 'qualcomm', 'adreno')
         for line in out.splitlines():
-            name = line.strip()
-            if not name or any(b in name for b in blacklist):
+            name, _, pnp_id = line.strip().partition('|')
+            vendor = re.search(r'VEN_([0-9A-F]{4})', pnp_id, re.IGNORECASE)
+            if not name or any(b in name for b in blacklist) or self._not_gpu(name, int(vendor.group(1), 16) if vendor else 0, pnp_id):
                 continue
             if any(v in name for v in vendors):
                 return True
@@ -2429,6 +2445,47 @@ class DeviceInstaller():
             error = f'finalize_exclusive_packages() error: {e}'
             print(error)
             return 0
+
+    def hip_runtime_child(self, candidates:list)->dict:
+        # {'count', 'version'} of the system HIP runtime, read by components/detect_gpu.py --hip-runtime in a child so
+        # the system libamdhip64 never loads in e2a's own process (check_hardware). {} when no candidate loads or the
+        # child does not answer
+        try:
+            proc = subprocess.run([python_exec, detect_gpu_script, '--hip-runtime', json.dumps(candidates)], capture_output=True, text=True, timeout=60)
+        except (subprocess.TimeoutExpired, OSError):
+            return {}
+        answer = next((line.strip() for line in reversed(proc.stdout.splitlines()) if line.strip().startswith('{')), None)
+        try:
+            data = json.loads(answer) if proc.returncode == 0 and answer else {}
+        except json.JSONDecodeError:
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def probe_gpus(self)->dict:
+        # torch's own GPU count, read by components/detect_gpu.py in a child process: a GPU torch can die natively in
+        # it. 'probed': the child ran to its end (or died in torch), so a count of 0 is torch's own answer. A probe that
+        # could not run (missing python, no answer in time, no answer on stdout) says nothing about the GPU. 120 s like
+        # reconcile_gpu_choice(): a cold first import of a GPU torch (antivirus scanning its DLLs, a machine short of RAM
+        # paging) took longer than the 30 s it had, so XPU stayed on unprobed (crash report 63aa7dc78e8ff6f6)
+        try:
+            proc = subprocess.run([python_exec, detect_gpu_script], capture_output=True, text=True, timeout=120)
+        except subprocess.TimeoutExpired as e:
+            return {'count': 0, 'backend': None, 'error': f'no answer within {e.timeout:g} s'}
+        except OSError as e:
+            return {'count': 0, 'backend': None, 'error': str(e)}
+        if proc.returncode != 0:
+            # Windows reports a native crash as an NTSTATUS (0xc0000005 access violation), POSIX as -signal
+            code = f'{proc.returncode:#x}' if proc.returncode > 255 else str(proc.returncode)
+            return {'count': 0, 'backend': None, 'probed': True, 'error': proc.stderr.strip() or f'exit code {code}'}
+        # the answer is detect_gpu.py's last line: torch or a driver may print to stdout before it
+        answer = next((line.strip() for line in reversed(proc.stdout.splitlines()) if line.strip().startswith('{')), None)
+        try:
+            data = json.loads(answer) if answer else None
+        except json.JSONDecodeError:
+            data = None
+        if not isinstance(data, dict):
+            return {'count': 0, 'backend': None, 'error': f'no answer on stdout: {proc.stdout.strip()[-200:]!r}'}
+        return {'count': 0, 'backend': None, **data, 'probed': True}
 
     def torch_probe_child(self)->Union[dict, None]:
         # run components/detect_gpu.py in a child process and parse its json line: None when the child could not run to
@@ -2653,19 +2710,6 @@ class DeviceInstaller():
                     return True
             return False
 
-        def _probe_gpus()->dict:
-            # 'probed': the child ran to its end (or died in torch), so a count of 0 is torch's own answer. A probe that
-            # could not run (timeout on a cold start, missing python, unreadable output) says nothing about the GPU
-            try:
-                proc = subprocess.run([python_exec, detect_gpu_script], capture_output=True, text=True, timeout=30)
-                if proc.returncode != 0:
-                    # Windows reports a native crash as an NTSTATUS (0xc0000005 access violation), POSIX as -signal
-                    code = f'{proc.returncode:#x}' if proc.returncode > 255 else str(proc.returncode)
-                    return {'count': 0, 'backend': None, 'probed': True, 'error': proc.stderr.strip() or f'exit code {code}'}
-                return {**json.loads(proc.stdout.strip() or '{}'), 'probed': True}
-            except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as e:
-                return {'count': 0, 'backend': None, 'error': str(e)}
-
         try:
             if device_info_str:
                 device_info = json.loads(device_info_str)
@@ -2851,7 +2895,7 @@ class DeviceInstaller():
                     # an inherited one would make sitecustomize.py answer 0 for torch in the probe too: it asks torch
                     # itself, and the verdict below sets it again
                     os.environ.pop('E2A_XPU_UNUSABLE', None)
-                    gpu_info = _probe_gpus()
+                    gpu_info = self.probe_gpus()
                     device_info_dict['gpu_count'] = gpu_info['count']
                     device_info_dict['gpu_backend'] = gpu_info['backend']
                     if gpu_info.get('error'):
@@ -2864,11 +2908,14 @@ class DeviceInstaller():
                     # VoiceExtractor, the session device check) asks torch.xpu again. Third-party code still asks it
                     # on its own (transformers at import, CPU conversions included): with E2A_XPU_UNUSABLE set,
                     # components/sitecustomize.py makes torch.xpu report no device in this process, torch not imported
-                    # yet, and in every child that inherits it
-                    if device_info['name'] == devices['XPU']['proc'] and gpu_info['count'] == 0 and gpu_info.get('probed'):
+                    # yet, and in every child that inherits it.
+                    # Only a count torch gave keeps XPU on. A probe without an answer turns it off too: it used to leave
+                    # XPU on unguarded, and the next CPU conversion died in transformers' own probe (crash report
+                    # 63aa7dc78e8ff6f6). Worst case a working Intel GPU sits this run out, with a message saying why
+                    if device_info['name'] == devices['XPU']['proc'] and gpu_info['count'] == 0:
                         devices['XPU']['found'] = False
                         os.environ['E2A_XPU_UNUSABLE'] = '1'
-                        msg = legends['msg_xpu_unusable']
+                        msg = legends['msg_xpu_unusable'] if gpu_info.get('probed') else legends['msg_xpu_probe_no_answer']
                         print(msg)
                     if gpu_info['count'] > 0:
                         idx = ','.join(str(i) for i in range(gpu_info['count']))
@@ -2876,12 +2923,24 @@ class DeviceInstaller():
                             os.environ['CUDA_VISIBLE_DEVICES'] = idx
                         elif gpu_info['backend'] == 'rocm':
                             os.environ['HIP_VISIBLE_DEVICES'] = idx
-                            # detect_gpu.py resolved it in its own child process, count > 0 means torch found the GPU under it
+                            # detect_gpu.py resolved it in its own child process against the installed torch's GPU
+                            # targets, count > 0 means torch found the GPU under it. The only override this process gets
                             if gpu_info.get('hsa_override') and not os.environ.get('HSA_OVERRIDE_GFX_VERSION'):
                                 os.environ['HSA_OVERRIDE_GFX_VERSION'] = gpu_info['hsa_override']
                         elif gpu_info['backend'] == 'xpu':
                             os.environ['ONEAPI_DEVICE_SELECTOR'] = f'level_zero:{idx}'
                             os.environ['ZE_AFFINITY_MASK'] = idx
+                    # read back with a native crash of this process (bug_reporter.note()): which way the probe went and
+                    # what torch runs under (XPU guard, HSA override), which the report of the next launch cannot tell
+                    if device_info['name'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['XPU']['proc']]:
+                        from lib.classes.bug_reporter import bug_reporter
+                        answer = 'answered' if gpu_info.get('probed') else 'no answer'
+                        probe = f"{device_info['name']} count {gpu_info['count']} ({answer})"
+                        if device_info['name'] == devices['XPU']['proc']:
+                            probe += f", E2A_XPU_UNUSABLE={os.environ.get('E2A_XPU_UNUSABLE', '0')}"
+                        elif device_info['name'] == devices['ROCM']['proc']:
+                            probe += f", HSA_OVERRIDE_GFX_VERSION={os.environ.get('HSA_OVERRIDE_GFX_VERSION') or 'unset'}"
+                        bug_reporter.fact('gpu_probe', probe)
                     return 0
                 else:
                     error = 'install_device_packages() error: json.loads() could not decode device_info_str'
