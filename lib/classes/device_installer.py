@@ -208,7 +208,15 @@ class DeviceInstaller():
                 device_info = json.load(f)
         except (OSError, json.JSONDecodeError):
             return None
-        return device_info if isinstance(device_info, dict) else None
+        if not isinstance(device_info, dict):
+            return None
+        # a CUDA image on a container where the driver does not answer (E2A_CUDA_UNUSABLE, set by check_device_info in
+        # full_docker, inherited by the engine workers and their install children): the engine venvs take the CPU torch,
+        # 0.2 GB instead of 3.4 GB of CUDA torch no GPU can run here. Their marker ('device') puts the CUDA torch back
+        # once the container has the GPU again. The file stays as built
+        if os.environ.get('E2A_CUDA_UNUSABLE') == '1' and device_info.get('name') == devices['CUDA']['proc']:
+            device_info = {**device_info, 'name': devices['CPU']['proc'], 'tag': devices['CPU']['proc']}
+        return device_info
 
     def link_os_libgomp(self, env_dir:str, device_info:Union[dict, None])->None:
         # Jetson (aarch64, glibc's small static TLS reserve): a wheel's own libgomp copy (auditwheel renames it, e.g.
@@ -372,6 +380,7 @@ class DeviceInstaller():
                     if error:
                         print(error)
                         name = devices['CPU']['proc']
+                        os.environ['E2A_CUDA_UNUSABLE'] = '1'
                 devices[name.upper()]['found'] = True
                 return json.dumps(device_info)
         return ''
