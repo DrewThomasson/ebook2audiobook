@@ -353,9 +353,14 @@ print(json.dumps(out))
         gpus = []
         try:
             if sys.platform == 'win32':
-                cmd = ['powershell', '-NoProfile', '-NonInteractive', '-Command', "Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name + ' | driver ' + $_.DriverVersion }"]
+                cmd = ['powershell', '-NoProfile', '-NonInteractive', '-Command', "Get-CimInstance Win32_VideoController | ForEach-Object { [string]$_.PNPDeviceID + '|' + $_.Name + ' | driver ' + $_.DriverVersion }"]
                 out = subprocess.run(cmd, capture_output=True, text=True, errors='replace', timeout=20).stdout
-                gpus = [line.strip() for line in out.splitlines() if line.strip()]
+                adapters = [line.strip().partition('|')[::2] for line in out.splitlines() if line.strip()]
+                # a GPU sits on PCI (ACPI: the Adreno of Windows arm64), a GPU without its driver too ("Microsoft Basic
+                # Display Adapter", worth seeing). Remote desktop and virtual display drivers (OrayIddDriver, RayLink,
+                # Parsec, RDP, Virtual Display Driver...) are ROOT\, SWD\, USB\ or VMBUS\ devices: left out, unless the
+                # machine has nothing else (a VM)
+                gpus = [desc.strip() for pnp, desc in adapters if pnp.upper().startswith(('PCI\\', 'ACPI\\'))] or [desc.strip() for pnp, desc in adapters]
             elif sys.platform.startswith('linux'):
                 vendors = {'0x10de': 'NVIDIA', '0x1002': 'AMD', '0x8086': 'Intel'}
                 for card in sorted(glob.glob('/sys/class/drm/card*')):
@@ -650,8 +655,10 @@ print(json.dumps(out))
 
     def stdio_gone(self, exc:BaseException)->bool:
         # the terminal (or the program reading the output through a pipe) was closed: print() itself raises,
-        # BrokenPipeError / EPIPE on POSIX, EINVAL on Windows (ERROR_NO_DATA, the pipe is being closed)
-        if not isinstance(exc, OSError) or not (isinstance(exc, BrokenPipeError) or exc.errno in (errno.EPIPE, errno.EINVAL)):
+        # BrokenPipeError / EPIPE on POSIX, EINVAL on Windows (ERROR_NO_DATA, the pipe is being closed), EBADF once the
+        # handle behind stdout is gone (console window closed under the running app, Windows ERROR_INVALID_HANDLE).
+        # The main process never closes nor redirects fd 1/2 itself (only the engine workers do, in their own process)
+        if not isinstance(exc, OSError) or not (isinstance(exc, BrokenPipeError) or exc.errno in (errno.EPIPE, errno.EINVAL, errno.EBADF)):
             return False
         frames = traceback.extract_tb(exc.__traceback__)
         line = (frames[-1].line or '').strip() if frames else ''
