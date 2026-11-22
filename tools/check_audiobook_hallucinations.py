@@ -38,13 +38,19 @@ sys.path.insert(0, root_dir)
 # limits: max(floor, factor * the book's median), default when the book has fewer than min_samples sentences to measure.
 # cer: distance over the text length; burst: longest run of wrong letters (babble or a skipped phrase inside a long
 # sentence barely moves its CER); edge: extra letters heard before the text starts or after it ends; length: seconds per
-# letter. Sentences under min_letters (one-word lines) or with digits (read in unknown words) get the length check only
+# letter. Sentences under min_letters (one-word lines) or with digits (read in unknown words) get the length check only.
+# missing: missing_letters or more letters of the text not heard within missing_window letters (a skipped word), a fixed
+# limit, confirmed on a short window of the audio around them (missing_seconds, one after the other): the recognizer drops
+# a word at the start or the end of a long sentence it hears in a short one. Measured: every missing word of 5 letters or
+# more caught (19/19 XTTS sentences with a word left out, English and German), 0 of 3-4 letters (the recognizer drops
+# short words in good audio too), 5 good sentences flagged in 636 (15 languages, 3 of them Japanese)
 settings = dict(
     asr_model='facebook/mms-1b-all', samplerate=16000, segment_gap=0.6, window=300.0,
     min_samples=20, min_letters=10, rate_min_letters=20,
     cer_factor=2.5, cer_floor=0.5, cer_default=0.6,
     burst_factor=3.0, burst_floor=9, burst_default=9,
     edge_factor=3.0, edge_floor=3, edge_default=3,
+    missing_letters=5, missing_window=8, missing_seconds=(3.0, 5.0),
     length_factor=2.0, length_slack=1.5, length_default_rate=0.25, length_default_slack=4.0, short_factor=0.35,
     lang_alias=dict(zho='cmn', nor='nob'),
 )
@@ -271,14 +277,15 @@ class Checker:
         total = last_row[-1]
         return max(k for k in range(len(last_row)) if last_row[len(last_row) - 1 - k] + k == total)
 
-    def compare(self, ref:str, hyp:str)->tuple[float, int, int]:
+    def compare(self, ref:str, hyp:str)->dict:
         # levenshtein alignment of the letters: the CER (above 1.0 when the take says more than the text), the longest
-        # burst of errors in a row (a single chance match inside not ending it) and the extra letters heard before the
-        # text starts or after it ends: a misheard name sits inside the text, extra letters at an edge can only be
-        # speech the text does not have
+        # burst of errors in a row (a single chance match inside not ending it), the extra letters heard before the
+        # text starts or after it ends (a misheard name sits inside the text, extra letters at an edge can only be
+        # speech the text does not have) and the window of the text with the most letters not heard (a skipped word:
+        # missing letters, where a misheard word has wrong ones)
         import regex as re
         if not ref:
-            return 0.0, 0, 0
+            return dict(cer=0.0, burst=0, edge=0, missing=0, missing_letters='')
         rows, cols = len(ref), len(hyp)
         dist = self.distances(ref, hyp)
         ops = []
@@ -296,7 +303,37 @@ class Checker:
         bursts = re.findall(r'[SID](?:[SID]|M(?=[SID]))*', ''.join(reversed(ops)))
         # leading extra letters: the same on both texts reversed
         edge = max(self.tail_extra(dist[rows]), self.tail_extra(self.distances(ref[::-1], hyp[::-1])[rows]))
-        return dist[rows][cols] / rows, max((len(b.replace('M', '')) for b in bursts), default=0), edge
+        marks = [op == 'D' for op in reversed(ops) if op != 'I']
+        window = settings['missing_window']
+        missing, start = 0, 0
+        for k in range(max(1, len(marks) - window + 1)):
+            count = sum(marks[k:k + window])
+            if count > missing:
+                missing, start = count, k
+        spots = [k for k in range(start, min(len(marks), start + window)) if marks[k]]
+        return dict(cer=dist[rows][cols] / rows, burst=max((len(b.replace('M', '')) for b in bursts), default=0), edge=edge,
+            missing=missing, missing_letters=ref[spots[0]:spots[-1] + 1] if spots else '', missing_at=(spots[0] + spots[-1] + 1) / 2 / rows if spots else 0.0)
+
+    def heard_in(self, pattern:str, text:str)->bool:
+        # pattern found in text, a few letters off at most: edit distance to its best matching part of text
+        prev = [0] * (len(text) + 1)
+        for i, p in enumerate(pattern, 1):
+            cur = [i] + [0] * len(text)
+            for j, t in enumerate(text, 1):
+                cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (p != t))
+            prev = cur
+        return min(prev) <= max(1, len(pattern) // 4)
+
+    def missing_heard(self, audio:Any, at:float, letters:str)->bool:
+        # the letters the whole sentence missed, looked for in a short window of the audio around their place
+        samplerate = settings['samplerate']
+        duration = len(audio) / samplerate
+        for seconds in settings['missing_seconds']:
+            start = max(0.0, min(at * duration - seconds / 2, duration - seconds))
+            heard = self.transcribe(audio[int(start * samplerate):int((start + seconds) * samplerate)])
+            if self.heard_in(letters, self.letters(heard)):
+                return True
+        return False
 
     def speech_segments(self, audio:Any)->list:
         # the sentence cut at its long silences ([pause], [break]): MMS on the whole sentence drops a short part followed
@@ -356,19 +393,30 @@ def current_limits(samples:dict)->dict:
         rate=median_sorted(samples['rate']) if len(samples['rate']) >= settings['min_samples'] else None)
 
 def badness(r:dict)->float:
-    return r['cer'] + (r['burst'] + r['edge']) / r['letters']
+    return r['cer'] + (r['burst'] + r['edge'] + r['missing']) / r['letters']
+
+def missing_suspect(r:dict)->bool:
+    # letters not heard, not yet found in a short window either
+    return r['cer'] is not None and r['missing'] >= settings['missing_letters'] and r.get('missing_confirmed') is not False
 
 def asr_failing(r:dict, limits:dict)->bool:
-    return r['cer'] is not None and (r['edge'] > limits['edge'] or r['burst'] > limits['burst'] or r['cer'] > limits['cer'])
+    return r['cer'] is not None and (r['edge'] > limits['edge'] or r['burst'] > limits['burst'] or r['cer'] > limits['cer'] or missing_suspect(r))
+
+def measure(r:dict, heard:str, measures:dict)->None:
+    r.update(heard=heard, missing_confirmed=None, **measures)
 
 def retry_segmented(checker:Checker, r:dict, audio:Any)->None:
     # a failing sentence with long silences, again part by part, the better of both kept. Babble is in the audio, both
     # hear it; MMS drops a short part before a long silence (a chapter title before its [pause]) on the whole one only
     heard = checker.transcribe(audio, segmented=True)
-    parts = dict(zip(('cer', 'burst', 'edge'), checker.compare(r['ref'], checker.letters(heard))), letters=r['letters'])
+    parts = dict(checker.compare(r['ref'], checker.letters(heard)), letters=r['letters'])
     if badness(parts) < badness(r):
-        r.update(heard=heard, cer=parts['cer'], burst=parts['burst'], edge=parts['edge'])
+        measure(r, heard, {k: v for k, v in parts.items() if k != 'letters'})
     r['segmented'] = True
+
+def confirm_missing(checker:Checker, r:dict, audio:Any)->None:
+    if missing_suspect(r) and r.get('missing_confirmed') is None:
+        r['missing_confirmed'] = not checker.missing_heard(audio, r['missing_at'], r['missing_letters'])
 
 def verdict(r:dict, limits:dict)->Optional[str]:
     # the reason a sentence is flagged, None when it is fine
@@ -391,6 +439,8 @@ def verdict(r:dict, limits:dict)->Optional[str]:
         return f"extra speech before or after its text ({r['edge']} letters, {limits['edge']:.0f} at most)"
     if r['burst'] > limits['burst']:
         return f"part of it does not match its text ({r['burst']} letters in a row, {limits['burst']:.0f} at most)"
+    if r['missing'] >= settings['missing_letters'] and r.get('missing_confirmed'):
+        return f"words missing from the audio ({r['missing']} letters not heard: {r['missing_letters']})"
     if r['cer'] > limits['cer']:
         return f"does not match its text (CER {r['cer']:.2f}, {limits['cer']:.2f} at most)"
     return None
@@ -427,7 +477,8 @@ def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
         digits = len(re.findall(r'\d', cue['text']))
         records.append(dict(block=cue['block'], sentence=cue['sentence'], start=round(cue['start'], 3), end=round(cue['end'], 3), duration=round(cue['end'] - cue['start'], 3),
             text=cue['text'], ref=ref, letters=len(ref), digits=digits,
-            asr=asr and len(ref) >= settings['min_letters'] and not digits, heard=None, cer=None, burst=None, edge=None, segments=1, reason=None))
+            asr=asr and len(ref) >= settings['min_letters'] and not digits, heard=None, cer=None, burst=None, edge=None, missing=None,
+            missing_letters=None, missing_confirmed=None, segments=1, reason=None))
     print(f'\n{audiobook}: {len(records)} sentences, language {language}' + (f' (recognizer {checker.asr_language})' if asr else ''))
     if not exact:
         print(f'  {approximate_note}')
@@ -446,14 +497,15 @@ def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
                 limits = current_limits(samples)
                 if r['asr'] and audio is not None:
                     segment = audio[round((r['start'] - window_start) * settings['samplerate']):round((r['end'] - window_start) * settings['samplerate'])]
-                    r['heard'] = checker.transcribe(segment)
-                    r['cer'], r['burst'], r['edge'] = checker.compare(r['ref'], checker.letters(r['heard']))
+                    heard = checker.transcribe(segment)
+                    measure(r, heard, checker.compare(r['ref'], checker.letters(heard)))
                     r['segments'] = len(checker.speech_segments(segment))
                     # the medians are made of the whole-sentence measures
                     for key in ('cer', 'burst', 'edge'):
                         bisect.insort(samples[key], r[key])
                     if asr_failing(r, limits) and r['segments'] > 1:
                         retry_segmented(checker, r, segment)
+                    confirm_missing(checker, r, segment)
                 if r['letters'] >= settings['rate_min_letters'] and not r['digits']:
                     bisect.insort(samples['rate'], r['duration'] / r['letters'])
                 reason = verdict(r, limits)
@@ -465,11 +517,13 @@ def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
     limits = current_limits(samples)
     for r in records:
         if not r.get('segmented') and r['segments'] > 1 and asr_failing(r, limits):
-            retry_segmented(checker, r, decode(audiobook, r['start'], r['duration']))
+            audio = decode(audiobook, r['start'], r['duration'])
+            retry_segmented(checker, r, audio)
+            confirm_missing(checker, r, audio)
         r['reason'] = verdict(r, limits)
     cleared = sum(1 for r in records if r.get('live') and not r['reason'])
     for r in records:
-        for key in ('ref', 'live', 'segmented'):
+        for key in ('ref', 'live', 'segmented', 'missing_at'):
             r.pop(key, None)
     return dict(audiobook=audiobook, vtt=vtt, language=language, asr_language=checker.asr_language, exact_numbers=exact, limits=limits,
         sentences=len(records), recognized=sum(1 for r in records if r['cer'] is not None),

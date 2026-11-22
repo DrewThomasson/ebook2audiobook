@@ -683,6 +683,9 @@ It reads the `.vtt` e2a writes beside each audiobook (one cue per sentence), tra
 letters of both texts, romanized, so any script works. The limits come from the book itself (the medians of all its
 sentences), names or a hard text raise them for the whole book while a hallucination stands out.
 Sentences under 10 letters and those still holding digits get the length check only, as does a language MMS does not know.
+A missing word of 5 letters or more is caught (all 19 in XTTS sentences read with a word left out), once a short window
+of the audio around it confirms it is not there: the recognizer drops a word at the start or the end of a long sentence
+that it hears on its own. A missing word of 3 or 4 letters mostly is not: the recognizer drops short words in good audio too.
 Each flagged sentence is printed as soon as it is found, all of them again in a table at the end, by their block and
 sentence numbers as e2a numbers them (from 0). Every sentence with its problem, its text, what was heard instead and
 its measures is saved in `<audiobook>.hallucinations.json`. While it runs, a sentence is judged on the sentences before
