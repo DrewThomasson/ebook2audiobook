@@ -566,6 +566,7 @@ legends = {
     'msg_tts_loaded': 'TTS {model}을(를) 불러왔습니다!',
     'msg_tts_already_loaded': 'TTS {model}이(가) 이미 로드되어 있습니다',
     'error_disk_full_models': 'TTS 모델을 로드하는 동안 디스크가 가득 찼습니다. {dir} 폴더를 비우고 ebook2audiobook을 다시 시작하면 모델이 다시 다운로드됩니다.',
+    'error_hf_offline': 'HF_HUB_OFFLINE이(가) 환경에 설정되어 있습니다. {file}을(를) 다운로드할 수 없으며 아직 {dir}에 없습니다.<br/>HF_HUB_OFFLINE 설정을 해제하고 ebook2audiobook을 다시 시작하거나 tools/preload_models.py로 준비한 모델을 해당 모델 폴더에 복사하세요.',
     'error_cuda_arch_unsupported': '설치된 torch {torch}에는 사용자의 {gpu}(컴퓨트 기능 {cc})에 대한 CUDA 커널이 없습니다. 이 torch는 {archs}용으로 빌드되었습니다.<br/>컴퓨트 능력 7.5(Maxwell, Pascal, Volta) 미만의 GPU에는 cu126 torch, RTX 50(12.0) cu128 이상이 필요합니다. Docker를 사용하는 경우 해당 이미지를 사용하고, 그렇지 않은 경우 올바른 버전을 설치하는 ebook2audiobook을 다시 시작하세요.',
     'error_gpu_fault': 'GPU({device})가 복구할 수 없는 오류로 인해 중지되었습니다: {error}.<br/>ebook2audiobook은(는) 다시 시작하기 전에는 GPU를 다시 사용할 수 없습니다. ebook2audiobook을 다시 시작한 다음 변환을 재개하세요. 마지막으로 변환된 문장부터 계속됩니다.<br/>이 문제가 다시 발생하면 GPU 드라이버를 업데이트하고 GPU 오버클럭이나 언더볼트를 해제한 후 온도를 확인하거나 CPU 장치를 선택하세요.',
     'error_out_of_memory_gpu': '{device}에 {engine}을(를) 로드할 수 있는 GPU 메모리가 부족합니다. GPU를 사용하는 다른 애플리케이션을 닫거나 CPU 장치 또는 더 가벼운 TTS 엔진을 선택하세요.',

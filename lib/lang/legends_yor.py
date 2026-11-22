@@ -566,6 +566,7 @@ legends = {
     'msg_tts_loaded': 'A ti ṣí TTS {model}!',
     'msg_tts_already_loaded': 'TTS {model} ti ṣí tẹ́lẹ̀',
     'error_disk_full_models': 'Disk kíkún nígbà tí o ń gbé àwòṣe TTS. Kú àká-ẹ̀dà {dir} náà kí o sì tún bẹ̀rẹ̀ ebook2audiobook, àwọn àwòṣe náà yóò tún di gbígbé sílẹ̀.',
+    'error_hf_offline': 'HF_HUB_OFFLINE ti ṣeto ni agbegbe rẹ: {file} ko le ṣe igbasilẹ ati pe ko si ni {dir} sibẹsibẹ.<br/>Yọ HF_HUB_OFFLINE kúrò kí o sì tún ebook2audiobook bẹ̀rẹ̀, tàbí da àwọn awoṣe tí a pèsè pẹ̀lú tools/preload_models.py sínú fọ́ọ̀dà àwọn awoṣe rẹ̀.',
     'error_cuda_arch_unsupported': 'Tọ́ọ́ṣì tí a fi sori ẹrọ {torch} kò ní àwọn kẹ́ńẹ́lì CUDA fún {gpu} rẹ (agbára ìṣirò {cc}), a kọ́ ọ fún: {archs}.<br/>Àwọn GPU tí ó wà ní ìsàlẹ̀ agbára ìṣirò 7.5 (Maxwell, Pascal, Volta) nílò cu126 torch, RTX 50 (12.0) cu128 tàbí tuntun: pẹ̀lú Docker lo àwòrán yẹn, bí bẹ́ẹ̀ kọ́ tún ebook2audiobook bẹ̀rẹ̀, èyí tí yóò fi èyí tí ó tọ̀nà sílẹ̀.',
     'error_gpu_fault': 'GPU ({device}) dáwọ́ dúró lórí àṣìṣe tí kò ṣeé tún ṣe: {error}.<br/>ebook2audiobook kò lè lò ó mọ́ kí ó tó tún bẹ̀rẹ̀. Tún ebook2audiobook bẹ̀rẹ̀, lẹ́yìn náà tẹ̀síwájú pẹ̀lú ìyípadà náà: ó ń tẹ̀síwájú láti gbolohun tó gbẹ̀yìn tí a yí padà.<br/>Tí ó bá ṣẹlẹ̀ lẹ́ẹ̀kan sí i, ṣe ìlọsíwájú fún awakọ̀ GPU, yí èyíkéyìí ìdàgbàsókè tabi ìdínkù agbára GPU padà, kí o sì ṣàyẹ̀wò ìwọ̀n òtútù rẹ̀, tàbí kí o yan ẹ̀rọ CPU.',
     'error_out_of_memory_gpu': 'Ìrántí GPU kò tó láti gbé {engine} wọlé lórí {device}. Pa àwọn ohun èlò mìíràn tí ó ń lo GPU náà, tàbí kí o yan ẹ̀rọ CPU tàbí ẹ̀rọ TTS tí kò wúwo tó.',
