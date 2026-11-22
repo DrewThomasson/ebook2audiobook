@@ -11,8 +11,17 @@ ARG PYTHON_VERSION=3.12
 FROM python:${PYTHON_VERSION}-slim-trixie
 
 ARG APP_VERSION=26.11.22
+# Hugging Face builds the image on a machine without GPU, whatever
+# hardware the Space runs on: nothing can be detected here, the device
+# is chosen. Space variables are passed as build args, so set DEVICE_TAG
+# in Settings > Variables and secrets, then Factory rebuild:
+#   cpu    CPU Basic / CPU Upgrade (default)
+#   cu126  NVIDIA T4, L4, L40S, A10G, A100, H100: CUDA 12.6 torch, runs
+#          on any 12.x driver. cu130+ needs a driver >= 580 on the Space
+# DOCKER_DEVICE_STR, when set, overrides DEVICE_TAG with a full
+# device_info json.
 ARG DEVICE_TAG=cpu
-ARG DOCKER_DEVICE_STR='{ "name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "default Hugging Face CPU device" }'
+ARG DOCKER_DEVICE_STR=''
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
@@ -119,6 +128,14 @@ RUN set -eux; \
     fi
 
 RUN set -eux; \
+    if [ -z "${DOCKER_DEVICE_STR}" ]; then \
+        case "${DEVICE_TAG}" in \
+            cpu) device_name=cpu ;; \
+            cu[0-9]*) device_name=cuda ;; \
+            *) echo "DEVICE_TAG='${DEVICE_TAG}' is not a Hugging Face device: cpu or cuXYZ (e.g. cu126)"; exit 1 ;; \
+        esac; \
+        DOCKER_DEVICE_STR="{\"name\": \"${device_name}\", \"os\": \"manylinux_2_28\", \"arch\": \"x86_64\", \"pyvenv\": [3, 12], \"tag\": \"${DEVICE_TAG}\", \"note\": \"Hugging Face ${device_name} device\"}"; \
+    fi; \
     ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"; \
     rustup self uninstall -y 2>/dev/null || true; \
     apt-get update; \
