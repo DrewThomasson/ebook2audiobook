@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'Abrufen der {engine} Modelldateien ({files}), der erste Download dauert eine Weile...',
     'msg_vulkan_selected': 'Vulkan-GPU {gpu}: Vulkan-Taschenlampe ausgewählt',
     'msg_vulkan_docker_image': 'Vulkan-Torch-Bild: Läuft auf der CPU und auf einer GPU, die an den Container übergeben wird, sobald das Gerät auf Vulkan eingestellt ist',
+    'msg_cuda_image_no_gpu': 'CUDA-Image ({tag}), aber keine NVIDIA-GPU im Container sichtbar: Ausführung auf der CPU. Übergeben Sie die GPU an den Container (docker run --gpus all) oder wählen Sie auf Hugging Face eine GPU-Hardware für den Space aus.',
+    'msg_cuda_image_driver_old': 'Das CUDA-Image ({tag}) benötigt einen NVIDIA-Treiber für CUDA {major}.x. Dieser ist für CUDA {version}: Ausführung auf der CPU. Aktualisieren Sie den Treiber oder verwenden Sie ein Image mit einem älteren CUDA-Tag.',
     'msg_gpu_choice_header': 'Hier können mehrere GPUs e2a ausführen, aber eine Torch-Instanz bedient nur eine von ihnen:',
     'msg_gpu_choice_prompt': 'Welches? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'Geben Sie eine Zahl von 0 bis {last} ein: ',

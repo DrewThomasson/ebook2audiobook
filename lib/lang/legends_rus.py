@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'Получение {engine} файлов модели ({files}), первая загрузка занимает некоторое время...',
     'msg_vulkan_selected': 'Графический процессор Vulkan {gpu}: выбран факел Vulkan',
     'msg_vulkan_docker_image': 'Изображение Vulkan Torch: работает на ЦП и на ГП, переданном контейнеру, когда для устройства установлено значение vulkan',
+    'msg_cuda_image_no_gpu': 'Образ CUDA ({tag}), но в контейнере не видно графического процессора NVIDIA: выполняется на ЦП. Передайте графический процессор в контейнер (docker run --gpus all) или выберите аппаратное обеспечение с графическим процессором для Space на Hugging Face.',
+    'msg_cuda_image_driver_old': 'Для образа CUDA ({tag}) требуется драйвер NVIDIA для CUDA {major}.x, а этот драйвер предназначен для CUDA {version}: работа на ЦП. Обновите драйвер или используйте образ с более старым тегом CUDA.',
     'msg_gpu_choice_header': 'Здесь несколько графических процессоров могут запускать e2a, но один torch обслуживает только один из них:',
     'msg_gpu_choice_prompt': 'Какой? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'Введите число от 0 до {last}: ',

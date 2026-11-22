@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'برای دریافت فایل‌های مدل {engine} ({files})، اولین دانلود کمی طول می‌کشد…',
     'msg_vulkan_selected': 'پردازنده گرافیکی Vulkan {gpu}: Vulkan Torch انتخاب شد',
     'msg_vulkan_docker_image': 'تصویر Vulkan Torch: روی CPU اجرا می‌شود و روی GPU که پس از تنظیم دستگاه روی Vulkan به کانتینر منتقل می‌شود، اجرا می‌شود.',
+    'msg_cuda_image_no_gpu': 'تصویر CUDA ({tag}) اما هیچ GPU NVIDIA در کانتینر قابل مشاهده نیست: در حال اجرا روی CPU. GPU را به کانتینر منتقل کنید (docker run --gpus all) یا در Hugging Face، یک سخت‌افزار GPU برای Space انتخاب کنید.',
+    'msg_cuda_image_driver_old': 'ایمیج CUDA ({tag}) به یک درایور NVIDIA برای CUDA {major}.x نیاز دارد، این درایور برای CUDA {version} است: در حال اجرا روی CPU. درایور را ارتقا دهید یا از تصویری با برچسب CUDA قدیمی‌تر استفاده کنید.',
     'msg_gpu_choice_header': 'در اینجا چندین GPU می‌توانند e2a را اجرا کنند، اما یک torch فقط یکی از آنها را پشتیبانی می‌کند:',
     'msg_gpu_choice_prompt': 'با کدومشون؟ [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'عددی بین 0 تا {last} وارد کنید: ',

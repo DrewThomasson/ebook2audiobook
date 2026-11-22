@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': '{engine} మోడల్ ఫైళ్ళను పొందడం ({files}), మొదటి డౌన్ ‌ లోడ్ ‌ కు కొంత సమయం పడుతుంది...',
     'msg_vulkan_selected': 'వల్కాన్ GPU {gpu}: వల్కాన్ టార్చ్ ఎంపిక చేయబడింది',
     'msg_vulkan_docker_image': 'Vulkan Torch చిత్రం: పరికరం vulkanకు సెట్ చేయబడిన తర్వాత, CPUపై మరియు కంటైనర్‌కు పంపబడిన GPUపై రన్ అవుతుంది',
+    'msg_cuda_image_no_gpu': 'CUDA ఇమేజ్ ({tag}) కానీ కంటైనర్‌లో NVIDIA GPU కనిపించడం లేదు: CPUపై రన్ అవుతోంది. GPUను కంటైనర్‌కు పాస్ చేయండి (docker run --gpus all) లేదా, Hugging Faceలో, స్పేస్ కోసం GPU హార్డ్‌వేర్‌ను ఎంచుకోండి.',
+    'msg_cuda_image_driver_old': 'CUDA ఇమేజ్‌కు ({tag}) CUDA {major}.x కోసం NVIDIA డ్రైవర్ అవసరం, ఇది CUDA {version} కోసం: CPUపై రన్ అవుతోంది. డ్రైవర్‌ను అప్‌గ్రేడ్ చేయండి లేదా పాత CUDA ట్యాగ్‌తో ఉన్న ఇమేజ్‌ను ఉపయోగించండి.',
     'msg_gpu_choice_header': 'ఇక్కడ అనేక GPUలు e2aను అమలు చేయగలవు, కానీ ఒక torch వాటిలో ఒకదానిని మాత్రమే అందిస్తుంది:',
     'msg_gpu_choice_prompt': 'ఏది? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': '0 నుండి {last} వరకు ఒక సంఖ్యను టైప్ చేయండి: ',

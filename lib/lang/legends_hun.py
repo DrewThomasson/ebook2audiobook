@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'A {engine} modellfájl ({files}) beszerzése, az első letöltés eltart egy ideig...',
     'msg_vulkan_selected': 'Vulkan GPU {gpu}: Vulkan zseblámpa kiválasztva',
     'msg_vulkan_docker_image': 'Vulkan Torch kép: a CPU-n fut, és a GPU-n, amelyet a konténernek ad át, miután az eszközt Vulkanra állították',
+    'msg_cuda_image_no_gpu': 'CUDA-kép ({tag}), de nincs látható NVIDIA GPU a konténerben: a CPU-n fut. Adja át a GPU-t a konténernek (docker run --gpus all), vagy a Hugging Face-en válasszon GPU-hardvert a Space számára.',
+    'msg_cuda_image_driver_old': 'A CUDA-képhez ({tag}) NVIDIA-illesztőprogramra van szükség a CUDA {major}.x verzióhoz, ez pedig a CUDA {version} verzióhoz való: a CPU-n fut. Frissítse az illesztőprogramot, vagy használjon egy régebbi CUDA-címkével ellátott képet.',
     'msg_gpu_choice_header': 'Itt több GPU is futtathatja az e2a-t, de egy torch csak az egyiket szolgálja ki:',
     'msg_gpu_choice_prompt': 'Melyiknek? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'Írjon be egy számot 0 és {last} között: ',
