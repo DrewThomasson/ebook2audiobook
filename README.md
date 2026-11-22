@@ -102,6 +102,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Tools](#tools)
   - [Preload models for offline installs](#preload-models)
   - [Translate ebooks out of e2a](#translate-ebooks)
+  - [Check an audiobook for hallucinations](#check-audiobook-hallucinations)
   
 - [Cloned Voices](#cloned-voices)
 - [Fine Tuned TTS models](#fine-tuned-tts-models) 
@@ -670,6 +671,69 @@ examples:
   translate_ebook.py @books.txt --to ita --mode bilingual
   translate_ebook.py --list
   translate_ebook.py --list --from eng
+```
+
+<a id="check-audiobook-hallucinations"></a>
+### Check an audiobook for hallucinations: `tools/check_audiobook_hallucinations.py`
+Lists the sentences of a finished e2a audiobook that do not say their text: babble, a word or a phrase said twice
+or skipped, mumble before or after the text, a sentence far too long or too short for its text (XTTS and the other
+autoregressive engines do it now and then). Report only: the audiobook is not changed, you decide what to redo.
+It reads the `.vtt` e2a writes beside each audiobook (one cue per sentence), transcribes every sentence with
+`facebook/mms-1b-all` (1162 languages, about 4 GB, downloaded into `./models/tts` on first use) and compares the
+letters of both texts, romanized, so any script works. The limits come from the book itself (the medians of all its
+sentences), names or a hard text raise them for the whole book while a hallucination stands out.
+Sentences under 10 letters and those still holding digits get the length check only, as does a language MMS does not know.
+The flagged sentences are printed with their number, time and chapter, and every sentence with its measures is saved
+in `<audiobook>.check.json`.
+   - **Linux/MacOS**
+     ```bash
+     ./python_env/bin/python tools/check_audiobook_hallucinations.py audiobooks/cli/book.m4b
+     ```
+   - **Windows**
+     ```bash
+     python_env\Scripts\python.exe tools\check_audiobook_hallucinations.py audiobooks\cli\book.m4b
+     ```
+   - A folder checks every audiobook in it that has its `.vtt` (all the parts of a split audiobook).
+   - `--language` is needed for a translated book: its language tag keeps the ebook's language.
+   - **Device**: `--device` takes e2a's names, `cpu`, `cuda`, `rocm`, `xpu`, `mps` or `jetson` (half precision on
+     the GPUs but MPS). By default it is the one e2a was installed for, and cpu when that one cannot be used.
+   - **Speed**: 7.6 minutes of audio took 2.3 to 5.4 minutes on 4 CPU cores, a GPU is the way for a whole book.
+
+```bash
+usage: check_audiobook_hallucinations.py [-h] [-l LANGUAGE] [--vtt VTT] [-o OUTPUT]
+                                         [--device {auto,cpu,cuda,rocm,xpu,mps,jetson}] [--all]
+                                         audiobooks [audiobooks ...]
+
+Report the sentences of an e2a audiobook that do not say their text: babble, a word or a phrase
+said twice or skipped, mumble before or after the text, a sentence too long or too short for its text.
+Report only: the audiobook is not changed.
+It reads the .vtt e2a writes beside each audiobook (one cue per sentence), transcribes each sentence with
+facebook/mms-1b-all (1162 languages, downloaded into models/tts on first use) and compares the letters of
+both texts, romanized (uroman, pykakasi for Japanese). The limits come from the book itself, from the
+medians of all its sentences: names or a hard text raise them for the whole book, a hallucination stands out.
+The report is printed and saved as <audiobook>.check.json.
+
+positional arguments:
+  audiobooks            Audiobook files (m4b, mp3, flac...) with their .vtt beside them, or folders holding
+                        them
+
+options:
+  -h, --help            show this help message and exit
+  -l LANGUAGE, --language LANGUAGE
+                        Language spoken, e2a ISO-639-3 code (default: the audiobook's language tag; set it
+                        for a translated book, its tag keeps the ebook's language)
+  --vtt VTT             Subtitles of the audiobook, single audiobook only (default: <audiobook>.vtt)
+  -o OUTPUT, --output OUTPUT
+                        Report file, single audiobook only (default: <audiobook>.check.json beside it)
+  --device {auto,cpu,cuda,rocm,xpu,mps,jetson}
+                        Device the speech recognizer runs on, named as in e2a (default: the one e2a was
+                        installed for, cpu when it cannot be used)
+  --all                 Print every sentence with its measures, not only the flagged ones
+
+examples:
+  check_audiobook_hallucinations.py audiobooks/cli/book.m4b
+  check_audiobook_hallucinations.py audiobooks/cli/book.m4b --language fra --device cuda
+  check_audiobook_hallucinations.py audiobooks/cli --all
 ```
 
 <a id="cloned-voices"></a>
