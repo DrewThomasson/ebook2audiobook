@@ -53,6 +53,7 @@ from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_aud
 from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp, gpu_fault, gpu_fault_alert
 
 from lib import *
+from lib.conf import no_proxy_host
 from lib.lang import legends, legends_langs, legends_iso1, ui_language, system_language
 
 #import logging
@@ -5908,8 +5909,9 @@ def get_os_proxy_bypass()->list:
 def set_no_proxy(hosts:list)->None:
     # any *_proxy env var makes urllib/requests/httpx stop reading the OS proxy (Windows registry, macOS settings): a
     # system proxy (Clash, v2rayN...) was dropped for HF downloads and pip once no_proxy got set. Carry it, and its
-    # bypass list, over to the env first. Merge, a user no_proxy (internal hosts) was overwritten
-    no_proxy = [host.strip() for host in os.environ.get('no_proxy', os.environ.get('NO_PROXY', '')).split(',') if host.strip()]
+    # bypass list, over to the env first. Merge, a user no_proxy (internal hosts) was overwritten.
+    # Every host in httpx form (no_proxy_host): a Windows ProxyOverride [::1] made each later httpx client raise
+    no_proxy = [host for host in [no_proxy_host(entry) for entry in os.environ.get('no_proxy', os.environ.get('NO_PROXY', '')).split(',')] if host]
     if not any(scheme in urllib.request.getproxies_environment() for scheme in ['http', 'https', 'all']):
         os_proxies = urllib.request.getproxies()
         for scheme in ['http', 'https']:
@@ -5917,7 +5919,7 @@ def set_no_proxy(hosts:list)->None:
                 os.environ[f'{scheme}_proxy'] = os.environ[f'{scheme.upper()}_PROXY'] = os_proxies[scheme]
         if os_proxies.get('http') or os_proxies.get('https'):
             hosts = [*get_os_proxy_bypass(), *hosts]
-    for host in hosts:
-        if host not in no_proxy:
+    for host in [no_proxy_host(entry) for entry in hosts]:
+        if host and host not in no_proxy:
             no_proxy.append(host)
     os.environ['no_proxy'] = os.environ['NO_PROXY'] = ','.join(no_proxy)

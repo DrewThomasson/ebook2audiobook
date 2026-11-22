@@ -18,8 +18,11 @@ class BugReporter:
     # GPU stack errors worth a self-test in a fresh process (plain "CUDA out of memory" is not: VRAM state says it all)
     gpu_error_re = re.compile(r'CUDNN_STATUS|CUBLAS_STATUS|CUFFT_|CUSOLVER_STATUS|CUDA error|CUDA driver|cuda runtime error|no kernel image|HIP error|hipError|MIOpen|miopenStatus|UR_RESULT_ERROR|PI_ERROR', re.IGNORECASE)
     # host RAM exhausted: torch's CPU allocator (Windows "not enough memory", Linux "can't allocate memory"), a C++
-    # bad_alloc (MSVC words it "bad allocation"). python / numpy MemoryError is matched by type
-    host_oom_re = re.compile(r'DefaultCPUAllocator|std::bad_alloc|\bbad allocation\b', re.IGNORECASE)
+    # bad_alloc (MSVC words it "bad allocation"), ggml_init()'s context buffer in a native server (audio.cpp, zonos2:
+    # "GGML_ASSERT(ctx->mem_buffer != NULL)", its malloc returned NULL). python / numpy MemoryError is matched by type
+    host_oom_re = re.compile(r'DefaultCPUAllocator|std::bad_alloc|\bbad allocation\b|mem_buffer != NULL', re.IGNORECASE)
+    # event() lines a report carries, the latest ones
+    max_events = 8
     # note() lines in the native crash log, told apart from faulthandler's records by this prefix
     note_prefix = 'e2a note: '
     dll_error_re = re.compile(r'Error loading "([^"]+?\.(?:dll|pyd))"', re.IGNORECASE)
@@ -85,6 +88,8 @@ print(json.dumps(out))
         self.fault_file = None
         # startup facts every note() carries (the GPU probe verdict), see fact()
         self.facts = {}
+        # failures survived before the reported one, see event()
+        self.events = []
         self.system = None
         self.ctx = None
         self.rules = []
@@ -289,6 +294,10 @@ print(json.dumps(out))
             # here too, not in send(): the caller unloads the engine right after, which stops its workers
             if any(isinstance(e, MemoryError) or self.host_oom_re.search(str(e)) for e in chain):
                 runtime['ram'] = self.ram_state()
+            with self.lock:
+                events = list(self.events)
+            if events:
+                runtime['events'] = events
             if runtime:
                 payload['runtime'] = runtime
             if wait:
@@ -353,9 +362,14 @@ print(json.dumps(out))
         gpus = []
         try:
             if sys.platform == 'win32':
-                cmd = ['powershell', '-NoProfile', '-NonInteractive', '-Command', "Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name + ' | driver ' + $_.DriverVersion }"]
+                cmd = ['powershell', '-NoProfile', '-NonInteractive', '-Command', "Get-CimInstance Win32_VideoController | ForEach-Object { [string]$_.PNPDeviceID + '|' + $_.Name + ' | driver ' + $_.DriverVersion }"]
                 out = subprocess.run(cmd, capture_output=True, text=True, errors='replace', timeout=20).stdout
-                gpus = [line.strip() for line in out.splitlines() if line.strip()]
+                adapters = [line.strip().partition('|')[::2] for line in out.splitlines() if line.strip()]
+                # a GPU sits on PCI (ACPI: the Adreno of Windows arm64), a GPU without its driver too ("Microsoft Basic
+                # Display Adapter", worth seeing). Remote desktop and virtual display drivers (OrayIddDriver, RayLink,
+                # Parsec, RDP, Virtual Display Driver...) are ROOT\, SWD\, USB\ or VMBUS\ devices: left out, unless the
+                # machine has nothing else (a VM)
+                gpus = [desc.strip() for pnp, desc in adapters if pnp.upper().startswith(('PCI\\', 'ACPI\\'))] or [desc.strip() for pnp, desc in adapters]
             elif sys.platform.startswith('linux'):
                 vendors = {'0x10de': 'NVIDIA', '0x1002': 'AMD', '0x8086': 'Intel'}
                 for card in sorted(glob.glob('/sys/class/drm/card*')):
@@ -425,6 +439,14 @@ print(json.dumps(out))
                 self.fault_file.flush()
         except Exception:
             pass
+
+    def event(self, text:str)->None:
+        # a failure the process went on after, which a later report would not show: a native GPU package that could not
+        # start or died mid-sentence before the next one was tried (crash report 3548dba2432446c8 showed only the last
+        # package, the CUDA ones that failed before it were left out). Kept in English, the user's alert is localized
+        line = f"{datetime.now(timezone.utc).strftime('%H:%M:%S')} {text.replace(chr(10), ' ')}"[:self.max_message]
+        with self.lock:
+            self.events = self.events[-(self.max_events - 1):] + [line]
 
     def fact(self, key:str, value:str)->None:
         # a startup fact every later note() carries (the GPU probe verdict, whether the XPU guard is on): a native crash
@@ -650,8 +672,10 @@ print(json.dumps(out))
 
     def stdio_gone(self, exc:BaseException)->bool:
         # the terminal (or the program reading the output through a pipe) was closed: print() itself raises,
-        # BrokenPipeError / EPIPE on POSIX, EINVAL on Windows (ERROR_NO_DATA, the pipe is being closed)
-        if not isinstance(exc, OSError) or not (isinstance(exc, BrokenPipeError) or exc.errno in (errno.EPIPE, errno.EINVAL)):
+        # BrokenPipeError / EPIPE on POSIX, EINVAL on Windows (ERROR_NO_DATA, the pipe is being closed), EBADF once the
+        # handle behind stdout is gone (console window closed under the running app, Windows ERROR_INVALID_HANDLE).
+        # The main process never closes nor redirects fd 1/2 itself (only the engine workers do, in their own process)
+        if not isinstance(exc, OSError) or not (isinstance(exc, BrokenPipeError) or exc.errno in (errno.EPIPE, errno.EINVAL, errno.EBADF)):
             return False
         frames = traceback.extract_tb(exc.__traceback__)
         line = (frames[-1].line or '').strip() if frames else ''

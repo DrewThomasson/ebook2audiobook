@@ -2,6 +2,7 @@ import json
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 from lib.classes.subprocess_pipe import SubprocessPipe
+from lib.classes.bug_reporter import bug_reporter
 from lib.classes.tts_engines.common.voice_conversion import VoiceConversion
 from lib.classes.tts_engines.common.hf_download import hf_download
 from lib.conf_models import TTS_VOICE_CONVERSION, default_vc_model, audiocpp_packages, audiocpp_asr, audiocpp_engines, audiocpp_repo
@@ -117,6 +118,7 @@ class AudioCpp(TTSUtils):
                             error = legends['error_zonos2_gpu_failed'].format(engine=tts_engine, package=self.package_name, error=e)
                             raise RuntimeError(error) from e
                         raise
+                    bug_reporter.event(f'{self.package_name} failed to start: {e}')
                     msg = legends['msg_zonos2_gpu_failed'].format(engine=tts_engine, package=self.package_name, error=e)
                     if show_alert is not None:
                         show_alert(self.session['id'], {'type': 'warning', 'msg': msg})
@@ -210,6 +212,7 @@ class AudioCpp(TTSUtils):
                             # none left stops the conversion)
                             crashes = VoiceConversion.gpu_crashes[self.package_name] = VoiceConversion.gpu_crashes.get(self.package_name, 0) + 1
                             error = str(reply.get('error') or '')
+                            bug_reporter.event(f'{self.package_name} died mid-sentence (crash {crashes}): {error}')
                             error = (error.split(': ', 1)[0] + ': ' + error.split(' | ')[-1]) if ' | ' in error else error
                             msg = legends['msg_zonos2_gpu_restart' if crashes < 2 else 'msg_zonos2_gpu_dropped'].format(engine=self.session['tts_engine'], package=self.package_name, error=error)
                             show_alert = getattr(sys.modules.get('lib.core'), 'show_alert', None)
