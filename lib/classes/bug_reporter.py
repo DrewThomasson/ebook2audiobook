@@ -18,8 +18,11 @@ class BugReporter:
     # GPU stack errors worth a self-test in a fresh process (plain "CUDA out of memory" is not: VRAM state says it all)
     gpu_error_re = re.compile(r'CUDNN_STATUS|CUBLAS_STATUS|CUFFT_|CUSOLVER_STATUS|CUDA error|CUDA driver|cuda runtime error|no kernel image|HIP error|hipError|MIOpen|miopenStatus|UR_RESULT_ERROR|PI_ERROR', re.IGNORECASE)
     # host RAM exhausted: torch's CPU allocator (Windows "not enough memory", Linux "can't allocate memory"), a C++
-    # bad_alloc (MSVC words it "bad allocation"). python / numpy MemoryError is matched by type
-    host_oom_re = re.compile(r'DefaultCPUAllocator|std::bad_alloc|\bbad allocation\b', re.IGNORECASE)
+    # bad_alloc (MSVC words it "bad allocation"), ggml_init()'s context buffer in a native server (audio.cpp, zonos2:
+    # "GGML_ASSERT(ctx->mem_buffer != NULL)", its malloc returned NULL). python / numpy MemoryError is matched by type
+    host_oom_re = re.compile(r'DefaultCPUAllocator|std::bad_alloc|\bbad allocation\b|mem_buffer != NULL', re.IGNORECASE)
+    # event() lines a report carries, the latest ones
+    max_events = 8
     # note() lines in the native crash log, told apart from faulthandler's records by this prefix
     note_prefix = 'e2a note: '
     dll_error_re = re.compile(r'Error loading "([^"]+?\.(?:dll|pyd))"', re.IGNORECASE)
@@ -85,6 +88,8 @@ print(json.dumps(out))
         self.fault_file = None
         # startup facts every note() carries (the GPU probe verdict), see fact()
         self.facts = {}
+        # failures survived before the reported one, see event()
+        self.events = []
         self.system = None
         self.ctx = None
         self.rules = []
@@ -289,6 +294,10 @@ print(json.dumps(out))
             # here too, not in send(): the caller unloads the engine right after, which stops its workers
             if any(isinstance(e, MemoryError) or self.host_oom_re.search(str(e)) for e in chain):
                 runtime['ram'] = self.ram_state()
+            with self.lock:
+                events = list(self.events)
+            if events:
+                runtime['events'] = events
             if runtime:
                 payload['runtime'] = runtime
             if wait:
@@ -430,6 +439,14 @@ print(json.dumps(out))
                 self.fault_file.flush()
         except Exception:
             pass
+
+    def event(self, text:str)->None:
+        # a failure the process went on after, which a later report would not show: a native GPU package that could not
+        # start or died mid-sentence before the next one was tried (crash report 3548dba2432446c8 showed only the last
+        # package, the CUDA ones that failed before it were left out). Kept in English, the user's alert is localized
+        line = f"{datetime.now(timezone.utc).strftime('%H:%M:%S')} {text.replace(chr(10), ' ')}"[:self.max_message]
+        with self.lock:
+            self.events = self.events[-(self.max_events - 1):] + [line]
 
     def fact(self, key:str, value:str)->None:
         # a startup fact every later note() carries (the GPU probe verdict, whether the XPU guard is on): a native crash

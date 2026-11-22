@@ -1,6 +1,7 @@
 import os, sys, re, json, shutil, platform, tarfile, zipfile, urllib.request
 from multiprocessing.managers import DictProxy
 from lib.classes.subprocess_pipe import SubprocessPipe
+from lib.classes.bug_reporter import bug_reporter
 from lib.classes.tts_engines.common.hf_download import hf_download
 from lib.conf import systems, devices, tts_dir, get_cpu_flags
 from lib.conf_models import TTS_VOICE_CONVERSION, default_vc_model, default_engine_settings, audiocpp_packages, audiocpp_asr, audiocpp_repo
@@ -93,6 +94,7 @@ class VoiceConversion(SubprocessPipe):
                         self.stop()
                     if attempt + 1 >= len(attempts):
                         raise
+                    bug_reporter.event(f'{self.package_name} failed to start: {e}')
                     msg = legends['msg_zonos2_gpu_failed'].format(engine=engine_name, package=self.package_name, error=e)
                     if show_alert is not None:
                         show_alert(session['id'], {'type': 'warning', 'msg': msg})
