@@ -12,15 +12,19 @@ FROM python:${PYTHON_VERSION}-slim-trixie
 
 ARG APP_VERSION=26.11.22
 # Hugging Face builds the image on a machine without GPU, whatever
-# hardware the Space runs on: nothing can be detected here, the device
-# is chosen. Space variables are passed as build args, so set DEVICE_TAG
-# in Settings > Variables and secrets, then Factory rebuild:
-#   cpu    CPU Basic / CPU Upgrade (default)
-#   cu126  NVIDIA T4, L4, L40S, A10G, A100, H100: CUDA 12.6 torch, runs
-#          on any 12.x driver. cu130+ needs a driver >= 580 on the Space
+# hardware the Space runs on: nothing can be detected here. The image
+# is CUDA, and the GPU is detected when the container starts: CUDA on
+# GPU hardware, CPU on CPU hardware (the CUDA torch runs there too), so
+# a hardware change needs no rebuild. Space variables are passed as
+# build args, so DEVICE_TAG can be set in Settings > Variables and
+# secrets, then Factory rebuild:
+#   cu126  NVIDIA T4, L4, L40S, A10G, A100, H100 and CPU (default):
+#          CUDA 12.6 torch, runs on any 12.x driver
+#   cu132  same, needs a driver >= 580 on the Space (CPU otherwise)
+#   cpu    CPU only: a smaller image, no GPU ever
 # DOCKER_DEVICE_STR, when set, overrides DEVICE_TAG with a full
 # device_info json.
-ARG DEVICE_TAG=cpu
+ARG DEVICE_TAG=cu126
 ARG DOCKER_DEVICE_STR=''
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
