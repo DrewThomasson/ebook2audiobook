@@ -21,14 +21,15 @@ It reads the .vtt e2a writes beside each audiobook (one cue per sentence), trans
 facebook/mms-1b-all (1162 languages, downloaded into models/tts on first use) and compares the letters of
 both texts, romanized (uroman, pykakasi for Japanese). The limits come from the book itself, from the
 medians of all its sentences: names or a hard text raise them for the whole book, a hallucination stands out.
-The report is printed and saved as <audiobook>.check.json.'''
+Each flagged sentence is printed as soon as it is found (number, time, chapter, problem), all of them in a
+table at the end, and every sentence with its measures is saved in <audiobook>.hallucinations.json.'''
 parser = argparse.ArgumentParser(prog='check_audiobook_hallucinations.py', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=examples, description=description)
 parser.add_argument('audiobooks', nargs='+', help='Audiobook files (m4b, mp3, flac...) with their .vtt beside them, or folders holding them')
 parser.add_argument('-l', '--language', default='', help="Language spoken, e2a ISO-639-3 code (default: the audiobook's language tag; set it for a translated book, its tag keeps the ebook's language)")
 parser.add_argument('--vtt', default='', help='Subtitles of the audiobook, single audiobook only (default: <audiobook>.vtt)')
-parser.add_argument('-o', '--output', default='', help='Report file, single audiobook only (default: <audiobook>.check.json beside it)')
+parser.add_argument('-o', '--output', default='', help='JSON report, single audiobook only (default: <audiobook>.hallucinations.json beside it)')
 parser.add_argument('--device', choices=['auto', 'cpu', 'cuda', 'rocm', 'xpu', 'mps', 'jetson'], default='auto', help='Device the speech recognizer runs on, named as in e2a (default: the one e2a was installed for, cpu when it cannot be used)')
-parser.add_argument('--all', action='store_true', help='Print every sentence with its measures, not only the flagged ones')
+parser.add_argument('--all', action='store_true', help='List every sentence with its measures in the table at the end, not only the flagged ones')
 args = parser.parse_args()
 start_dir = os.getcwd()
 os.chdir(root_dir)
@@ -335,15 +336,67 @@ class Checker:
             texts.append(self.processor.decode(torch.argmax(logits, dim=-1)[0].cpu()))
         return ' '.join(text for text in texts if text)
 
+def median_sorted(values:list)->float:
+    middle = len(values) // 2
+    return values[middle] if len(values) % 2 else (values[middle - 1] + values[middle]) / 2
+
 def limit(values:list, name:str)->float:
+    # values kept sorted (bisect.insort): the median of a growing book stays cheap
     if len(values) < settings['min_samples']:
         return settings[f'{name}_default']
-    return max(settings[f'{name}_floor'], settings[f'{name}_factor'] * statistics.median(values))
+    return max(settings[f'{name}_floor'], settings[f'{name}_factor'] * median_sorted(values))
+
+def current_limits(samples:dict)->dict:
+    return dict(cer=limit(samples['cer'], 'cer'), burst=limit(samples['burst'], 'burst'), edge=limit(samples['edge'], 'edge'),
+        rate=median_sorted(samples['rate']) if len(samples['rate']) >= settings['min_samples'] else None)
 
 def badness(r:dict)->float:
     return r['cer'] + (r['burst'] + r['edge']) / r['letters']
 
+def asr_failing(r:dict, limits:dict)->bool:
+    return r['cer'] is not None and (r['edge'] > limits['edge'] or r['burst'] > limits['burst'] or r['cer'] > limits['cer'])
+
+def retry_segmented(checker:Checker, r:dict, audio:Any)->None:
+    # a failing sentence with long silences, again part by part, the better of both kept. Babble is in the audio, both
+    # hear it; MMS drops a short part before a long silence (a chapter title before its [pause]) on the whole one only
+    heard = checker.transcribe(audio, segmented=True)
+    parts = dict(zip(('cer', 'burst', 'edge'), checker.compare(r['ref'], checker.letters(heard))), letters=r['letters'])
+    if badness(parts) < badness(r):
+        r.update(heard=heard, cer=parts['cer'], burst=parts['burst'], edge=parts['edge'])
+    r['segmented'] = True
+
+def verdict(r:dict, limits:dict)->Optional[str]:
+    # the reason a sentence is flagged, None when it is fine
+    length_letters = r['letters'] + 4 * r['digits']
+    if not length_letters:
+        return None
+    if limits['rate'] is not None:
+        longest = limits['rate'] * length_letters * settings['length_factor'] + settings['length_slack']
+        shortest = max(0.1, limits['rate'] * length_letters * settings['short_factor']) if length_letters >= settings['rate_min_letters'] else 0.1
+    else:
+        longest = length_letters * settings['length_default_rate'] + settings['length_default_slack']
+        shortest = 0.1
+    if r['duration'] > longest:
+        return f"too long for its text ({r['duration']:.1f}s, {longest:.1f}s at most)"
+    if r['duration'] < shortest:
+        return f"too short for its text ({r['duration']:.1f}s, {shortest:.1f}s at least)"
+    if r['cer'] is None:
+        return None
+    if r['edge'] > limits['edge']:
+        return f"extra speech before or after its text ({r['edge']} letters, {limits['edge']:.0f} at most)"
+    if r['burst'] > limits['burst']:
+        return f"part of it does not match its text ({r['burst']} letters in a row, {limits['burst']:.0f} at most)"
+    if r['cer'] > limits['cer']:
+        return f"does not match its text (CER {r['cer']:.2f}, {limits['cer']:.2f} at most)"
+    return None
+
+def live_line(r:dict, reason:str)->str:
+    chapter = f", {r['chapter']}" if r['chapter'] else ''
+    text = r['text'] if len(r['text']) <= 70 else r['text'][:69] + '…'
+    return f"  hallucination: sentence #{r['index']} at {stamp(r['start'])[:-4]}{chapter}: {reason}\n      {text}"
+
 def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
+    import bisect
     import regex as re
     from tqdm import tqdm
     cues = parse_vtt(vtt)
@@ -369,9 +422,11 @@ def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
         records.append(dict(index=n + 1, start=round(cue['start'], 3), end=round(cue['end'], 3), duration=round(cue['end'] - cue['start'], 3),
             chapter=chapter_at(chapters, cue['start']), text=cue['text'], ref=ref, letters=len(ref), digits=digits,
             asr=asr and len(ref) >= settings['min_letters'] and not digits, heard=None, cer=None, burst=None, edge=None, segments=1, reason=None))
-    # first pass: every sentence on its own, a window of the audiobook decoded at a time
-    print(f'{audiobook}: {len(records)} sentences, language {language}' + (f' (recognizer {checker.asr_language})' if asr else ''))
-    with tqdm(total=len(records), unit='sentence') as bar:
+    print(f'\n{audiobook}: {len(records)} sentences, language {language}' + (f' (recognizer {checker.asr_language})' if asr else ''))
+    # every sentence on its own, a window of the audiobook decoded at a time. Each one is judged at once on the medians of
+    # the sentences before it (printed), then all again on the medians of the whole book (the table at the end)
+    samples = dict(cer=[], burst=[], edge=[], rate=[])
+    with tqdm(total=len(records), unit='sentence', dynamic_ncols=True) as bar:
         i = 0
         while i < len(records):
             j = i
@@ -380,73 +435,113 @@ def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
             window_start = records[i]['start']
             audio = decode(audiobook, window_start, records[j]['end'] - window_start) if any(r['asr'] for r in records[i:j + 1]) else None
             for r in records[i:j + 1]:
+                limits = current_limits(samples)
                 if r['asr'] and audio is not None:
-                    a = round((r['start'] - window_start) * settings['samplerate'])
-                    b = round((r['end'] - window_start) * settings['samplerate'])
-                    segment = audio[a:b]
+                    segment = audio[round((r['start'] - window_start) * settings['samplerate']):round((r['end'] - window_start) * settings['samplerate'])]
                     r['heard'] = checker.transcribe(segment)
                     r['cer'], r['burst'], r['edge'] = checker.compare(r['ref'], checker.letters(r['heard']))
                     r['segments'] = len(checker.speech_segments(segment))
+                    # the medians are made of the whole-sentence measures
+                    for key in ('cer', 'burst', 'edge'):
+                        bisect.insort(samples[key], r[key])
+                    if asr_failing(r, limits) and r['segments'] > 1:
+                        retry_segmented(checker, r, segment)
+                if r['letters'] >= settings['rate_min_letters'] and not r['digits']:
+                    bisect.insort(samples['rate'], r['duration'] / r['letters'])
+                reason = verdict(r, limits)
+                if reason:
+                    r['live'] = True
+                    bar.write(live_line(r, reason))
                 bar.update(1)
             i = j + 1
-    measured = [r for r in records if r['cer'] is not None]
-    rates = [r['duration'] / r['letters'] for r in records if r['letters'] >= settings['rate_min_letters'] and not r['digits']]
-    limits = dict(cer=limit([r['cer'] for r in measured], 'cer'), burst=limit([r['burst'] for r in measured], 'burst'), edge=limit([r['edge'] for r in measured], 'edge'))
-    rate = statistics.median(rates) if len(rates) >= settings['min_samples'] else None
-    limits['rate'] = rate
-
-    def failing(r:dict)->bool:
-        return r['cer'] is not None and (r['edge'] > limits['edge'] or r['burst'] > limits['burst'] or r['cer'] > limits['cer'])
-
-    # second pass, failing sentences with long silences: again part by part, the better of both is kept. Babble is in
-    # the audio, both hear it; MMS drops a short part before a long silence on the whole sentence only
-    for r in [r for r in measured if failing(r) and r['segments'] > 1]:
-        heard = checker.transcribe(decode(audiobook, r['start'], r['duration']), segmented=True)
-        parts = dict(zip(('cer', 'burst', 'edge'), checker.compare(r['ref'], checker.letters(heard))), letters=r['letters'])
-        if badness(parts) < badness(r):
-            r.update(heard=heard, cer=parts['cer'], burst=parts['burst'], edge=parts['edge'])
+    limits = current_limits(samples)
     for r in records:
-        length_letters = r['letters'] + 4 * r['digits']
-        if not length_letters:
-            continue
-        if rate is not None:
-            longest = rate * length_letters * settings['length_factor'] + settings['length_slack']
-            shortest = max(0.1, rate * length_letters * settings['short_factor']) if length_letters >= settings['rate_min_letters'] else 0.1
-        else:
-            longest = length_letters * settings['length_default_rate'] + settings['length_default_slack']
-            shortest = 0.1
-        if r['duration'] > longest:
-            r['reason'] = f"too long for its text ({r['duration']:.1f}s, {longest:.1f}s at most)"
-        elif r['duration'] < shortest:
-            r['reason'] = f"too short for its text ({r['duration']:.1f}s, {shortest:.1f}s at least)"
-        elif r['cer'] is None:
-            continue
-        elif r['edge'] > limits['edge']:
-            r['reason'] = f"extra speech before or after its text ({r['edge']} letters, {limits['edge']:.0f} at most)"
-        elif r['burst'] > limits['burst']:
-            r['reason'] = f"part of it does not match its text ({r['burst']} letters in a row, {limits['burst']:.0f} at most)"
-        elif r['cer'] > limits['cer']:
-            r['reason'] = f"does not match its text (CER {r['cer']:.2f}, {limits['cer']:.2f} at most)"
-    flagged = [r for r in records if r['reason']]
+        if not r.get('segmented') and r['segments'] > 1 and asr_failing(r, limits):
+            retry_segmented(checker, r, decode(audiobook, r['start'], r['duration']))
+        r['reason'] = verdict(r, limits)
+    cleared = sum(1 for r in records if r.get('live') and not r['reason'])
     for r in records:
-        del r['ref']
+        for key in ('ref', 'live', 'segmented'):
+            r.pop(key, None)
     return dict(audiobook=audiobook, vtt=vtt, language=language, asr_language=checker.asr_language, limits=limits,
-        sentences=len(records), recognized=len(measured), flagged=len(flagged), records=records)
+        sentences=len(records), recognized=sum(1 for r in records if r['cer'] is not None),
+        flagged=sum(1 for r in records if r['reason']), cleared=cleared, records=records)
+
+def display_width(text:str)->int:
+    # terminal columns: CJK characters take two, combining marks none
+    return sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in 'WF' else 1 for c in text)
+
+def wrap(text:str, width:int)->list[str]:
+    # greedy on display width, words kept whole when they fit, cut by character otherwise (CJK has no spaces)
+    lines = []
+    for paragraph in text.split('\n'):
+        line, used = '', 0
+        for token in re.findall(r'\S+\s*', paragraph):
+            for piece in ([token] if display_width(token.rstrip()) <= width else list(token)):
+                if used and used + display_width(piece.rstrip()) > width:
+                    lines.append(line.rstrip())
+                    line, used = '', 0
+                    piece = piece.lstrip()
+                line += piece
+                used += display_width(piece)
+        lines.append(line.rstrip())
+    return lines
+
+def table(headers:list[str], rows:list[list[str]], widths:list[int])->list[str]:
+    def rule(left:str, middle:str, right:str)->str:
+        return left + middle.join('─' * (w + 2) for w in widths) + right
+
+    def cells(row:list[str])->list[str]:
+        wrapped = [wrap(str(cell), w) for cell, w in zip(row, widths)]
+        height = max(len(lines) for lines in wrapped)
+        out = []
+        for k in range(height):
+            parts = []
+            for lines, w in zip(wrapped, widths):
+                text = lines[k] if k < len(lines) else ''
+                parts.append(' ' + text + ' ' * (w - display_width(text)) + ' ')
+            out.append('│' + '│'.join(parts) + '│')
+        return out
+
+    out = [rule('┌', '┬', '┐')] + cells(headers) + [rule('├', '┼', '┤')]
+    for n, row in enumerate(rows):
+        if n:
+            out.append(rule('├', '┼', '┤'))
+        out += cells(row)
+    return out + [rule('└', '┴', '┘')]
 
 def print_report(report:dict)->None:
     limits = report['limits']
     rate = f"{limits['rate']:.3f}s per letter" if limits['rate'] else 'default'
-    print(f"\n{report['audiobook']}\n  {report['sentences']} sentences, {report['recognized']} checked by speech recognition, the others by their length only")
+    print(f"\n{report['audiobook']}")
+    print(f"  {report['sentences']} sentences, {report['recognized']} checked by speech recognition, the others by their length only")
     print(f"  limits: CER {limits['cer']:.2f}, {limits['burst']:.0f} wrong letters in a row, {limits['edge']:.0f} extra letters at an edge, length {rate}")
-    for r in report['records']:
-        if not (r['reason'] or args.all):
-            continue
-        measures = f"cer {r['cer']:.2f} burst {r['burst']} edge {r['edge']}" if r['cer'] is not None else 'length only'
-        where = f"#{r['index']:<5} {stamp(r['start'])}  {r['chapter']}"
-        print(f"  {'FLAGGED ' if r['reason'] else ''}{where}\n    {r['reason'] or measures}\n    text : {r['text']}")
-        if r['heard'] is not None:
-            print(f"    heard: {r['heard']}")
-    print(f"  {report['flagged']} sentence(s) flagged")
+    shown = [r for r in report['records'] if r['reason'] or args.all]
+    if shown:
+        # the sentence column takes what the terminal leaves, the chapter column goes first when it is too narrow
+        total = min(max(shutil.get_terminal_size((120, 24)).columns, 80), 200)
+        number = max(1, len(str(shown[-1]['index'])))
+        chapter = min(24, max(display_width(r['chapter']) for r in shown))
+        fixed = [number, 8, chapter, 26]
+        # each column takes its width + 3 (padding, border), plus the left border and the 2 spaces of indent
+        if chapter and total - sum(fixed) - 3 * 5 - 3 < 30:
+            chapter = 0
+        headers = ['#', 'Time', 'Chapter', 'Problem', 'Sentence, then what was heard']
+        widths = [number, 8, chapter, 26, 0]
+        widths[4] = max(20, total - sum(widths) - 3 * (5 if chapter else 4) - 3)
+        rows = []
+        for r in shown:
+            problem = r['reason'] or (f"ok: CER {r['cer']:.2f}, burst {r['burst']}, edge {r['edge']}" if r['cer'] is not None else 'ok: length only')
+            sentence = r['text'] + (f"\nheard: {r['heard'] or '(nothing)'}" if r['heard'] is not None else '')
+            rows.append([str(r['index']), stamp(r['start'])[:-4], r['chapter'], problem, sentence])
+        if not chapter:
+            headers, widths = [h for k, h in enumerate(headers) if k != 2], [w for k, w in enumerate(widths) if k != 2]
+            rows = [[c for k, c in enumerate(row) if k != 2] for row in rows]
+        print('\n'.join('  ' + line for line in table(headers, rows, widths)))
+    flagged = f"  {report['flagged']} sentence{'s' if report['flagged'] != 1 else ''} flagged" if report['flagged'] else '  No sentence flagged'
+    if report['cleared']:
+        flagged += f" ({report['cleared']} printed during the check cleared by the limits of the whole book)"
+    print(flagged)
 
 def main()->int:
     found = find_audiobooks(args.audiobooks)
@@ -461,7 +556,7 @@ def main()->int:
         if report is None:
             continue
         print_report(report)
-        output = to_abs(args.output) if args.output else os.path.splitext(audiobook)[0] + '.check.json'
+        output = to_abs(args.output) if args.output else os.path.splitext(audiobook)[0] + '.hallucinations.json'
         with open(output, 'w', encoding='utf-8') as f:
             json.dump(report, f, ensure_ascii=False, indent=1)
         print(f'  report: {output}')
