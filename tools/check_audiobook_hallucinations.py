@@ -21,7 +21,7 @@ It reads the .vtt e2a writes beside each audiobook (one cue per sentence), trans
 facebook/mms-1b-all (1162 languages, downloaded into models/tts on first use) and compares the letters of
 both texts, romanized (uroman, pykakasi for Japanese). The limits come from the book itself, from the
 medians of all its sentences: names or a hard text raise them for the whole book, a hallucination stands out.
-Each flagged sentence is printed as soon as it is found (number, time, chapter, problem), all of them in a
+Each flagged sentence is printed as soon as it is found (block and sentence numbers as in e2a, problem), all of them in a
 table at the end, and every sentence with its measures is saved in <audiobook>.hallucinations.json.'''
 parser = argparse.ArgumentParser(prog='check_audiobook_hallucinations.py', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=examples, description=description)
 parser.add_argument('audiobooks', nargs='+', help='Audiobook files (m4b, mp3, flac...) with their .vtt beside them, or folders holding them')
@@ -51,6 +51,7 @@ settings = dict(
 # e2a device -> torch device: ROCm and Jetson builds of torch run through torch.cuda. Half precision on GPUs but MPS
 torch_devices = dict(cpu='cpu', cuda='cuda', rocm='cuda', jetson='cuda', xpu='xpu', mps='mps')
 half_devices = ['cuda', 'xpu']
+approximate_note = 'no block numbers in these subtitles (audiobook made before e2a wrote them): blocks counted from the chapters, off after a block left out of the conversion'
 audio_exts = ['.m4b', '.m4a', '.mp4', '.mp3', '.aac', '.flac', '.wav', '.ogg', '.oga', '.opus', '.webm', '.mka', '.mkv', '.mov']
 
 def to_abs(path:str)->str:
@@ -84,6 +85,8 @@ def parse_time(stamp:str)->float:
     return seconds
 
 def parse_vtt(path:str)->list[dict]:
+    # sentence cues, named "block <block index> sentence <sentence index>" by e2a (none in older audiobooks). Interlude
+    # cues ("interlude <block index>") are music, left out
     cues = []
     with open(path, encoding='utf-8-sig') as f:
         blocks = f.read().replace('\r\n', '\n').split('\n\n')
@@ -91,10 +94,26 @@ def parse_vtt(path:str)->list[dict]:
         lines = [line for line in block.split('\n') if line.strip()]
         for i, line in enumerate(lines):
             if '-->' in line:
+                cue_id = lines[i - 1].strip() if i else ''
+                if re.match(r'^interlude \d+$', cue_id):
+                    break
+                ids = re.match(r'^block (\d+) sentence (\d+)$', cue_id)
                 start, end = line.split('-->')[:2]
-                cues.append(dict(start=parse_time(start), end=parse_time(end.split()[0]), text=' '.join(lines[i + 1:]).strip()))
+                cues.append(dict(start=parse_time(start), end=parse_time(end.split()[0]), text=' '.join(lines[i + 1:]).strip(),
+                    block=int(ids.group(1)) if ids else None, sentence=int(ids.group(2)) if ids else None))
                 break
     return cues
+
+def number_from_chapters(cues:list, chapters:list)->None:
+    # older audiobooks: one chapter per block, its cues counted (a line of tags only, [pause] alone, has its own empty
+    # cue, so the sentence numbers hold). The block numbers are off after a block e2a skipped (keep unchecked)
+    import bisect
+    starts = sorted(float(c['start_time']) for c in chapters)
+    counts = {}
+    for cue in cues:
+        block = max(0, bisect.bisect_right(starts, cue['start'] + 0.001) - 1) if starts else 0
+        cue['block'], cue['sentence'] = block, counts.get(block, 0)
+        counts[block] = cue['sentence'] + 1
 
 def probe(path:str)->dict:
     out = subprocess.run([shutil.which('ffprobe'), '-v', 'error', '-show_chapters', '-show_format', '-show_streams', '-select_streams', 'a:0', '-of', 'json', path], capture_output=True, text=True, check=True).stdout
@@ -115,15 +134,6 @@ def tag_language(info:dict)->str:
         except Exception:
             pass
     return code
-
-def chapter_at(chapters:list, seconds:float)->str:
-    for chapter in chapters:
-        if float(chapter['start_time']) <= seconds < float(chapter['end_time']):
-            # e2a's chapter titles keep their [break] / [pause] tags
-            title = re.sub(r'\[\s*/?\s*(?:break|pause|voice|emotion)[^\]]*\]', ' ', str((chapter.get('tags') or {}).get('title', '')))
-            title = ' '.join(title.replace(' ;', ';').split())
-            return title if len(title) <= 40 else title[:39] + '…'
-    return ''
 
 def decode(path:str, start:float, duration:float)->Any:
     # mono float32 at the recognizer's rate, straight from ffmpeg
@@ -160,11 +170,6 @@ def pick_device(requested:str)->str:
         print(f'{name}: not available with this python_env, the speech recognizer runs on cpu')
         return 'cpu'
     return name
-
-def stamp(seconds:float)->str:
-    m, s = divmod(seconds, 60)
-    h, m = divmod(m, 60)
-    return f'{int(h):02}:{int(m):02}:{s:06.3f}'
 
 class Checker:
 
@@ -391,9 +396,8 @@ def verdict(r:dict, limits:dict)->Optional[str]:
     return None
 
 def live_line(r:dict, reason:str)->str:
-    chapter = f", {r['chapter']}" if r['chapter'] else ''
     text = r['text'] if len(r['text']) <= 70 else r['text'][:69] + '…'
-    return f"  hallucination: sentence #{r['index']} at {stamp(r['start'])[:-4]}{chapter}: {reason}\n      {text}"
+    return f"  hallucination: block {r['block']}, sentence {r['sentence']}: {reason}\n      {text}"
 
 def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
     import bisect
@@ -414,15 +418,20 @@ def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
     asr = checker.asr_language is not None
     if not asr:
         print(f'{audiobook}: the speech recognizer does not know {language}, only the length of each sentence is checked')
+    exact = all(cue['block'] is not None for cue in cues)
+    if not exact:
+        number_from_chapters(cues, chapters)
     records = []
-    for n, cue in enumerate(cues):
+    for cue in cues:
         ref = checker.letters(cue['text'])
         # a digit left in the text is read as a word or more: 4 letters for the length limits, kept out of the rate median
         digits = len(re.findall(r'\d', cue['text']))
-        records.append(dict(index=n + 1, start=round(cue['start'], 3), end=round(cue['end'], 3), duration=round(cue['end'] - cue['start'], 3),
-            chapter=chapter_at(chapters, cue['start']), text=cue['text'], ref=ref, letters=len(ref), digits=digits,
+        records.append(dict(block=cue['block'], sentence=cue['sentence'], start=round(cue['start'], 3), end=round(cue['end'], 3), duration=round(cue['end'] - cue['start'], 3),
+            text=cue['text'], ref=ref, letters=len(ref), digits=digits,
             asr=asr and len(ref) >= settings['min_letters'] and not digits, heard=None, cer=None, burst=None, edge=None, segments=1, reason=None))
     print(f'\n{audiobook}: {len(records)} sentences, language {language}' + (f' (recognizer {checker.asr_language})' if asr else ''))
+    if not exact:
+        print(f'  {approximate_note}')
     # every sentence on its own, a window of the audiobook decoded at a time. Each one is judged at once on the medians of
     # the sentences before it (printed), then all again on the medians of the whole book (the table at the end)
     samples = dict(cer=[], burst=[], edge=[], rate=[])
@@ -463,7 +472,7 @@ def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
     for r in records:
         for key in ('ref', 'live', 'segmented'):
             r.pop(key, None)
-    return dict(audiobook=audiobook, vtt=vtt, language=language, asr_language=checker.asr_language, limits=limits,
+    return dict(audiobook=audiobook, vtt=vtt, language=language, asr_language=checker.asr_language, exact_numbers=exact, limits=limits,
         sentences=len(records), recognized=sum(1 for r in records if r['cer'] is not None),
         flagged=sum(1 for r in records if r['reason']), cleared=cleared, records=records)
 
@@ -516,27 +525,21 @@ def print_report(report:dict)->None:
     print(f"\n{report['audiobook']}")
     print(f"  {report['sentences']} sentences, {report['recognized']} checked by speech recognition, the others by their length only")
     print(f"  limits: CER {limits['cer']:.2f}, {limits['burst']:.0f} wrong letters in a row, {limits['edge']:.0f} extra letters at an edge, length {rate}")
+    if not report['exact_numbers']:
+        print(f'  {approximate_note}')
     shown = [r for r in report['records'] if r['reason'] or args.all]
     if shown:
-        # the sentence column takes what the terminal leaves, the chapter column goes first when it is too narrow
+        # block and sentence as e2a numbers them (from 0), the text column takes what the terminal leaves: each column
+        # takes its width + 3 (padding, border), plus the left border and the 2 spaces of indent
         total = min(max(shutil.get_terminal_size((120, 24)).columns, 80), 200)
-        number = max(1, len(str(shown[-1]['index'])))
-        chapter = min(24, max(display_width(r['chapter']) for r in shown))
-        fixed = [number, 8, chapter, 26]
-        # each column takes its width + 3 (padding, border), plus the left border and the 2 spaces of indent
-        if chapter and total - sum(fixed) - 3 * 5 - 3 < 30:
-            chapter = 0
-        headers = ['#', 'Time', 'Chapter', 'Problem', 'Sentence, then what was heard']
-        widths = [number, 8, chapter, 26, 0]
-        widths[4] = max(20, total - sum(widths) - 3 * (5 if chapter else 4) - 3)
+        headers = ['Block', 'Sentence', 'Problem', 'Text, then what was heard']
+        widths = [5, 8, 26, 0]
+        widths[3] = max(20, total - sum(widths) - 3 * 4 - 3)
         rows = []
         for r in shown:
             problem = r['reason'] or (f"ok: CER {r['cer']:.2f}, burst {r['burst']}, edge {r['edge']}" if r['cer'] is not None else 'ok: length only')
             sentence = r['text'] + (f"\nheard: {r['heard'] or '(nothing)'}" if r['heard'] is not None else '')
-            rows.append([str(r['index']), stamp(r['start'])[:-4], r['chapter'], problem, sentence])
-        if not chapter:
-            headers, widths = [h for k, h in enumerate(headers) if k != 2], [w for k, w in enumerate(widths) if k != 2]
-            rows = [[c for k, c in enumerate(row) if k != 2] for row in rows]
+            rows.append([str(r['block']), str(r['sentence']), problem, sentence])
         print('\n'.join('  ' + line for line in table(headers, rows, widths)))
     flagged = f"  {report['flagged']} sentence{'s' if report['flagged'] != 1 else ''} flagged" if report['flagged'] else '  No sentence flagged'
     if report['cleared']:
