@@ -566,6 +566,7 @@ legends = {
     'msg_tts_loaded': 'TTS {model} dimuat!',
     'msg_tts_already_loaded': 'TTS {model} sudah dimuat',
     'error_disk_full_models': 'Disk penuh saat memuat model tts. Kosongkan folder {dir} dan mulai ulang ebook2audiobook, model akan diunduh lagi.',
+    'error_hf_offline': 'HF_HUB_OFFLINE diatur di lingkungan Anda: {file} tidak dapat diunduh dan belum ada di {dir}.<br/>Batalkan pengaturan HF_HUB_OFFLINE dan mulai ulang ebook2audiobook, atau salin model yang disiapkan dengan tools/preload_models.py ke folder modelnya.',
     'error_cuda_arch_unsupported': 'Torch {torch} yang diinstal tidak memiliki kernel CUDA untuk {gpu} Anda (kemampuan komputasi {cc}), torch ini dibuat untuk: {archs}.<br/>GPU di bawah kemampuan komputasi 7.5 (Maxwell, Pascal, Volta) memerlukan cu126 torch, RTX 50 (12.0) cu128 atau yang lebih baru: dengan Docker, gunakan image tersebut, atau mulai ulang ebook2audiobook, yang akan menginstal versi yang tepat.',
     'error_gpu_fault': 'GPU ({device}) berhenti karena kesalahan yang tidak dapat dipulihkan: {error}.<br/>ebook2audiobook tidak dapat menggunakannya lagi sebelum di-restart. Mulai ulang ebook2audiobook, lalu lanjutkan konversi: konversi akan dilanjutkan dari kalimat terakhir yang dikonversi.<br/>Jika terjadi lagi, perbarui driver GPU, batalkan overclock atau undervolt GPU, dan periksa suhunya, atau pilih perangkat CPU.',
     'error_out_of_memory_gpu': 'Memori GPU tidak cukup untuk memuat {engine} di {device}. Tutup aplikasi lain yang menggunakan GPU, atau pilih perangkat CPU atau mesin TTS yang lebih ringan.',

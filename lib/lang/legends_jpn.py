@@ -566,6 +566,7 @@ legends = {
     'msg_tts_loaded': 'TTS {model} を読み込みました！',
     'msg_tts_already_loaded': 'TTS {model} はすでに読み込まれています',
     'error_disk_full_models': 'TTSモデルの読み込み中にディスクがいっぱいになりました。{dir}フォルダを空にしてebook 2 audiobookを再起動すると、モデルが再度ダウンロードされます。',
+    'error_hf_offline': 'HF_HUB_OFFLINEが環境に設定されています：{file}はダウンロードできず、まだ{dir}にありません。<br/>HF_HUB_OFFLINEの設定を解除してebook2audiobookを再起動するか、tools/preload_models.pyで準備したモデルをそのモデルフォルダにコピーしてください。',
     'error_cuda_arch_unsupported': 'インストールされているtorch {torch}には、お使いの{gpu}（Compute Capability {cc}）用のCUDAカーネルがありません。これは次向けにビルドされています：{archs}。<br/>コンピューティング能力が7.5未満のGPU（Maxwell、Pascal、Volta）には、cu126 torch、RTX 50（12.0）cu128以降が必要です。Dockerを使用する場合はそのイメージを使用し、それ以外の場合はebook2audiobookを再起動して、適切なものをインストールしてください。',
     'error_gpu_fault': 'GPU（{device}）が回復不能なエラーで停止しました：{error}。<br/>ebook2audiobookは、再起動するまでGPUを再度使用できません。ebook2audiobookを再起動してから変換を再開してください。変換は最後に変換された文から続行されます。<br/>再度発生した場合は、GPUドライバーを更新し、GPUのオーバークロックやアンダーボルトを元に戻して温度を確認するか、CPUデバイスを選択してください。',
     'error_out_of_memory_gpu': '{device}に{engine}を読み込むのに十分なGPUメモリがありません。GPUを使用している他のアプリケーションを閉じるか、CPUデバイスまたはより軽いTTSエンジンを選択してください。',

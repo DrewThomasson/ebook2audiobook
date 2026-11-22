@@ -566,6 +566,7 @@ legends = {
     'msg_tts_loaded': 'TTS {model} 已加载！',
     'msg_tts_already_loaded': 'TTS {model} 已经加载',
     'error_disk_full_models': '加载TTS模型时磁盘已满。清空{dir}文件夹并重新启动ebook2audiobook ，模型将再次下载。',
+    'error_hf_offline': 'HF_HUB_OFFLINE已在您的环境中设置：{file}无法下载，且尚未位于{dir}中。<br/>取消设置HF_HUB_OFFLINE并重启ebook2audiobook，或者将使用tools/preload_models.py准备的模型复制到其models文件夹中。',
     'error_cuda_arch_unsupported': '已安装的torch {torch}没有适用于您的{gpu}（计算能力{cc}）的CUDA内核，它是为以下设备构建的：{archs}。<br/>计算能力低于7.5（Maxwell、Pascal、Volta）的 GPU 需要 cu126 torch，RTX 50（12.0）需要 cu128 或更高版本：使用 Docker 时请使用该镜像，否则请重启 ebook2audiobook，它会安装正确的版本。',
     'error_gpu_fault': 'GPU ({device}) 因不可恢复的错误而停止：{error}。<br/>在重新启动之前，ebook2audiobook 无法再次使用它。重启 ebook2audiobook，然后恢复转换：它将从上一个已转换的句子继续。<br/>如果再次发生这种情况，请更新 GPU 驱动程序，撤销任何 GPU 超频或欠压操作并检查其温度，或者选择 CPU 设备。',
     'error_out_of_memory_gpu': 'GPU 内存不足，无法在 {device} 上加载 {engine}。关闭其他使用 GPU 的应用程序，或选择 CPU 设备或更轻量的 TTS 引擎。',
