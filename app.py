@@ -512,6 +512,9 @@ valence, arousal (-1 to 1).""")
             result = manager.install_python_packages()
             if result == 1:
                 sys.exit(1)
+        elif args['script_mode'] == FULL_DOCKER:
+            # the image's torch is never replaced in a running container: only say when its nightly build has a stable one
+            manager.dev_stable_notice()
         if DEVICE_SYSTEM == systems['WINDOWS'] and not register_dlls():
             error = legends['error_shared_dlls']
             print(error)

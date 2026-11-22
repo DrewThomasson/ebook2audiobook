@@ -75,6 +75,7 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None, offs
         audio_files = []
         sentences_to_use = []
         sentence_block_indices = []
+        sentence_indices = []
         for i, block in enumerate(blocks):
             if not (block['keep'] and block['text'].strip()):
                 continue
@@ -95,6 +96,7 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None, offs
                 audio_files.append(audio_file)
                 sentences_to_use.append(sentence)
                 sentence_block_indices.append(i)
+                sentence_indices.append(sentence_idx)
         audio_files_length = len(audio_files)
         sentences_total_time = 0.0
         vtt_blocks = []
@@ -122,7 +124,9 @@ def build_vtt_file(session:dict, vtt_path:str=None, block_indices:set=None, offs
                     ' ',
                     SML_TAG_PATTERN.sub('', str(sentences_to_use[idx]))
                 ).strip()
-                vtt_blocks.append(f'{start} --> {end}\n{text}\n')
+                # WebVTT cue id "block <block index> sentence <sentence index>": where the sentence is in e2a, for
+                # tools/check_audiobook_hallucinations.py. Players and the audiobook editor read it as a plain cue id
+                vtt_blocks.append(f'block {block_idx} sentence {sentence_indices[idx]}\n{start} --> {end}\n{text}\n')
                 if session['is_gui_process']:
                     total_progress = (t.n + 1) / audio_files_length
                     progress_bar(
@@ -542,6 +546,9 @@ class TTSUtils:
                 from lib.classes.tts_engines.common.xpu_workarounds import patch_coqui_hifigan_for_xpu
                 engine = patch_coqui_hifigan_for_xpu(engine)
                 # ----------------------------------
+                # coqui-tts' GPT inference (Tortoise here) on transformers >= 5.24: the cache under its new name
+                from lib.classes.tts_engines.common.transformers_workarounds import patch_coqui_gpt_cache
+                patch_coqui_gpt_cache()
                 vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                 self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                 models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)
@@ -683,6 +690,9 @@ class TTSUtils:
                     from lib.classes.tts_engines.common.xpu_workarounds import patch_coqui_hifigan_for_xpu
                     engine = patch_coqui_hifigan_for_xpu(engine)
                     # ----------------------------------
+                    # coqui-tts' GPT inference (XTTS here) on transformers >= 5.24: the cache under its new name
+                    from lib.classes.tts_engines.common.transformers_workarounds import patch_coqui_gpt_cache
+                    patch_coqui_gpt_cache()
                     vram_dict = VRAMDetector().detect_vram(self.session['device'], self.session['script_mode'])
                     self.session['free_vram_gb'] = vram_dict.get('free_vram_gb', 0)
                     models_loaded_size_gb = self._loaded_tts_size_gb(loaded_tts)

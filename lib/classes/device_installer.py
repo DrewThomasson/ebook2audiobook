@@ -90,6 +90,11 @@ class DeviceInstaller():
     # release installed by hand, which coqui-tts does not run with: 4.46 imports torch.distributed.fsdp in generate()
     # and fails on torch builds without distributed (the +vulkan wheels)
     transformers_min = '4.57'
+    # the last coqui-tts release python 3.10 gets, whatever requirements.txt pins for the others. 3.10 is Jetson's
+    # python_env (min_python_version: its torch wheels are cp310 only), and a coqui-tts release dropping 3.10 (EOL since
+    # 2026-10) would not install there. 0.28.0 declares >=3.10,<3.15; it predates transformers 5.24's cache rename, so
+    # transformers_workarounds.patch_coqui_gpt_cache() stays while 3.10 is on it
+    coqui_tts_py310_max = '0.28.0'
     exclusive_pkgs = {
         'onnxruntime': ['onnxruntime', 'onnxruntime-gpu', 'onnxruntime-directml']
     }
@@ -102,6 +107,11 @@ class DeviceInstaller():
     gpu_choice_timeout = 60
     # PCI vendor id -> the device its runtime serves, for the GPU choice
     gpu_pci_vendors = {0x1002: devices['ROCM']['proc'], 0x10de: devices['CUDA']['proc'], 0x8086: devices['XPU']['proc']}
+    # PCI vendors whose display adapters never run torch (_not_gpu): server BMC VGA (ASPEED, Matrox G200, Huawei iBMC),
+    # emulated / paravirtual VGA (QEMU-Bochs, virtio-gpu, QXL, VMware SVGA, VirtualBox, Hyper-V, Parallels, Xen, Cirrus,
+    # S3 Trio) and Silicon Motion's embedded / USB graphics. A BMC VGA counted as an add-in card stopped
+    # reconcile_gpu_choice() from moving a server's default onto its real GPU
+    display_vendors = {0x1a03, 0x102b, 0x19e5, 0x1234, 0x1af4, 0x1b36, 0x15ad, 0x80ee, 0x1414, 0x1ab8, 0x5853, 0x1013, 0x5333, 0x126f}
 
     uv_install_url = 'https://docs.astral.sh/uv/getting-started/installation/'
     # official download page of the Microsoft Visual C++ redistributables (msvcp140/vcruntime140: absent from every
@@ -139,6 +149,23 @@ class DeviceInstaller():
 
     def _uv_pip(self, subcommand:str, *args)->list:
         return [self.uv_bin, 'pip', subcommand, '--python', python_exec, *args]
+
+    @cached_property
+    def uv_torch_backends(self)->Union[set, None]:
+        # the --torch-backend values this uv accepts, from its own help ('[possible values: auto, cpu, cu132, …]'): uv
+        # 0.11 stops at cu132 and rejects cu134 / cu135 outright. None when the help cannot be read
+        try:
+            out = subprocess.run([self.uv_bin, 'pip', 'install', '--help'], capture_output=True, text=True, timeout=30).stdout
+        except (subprocess.TimeoutExpired, OSError):
+            return None
+        m = re.search(r'--torch-backend\b.*?\[possible values: ([^\]]+)\]', out or '', re.S)
+        return {value.strip() for value in m.group(1).split(',') if value.strip()} if m else None
+
+    def uv_torch_backend_ok(self, torch_backend:str)->bool:
+        # an engine venv tries uv's --torch-backend first: a value this uv does not know fails before any resolution,
+        # so it goes straight to the DeviceInstaller fallback. Unknown backend list: try it, as before
+        backends = self.uv_torch_backends
+        return backends is None or torch_backend in backends
 
     @cached_property
     def check_platform(self)->str:
@@ -274,13 +301,19 @@ class DeviceInstaller():
             os_env = 'linux' if name == devices['JETSON']['proc'] else self.check_platform
             if all([name, tag, os_env, arch, pyvenv]):
                 device_info = {"name": name, "os": os_env, "arch": arch, "pyvenv": pyvenv, "tag": tag, "note": re.sub(r'[^\w\s-]', '', msg.replace('!', ''))}
-                if device_info != previous:
+                # the crash probe's verdict ('usable', written by install_device_packages) belongs to this detection: kept
+                # while the detection stays the same, dropped with any change (driver update) so the probe runs again.
+                # Compared with it in, the file differed at every start and the rewrite lost the verdict
+                previous_detected = {key: value for key, value in previous.items() if key != 'usable'} if isinstance(previous, dict) else None
+                if device_info != previous_detected:
                     try:
                         with open(device_info_json, 'w', encoding='utf-8') as f:
                             json.dump(device_info, f)
                     except OSError as e:
                         error = legends['msg_device_info_write_failed'].format(e=e)
                         print(error, file=sys.stderr)
+                elif previous.get('usable'):
+                    device_info['usable'] = previous['usable']
                 return json.dumps(device_info)
         elif mode == BUILD_DOCKER:
             name, tag, msg = self.detect_device(BUILD_DOCKER)
@@ -471,18 +504,32 @@ class DeviceInstaller():
             return None
 
     @staticmethod
-    def _virtual_gpu(name:str)->bool:
-        # display-only / virtual adapters never run torch, but they occupy a slot in every enumeration (Windows reports
-        # them through WMI even when Vulkan does not see them): Remote Desktop's 'Microsoft Remote Display Adapter',
-        # TeamViewer's 'Meta Virtual Monitor', ToDesk / Virtual Desktop mirrors, VMware SVAs, basic VGA drivers... The
-        # names all contain 'virtual' or 'display', or are one of the plain framebuffer stubs listed here. A name with a
-        # vendor GPU word in it stays real: 'NVIDIA GeForce RTX 3060 Laptop GPU' contains none, 'Intel(R) UHD Graphics
-        # 770' does ('graphics' alone must not hide an iGPU, it only ever ranks last). The guard words stay narrow so a
-        # virtual mirror named after its host GPU ('GameViewer Virtual Display Adapter' on an AMD box) is still dropped
+    def _not_gpu(name:str, vendor_id:int=0, pnp_id:str='')->bool:
+        # display-only adapters never run torch, but they occupy a slot in every enumeration (Windows reports them through
+        # WMI even when Vulkan does not see them), shift the GPU index shown to the user and can leave a lone real GPU
+        # looking like one choice among several. Dropped, so a machine with one real GPU selects it by default:
+        # - Windows device not on a GPU bus (pnp_id): USB graphics (DisplayLink, MCT Trigger, Silicon Motion: USB\),
+        #   indirect / virtual displays (Remote Desktop, Parsec, spacedesk, IddSampleDriver, Citrix: SWD\ or ROOT\),
+        #   mirror drivers (ROOT\), Hyper-V synthetic video (VMBUS\). A real GPU sits on PCI\ (ACPI\ on Snapdragon)
+        # - PCI vendor of display-only chips (display_vendors): server BMC VGA, emulated / paravirtual VGA
+        # - name: 'virtual', 'display' and the stubs listed here ('Microsoft Remote Display Adapter', TeamViewer's
+        #   'Meta Virtual Monitor', VMware SVGA, basic VGA drivers...)
+        # A name with a vendor GPU word in it stays real whatever its bus: 'NVIDIA GeForce RTX 3060 Laptop GPU' (a GPU-PV
+        # adapter in a VM included). 'Intel(R) UHD Graphics 770' has none ('graphics' alone must not hide an iGPU, it
+        # only ever ranks last). The guard words stay narrow so a virtual mirror named after its host GPU ('GameViewer
+        # Virtual Display Adapter' on an AMD box) is still dropped
         lowered = name.lower()
         if any(word in lowered for word in ('nvidia', 'geforce', 'quadro', 'tesla', 'rtx', 'gtx', 'radeon rx', 'arc a')) and 'virtual' not in lowered:
             return False
+        if vendor_id in DeviceInstaller.display_vendors:
+            return True
+        if pnp_id.upper().startswith(('USB\\', 'SWD\\', 'ROOT\\', 'VMBUS\\')):
+            return True
         if 'virtual' in lowered or 'display' in lowered:
+            return True
+        # bus and display-only words, no chip vendor: display_vendors has those by id, and a name match would drop the
+        # Vulkan device of a VM ('Virtio-GPU Venus (AMD Radeon 780M)': the host GPU) or a board-maker's Arc card
+        if re.search(r'\b(?:usb|mirror|indirect|remote|hyper-v|spacedesk|parsec|idd\w*)\b', lowered):
             return True
         return any(word in lowered for word in ('vmware svga', 'basic render', 'llvmpipe', 'v3d', 'vc4', 'simple-framebuffer'))
 
@@ -491,20 +538,23 @@ class DeviceInstaller():
         # which the Vulkan loader enumerates in (DXGI order), WMI without a loader. Linux: PCI bus order. Model and card
         # come from the Vulkan device of the same vendor (deviceType discrete); without one the card is guessed: Intel's
         # integrated GPU is 00:02.0 on the PCI bus (on Windows: any Intel), NVIDIA and AMD count as cards. Virtual
-        # display adapters (_virtual_gpu) are dropped: they hold no compute memory, and counting them shifted the CUDA
+        # display adapters (_not_gpu) are dropped: they hold no compute memory, and counting them shifted the CUDA
         # index reported to the user (bug reports showed 'gpu 0' while nvidia-smi said gpu 1)
         if self.system == systems['WINDOWS'] and vk_devices:
-            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._virtual_gpu(model)]
+            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._not_gpu(model, vendor_id)]
         pci = []  # (vendor id, name)
         if self.system == systems['WINDOWS']:
             try:
                 out = subprocess.run(['powershell', '-NoProfile', '-Command', "Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name + '|' + $_.PNPDeviceID }"], capture_output=True, text=True, errors='replace', timeout=20).stdout
             except (OSError, subprocess.TimeoutExpired):
                 out = ''
-            # one line per adapter, in the OS's order; a virtual display adapter drops both its fields
-            for name, vendor_id in re.findall(r'(?m)^(.*?)\|.*VEN_([0-9A-F]{4})', out, re.IGNORECASE):
-                if not self._virtual_gpu(name):
-                    pci.append((int(vendor_id, 16), name.strip()))
+            # one line per adapter, in the OS's order, 'Name|PNPDeviceID'. Only a PCI vendor id counts (VEN_xxxx): a
+            # USB, software or root device has none, and _not_gpu() drops the display-only ones that do
+            for line in out.splitlines():
+                name, _, pnp_id = line.strip().partition('|')
+                vendor = re.search(r'VEN_([0-9A-F]{4})', pnp_id, re.IGNORECASE)
+                if vendor and not self._not_gpu(name, int(vendor.group(1), 16), pnp_id):
+                    pci.append((int(vendor.group(1), 16), name.strip()))
         else:
             sysfs = '/sys/bus/pci/devices'
             if os.path.isdir(sysfs):
@@ -527,7 +577,7 @@ class DeviceInstaller():
                                 name = next((line.strip() for line in out.splitlines() if line.strip()), '')
                             except (OSError, subprocess.TimeoutExpired):
                                 name = ''
-                        if self._virtual_gpu(name):
+                        if self._not_gpu(name, vendor_id):
                             continue
                         pci.append((vendor_id, name))
                     except (OSError, ValueError):
@@ -538,11 +588,11 @@ class DeviceInstaller():
                 except (OSError, subprocess.TimeoutExpired):
                     out = ''
                 for description, vendor_id in re.findall(r'^\S+ (.*?\[030[02]\].*?\[([0-9a-f]{4}):[0-9a-f]{4}\])', out, re.IGNORECASE | re.MULTILINE):
-                    if self._virtual_gpu(description):
+                    if self._not_gpu(description, int(vendor_id, 16)):
                         continue
                     pci.append((int(vendor_id, 16), description))
         if not pci:
-            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._virtual_gpu(model)]
+            return [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in vk_devices if not self._not_gpu(model, vendor_id)]
         unmatched = list(vk_devices)
         gpus = []
         for vendor_id, name in pci:
@@ -558,15 +608,15 @@ class DeviceInstaller():
             else:
                 address = next((device[3] for device in vk_devices if device[0] == vendor_id and len(device) > 3), '')
                 card = bool(address) and not address.endswith(':00:02.0')
-            same = [device for device in unmatched if device[0] == vendor_id and not self._virtual_gpu(device[1])]
+            same = [device for device in unmatched if device[0] == vendor_id and not self._not_gpu(device[1], device[0])]
             device = next((device for device in same if (device[2] == 2) == card), same[0] if same else None)
             if device:
                 unmatched.remove(device)
                 gpus.append((vendor_id, device[1], device[2] == 2))
             else:
                 gpus.append((vendor_id, name, card))
-        # Vulkan GPUs not on the PCI list come last; the virtual ones are never listed at all
-        return gpus + [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in unmatched if not self._virtual_gpu(model)]
+        # Vulkan GPUs not on the PCI list come last; the display-only ones are never listed at all
+        return gpus + [(vendor_id, model, device_type == 2) for vendor_id, model, device_type in unmatched if not self._not_gpu(model, vendor_id)]
 
     def gpu_candidates(self, gpu_results:dict)->list:
         # each way e2a can run a GPU here, as (name, tag, msg, models): a vendor runtime detect_device() found (cuda,
@@ -1080,29 +1130,15 @@ class DeviceInstaller():
             # ============================================================
             if not tegra and has_rocm() and has_amd_gpu_pci():
                 name, tag, msg = None, None, ''
-                # HSA_OVERRIDE_GFX_VERSION is read once, when this process first initializes the HSA runtime:
-                # the ctypes hipGetDeviceCount() below does it, and torch later reuses that loaded libhsa-runtime64.so.1,
-                # so the override must be in os.environ before it. detect_gpu.py inherits it and reports it back unchanged.
-                if os.name == 'posix' and not os.environ.get('HSA_OVERRIDE_GFX_VERSION'):
-                    sys_path = list(sys.path)
-                    try:
-                        import importlib.util
-                        spec = importlib.util.spec_from_file_location('detect_gpu', detect_gpu_script)
-                        detect_gpu = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(detect_gpu)
-                        detect_gpu.handle_rocm_override()
-                    except Exception:
-                        pass  # never block device detection
-                    finally:
-                        sys.path[:] = sys_path  # handle_rocm_override() puts components/ first on sys.path
                 version = ()
                 msg = ''
                 hip_device_count = 0
                 # 1) HIP runtime detection via ctypes (primary)
                 try:
                     import ctypes
-                    libhip = None
+                    runtime_version = None
                     if os.name == 'nt':
+                        libhip = None
                         hip_path = os.environ.get('HIP_PATH', '')
                         candidates = ['amdhip64.dll']
                         if hip_path:
@@ -1113,6 +1149,13 @@ class DeviceInstaller():
                                 break
                             except OSError:
                                 continue
+                        if libhip:
+                            device_count = ctypes.c_int()
+                            if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
+                                hip_device_count = device_count.value
+                            v_int = ctypes.c_int()
+                            if libhip.hipRuntimeGetVersion(ctypes.byref(v_int)) == 0:
+                                runtime_version = v_int.value
                     else:
                         candidates = ['libamdhip64.so']
                         min_major, _ = rocm_version_range['min']
@@ -1135,34 +1178,32 @@ class DeviceInstaller():
                                             candidates.append(os.path.join(d, f))
                                 except OSError:
                                     pass
-                        for lib_name in candidates:
-                            try:
-                                libhip = ctypes.CDLL(lib_name)
-                                break
-                            except OSError:
-                                continue
-                    if libhip:
-                        device_count = ctypes.c_int()
-                        if libhip.hipGetDeviceCount(ctypes.byref(device_count)) == 0:
-                            hip_device_count = device_count.value
-                        v_int = ctypes.c_int()
-                        if libhip.hipRuntimeGetVersion(ctypes.byref(v_int)) == 0:
-                            v = v_int.value
-                            if v >= 10000000:
-                                major = v // 10000000
-                                minor = (v % 10000000) // 100000
-                                patch = v % 100000
-                            elif v >= 100:
-                                major = v // 100
-                                minor = (v % 100) // 10
-                                patch = 0
-                            else:
-                                major, minor, patch = v, 0, 0
-                            if hip_device_count > 0:
-                                version = (major, minor, patch)
-                            else:
-                                ver_disp = f'{major}.{minor}.{patch}' if patch else f'{major}.{minor}'
-                                msg = legends['msg_hip_no_devices'].format(version=ver_disp)
+                        # asked in a child (detect_gpu.py --hip-runtime), not loaded here: a libamdhip64 loaded in this
+                        # process stays, and torch imported later binds its ROCm libraries to it by soname
+                        # (libamdhip64.so.7). torch built for ROCm 7.14 then ran on the system's 7.16 runtime, under the
+                        # HSA_OVERRIDE_GFX_VERSION picked for this probe, while detect_gpu.py had checked torch on its
+                        # own stack (crash report ec3a0208c4c44215: segfault at the first tensor stanza moved to the GPU).
+                        # The override torch runs under comes from detect_gpu.py's verdict alone (install_device_packages)
+                        answer = self.hip_runtime_child(candidates)
+                        hip_device_count = answer.get('count') or 0
+                        runtime_version = answer.get('version')
+                    if runtime_version is not None:
+                        v = runtime_version
+                        if v >= 10000000:
+                            major = v // 10000000
+                            minor = (v % 10000000) // 100000
+                            patch = v % 100000
+                        elif v >= 100:
+                            major = v // 100
+                            minor = (v % 100) // 10
+                            patch = 0
+                        else:
+                            major, minor, patch = v, 0, 0
+                        if hip_device_count > 0:
+                            version = (major, minor, patch)
+                        else:
+                            ver_disp = f'{major}.{minor}.{patch}' if patch else f'{major}.{minor}'
+                            msg = legends['msg_hip_no_devices'].format(version=ver_disp)
                 except (OSError, AttributeError):
                     pass
                 # 2) hipcc fallback
@@ -1725,11 +1766,34 @@ class DeviceInstaller():
     def torchaudio_spec(self, torch_version:str)->str:
         # requirement for the PyTorch index path (CUDA, CPU, XPU, ROCm linux). from the
         # ceiling on, any 2.11.x patch is valid and uv takes the highest one the stable or
-        # nightly index carries for this tag. explicit wheel URLs (jetson, vulkan, windows
-        # rocm) keep torchaudio_version(): their filenames are exact.
+        # nightly index carries for this tag. A tag with no stable index yet (cu135) has
+        # nothing but the nightly 2.11.0.devYYYYMMDD builds, below 2.11.0 itself: '.dev0'
+        # lets them in, any stable 2.11.x still wins where one exists. explicit wheel URLs
+        # (jetson, vulkan, windows rocm) keep torchaudio_version(): their filenames are exact.
+        if self.version_tuple(torch_version, 3) >= self.version_tuple(self.torchaudio_max, 3):
+            major, minor, _ = self.version_tuple(self.torchaudio_max, 3)
+            return f'torchaudio>={self.torchaudio_max}.dev0,<{major}.{minor + 1}'
+        return f'torchaudio=={torch_version}'
+
+    def torchaudio_stable_spec(self, torch_version:str)->str:
+        # torchaudio_spec() without the nightly builds: what the stable tree must carry for a nightly one to be replaced
         if self.version_tuple(torch_version, 3) >= self.version_tuple(self.torchaudio_max, 3):
             return f'torchaudio~={self.torchaudio_max}'
         return f'torchaudio=={torch_version}'
+
+    def release_range(self, pkg:str, release:str)->str:
+        # pkg at this torch_matrix release, or its nightly build while the release is not published: '>=X.Y.Z.dev0'
+        # lets the resolver take a X.Y.Z.devYYYYMMDD build from the nightly tree, '<X.Y.(Z+1)' keeps it on this release,
+        # and the stable X.Y.Z, higher than every dev build of it, wins as soon as an index carries it
+        major, minor, patch = self.version_tuple(release, 3)
+        return f'{pkg}>={major}.{minor}.{patch}.dev0,<{major}.{minor}.{patch + 1}'
+
+    def release_version(self, installed_version:str)->str:
+        # '2.16.0.dev20261121+cu135' -> '2.16.0': the release a nightly build leads to, local tag dropped
+        return re.sub(r'\.dev\d+$', '', installed_version.split('+', 1)[0])
+
+    def is_dev_version(self, installed_version:Union[str, bool, None])->bool:
+        return bool(installed_version) and re.search(r'\.dev\d+', str(installed_version)) is not None
 
     def torchaudio_ok(self, installed_version:str, torch_version:str)->bool:
         # does the installed torchaudio base version satisfy torchaudio_spec(torch_version)
@@ -1810,6 +1874,13 @@ class DeviceInstaller():
                     head = re.sub(r'[-_.]+', '-', re.split(r'[<>=!\[;]', pkg, 1)[0].strip().lower())
                     if head in {'torch', 'torchaudio'} or head in self.device_pkgs:
                         continue
+                    # python 3.10 keeps coqui-tts at coqui_tts_py310_max: the line's extras and marker stay, its version
+                    # goes. An installed release above it violates the pin and is put back at the next start
+                    if head == 'coqui-tts' and self.python_version < (3, 11):
+                        spec, _, marker = pkg.partition(';')
+                        pkg = re.split(r'[<>=!~]', spec, maxsplit=1)[0].strip() + f'=={self.coqui_tts_py310_max}'
+                        if marker.strip():
+                            pkg += f'; {marker.strip()}'
                     if head in overrides:
                         if overrides[head] is None:
                             continue
@@ -2254,7 +2325,7 @@ class DeviceInstaller():
             return False
         cmd = [
             'powershell', '-NoProfile', '-NonInteractive', '-Command',
-            'Get-CimInstance Win32_VideoController | Select-Object -ExpandProperty Name'
+            "Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name + '|' + $_.PNPDeviceID }"
         ]
         try:
             out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=30).decode(errors='ignore').lower()
@@ -2262,11 +2333,14 @@ class DeviceInstaller():
             error = f'has_directml_gpu(): {e}'
             print(error)
             return False
-        blacklist = ('microsoft basic display', 'remote display', 'standard vga', 'virtual', 'vmware', 'parallels', 'citrix')
+        # the same display-only filter as system_gpus(), so a DisplayLink dock or a virtual monitor never passes for a
+        # DirectML GPU. A Snapdragon Adreno has no PCI vendor id (ACPI\QCOM...): its name decides
+        blacklist = ('standard vga', 'parallels', 'citrix')
         vendors = ('nvidia', 'amd', 'radeon', 'intel', 'arc', 'qualcomm', 'adreno')
         for line in out.splitlines():
-            name = line.strip()
-            if not name or any(b in name for b in blacklist):
+            name, _, pnp_id = line.strip().partition('|')
+            vendor = re.search(r'VEN_([0-9A-F]{4})', pnp_id, re.IGNORECASE)
+            if not name or any(b in name for b in blacklist) or self._not_gpu(name, int(vendor.group(1), 16) if vendor else 0, pnp_id):
                 continue
             if any(v in name for v in vendors):
                 return True
@@ -2430,6 +2504,47 @@ class DeviceInstaller():
             print(error)
             return 0
 
+    def hip_runtime_child(self, candidates:list)->dict:
+        # {'count', 'version'} of the system HIP runtime, read by components/detect_gpu.py --hip-runtime in a child so
+        # the system libamdhip64 never loads in e2a's own process (check_hardware). {} when no candidate loads or the
+        # child does not answer
+        try:
+            proc = subprocess.run([python_exec, detect_gpu_script, '--hip-runtime', json.dumps(candidates)], capture_output=True, text=True, timeout=60)
+        except (subprocess.TimeoutExpired, OSError):
+            return {}
+        answer = next((line.strip() for line in reversed(proc.stdout.splitlines()) if line.strip().startswith('{')), None)
+        try:
+            data = json.loads(answer) if proc.returncode == 0 and answer else {}
+        except json.JSONDecodeError:
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def probe_gpus(self)->dict:
+        # torch's own GPU count, read by components/detect_gpu.py in a child process: a GPU torch can die natively in
+        # it. 'probed': the child ran to its end (or died in torch), so a count of 0 is torch's own answer. A probe that
+        # could not run (missing python, no answer in time, no answer on stdout) says nothing about the GPU. 120 s like
+        # reconcile_gpu_choice(): a cold first import of a GPU torch (antivirus scanning its DLLs, a machine short of RAM
+        # paging) took longer than the 30 s it had, so XPU stayed on unprobed (crash report 63aa7dc78e8ff6f6)
+        try:
+            proc = subprocess.run([python_exec, detect_gpu_script], capture_output=True, text=True, timeout=120)
+        except subprocess.TimeoutExpired as e:
+            return {'count': 0, 'backend': None, 'error': f'no answer within {e.timeout:g} s'}
+        except OSError as e:
+            return {'count': 0, 'backend': None, 'error': str(e)}
+        if proc.returncode != 0:
+            # Windows reports a native crash as an NTSTATUS (0xc0000005 access violation), POSIX as -signal
+            code = f'{proc.returncode:#x}' if proc.returncode > 255 else str(proc.returncode)
+            return {'count': 0, 'backend': None, 'probed': True, 'error': proc.stderr.strip() or f'exit code {code}'}
+        # the answer is detect_gpu.py's last line: torch or a driver may print to stdout before it
+        answer = next((line.strip() for line in reversed(proc.stdout.splitlines()) if line.strip().startswith('{')), None)
+        try:
+            data = json.loads(answer) if answer else None
+        except json.JSONDecodeError:
+            data = None
+        if not isinstance(data, dict):
+            return {'count': 0, 'backend': None, 'error': f'no answer on stdout: {proc.stdout.strip()[-200:]!r}'}
+        return {'count': 0, 'backend': None, **data, 'probed': True}
+
     def torch_probe_child(self)->Union[dict, None]:
         # run components/detect_gpu.py in a child process and parse its json line: None when the child could not run to
         # its end (missing python, timeout, unreadable output). Used before installing a GPU torch at all -- an access
@@ -2455,9 +2570,10 @@ class DeviceInstaller():
         if tag_dir.startswith('win-'):
             tag_dir = tag_dir[len('win-'):]
         with tempfile.TemporaryDirectory(prefix='e2a_probe_') as probe_dir:
-            # torchaudio_spec, not '==': at the ceiling no exact version exists (any 2.11.x patch is valid)
+            # torchaudio_spec, not '==': at the ceiling no exact version exists (any 2.11.x patch is valid). torch the same
+            # range as the install: the row's nightly build while its release is not published
             cmd = self._uv_pip('install', '--target', probe_dir, '--no-cache', '--no-deps',
-                               f'torch=={torch_version_matrix}', self.torchaudio_spec(torch_version_matrix),
+                               self.release_range('torch', torch_version_matrix), self.torchaudio_spec(torch_version_matrix),
                                '--index-url', f'{url}/{tag_dir}', '--extra-index-url', f'{default_pytorch_nightly_url}/{tag_dir}',
                                '--index-strategy', 'unsafe-best-match')
             if subprocess.call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
@@ -2486,11 +2602,14 @@ class DeviceInstaller():
         # The verdict goes to .device_info.json so later starts skip the (slow) probing, until the driver changes and
         # check_device_info rewrites the file. Returns '' when every probed row crashed: keep the original tag rather
         # than guess
+        # the rows built for this OS (not 'tag': a cuXYZ key is never in an 'os' list, the filter used to leave no row
+        # and no probe ever ran), ordered by CUDA version: 'cu132' -> (13, 2), as cuda_tag() reads them ('cu(\d)(\d)'
+        # read every 12.x and 13.x row as the same (1, 2) / (1, 3))
         rows = sorted({key for key in torch_matrix
                        if re.fullmatch(r'(?:win-)?cu\d{3}', key)
-                       and tag in torch_matrix[key]['os']
+                       and self.system in torch_matrix[key]['os']
                        and self.detect_arch_tag() in torch_matrix[key]['arch']},
-                      key=lambda k: tuple(int(n) for n in re.search(r'cu(\d)(\d)', k).groups()))
+                      key=lambda k: tuple(int(n) for n in re.search(r'cu(\d+)(\d)$', k).groups()))
         idx = rows.index(tag) if tag in rows else len(rows)
         probed = False
         for candidate in rows[:idx + 1][::-1]:
@@ -2577,6 +2696,131 @@ class DeviceInstaller():
         except OSError:
             pass
 
+    # nightly builds an install pass took because torch_matrix names a release not published yet (cu135: torch 2.16.0,
+    # torchaudio 2.11.x, torchcodec 0.18.0). Kept in the env they were installed into (python_env, an engine venv, the
+    # docker image's python), next to the install lock: it lives and dies with those packages. Per package the exact
+    # build installed, the stable requirement replacing it and the stable index to ask, plus the time of the last check
+    dev_pkgs_marker = '.e2a_dev_pkgs.json'
+    dev_check_interval = 86400
+
+    def dev_marker_load(self, prefix:str)->dict:
+        try:
+            with open(os.path.join(prefix, self.dev_pkgs_marker), 'r', encoding='utf-8') as f:
+                marker = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return {}
+        return marker if isinstance(marker, dict) and isinstance(marker.get('packages'), dict) else {}
+
+    def dev_marker_write(self, prefix:str, marker:dict)->None:
+        # no nightly build left: no file. Replaced in one step, a start reading meanwhile gets either version
+        marker_file = os.path.join(prefix, self.dev_pkgs_marker)
+        try:
+            if not marker.get('packages'):
+                if os.path.exists(marker_file):
+                    os.remove(marker_file)
+                return
+            marker_tmp = f'{marker_file}.e2a'
+            with open(marker_tmp, 'w', encoding='utf-8') as f:
+                json.dump(marker, f, indent=2)
+            os.replace(marker_tmp, marker_file)
+        except OSError:
+            pass
+
+    def dev_marker_record(self, tag:str, stable:dict)->None:
+        # after an install pass into sys.prefix. stable: {pkg: (stable requirement, stable index url)} for the packages it
+        # installed from the PyTorch indexes; only the ones that came out as nightly builds are kept. 'checked' starts
+        # now: the pass just resolved the newest builds, the stable tree is asked again in dev_check_interval
+        importlib.invalidate_caches()
+        packages = {}
+        for pkg, (requirement, index_url) in stable.items():
+            installed = self.get_package_version(pkg)
+            if self.is_dev_version(installed):
+                packages[pkg] = {'installed': installed, 'stable': requirement, 'index_url': index_url}
+        if packages:
+            msg = legends['msg_dev_build_installed'].format(pkgs=', '.join(f"{pkg} {entry['installed']}" for pkg, entry in packages.items()), tag=tag)
+            print(msg)
+        self.dev_marker_write(sys.prefix, {'tag': tag, 'packages': packages, 'checked': time.time()})
+
+    def dist_versions(self, prefix:str)->dict:
+        # {name: version} from the dist-info folders of the env at prefix ('torch-2.16.0.dev20261121+cu135.dist-info'),
+        # read without its python: an engine venv is checked from python_env's process
+        if self.system == systems['WINDOWS']:
+            site_dirs = [os.path.join(prefix, 'Lib', 'site-packages')]
+        else:
+            site_dirs = glob(os.path.join(prefix, 'lib', 'python*', 'site-packages'))
+        found = {}
+        for site_dir in site_dirs:
+            for dist_info in glob(os.path.join(site_dir, '*.dist-info')):
+                name, _, dist_version = os.path.basename(dist_info)[:-len('.dist-info')].partition('-')
+                if dist_version:
+                    found[re.sub(r'[-_.]+', '-', name).lower()] = dist_version
+        return found
+
+    def stable_available(self, requirement:str, index_url:str, python:str)->Union[bool, None]:
+        # does the stable tree carry this release for python's version and platform. --reinstall makes uv ask the index
+        # even when the env already satisfies the requirement: without it an installed build answers 'nothing to do'
+        # and no lookup happens. uv exits 1 when no build matches, 2 on an error (offline, index unreachable): None then,
+        # which tells nothing about the release
+        try:
+            rc = subprocess.call([self.uv_bin, 'pip', 'install', '--python', python, '--dry-run', '--reinstall', '--no-cache', '--no-deps', requirement, '--index-url', index_url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+        except (subprocess.TimeoutExpired, OSError):
+            return None
+        return True if rc == 0 else False if rc == 1 else None
+
+    def dev_stable_check(self, prefix:str, python:str, stamp_found:bool=False)->list:
+        # stable requirements now on the stable tree for the nightly builds recorded in prefix's marker, [] when there
+        # are none or the last check is younger than dev_check_interval. An entry whose build is no longer the installed
+        # one (replaced since, by hand or by an engine's own resolver) is dropped first. 'checked' is stamped when every
+        # package got an answer: an offline start stamps nothing and the next one asks again. A found stable build
+        # stamps it only with stamp_found (the docker notice: the image is not changed, say it once per interval)
+        marker = self.dev_marker_load(prefix)
+        if not marker:
+            return []
+        installed = self.dist_versions(prefix)
+        packages = {pkg: entry for pkg, entry in marker['packages'].items() if isinstance(entry, dict) and entry.get('installed') and installed.get(pkg) == entry['installed'] and entry.get('stable') and entry.get('index_url')}
+        if packages != marker['packages']:
+            marker['packages'] = packages
+            self.dev_marker_write(prefix, marker)
+        if not packages:
+            return []
+        try:
+            checked = float(marker.get('checked') or 0)
+        except (TypeError, ValueError):
+            checked = 0
+        if time.time() - checked < self.dev_check_interval:
+            return []
+        available = []
+        answered = True
+        for entry in packages.values():
+            state = self.stable_available(entry['stable'], entry['index_url'], python)
+            if state is None:
+                answered = False
+            elif state:
+                available.append(entry['stable'])
+        if answered and (stamp_found or not available):
+            marker['checked'] = time.time()
+            self.dev_marker_write(prefix, marker)
+        return available
+
+    def dev_switch_due(self, prefix:str, python:str)->bool:
+        # a nightly build in the env at prefix has its stable build published: the caller reinstalls, the release range
+        # (release_range, torchaudio_spec) then resolves to the stable one
+        available = self.dev_stable_check(prefix, python)
+        if available:
+            msg = legends['msg_dev_stable_switch'].format(pkgs=', '.join(available), tag=self.dev_marker_load(prefix).get('tag', ''))
+            print(msg)
+            return True
+        return False
+
+    def dev_stable_notice(self)->None:
+        # full_docker: the image's torch is never replaced at run time. The image is the versioned artifact, a swap would
+        # land in the container layer and be downloaded again after every recreate. Once a stable build replacing a
+        # nightly one the image carries is out, say so once per dev_check_interval: pull or rebuild the image
+        available = self.dev_stable_check(sys.prefix, python_exec, stamp_found=True)
+        if available:
+            msg = legends['msg_dev_stable_docker'].format(pkgs=', '.join(available), tag=self.dev_marker_load(sys.prefix).get('tag', ''))
+            print(msg)
+
     @install_locked
     def install_device_packages(self, device_info_str:str)->int:
         def _tag_ok(installed_tag):
@@ -2600,10 +2844,12 @@ class DeviceInstaller():
             return installed_tag == tag
 
         def _needs_reinstall():
-            # torch: base version + local tag must match what we'd install for this device
+            # torch: base version + local tag must match what we'd install for this device. A nightly build of the
+            # matrix release (2.16.0.devYYYYMMDD for 'last' 2.16.0) is that release until its stable build is out:
+            # dev_switch_due() below replaces it then
             if not torch_version_current_full:
                 return True
-            if torch_version_current_base != torch_version_matrix:
+            if self.release_version(torch_version_current_base) != torch_version_matrix:
                 return True
             if not _tag_ok(current_tag):
                 return True
@@ -2651,20 +2897,10 @@ class DeviceInstaller():
                 vulkan_torch_url = f"{default_jetson_url}/torch/torch-{torch_version_matrix}%2B{tag}-cp{py_major}{py_minor}-cp{py_major}{py_minor}-{device_info['os']}_{device_info['arch']}.whl"
                 if self.vulkan_torch_lacks_libomp(vulkan_torch_url):
                     return True
+            # nightly builds installed while a release was not published: once a day, is its stable build out
+            if self.dev_switch_due(sys.prefix, python_exec):
+                return True
             return False
-
-        def _probe_gpus()->dict:
-            # 'probed': the child ran to its end (or died in torch), so a count of 0 is torch's own answer. A probe that
-            # could not run (timeout on a cold start, missing python, unreadable output) says nothing about the GPU
-            try:
-                proc = subprocess.run([python_exec, detect_gpu_script], capture_output=True, text=True, timeout=30)
-                if proc.returncode != 0:
-                    # Windows reports a native crash as an NTSTATUS (0xc0000005 access violation), POSIX as -signal
-                    code = f'{proc.returncode:#x}' if proc.returncode > 255 else str(proc.returncode)
-                    return {'count': 0, 'backend': None, 'probed': True, 'error': proc.stderr.strip() or f'exit code {code}'}
-                return {**json.loads(proc.stdout.strip() or '{}'), 'probed': True}
-            except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as e:
-                return {'count': 0, 'backend': None, 'error': str(e)}
 
         try:
             if device_info_str:
@@ -2710,10 +2946,13 @@ class DeviceInstaller():
                         # The verdict goes to .device_info.json ('usable'), so later starts skip the slow probing; a
                         # driver update rewrites the file from detection and the probe runs again. A tag already usable
                         # needs no probe either -- it is what the install below would pick anyway
+                        # never during a docker image build (IN_DOCKER, set by the Dockerfile): no GPU there, every row would
+                        # answer 0 devices, count as crashed, and each one's torch be downloaded for nothing
                         if (not device_info.get('usable')
                                 and tag.startswith(('cu', 'win-cu'))
                                 and not tag.endswith(('.1', '.2', '.3', '.4', '.5', '.6', '.7', '.8', '.9'))
-                                and device_info['name'] == devices['CUDA']['proc']):
+                                and device_info['name'] == devices['CUDA']['proc']
+                                and os.environ.get('IN_DOCKER') != '1'):
                             py_major, py_minor = device_info['pyvenv']
                             usable = self.usable_cuda_tag(tag, py_major, py_minor)
                             if usable is not None:
@@ -2746,6 +2985,9 @@ class DeviceInstaller():
                                 and device_info['os'] in ('manylinux_2_28', 'linux')
                                 and device_info['arch'] == archs['AARCH64']
                             )
+                            # {pkg: (stable requirement, stable index url)} for what comes from the PyTorch indexes below,
+                            # handed to dev_marker_record() once the pass succeeded
+                            stable_index = {}
                             #### torch/torchaudio installation
                             subprocess.check_call(self._uv_pip('install', '--no-cache', 'filelock', 'typing-extensions', 'jinja2', 'fsspec', 'networkx', 'sympy'))
                             if device_info['name'] == devices['JETSON']['proc']:
@@ -2792,8 +3034,13 @@ class DeviceInstaller():
                                 # 'win-cuXYZ' rows keep the Windows torch apart, their wheels are on the plain cuXYZ index
                                 torch_url_tag = tag_dir.replace('win-', '') if tag_dir.startswith('win-cu') else tag_dir
                                 torchaudio_url_tag = torch_url_tag
-                                subprocess.check_call(self._uv_pip('install', '--reinstall-package', 'torch', '--no-cache', f'torch=={torch_version_matrix}', '--index-url', f'{url}/{torch_url_tag}', '--extra-index-url', f'{url_nightly}/{torch_url_tag}', '--index-strategy', 'unsafe-best-match'))
+                                # a range, not '==': a release not published yet resolves to its newest nightly build
+                                # (release_range), and --reinstall-package moves an installed nightly one to the stable
+                                # build once it is out
+                                subprocess.check_call(self._uv_pip('install', '--reinstall-package', 'torch', '--no-cache', self.release_range('torch', torch_version_matrix), '--index-url', f'{url}/{torch_url_tag}', '--extra-index-url', f'{url_nightly}/{torch_url_tag}', '--index-strategy', 'unsafe-best-match'))
                                 subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', self.torchaudio_spec(torch_version_matrix), '--index-url', f'{url}/{torchaudio_url_tag}', '--extra-index-url', f'{url_nightly}/{torchaudio_url_tag}', '--index-strategy', 'unsafe-best-match'))
+                                stable_index['torch'] = (f'torch=={torch_version_matrix}', f'{url}/{torch_url_tag}')
+                                stable_index['torchaudio'] = (self.torchaudio_stable_spec(torch_version_matrix), f'{url}/{torchaudio_url_tag}')
                             if not self.check_numpy():
                                 return 1
                             #### torchcodec installation
@@ -2826,8 +3073,11 @@ class DeviceInstaller():
                                         # (torchaudio.load). ROCm and Vulkan, and CUDA on Windows (cu128 / cu129 carry no
                                         # Windows torchcodec, and since 0.12 one build serves every torch >= 2.11)
                                         cpu_torchcodec = device_info['name'] in [devices['ROCM']['proc'], devices['VULKAN']['proc']] or (device_info['name'] == devices['CUDA']['proc'] and self.system == systems['WINDOWS'])
-                                        torchcodec_index_url = f'{default_pytorch_url}/cpu' if cpu_torchcodec else f"{default_pytorch_url}/{tag_dir.replace('win-', '')}"
-                                        rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec=={torchcodec_version_matrix}', '--index-url', torchcodec_index_url))
+                                        torchcodec_url_tag = 'cpu' if cpu_torchcodec else tag_dir.replace('win-', '')
+                                        # the nightly tree too, like torch: a 'codec' release not published yet (0.18.0)
+                                        # comes from its nightly build until the stable one is out
+                                        rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', self.release_range('torchcodec', torchcodec_version_matrix), '--index-url', f'{default_pytorch_url}/{torchcodec_url_tag}', '--extra-index-url', f'{default_pytorch_nightly_url}/{torchcodec_url_tag}', '--index-strategy', 'unsafe-best-match'))
+                                        stable_index['torchcodec'] = (f'torchcodec=={torchcodec_version_matrix}', f'{default_pytorch_url}/{torchcodec_url_tag}')
                                 if rc == 0:
                                     try:
                                         subprocess.check_call([python_exec, '-c', 'from torchcodec.decoders import AudioDecoder'])
@@ -2839,6 +3089,8 @@ class DeviceInstaller():
                                     error = legends['error_torchcodec_missing']
                                     print(error)
                                     return 1
+                            # nightly builds this pass took, if any (none: an older marker goes away)
+                            self.dev_marker_record(tag, stable_index)
                         except subprocess.CalledProcessError as e:
                             error = legends['error_torch_install_failed'].format(e=e)
                             print(error)
@@ -2851,7 +3103,7 @@ class DeviceInstaller():
                     # an inherited one would make sitecustomize.py answer 0 for torch in the probe too: it asks torch
                     # itself, and the verdict below sets it again
                     os.environ.pop('E2A_XPU_UNUSABLE', None)
-                    gpu_info = _probe_gpus()
+                    gpu_info = self.probe_gpus()
                     device_info_dict['gpu_count'] = gpu_info['count']
                     device_info_dict['gpu_backend'] = gpu_info['backend']
                     if gpu_info.get('error'):
@@ -2864,11 +3116,14 @@ class DeviceInstaller():
                     # VoiceExtractor, the session device check) asks torch.xpu again. Third-party code still asks it
                     # on its own (transformers at import, CPU conversions included): with E2A_XPU_UNUSABLE set,
                     # components/sitecustomize.py makes torch.xpu report no device in this process, torch not imported
-                    # yet, and in every child that inherits it
-                    if device_info['name'] == devices['XPU']['proc'] and gpu_info['count'] == 0 and gpu_info.get('probed'):
+                    # yet, and in every child that inherits it.
+                    # Only a count torch gave keeps XPU on. A probe without an answer turns it off too: it used to leave
+                    # XPU on unguarded, and the next CPU conversion died in transformers' own probe (crash report
+                    # 63aa7dc78e8ff6f6). Worst case a working Intel GPU sits this run out, with a message saying why
+                    if device_info['name'] == devices['XPU']['proc'] and gpu_info['count'] == 0:
                         devices['XPU']['found'] = False
                         os.environ['E2A_XPU_UNUSABLE'] = '1'
-                        msg = legends['msg_xpu_unusable']
+                        msg = legends['msg_xpu_unusable'] if gpu_info.get('probed') else legends['msg_xpu_probe_no_answer']
                         print(msg)
                     if gpu_info['count'] > 0:
                         idx = ','.join(str(i) for i in range(gpu_info['count']))
@@ -2876,12 +3131,24 @@ class DeviceInstaller():
                             os.environ['CUDA_VISIBLE_DEVICES'] = idx
                         elif gpu_info['backend'] == 'rocm':
                             os.environ['HIP_VISIBLE_DEVICES'] = idx
-                            # detect_gpu.py resolved it in its own child process, count > 0 means torch found the GPU under it
+                            # detect_gpu.py resolved it in its own child process against the installed torch's GPU
+                            # targets, count > 0 means torch found the GPU under it. The only override this process gets
                             if gpu_info.get('hsa_override') and not os.environ.get('HSA_OVERRIDE_GFX_VERSION'):
                                 os.environ['HSA_OVERRIDE_GFX_VERSION'] = gpu_info['hsa_override']
                         elif gpu_info['backend'] == 'xpu':
                             os.environ['ONEAPI_DEVICE_SELECTOR'] = f'level_zero:{idx}'
                             os.environ['ZE_AFFINITY_MASK'] = idx
+                    # read back with a native crash of this process (bug_reporter.note()): which way the probe went and
+                    # what torch runs under (XPU guard, HSA override), which the report of the next launch cannot tell
+                    if device_info['name'] in [devices['CUDA']['proc'], devices['ROCM']['proc'], devices['XPU']['proc']]:
+                        from lib.classes.bug_reporter import bug_reporter
+                        answer = 'answered' if gpu_info.get('probed') else 'no answer'
+                        probe = f"{device_info['name']} count {gpu_info['count']} ({answer})"
+                        if device_info['name'] == devices['XPU']['proc']:
+                            probe += f", E2A_XPU_UNUSABLE={os.environ.get('E2A_XPU_UNUSABLE', '0')}"
+                        elif device_info['name'] == devices['ROCM']['proc']:
+                            probe += f", HSA_OVERRIDE_GFX_VERSION={os.environ.get('HSA_OVERRIDE_GFX_VERSION') or 'unset'}"
+                        bug_reporter.fact('gpu_probe', probe)
                     return 0
                 else:
                     error = 'install_device_packages() error: json.loads() could not decode device_info_str'

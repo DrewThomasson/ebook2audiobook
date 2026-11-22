@@ -107,6 +107,10 @@ torch_matrix = {
     "win-cu129":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "last": "2.8.0", "codec": "0.8.0"},
     "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"},
     "cu132":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"},
+    # 'last' / 'codec' may name a release not out yet: the install takes its nightly build (X.Y.Z.devYYYYMMDD) from
+    # the nightly tree meanwhile and switches to the stable one once it is published (DeviceInstaller.dev_switch_due)
+    "cu134":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.15.0", "codec": "0.18.0"},
+    "cu135":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.16.0", "codec": "0.18.0"},
     # ROCm
     "rocm5.7":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.3.1",  "codec": ""},
     "rocm6.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.4.1",  "codec": ""},
@@ -134,7 +138,7 @@ torch_matrix = {
 
 torchaudio_max = '2.11.0'
 transformers_caps = {'2.4': '5.1', '2.5': '5.8', '2.6': '5.19'}
-cuda_version_range = {"min": (11,8), "max": (13,2)}
+cuda_version_range = {"min": (11,8), "max": (13,5)}
 rocm_version_range = {"min": (5,7), "max": (7,2)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
