@@ -2,7 +2,7 @@ import os, sys, re, json, shutil, platform, tarfile, zipfile, urllib.request
 from multiprocessing.managers import DictProxy
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.tts_engines.common.hf_download import hf_download
-from lib.conf import systems, devices, tts_dir
+from lib.conf import systems, devices, tts_dir, get_cpu_flags
 from lib.conf_models import TTS_VOICE_CONVERSION, default_vc_model, default_engine_settings, audiocpp_packages, audiocpp_asr, audiocpp_repo
 from lib.lang import legends
 
@@ -170,18 +170,8 @@ class VoiceConversion(SubprocessPipe):
             candidates = ((['macos-arm64', 'macos-arm64-acpp'] if gpu_wanted else []) + ['macos-arm64-cpu', 'macos-arm64-cpu-acpp']) if machine == 'arm64' else ((['macos-x86_64-vulkan'] if gpu_wanted else []) + ['macos-x86_64', 'macos-x86_64-acpp'])
         else:
             candidates = []
-        # CPU features the packages may need, with /proc/cpuinfo names on every OS
-        cpu_flags = set()
-        if os.path.exists('/proc/cpuinfo'):
-            with open('/proc/cpuinfo', 'r', encoding='utf-8', errors='replace') as f:
-                features = re.search(r'^(?:Features|flags)\s*:\s*(.*)$', f.read(), re.M)
-            cpu_flags = set(features.group(1).split()) if features else set()
-        elif sys.platform == systems['WINDOWS']:
-            import ctypes
-            present = ctypes.windll.kernel32.IsProcessorFeaturePresent
-            # PF_SSE4_2_INSTRUCTIONS_AVAILABLE 38, PF_AVX2_INSTRUCTIONS_AVAILABLE 40 (AVX2 CPUs all have FMA, F16C, BMI2);
-            # arm64: PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE 43, the dot product, whose cores all have fp16 arithmetic too
-            cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set()) | ({'asimddp', 'asimdhp'} if present(43) else set())
+        # CPU features the packages may need, with /proc/cpuinfo names on every OS (x86_64 emulated on arm64: SSE4.2)
+        cpu_flags = get_cpu_flags()
         glibc = platform.libc_ver()
         glibc_version = tuple(int(x) for x in re.findall(r'\d+', glibc[1])[:2]) if glibc[0] == 'glibc' and glibc[1] else (0, 0)
         mac_version = tuple(int(x) for x in (platform.mac_ver()[0] or '0').split('.')[:2]) if sys.platform == systems['MACOS'] else (0, 0)

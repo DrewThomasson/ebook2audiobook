@@ -147,11 +147,12 @@ tts_engines_with_custom_model = (TTS_ENGINES['PIPER'], TTS_ENGINES['XTTS'], TTS_
 audiocpp_version = '0.9.5'
 audiocpp_release = f'https://github.com/0xShug0/audio.cpp/releases/download/v{audiocpp_version}/audio-v{audiocpp_version}'
 audiocpp_packages = {
-    # official release assets. Linux ones are built on Ubuntu 24.04: glibc 2.38 / GLIBCXX_3.4.32 / libgomp.so.1 floor
-    # (a host missing the last two fails to start them and falls through to the next package); portable = runtime CPU
-    # dispatch (libggml-cpu-<arch> picked at start, sse42 up to zen4 / sapphirerapids)
-    "linux-x64-vulkan-acpp": {"urls": [f"{audiocpp_release}-bin-ubuntu-x64-vulkan-portable.tar.gz"], "gpu": True, "backend": "vulkan", "glibc_min": "2.38"},
-    "linux-x64-cpu-acpp": {"urls": [f"{audiocpp_release}-bin-ubuntu-x64-cpu-portable.tar.gz"], "gpu": False, "glibc_min": "2.38"},
+    # official release assets. Linux ones of v0.9.5 are built on Ubuntu 26.04 (GCC 15.2): glibc 2.43 (log10f, sqrtf...)
+    # / GLIBCXX_3.4.32 / libgomp.so.1 floor, so never on the trixie Docker image (glibc 2.41), which failed with
+    # "GLIBC_2.43 not found" (a host missing the last two fails to start them and falls through to the next package);
+    # portable = runtime CPU dispatch (libggml-cpu-<arch> picked at start, sse42 up to zen4 / sapphirerapids)
+    "linux-x64-vulkan-acpp": {"urls": [f"{audiocpp_release}-bin-ubuntu-x64-vulkan-portable.tar.gz"], "gpu": True, "backend": "vulkan", "glibc_min": "2.43"},
+    "linux-x64-cpu-acpp": {"urls": [f"{audiocpp_release}-bin-ubuntu-x64-cpu-portable.tar.gz"], "gpu": False, "glibc_min": "2.43"},
     "windows-x64-cuda13-acpp": {"urls": [f"{audiocpp_release}-bin-windows-x64-cuda13.3.zip", f"{audiocpp_release}-cudart-windows-x64-cuda13.3.zip"], "gpu": True, "backend": "cuda"},
     "windows-x64-cuda12-acpp": {"urls": [f"{audiocpp_release}-bin-windows-x64-cuda12.4.zip", f"{audiocpp_release}-cudart-windows-x64-cuda12.4.zip"], "gpu": True, "backend": "cuda"},
     "windows-x64-vulkan-acpp": {"urls": [f"{audiocpp_release}-bin-windows-x64-vulkan-portable.zip"], "gpu": True, "backend": "vulkan"},

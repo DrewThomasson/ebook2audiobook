@@ -1,4 +1,4 @@
-import os, ssl, tempfile, sys, re, ipaddress
+import os, ssl, tempfile, sys, re, ipaddress, platform
 from pathlib import Path
 
 debug_mode = False
@@ -334,6 +334,30 @@ def no_proxy_patch()->None:
             hosts = [no_proxy_host(entry) for entry in os.environ[name].split(',')]
             os.environ[name] = ','.join(dict.fromkeys([host for host in hosts if host]))
 no_proxy_patch()
+
+# ---------------------------------------------------------------------
+# CPU features
+# ---------------------------------------------------------------------
+def get_cpu_flags()->set:
+    # CPU features the native packages may need (audiocpp, zonos2, zonos3), with /proc/cpuinfo names on every OS.
+    # An x86_64 process on an aarch64 kernel (Docker Desktop amd64 image on Apple Silicon, Rosetta or QEMU) reads the
+    # host's arm64 "Features" line and no x86 flag: every own x86 build was refused and only audio.cpp's official one was
+    # left, whose glibc floor the trixie image is below. Both emulators run SSE4.2, AVX not on every macOS: that floor
+    cpu_flags = set()
+    if os.path.exists('/proc/cpuinfo'):
+        with open('/proc/cpuinfo', 'r', encoding='utf-8', errors='replace') as f:
+            cpuinfo = f.read()
+        features = re.search(r'^(?:Features|flags)\s*:\s*(.*)$', cpuinfo, re.M)
+        cpu_flags = set(features.group(1).split()) if features else set()
+        if platform.machine().lower() in ('x86_64', 'amd64') and not re.search(r'^flags\s*:', cpuinfo, re.M):
+            cpu_flags = {'sse4_2'}
+    elif sys.platform == systems['WINDOWS']:
+        import ctypes
+        present = ctypes.windll.kernel32.IsProcessorFeaturePresent
+        # PF_SSE4_2_INSTRUCTIONS_AVAILABLE 38, PF_AVX2_INSTRUCTIONS_AVAILABLE 40 (AVX2 CPUs all have FMA, F16C, BMI2);
+        # arm64: PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE 43, the dot product, whose cores all have fp16 arithmetic too
+        cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set()) | ({'asimddp', 'asimdhp'} if present(43) else set())
+    return cpu_flags
 
 # ---------------------------------------------------------------------
 # TLS trust
