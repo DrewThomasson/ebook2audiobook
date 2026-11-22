@@ -33,6 +33,15 @@ def check_virtual_env(script_mode:str)->bool:
     if script_mode == FULL_DOCKER:
         return check_uv()
     if search_python_env == 'python_env':
+        # the launchers rebuild a python_env of any other python: one outside min/max was made by hand, with packages
+        # e2a never resolved for it (a python 3.13 one ran gradio 5.50 against the 6.32 pin and failed in build_interface)
+        if current_version < min_python_version or current_version > max_python_version:
+            error=f'''***********
+{legends['error_python_version'].format(version=f'{current_version[0]}.{current_version[1]}')}
+{install_info}
+***********'''
+            print(error)
+            return False
         pyvenv_cfg = os.path.join(sys.prefix, 'pyvenv.cfg')
         conda_meta = os.path.join(sys.prefix, 'conda-meta')
         if os.path.isdir(conda_meta):
