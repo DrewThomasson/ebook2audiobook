@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': '{engine} மாதிரி கோப்புகளைப் பெறுவதற்கு ({files}), முதல் பதிவிறக்கத்திற்கு சிறிது நேரம் ஆகும்...',
     'msg_vulkan_selected': 'வல்கன் GPU {gpu}: வல்கன் டார்ச் தேர்ந்தெடுக்கப்பட்டது',
     'msg_vulkan_docker_image': 'Vulkan Torch படம்: சாதனம் vulkan க்கு அமைக்கப்படும்போது கொள்கலனுக்கு அனுப்பப்படும் CPU மற்றும் GPU இல் இயங்குகிறது',
+    'msg_cuda_image_no_gpu': 'CUDA படம் ({tag}) ஆனால் கொள்கலனில் NVIDIA GPU எதுவும் தெரியவில்லை: CPU இல் இயங்குகிறது. GPU-வை கொள்கலனுக்கு அனுப்புங்கள் (docker run --gpus all) அல்லது, Hugging Face-இல், Space-க்கு ஒரு GPU வன்பொருளைத் தேர்ந்தெடுக்கவும்.',
+    'msg_cuda_image_driver_old': 'CUDA படம் ({tag}) க்கு CUDA {major}.x க்கான NVIDIA இயக்கி தேவை, இது CUDA {version} க்கானது: CPU இல் இயங்குகிறது. ஓட்டுநரை மேம்படுத்தவும் அல்லது பழைய CUDA குறிச்சொல்லைக் கொண்ட படத்தை பயன்படுத்தவும்.',
     'msg_gpu_choice_header': 'பல GPU-க்கள் இங்கே e2a-வை இயக்கலாம், ஆனால் ஒரு torch அவற்றில் ஒன்றிற்கு மட்டுமே சேவை செய்கிறது:',
     'msg_gpu_choice_prompt': 'எது? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': '0 முதல் {last} வரையிலான எண்ணை உள்ளிடவும்: ',

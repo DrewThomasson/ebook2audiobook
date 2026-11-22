@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'Njaluk file model {engine} ({files}), download pisanan njupuk sawetara wektu...',
     'msg_vulkan_selected': 'Vulkan GPU {gpu}: Vulkan Torch',
     'msg_vulkan_docker_image': 'Gambar Vulkan Torch: mlaku ing CPU, lan ing GPU sing dikirim menyang kontainer sawise piranti disetel menyang vulkan',
+    'msg_cuda_image_no_gpu': 'Gambar CUDA ({tag}) nanging ora ana GPU NVIDIA sing katon ing kontainer: mlaku ing CPU. Kirim GPU menyang kontainer (docker run --gpus all) utawa, ing Hugging Face, pilih hardware GPU kanggo Space.',
+    'msg_cuda_image_driver_old': 'Gambar CUDA ({tag}) mbutuhake driver NVIDIA kanggo CUDA {major}.x, iki kanggo CUDA {version}: mlaku ing CPU. Nganyari driver utawa nggunakake gambar kanthi tag CUDA sing luwih lawas.',
     'msg_gpu_choice_header': 'Sawetara GPU bisa mbukak e2a ing kene, nanging siji torch mung nglayani salah sijine:',
     'msg_gpu_choice_prompt': 'Sing endi? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'Ketik nomer saka 0 nganti {last}: ',

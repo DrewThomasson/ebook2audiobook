@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': '是让大家 {engine} 模型文件（{files}） ，第一次下载需要一段时间……',
     'msg_vulkan_selected': 'Vulkan GPU {gpu} ：已选择Vulkan Torch',
     'msg_vulkan_docker_image': 'Vulkan Torch 图像：在 CPU 上运行，并在设备设置为 Vulkan 后在传递给容器的 GPU 上运行',
+    'msg_cuda_image_no_gpu': 'CUDA 镜像 ({tag})，但容器中没有可见的 NVIDIA GPU：正在 CPU 上运行。将 GPU 传递给容器（docker run --gpus all），或者在 Hugging Face 上为 Space 选择 GPU 硬件。',
+    'msg_cuda_image_driver_old': 'CUDA镜像（{tag}）需要适用于CUDA {major}.x的NVIDIA驱动程序，此驱动程序适用于CUDA {version}：在CPU上运行。升级驱动程序或使用带有较旧CUDA标签的镜像。',
     'msg_gpu_choice_header': '这里有几块 GPU 可以运行 e2a，但一个 torch 仅为其中一块服务：',
     'msg_gpu_choice_prompt': '哪個 ？ [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': '输入一个从 0 到 {last} 的数字： ',

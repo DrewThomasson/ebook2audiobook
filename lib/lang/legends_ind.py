@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'Mendapatkan {engine} file model ({files}), unduhan pertama membutuhkan waktu…',
     'msg_vulkan_selected': 'GPU Vulkan {gpu}: Obor Vulkan dipilih',
     'msg_vulkan_docker_image': 'Gambar Vulkan Torch: berjalan di CPU, dan di GPU yang diteruskan ke kontainer setelah perangkat diatur ke vulkan',
+    'msg_cuda_image_no_gpu': 'Image CUDA ({tag}) tetapi tidak ada GPU NVIDIA yang terlihat di kontainer: berjalan di CPU. Alihkan GPU ke kontainer (docker run --gpus all) atau, di Hugging Face, pilih perangkat keras GPU untuk Space.',
+    'msg_cuda_image_driver_old': 'Image CUDA ({tag}) memerlukan driver NVIDIA untuk CUDA {major}.x, yang ini untuk CUDA {version}: berjalan di CPU. Tingkatkan driver atau gunakan image dengan tag CUDA yang lebih lama.',
     'msg_gpu_choice_header': 'Beberapa GPU dapat menjalankan e2a di sini, tetapi satu torch hanya melayani salah satunya:',
     'msg_gpu_choice_prompt': 'WHICH ONE? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'Ketik angka dari 0 hingga {last}: ',

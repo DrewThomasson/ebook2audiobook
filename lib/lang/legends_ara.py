@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'الحصول على ملفات طراز {engine} ({files})، يستغرق التنزيل الأول بعض الوقت...',
     'msg_vulkan_selected': 'Vulkan GPU {gpu}: تم اختيار مشعل Vulkan',
     'msg_vulkan_docker_image': 'صورة Vulkan Torch: تعمل على وحدة المعالجة المركزية (CPU)، وعلى وحدة معالجة الرسومات (GPU) التي يتم تمريرها إلى الحاوية بمجرد ضبط الجهاز على Vulkan',
+    'msg_cuda_image_no_gpu': 'صورة CUDA ({tag}) ولكن لا توجد وحدة معالجة رسومات NVIDIA مرئية في الحاوية: يتم التشغيل على وحدة المعالجة المركزية. مرّر وحدة معالجة الرسومات (GPU) إلى الحاوية (docker run --gpus all) أو، على Hugging Face، اختر أجهزة وحدة معالجة الرسومات (GPU) للمساحة.',
+    'msg_cuda_image_driver_old': 'تحتاج صورة CUDA ({tag}) إلى برنامج تشغيل NVIDIA لـ CUDA {major}.x، وهذا البرنامج مخصص لـ CUDA {version}: يعمل على وحدة المعالجة المركزية (CPU). قم بترقية برنامج التشغيل أو استخدم صورة ذات علامة CUDA أقدم.',
     'msg_gpu_choice_header': 'يمكن للعديد من وحدات معالجة الرسومات تشغيل e2a هنا، ولكن وحدة torch واحدة تخدم واحدة فقط منها:',
     'msg_gpu_choice_prompt': 'ما هي؟ [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'اكتب رقمًا من 0 إلى {last}: ',

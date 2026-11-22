@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'Getting the {engine} model files ({files}), the first download takes a while…',
     'msg_vulkan_selected': 'Vulkan GPU {gpu}: Vulkan Torch selected',
     'msg_vulkan_docker_image': 'Vulkan Torch image: runs on the CPU, and on a GPU passed to the container once the device is set to vulkan',
+    'msg_cuda_image_no_gpu': 'CUDA image ({tag}) but no NVIDIA GPU visible in the container: running on CPU. Pass the GPU to the container (docker run --gpus all) or, on Hugging Face, choose a GPU hardware for the Space.',
+    'msg_cuda_image_driver_old': 'CUDA image ({tag}) needs an NVIDIA driver for CUDA {major}.x, this one is for CUDA {version}: running on CPU. Upgrade the driver or use an image with an older CUDA tag.',
     'msg_gpu_choice_header': 'Several GPUs can run e2a here, but one torch serves only one of them:',
     'msg_gpu_choice_prompt': 'Which one? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'Type a number from 0 to {last}: ',

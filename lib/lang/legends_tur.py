@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': '{engine} model dosyasını ({files}) almak, ilk indirme biraz zaman alır…',
     'msg_vulkan_selected': 'Vulkan GPU {gpu}: Vulkan Meşalesi seçildi',
     'msg_vulkan_docker_image': 'Vulkan Torch görüntüsü: Cihaz vulkan olarak ayarlandığında konteynere aktarılan bir GPU\'da ve CPU\'da çalışır.',
+    'msg_cuda_image_no_gpu': 'CUDA görüntüsü ({tag}) var ancak konteynerde NVIDIA GPU görünmüyor: CPU üzerinde çalışıyor. GPU\'yu konteynere aktarın (docker run --gpus all) veya Hugging Face\'te Alan için bir GPU donanımı seçin.',
+    'msg_cuda_image_driver_old': 'CUDA görüntüsü ({tag}) için CUDA {major}.x\'e yönelik bir NVIDIA sürücüsü gerekir; bu sürücü CUDA {version} içindir: CPU\'da çalışıyor. Sürücüyü yükseltin veya daha eski bir CUDA etiketine sahip bir görüntü kullanın.',
     'msg_gpu_choice_header': 'Burada birkaç GPU, e2a\'yı çalıştırabilir, ancak bir torch bunlardan yalnızca birine hizmet eder:',
     'msg_gpu_choice_prompt': 'Hangisi? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': '0 ile {last} arasında bir sayı girin: ',

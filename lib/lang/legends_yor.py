@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'Gbígba àwọn fáìlì àwòṣe {engine} ({files}), ìmúṣẹ àkọ́kọ́ gba ìgbà díẹ̀...',
     'msg_vulkan_selected': 'Vulkan GPU {gpu}: Vulkan Torch yàn',
     'msg_vulkan_docker_image': 'Àwòrán Vulkan Torch: ń ṣiṣẹ́ lórí CPU, àti lórí GPU tí a fi ránṣẹ́ sí àpótí náà ní kété tí a bá ti ṣètò ẹ̀rọ náà sí vulkan',
+    'msg_cuda_image_no_gpu': 'Àwòrán CUDA ({tag}) ṣùgbọ́n kò sí NVIDIA GPU tí ó hàn nínú apoti náà: ó ń ṣiṣẹ́ lórí CPU. Fi GPU lọ sí kọǹténà náà (docker run --gpus gbogbo) tàbí, lórí Hugging Face, yan ohun èlò GPU fún Space náà.',
+    'msg_cuda_image_driver_old': 'Àwòrán CUDA ({tag}) nílò awakọ NVIDIA fún CUDA {major}.x, èyí jẹ́ fún CUDA {version}: ṣiṣẹ́ lórí CPU. Ṣe ìgbéléwọ̀n awakọ̀ náà tàbí lo àwòrán tí ó ní àmì CUDA àtijọ́.',
     'msg_gpu_choice_header': 'Ọ̀pọ̀lọpọ̀ GPU lè ṣiṣẹ́ e2a níbí, ṣùgbọ́n torch kan ṣiṣẹ́ fún ọ̀kan nínú wọn nìkan:',
     'msg_gpu_choice_prompt': 'Èwo nínú wọn? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'Tẹ nọ́ḿbà kan láti 0 sí {last}: ',

@@ -608,6 +608,8 @@ legends = {
     'msg_zonos2_models': 'Obteniendo los {engine} archivos de modelo ({files}), la primera descarga lleva un tiempo...',
     'msg_vulkan_selected': 'GPU Vulkan {gpu}: Antorcha Vulkan seleccionada',
     'msg_vulkan_docker_image': 'Imagen de Vulkan Torch: se ejecuta en la CPU y en una GPU pasada al contenedor una vez que el dispositivo se configura en Vulkan.',
+    'msg_cuda_image_no_gpu': 'Imagen CUDA ({tag}), pero no hay ninguna GPU NVIDIA visible en el contenedor: se está ejecutando en la CPU. Pase la GPU al contenedor (docker run --gpus all) o, en Hugging Face, elija un hardware GPU para el espacio.',
+    'msg_cuda_image_driver_old': 'La imagen CUDA ({tag}) necesita un controlador NVIDIA para CUDA {major}.x; este es para CUDA {version}: se ejecuta en la CPU. Actualice el controlador o utilice una imagen con una etiqueta CUDA más antigua.',
     'msg_gpu_choice_header': 'Aquí pueden ejecutarse varias GPU con e2a, pero una antorcha solo sirve para una de ellas:',
     'msg_gpu_choice_prompt': '¿Cuál? [0-{last}, Enter = 0, {seconds} s]: ',
     'msg_gpu_choice_invalid': 'Escriba un número del 0 al {last}: ',
