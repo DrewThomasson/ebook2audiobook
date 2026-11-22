@@ -1,4 +1,4 @@
-import os, ssl, tempfile, sys, re
+import os, ssl, tempfile, sys, re, ipaddress, platform
 from pathlib import Path
 
 debug_mode = False
@@ -107,6 +107,10 @@ torch_matrix = {
     "win-cu129":{"os": [systems['WINDOWS']], "arch": [archs['AMD64']], "last": "2.8.0", "codec": "0.8.0"},
     "cu130":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"},
     "cu132":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.14.1", "codec": "0.17.0"},
+    # 'last' / 'codec' may name a release not out yet: the install takes its nightly build (X.Y.Z.devYYYYMMDD) from
+    # the nightly tree meanwhile and switches to the stable one once it is published (DeviceInstaller.dev_switch_due)
+    "cu134":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.15.0", "codec": "0.18.0"},
+    "cu135":     {"os": [systems['LINUX'],systems['WINDOWS']], "arch": [archs['X86_64'], archs['AMD64'], archs['AARCH64']], "last": "2.16.0", "codec": "0.18.0"},
     # ROCm
     "rocm5.7":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.3.1",  "codec": ""},
     "rocm6.0":   {"os": [systems['LINUX']], "arch": [archs['X86_64']], "last": "2.4.1",  "codec": ""},
@@ -134,7 +138,7 @@ torch_matrix = {
 
 torchaudio_max = '2.11.0'
 transformers_caps = {'2.4': '5.1', '2.5': '5.8', '2.6': '5.19'}
-cuda_version_range = {"min": (11,8), "max": (13,2)}
+cuda_version_range = {"min": (11,8), "max": (13,5)}
 rocm_version_range = {"min": (5,7), "max": (7,2)}
 mps_version_range = {"min": (0,0), "max": (0,0)}
 xpu_version_range = {"min": (0,0), "max": (0,0)}
@@ -299,6 +303,61 @@ def std_streams_utf8()->None:
         except (ValueError, OSError):
             pass
 std_streams_utf8()
+
+# ---------------------------------------------------------------------
+# Proxy bypass
+# ---------------------------------------------------------------------
+def no_proxy_host(entry:str)->str:
+    # one no_proxy entry in the form httpx takes, '' to leave it out. httpx turns every entry into a URLPattern on each
+    # Client(): a bracketed ipv6 ([::1], [::1]:8080) or an ipv6 network (fe80::/10, [fe80::]/10) raises InvalidURL
+    # there, and gradio builds one at import, so e2a died before its first line ("Invalid port: ':1]'").
+    # [::1] -> ::1, the form httpx and requests both match; its port is dropped, a bare ipv6 cannot carry one.
+    # An ipv6 network has no form httpx parses (requests skips it too): left out
+    host = entry.strip()
+    if host.startswith('['):
+        address, bracket, rest = host[1:].partition(']')
+        if not bracket or rest.startswith('/'):
+            return ''
+        host = address
+    if '/' in host and '://' not in host:
+        try:
+            if ipaddress.ip_network(host, strict=False).version == 6:
+                return ''
+        except ValueError:
+            pass
+    return host
+
+def no_proxy_patch()->None:
+    # a no_proxy set before e2a starts (user env, VPN or proxy client): before gradio's import below. Children inherit it
+    for name in ['no_proxy', 'NO_PROXY']:
+        if os.environ.get(name):
+            hosts = [no_proxy_host(entry) for entry in os.environ[name].split(',')]
+            os.environ[name] = ','.join(dict.fromkeys([host for host in hosts if host]))
+no_proxy_patch()
+
+# ---------------------------------------------------------------------
+# CPU features
+# ---------------------------------------------------------------------
+def get_cpu_flags()->set:
+    # CPU features the native packages may need (audiocpp, zonos2, zonos3), with /proc/cpuinfo names on every OS.
+    # An x86_64 process on an aarch64 kernel (Docker Desktop amd64 image on Apple Silicon, Rosetta or QEMU) reads the
+    # host's arm64 "Features" line and no x86 flag: every own x86 build was refused and only audio.cpp's official one was
+    # left, whose glibc floor the trixie image is below. Both emulators run SSE4.2, AVX not on every macOS: that floor
+    cpu_flags = set()
+    if os.path.exists('/proc/cpuinfo'):
+        with open('/proc/cpuinfo', 'r', encoding='utf-8', errors='replace') as f:
+            cpuinfo = f.read()
+        features = re.search(r'^(?:Features|flags)\s*:\s*(.*)$', cpuinfo, re.M)
+        cpu_flags = set(features.group(1).split()) if features else set()
+        if platform.machine().lower() in ('x86_64', 'amd64') and not re.search(r'^flags\s*:', cpuinfo, re.M):
+            cpu_flags = {'sse4_2'}
+    elif sys.platform == systems['WINDOWS']:
+        import ctypes
+        present = ctypes.windll.kernel32.IsProcessorFeaturePresent
+        # PF_SSE4_2_INSTRUCTIONS_AVAILABLE 38, PF_AVX2_INSTRUCTIONS_AVAILABLE 40 (AVX2 CPUs all have FMA, F16C, BMI2);
+        # arm64: PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE 43, the dot product, whose cores all have fp16 arithmetic too
+        cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set()) | ({'asimddp', 'asimdhp'} if present(43) else set())
+    return cpu_flags
 
 # ---------------------------------------------------------------------
 # TLS trust

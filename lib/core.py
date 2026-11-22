@@ -53,6 +53,7 @@ from lib.classes.tts_engines.common.audio import get_audiolist_duration, get_aud
 from lib.classes.tts_engines.common.utils import build_vtt_file, format_timestamp, gpu_fault, gpu_fault_alert
 
 from lib import *
+from lib.conf import no_proxy_host
 from lib.lang import legends, legends_langs, legends_iso1, ui_language, system_language
 
 #import logging
@@ -1661,6 +1662,18 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                 return []
             title = get_ebook_title(epubBook, all_docs)
             note_targets = get_note_targets(all_docs)
+            # words the whole book writes in lowercase or capitalized: an all caps word (SECRET) is not spelled like an acronym (CIA),
+            # and the roman numbers its titles count with (I, II, III): a title word made of roman letters (DIX, MIX) is not a number
+            from html import unescape as html_unescape
+            known_words = set()
+            doc_bodies = []
+            for doc in all_docs:
+                doc_body = doc.get_body_content()
+                doc_body = doc_body.decode('utf-8', errors='replace') if isinstance(doc_body, bytes) else (doc_body or '')
+                doc_body = re.sub(r'<(script|style)\b.*?</\1\s*>', ' ', doc_body, flags=re.DOTALL | re.IGNORECASE)
+                doc_bodies.append(doc_body)
+                known_words |= get_known_words(html_unescape(re.sub(r'<[^>]+>', ' ', doc_body)))
+            title_romans = get_title_romans(doc_bodies)
             blocks = []
             stanza_nlp = False
             if session['language'] in year_to_decades_languages:
@@ -1686,7 +1699,11 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                         except Exception:
                             pass
                         stanza_processors = 'tokenize,mwt,ner' if stanza_has_mwt else 'tokenize,ner'
+                        # the first model of a conversion on the GPU: a native crash here reported 'where: -' (crash
+                        # report ec3a0208c4c44215), the note says what ran and carries the GPU probe's verdict
+                        bug_reporter.note(f"loading {stanza_model} on {session['device'] if use_gpu else devices['CPU']['proc']}", ram=True)
                         stanza_nlp = stanza.Pipeline(stanza_lang, processors=stanza_processors, use_gpu=use_gpu, download_method=DownloadMethod.REUSE_RESOURCES, dir=os.getenv('STANZA_RESOURCES_DIR'))
+                        bug_reporter.note(f'{stanza_model} loaded')
                         if stanza_nlp:
                             session['stanza_cache'] = stanza_model
                             loaded_tts[stanza_model] = stanza_nlp
@@ -1707,7 +1724,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
                     zip_names = set(zf.namelist())
                     zip_basenames = {os.path.basename(n): n for n in zip_names}
                     for doc_idx, doc in enumerate(all_docs):
-                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames, note_targets.get(posixpath.normpath(doc.get_name())))
+                        text = filter_blocks(session_id, doc_idx, doc, stanza_nlp, is_num2words_compat, non_text_filter, zf, zip_names, zip_basenames, note_targets.get(posixpath.normpath(doc.get_name())), known_words, title_romans)
                         if text is None:
                             error = legends['error_doc_extract'].format(doc=doc_idx + 1)
                             show_alert(session_id, {"type": "warning", "msg": error})
@@ -1739,7 +1756,7 @@ def get_blocks(session_id:str, epubBook:EpubBook)->list:
         DependencyError(error)
         return []
 
-def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None, note_targets:dict|None=None)->str|None:
+def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is_num2words_compat:bool, non_text_filter:NonTextFilter, zf:zipfile.ZipFile=None, zip_names:set=None, zip_basenames:dict=None, note_targets:dict|None=None, known_words:set|None=None, title_romans:set|None=None)->str|None:
 
     def _tuple_row(node:Any, last_text_char:str|None=None, in_heading:bool=False)->Generator[tuple[str, Any], None, None]|None:
         try:
@@ -1917,7 +1934,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             prev_typ = None
             for typ, payload in tuples_list:
                 if typ == 'heading':
-                    text_list.append(payload.strip())
+                    text_list.append(roman2number(payload.strip(), lang, lang_iso1, title_romans=title_romans))
                 elif typ in ('break', 'pause'):
                     # Original logic: add token if different from previous type
                     if prev_typ != typ:
@@ -1951,7 +1968,8 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                 else:
                     text = payload.strip()
                     if text:
-                        text_list.append(text)
+                        # a paragraph used as a title (CHAPTER IV) converts its roman number too
+                        text_list.append(roman2number(text, lang, lang_iso1, at_start=True, title_romans=title_romans))
                 prev_typ = typ
             msg = legends['msg_flattening_raw']
             print(msg)
@@ -2051,9 +2069,6 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
                             lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
                             text
                         )
-            msg = legends['msg_convert_romans']
-            print(msg)
-            text = roman2number(text)
             msg = legends['msg_convert_time']
             print(msg)
             text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
@@ -2062,7 +2077,7 @@ def filter_blocks(session_id:str, idx:int, doc:EpubHtml, stanza_nlp:Pipeline, is
             text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
             msg = legends['msg_normalize_text']
             print(msg)
-            text = normalize_text(text, lang, lang_iso1, tts_engine)
+            text = normalize_text(text, lang, lang_iso1, tts_engine, known_words)
             text = restore_sml(text, sml_blocks)
             return text
         return None
@@ -2793,83 +2808,311 @@ def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_c
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
-def roman2number(text:str)->str:
+def is_roman_numeral(token:str)->bool:
+    # a token read as a roman number even alone: I V X numerals (II, XIV, VIII) or long ones (XLII, MCMXC),
+    # a short one with L C D M is an acronym or a word (DC, CD, MD, CV, MIX, DI)
+    return bool(re.fullmatch(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})', token)) and (len(token) > 3 or not re.search(r'[LCDM]', token))
 
-    def _is_valid_roman(s:str)->bool:
-        return bool(valid_roman.fullmatch(s))
+def roman_to_int(roman:str)->int|None:
+    # uppercase roman number to int, None when it is not a valid one (IIII, VX, LCD)
+    if not re.fullmatch(r'(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})', roman):
+        return None
+    i = 0
+    result = 0
+    while i < len(roman):
+        for symbol, value in roman_numbers_tuples:
+            if roman.startswith(symbol, i):
+                result += value
+                i += len(symbol)
+                break
+    return result
 
-    def _to_int(s:str)->str:
-        s = s.upper()
+@functools.lru_cache(maxsize=None)
+def get_title_roman_patterns(lang:str|None=None)->dict:
+    # a title's roman number in caps, next to a chapter word of the book's language (all languages when it has none)
+    # or opening the title. a CJK chapter word needs no space (第Ⅳ章, 제IV장), all caps may drop accents (CAPITULO, ΚΕΦΑΛΑΙΟ, KISIM).
+    # built once per language: roman2number() runs on every heading and paragraph
+
+    def _alt(words:list[str])->str:
+        return '|'.join(map(re.escape, sorted(words, key=len, reverse=True)))
+
+    words = chapter_word_mapping.get(lang) or [w for ws in chapter_word_mapping.values() for w in ws]
+    words = set(words) | {word_key(w).replace('ı', 'i') for w in words}
+    glued = [w for w in words if re.search(r'[\p{Han}\p{Hiragana}\p{Katakana}\p{Hangul}]$', w)]
+    spaced = [w for w in words if w not in glued]
+    numeral = r'(?P<num>[IVXLCDM' + re.escape(''.join(roman_lookalikes)) + r']+)'
+    # no word behind the numeral: the end of the title or a punctuation, not a contraction (Part I'm Back)
+    no_word = r'(?=\s*(?:$|[^\w\s\'’]))'
+    word_first = r'(?<![\p{L}\p{M}])(?i:' + _alt(spaced) + r')\s+)' + numeral + no_word
+    # the dot and space after the numeral are taken (an ordinal replaces them), the chapter word is kept
+    behind = []
+    if spaced:
+        behind.append(r'(?P<sep>\.\s*|\s+)(?=(?P<word>(?i:' + _alt(spaced) + r'))(?![\p{L}\p{M}]))')
+    if glued:
+        behind.append(r'(?P<gsep>\s*)(?=' + _alt(glued) + r')')
+    word_after = numeral + r'(?:' + '|'.join(behind) + r')'
+    edge = r'\p{Latin}\p{Cyrillic}\p{Greek}\p{Armenian}\p{Nd}\p{M}'
+    title_start = r'(?P<pre>^[\s\-–—~*]*)'
+    # a paragraph used as a title may open with a word setting the ordinal's ending (Das IV. Kapitel)
+    before = list((language_ordinal_before.get(lang) or {}).get('before', {}))
+    title_start_before = r'(?P<pre>^[\s\-–—~*]*(?:(?i:' + _alt(before) + r')\s+)?)' if before else title_start
+    return dict(
+        # Chapter IV, Глава XII, Part II: The Return, anywhere in a heading
+        word_first=re.compile(r'(?P<pre>' + word_first),
+        # CHAPTER IV. THE RETURN opening a paragraph used as a title
+        word_first_start=re.compile(r'(?P<pre>^\s*' + word_first),
+        # IV. fejezet, IV luku, XII. Bölüm, 第Ⅳ章, 제IV장: the chapter word behind, anywhere in a heading
+        word_after=re.compile(r'(?P<pre>)(?<![' + edge + r'])' + word_after),
+        word_after_start=re.compile(title_start_before + word_after),
+        # IV, XII. The Return, IV: Exile opening a heading: a numbering mark may follow, not a comma (I, Robot)
+        bare_first=re.compile(title_start + numeral + r'(?=\s*(?:$|[.:\-–—]))'),
+        # IV. standing alone in a paragraph used as a title, never prose (I, for one, agree)
+        bare_alone=re.compile(title_start + numeral + r'(?=[\s.:\-–—~*]*$)'),
+        # any numeral of a CJK text, not glued to latin letters or digits (ロッキーIV, Ⅳ 旅立ち)
+        cjk_any=re.compile(r'(?P<pre>)(?<![' + edge + r'])' + numeral + r'(?![' + edge + r'])'),
+    )
+
+def get_title_romans(doc_bodies:list[str])->set:
+    # roman numbers a book counts its titles with (I, II, III...): a title opening with a bare roman number is a number
+    # only when the book has the one before or after it too, so a title word made of roman letters (DIX, MIX, DC)
+    # or a lone I (a poem titled I) stays written. the same in every language: it only reads the book's own titles
+    from html import unescape as html_unescape
+    patterns = get_title_roman_patterns()
+    lookalikes = str.maketrans(roman_lookalikes)
+    found = set()
+    for body in doc_bodies:
+        headings = re.findall(r'<h[1-4]\b[^>]*>(.*?)</h[1-4]\s*>', body, flags=re.DOTALL | re.IGNORECASE)
+        pieces = [(patterns['bare_first'], piece) for heading in headings for piece in re.split(r'<[^>]+>', heading)]
+        pieces += [(patterns['bare_alone'], piece) for piece in re.split(r'<[^>]+>', body)]
+        for pattern, piece in pieces:
+            m = pattern.match(html_unescape(piece).strip())
+            if m:
+                roman = m.group('num').translate(lookalikes)
+                if roman_to_int(roman) is not None:
+                    found.add(roman)
+    values = {roman_to_int(roman) for roman in found}
+    return {roman for roman in found if roman_to_int(roman) - 1 in values or roman_to_int(roman) + 1 in values}
+
+def roman2number(title:str, lang:str|None=None, lang_iso1:str|None=None, at_start:bool=False, title_romans:set|None=None)->str:
+    # a title's roman number in caps is converted when a chapter word of the book's language is next to it: in front with
+    # no word behind (Chapter IV, Part II: The Return) or behind (IV. fejezet, IV luku, 第Ⅳ章), or when it opens the title
+    # and the book counts its titles with it (IV, XII. The Return). Louis XIV, Chapter IV The Return, I, Robot, DIX stay written.
+    # before a chapter word, language_ordinal_before reads it as an ordinal: IV. Kapitel -> viertes Kapitel.
+    # in a CJK text any latin capitals making a roman number are one, titles or not (ロッキーIV).
+    # at_start: a paragraph used as a title must open with it (CHAPTER IV. THE RETURN) or be the numeral alone (IV.)
+
+    def _inflect(word:str, endings:list)->str:
+        for old, new in endings:
+            if word.endswith(old):
+                return word[:-len(old)] + new
+        return word
+
+    def _repl(m:re.Match)->str:
+        value = roman_to_int(m.group('num').translate(lookalikes))
+        if value is None:
+            return m.group(0)
+        return f"{m.group('pre')}{value}"
+
+    def _repl_bare(m:re.Match)->str:
+        if m.group('num').translate(lookalikes) not in (title_romans or ()):
+            return m.group(0)
+        return _repl(m)
+
+    def _repl_after(m:re.Match)->str:
+        value = roman_to_int(m.group('num').translate(lookalikes))
+        if value is None:
+            return m.group(0)
+        # a language may have only spaced (Kapitel) or only CJK (章) chapter words, so some groups may not exist
+        groups = m.groupdict()
+        word = groups.get('word')
+        if word and ordinal_rules is not None and lang_iso1:
+            try:
+                ordinal = num2words(value, lang=lang_iso1, to='ordinal')
+                # a word right before the numeral sets the ending (das vierte, im vierten), else the chapter word's gender (viertes)
+                prev = re.search(r'([\p{L}\p{M}]+)\s+$', m.string[:m.start('num')])
+                endings = ordinal_rules.get('before', {}).get(prev.group(1).casefold()) if prev else None
+                if endings is None:
+                    endings = ordinal_rules.get('endings', {}).get(genders.get(word_key(word)), [])
+                # the ordinal takes the numeral and its dot: IV. Kapitel -> viertes Kapitel
+                return f"{m.group('pre')}{' '.join(_inflect(w, endings) for w in ordinal.split())} "
+            except Exception:
+                pass
+        return f"{m.group('pre')}{value}{groups.get('sep') or groups.get('gsep') or ''}"
+
+    def _repl_cjk(m:re.Match)->str:
+        # unicode numerals always (Ⅳ), latin letters from 2 letters read as a number alone (IV, XII), not CD, CM, DC, X線, Vサイン
+        num = m.group('num')
+        if not re.search(r'[\u2160-\u216F]', num) and (len(num) < 2 or not is_roman_numeral(num.translate(lookalikes))):
+            return m.group(0)
+        return _repl(m)
+
+    lookalikes = str.maketrans(roman_lookalikes)
+    patterns = get_title_roman_patterns(lang)
+    ordinal_rules = language_ordinal_before.get(lang)
+    genders = {word_key(w): g for w, g in (ordinal_rules or {}).get('genders', {}).items()}
+    if at_start:
+        title = patterns['word_first_start'].sub(_repl, title, count=1)
+        title = patterns['word_after_start'].sub(_repl_after, title, count=1)
+        title = patterns['bare_alone'].sub(_repl_bare, title)
+    else:
+        title = patterns['word_first'].sub(_repl, title)
+        title = patterns['word_after'].sub(_repl_after, title)
+        title = patterns['bare_first'].sub(_repl_bare, title)
+    if language_mapping.get(lang, {}).get('script') in ('chinese', 'japanese', 'hangul'):
+        title = patterns['cjk_any'].sub(_repl_cjk, title)
+    return title
+
+def word_key(word:str)->str:
+    # case and accent free form of a word: all caps often drop the accents (ETE/été, ΣΟΦΙΑ/Σοφία)
+    return ''.join(c for c in unicodedata.normalize('NFD', word.casefold()) if not unicodedata.combining(c))
+
+def get_known_words(text:str)->set:
+    # words the text writes with a lowercase letter (secret, Tower, McGuire): the same word in all caps is a real word, not an acronym
+    return {word_key(w) for w in set(re.findall(r'[\p{L}\p{M}]+', text)) if not w.isupper()}
+
+def acronym2letters(text:str, lang:str, known_words:set|None=None)->str:
+    # spell all caps acronyms letter by letter (CIA -> C I A) so the TTS does not read them as a word,
+    # all caps words (SECRET, AGENCY, TOWER) stay untouched. an all caps token is an acronym when it is short
+    # (CIA, OSS, US, IT) outside a caps passage, or when the text never writes it in lowercase and it is
+    # unpronounceable (HTML, USSR). only cased scripts have acronyms to detect: latin, cyrillic, greek, armenian.
+
+    def _units(cluster:str)->list[str]:
+        # consonant cluster to sounds: digraphs (sch, ch, th, sz, cz...) and doubled letters are one sound
+        units = []
         i = 0
-        result = 0
-        while i < len(s):
-            for roman, value in roman_numbers_tuples:
-                if s[i:i + len(roman)] == roman:
-                    result += value
-                    i += len(roman)
+        while i < len(cluster):
+            for size in (3, 2):
+                if cluster[i:i + size] in digraph_sonority:
+                    units.append(cluster[i:i + size])
+                    i += size
                     break
             else:
-                return s
-        return str(result)
+                j = i
+                while j < len(cluster) and cluster[j] == cluster[i]:
+                    j += 1
+                units.append(cluster[i:j])
+                i = j
+        return units
 
-    def _repl_heading(m:re.Match)->str:
-        roman = m.group(1)
-        if not _is_valid_roman(roman):
+    def _base(unit:str)->str:
+        return unit if unit in digraph_sonority else unit[0]
+
+    def _sonority(unit:str)->int:
+        base = _base(unit)
+        return digraph_sonority.get(base, letter_sonority.get(base, 2))
+
+    def _onset_pair(a:str, b:str)->bool:
+        # sonority rises toward the vowel (bl, tr, kn, ps), or s + stop/nasal (st, sp, sm), or prenasalized (mb, nd)
+        a, b = _base(a), _base(b)
+        sa, sb = _sonority(a), _sonority(b)
+        return sb > sa or (a in ('s', 'z', 'sz') and (sb in (1, 3) or b in ('f', 'v'))) or (a in ('m', 'n') and b in ('b', 'd', 'g', 'j', 'z', 'dz'))
+
+    def _onset_ok(units:list[str])->bool:
+        if len(units) < 2:
+            return True
+        if len(units) == 2:
+            return _onset_pair(units[0], units[1])
+        if len(units) == 3 and _onset_pair(units[1], units[2]):
+            return (units[0] in ('s', 'z', 'm', 'n') and _onset_pair(units[0], units[1])) or _sonority(units[0]) < _sonority(units[1])
+        return False
+
+    def _coda_ok(units:list[str])->bool:
+        # sonority falls after the vowel (nd, rst, lk), a fricative may close it (ts, pf, ks), stop + t (pt, ct, dt), fricative + nasal (ism, rhythm).
+        # a doubled consonant only right after the vowel (oss, herrn, not urss)
+        for i in range(1, len(units)):
+            a, b = units[i - 1], units[i]
+            if len(b) > 1 and b not in digraph_sonority:
+                return False
+            sa, sb = _sonority(a), _sonority(b)
+            if not (sb < sa or sb == 2 or (sb == sa and sa in (3, 4)) or (sa == 1 and b == 't') or (sa == 2 and sb == 3)):
+                return False
+        return True
+
+    def _is_pronounceable(token:str)->bool:
+        word = re.sub(r'[^a-z]', '', unidecode(token).lower())
+        # McGUIRE, McLEAN: the prefix is said apart
+        if len(word) > 4 and word.startswith('mc'):
+            word = word[2:]
+        # h after a vowel lengthens it (JOHN, STAHL, AHMED)
+        word = re.sub(r'(?<=[aeiouy])h(?=[^aeiouy])', '', word)
+        if not word:
+            return True
+        shape = ''.join('v' if c in 'aeiou' or (c == 'y' and (i + 1 == len(word) or word[i + 1] not in 'aeiou')) else 'c' for i, c in enumerate(word))
+        if 'v' not in shape:
+            return False
+        first, last = shape.index('v'), shape.rindex('v')
+        medials = [_units(word[first + m.start():first + m.end()]) for m in re.finditer(r'c+', shape[first:last + 1])]
+        return (
+            _onset_ok(_units(word[:first]))
+            and _coda_ok(_units(word[last + 1:]))
+            and all(any(_coda_ok(units[:k]) and _onset_ok(units[k:]) for k in range(len(units) + 1)) for units in medials)
+        )
+
+    def _is_caps_neighbour(gap:str, word:str)->bool:
+        # an all caps word in the same phrase (TOP SECRET CIA FILES, ODD CRAFT), or glued by a hyphen (WI-FI, CD-ROM)
+        if gap in ('-', '\u2010', '\u2011'):
+            return word.isupper()
+        if any(ch in punctuation_split_hard_set or ch in '\r\n' or 0xE000 <= ord(ch) <= 0xF8FF for ch in gap):
+            return False
+        return len(word) > 1 and word.isupper() and (word_key(word) in known_words or (len(word) > 3 and _is_pronounceable(word)))
+
+    def _in_caps_context(start:int)->bool:
+        idx = word_index[start]
+        if idx > 0:
+            p_start, p_end, p_word = word_spans[idx - 1]
+            if _is_caps_neighbour(source[p_end:start], p_word):
+                return True
+        if idx + 1 < len(word_spans):
+            n_start, n_end, n_word = word_spans[idx + 1]
+            if _is_caps_neighbour(source[word_spans[idx][1]:n_start], n_word):
+                return True
+        return False
+
+    def _repl(m:re.Match)->str:
+        token, plural = m.group(1), m.group(2)
+        # a short token in caps is an acronym even when it is also a word (US, IT, WHO), a long one is a word (SECRET)
+        if len(token) > short_max and word_key(token) in known_words:
             return m.group(0)
-        return f"{_to_int(roman)}{m.group(2)}{m.group(3)}"
-
-    def _repl_standalone(m:re.Match)->str:
-        roman = m.group(1)
-        if not _is_valid_roman(roman):
+        # NOOO, HMMM, GRRR stretch their last letter, СССР does not
+        if len(token) > 3 and re.search(r'(.)\1\1$', token):
             return m.group(0)
-        return f"{_to_int(roman)}{m.group(2)}"
-
-    def _repl_word(m:re.Match)->str:
-        roman = m.group(1)
-        if not _is_valid_roman(roman):
+        start, end = m.start(), m.end()
+        near_digit = (start > 0 and source[start - 1].isdigit()) or (end < len(source) and source[end].isdigit())
+        # roman numbers outside chapter words (Louis XIV, World War II) stay written, MI6 or CDs are not roman numbers
+        if not plural and not near_digit and is_roman_numeral(token):
             return m.group(0)
-        return _to_int(roman)
-
-    def _repl_chapter_single(m:re.Match)->str:
-        word = m.group(1)
-        roman = m.group(2)
-        if not _is_valid_roman(roman):
+        if _is_pronounceable(token) and (len(token) > short_max or caps_text or _in_caps_context(start)):
             return m.group(0)
-        return f'{word} {_to_int(roman)}'
+        return ' '.join(token) + plural
 
-    valid_roman = re.compile(
-        r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
-        re.IGNORECASE
-    )
-    chapter_words = sorted(
-        {w for words in chapter_word_mapping.values() for w in words},
-        key=len,
-        reverse=True
-    )
-    chapter_words_re = re.compile(
-        rf'\b({"|".join(map(re.escape, chapter_words))})\s+([IVXLCDM]+)\b',
-        re.IGNORECASE | re.UNICODE
-    )
-    text = re.sub(
-        r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
-        _repl_heading,
-        text,
-        flags=re.MULTILINE
-    )
-    text = re.sub(
-        r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
-        _repl_standalone,
-        text,
-        flags=re.MULTILINE
-    )
-    text = chapter_words_re.sub(_repl_chapter_single, text)
-    text = re.sub(
-        r'(?<!\S)([IVXLCDM]{2,})(?!\S)',
-        _repl_word,
-        text
-    )
-    return text
-    
+    letters = r'\p{Latin}\p{Cyrillic}\p{Greek}\p{Armenian}'
+    token_pattern = re.compile(r'(?<![' + letters + r'\p{M}])((?:(?=\p{Lu})[' + letters + r']){2,})(s?)(?![' + letters + r'\p{M}])')
+    if not token_pattern.search(text):
+        return text
+    letter_sonority = {
+        **dict.fromkeys('pbtdkgcq', 1),
+        **dict.fromkeys('fvszhx', 2),
+        **dict.fromkeys('mn', 3),
+        **dict.fromkeys('lr', 4),
+        **dict.fromkeys('wjy', 5),
+    }
+    digraph_sonority = {
+        'tch': 2, 'sch': 2, 'ch': 2, 'sh': 2, 'th': 2, 'ph': 2, 'gh': 2, 'kh': 2, 'zh': 2,
+        'sz': 2, 'zs': 2, 'cs': 2, 'rz': 2, 'cz': 1, 'dz': 1, 'ck': 1, 'gn': 3, 'wh': 5, 'wr': 4, 'rh': 4,
+    }
+    if known_words is None:
+        known_words = get_known_words(text)
+    short_max = 2 if lang in acronym_as_word_languages else 3
+    source = text
+    word_spans = [(m.start(), m.end(), m.group()) for m in re.finditer(r'[' + letters + r'\p{M}]+', text)]
+    word_index = {s: i for i, (s, e, w) in enumerate(word_spans)}
+    # a text mostly in caps (telegram, all caps book or title): only unpronounceable tokens are spelled
+    caps_text = False
+    if language_mapping.get(lang, {}).get('script') in ('latin', 'cyrillic', 'greek', 'armenian'):
+        cased = [w for s, e, w in word_spans if len(w) > 1 and (w.isupper() or w.islower() or w.istitle())]
+        caps_text = len(cased) > 0 and sum(1 for w in cased if w.isupper()) * 2 > len(cased)
+    return token_pattern.sub(_repl, text)
+
 def is_latin(s:str)->bool:
     return all((u'a' <= ch.lower() <= 'z') or ch.isdigit() or not ch.isalpha() for ch in s)
 
@@ -3049,8 +3292,10 @@ def _normalize_text_tables(lang:str)->tuple:
     else:
         lookup = None
         abbr_pattern = None
-    # uppercase acronyms: matches sequences like a., c.i.a., f.d.a., m.c., etc...
-    acronym_pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
+    # unicode roman numerals (Ⅳ, ⅻ) to letters the TTS can read, titles were converted to numbers before
+    unicode_roman_pattern = re.compile(r'[\u2160-\u217F]+')
+    # dotted letters like a., c.i.a., F.B.I., U.S.A, С.С.С.Р.: an acronym is always spelled, one letter per word
+    acronym_pattern = re.compile(r'(?<![\p{L}\p{M}\p{N}])(?:(?:[a-zA-Z]|\p{Lu})\.)+(?:[a-zA-Z]|\p{Lu})?(?![\p{L}\p{M}\p{N}])(?:\.(?![\p{L}\p{N}]))?')
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a [pause] 1.4sec
     pause_pattern = re.compile(r'(?:\r\n|\r|\n){2,}')
     pause_repl = f" {sml_token('pause')} "
@@ -3075,13 +3320,13 @@ def _normalize_text_tables(lang:str)->tuple:
     # Replace special chars with words
     specialchars = specialchars_mapping.get(lang, specialchars_mapping.get(default_language_code, specialchars_mapping['eng']))
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
-    return (emoji_pattern, abbr_pattern, lookup, acronym_pattern, pause_pattern, pause_repl,
+    return (emoji_pattern, abbr_pattern, lookup, unicode_roman_pattern, acronym_pattern, pause_pattern, pause_repl,
             newline_pattern, switch_pattern, chars_remove_table, quote_norm_pattern, quote_comma_pattern,
             spaces_pattern, ok_pattern, hard_pattern, soft_pattern, letterdigit_pattern, specialchars_table)
 
-def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
+def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str, known_words:set|None=None)->str:
 
-    (emoji_pattern, abbr_pattern, lookup, acronym_pattern, pause_pattern, pause_repl,
+    (emoji_pattern, abbr_pattern, lookup, unicode_roman_pattern, acronym_pattern, pause_pattern, pause_repl,
      newline_pattern, switch_pattern, chars_remove_table, quote_norm_pattern, quote_comma_pattern,
      spaces_pattern, ok_pattern, hard_pattern, soft_pattern, letterdigit_pattern,
      specialchars_table) = _normalize_text_tables(lang)
@@ -3090,12 +3335,25 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
         # case-insensitive dict lookup; same semantics as the old linear scan over mapping.items()
         return lookup.get(match.group(1).lower(), match.group(1))
 
+    def _dotted(match:re.Match)->str:
+        letters = match.group().replace('.', '')
+        # a single non latin initial (А. Пушкин) keeps its dot as before
+        if len(letters) == 1 and not letters.isascii():
+            return match.group()
+        return ' '.join(letters.upper())
+
     # Remove emojis
     text = emoji_pattern.sub('', text)
     if abbr_pattern is not None:
         text = abbr_pattern.sub(_replace, text)
-    # uppercase acronyms
-    text = acronym_pattern.sub(lambda m: m.group().replace('.', '').upper(), text)
+    # unicode roman numerals to letters the TTS can read
+    text = unicode_roman_pattern.sub(lambda m: unicodedata.normalize('NFKC', m.group()), text)
+    # dotted acronyms are always spelled
+    text = acronym_pattern.sub(_dotted, text)
+    # Replace ok by 'Okay' before the acronyms so OK is not spelled
+    text = ok_pattern.sub('Okay', text)
+    # spell all caps acronyms (CIA -> C I A), keep all caps words (SECRET, TOWER)
+    text = acronym2letters(text, lang, known_words)
     # romanize foreign words
     if language_mapping[lang]['script'] == 'latin':
         text = foreign2latin(text, lang)
@@ -3112,8 +3370,6 @@ def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     text = text.replace('"', '')
     # Replace multiple spaces with single space
     text = spaces_pattern.sub(' ', text)
-    # Replace ok by 'Okay'
-    text = ok_pattern.sub('Okay', text)
     # Reduce multiple consecutive punctuations hard, then soft
     text = hard_pattern.sub(r'\2 ', text).strip()
     text = soft_pattern.sub(r'\2 ', text).strip()
@@ -5653,8 +5909,9 @@ def get_os_proxy_bypass()->list:
 def set_no_proxy(hosts:list)->None:
     # any *_proxy env var makes urllib/requests/httpx stop reading the OS proxy (Windows registry, macOS settings): a
     # system proxy (Clash, v2rayN...) was dropped for HF downloads and pip once no_proxy got set. Carry it, and its
-    # bypass list, over to the env first. Merge, a user no_proxy (internal hosts) was overwritten
-    no_proxy = [host.strip() for host in os.environ.get('no_proxy', os.environ.get('NO_PROXY', '')).split(',') if host.strip()]
+    # bypass list, over to the env first. Merge, a user no_proxy (internal hosts) was overwritten.
+    # Every host in httpx form (no_proxy_host): a Windows ProxyOverride [::1] made each later httpx client raise
+    no_proxy = [host for host in [no_proxy_host(entry) for entry in os.environ.get('no_proxy', os.environ.get('NO_PROXY', '')).split(',')] if host]
     if not any(scheme in urllib.request.getproxies_environment() for scheme in ['http', 'https', 'all']):
         os_proxies = urllib.request.getproxies()
         for scheme in ['http', 'https']:
@@ -5662,7 +5919,7 @@ def set_no_proxy(hosts:list)->None:
                 os.environ[f'{scheme}_proxy'] = os.environ[f'{scheme.upper()}_PROXY'] = os_proxies[scheme]
         if os_proxies.get('http') or os_proxies.get('https'):
             hosts = [*get_os_proxy_bypass(), *hosts]
-    for host in hosts:
-        if host not in no_proxy:
+    for host in [no_proxy_host(entry) for entry in hosts]:
+        if host and host not in no_proxy:
             no_proxy.append(host)
     os.environ['no_proxy'] = os.environ['NO_PROXY'] = ','.join(no_proxy)

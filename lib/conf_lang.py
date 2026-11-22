@@ -21,6 +21,10 @@ language_separator = 'zzz' # language_mapping's "More languages (A to Z)" line o
 session_info = 'In headless mode, store it in case of interruption, crash,\nor reuse of a custom model or custom voice.\nYou can resume the conversion with the --session option.\n************************************************************************'
 year_to_decades_languages = ['eng', 'deu', 'nld', 'nob', 'dan', 'swe']
 
+# languages reading a 3 letters pronounceable all caps acronym as a word (la CIA, la ONU, gli USA) instead of spelling it.
+# an unpronounceable acronym (FBI, KGB, URSS) and a 2 letters one (UE, TV) are spelled in every language.
+acronym_as_word_languages = ['spa', 'ita', 'por', 'cat', 'glg']
+
 # languages writing decimals with a comma and grouping thousands with a dot or a space (i.e. 1.234,5 or 1 234,5)
 language_decimal_comma = [
     'afr', 'arg', 'ast', 'aze', 'bak', 'bel', 'bos', 'bre', 'bul', 'cat', 'ces', 'chv', 'dan', 'deu', 'ell', 'epo',
@@ -692,17 +696,17 @@ chapter_word_mapping = {
     "eng": ["chapter", "part", "psalm", "section", "paragraph", "article", "tome"],
     "fra": ["chapitre", "partie", "psaume", "section", "paragraphe", "article", "tome"],
     "spa": ["capítulo", "parte", "salmo", "sección", "párrafo", "artículo", "tomo"],
-    "deu": ["Kapitel", "Teil", "Psalm", "Abschnitt", "Absatz", "Artikel", "Band"],
+    "deu": ["Kapitel", "Teil", "Psalm", "Abschnitt", "Absatz", "Artikel", "Band", "Kapitels", "Teils", "Teiles", "Psalms", "Abschnitts", "Abschnittes", "Absatzes", "Artikels", "Bandes"],
     "ita": ["capitolo", "parte", "salmo", "sezione", "paragrafo", "articolo", "tomo"],
     "rus": ["глава", "часть", "псалом", "раздел", "параграф", "статья", "том"],
-    "zho": ["章节", "部分", "诗篇", "节", "段落", "条款", "卷"],
-    "jpn": ["章", "部", "詩編", "節", "段落", "条項", "巻"],
-    "kor": ["장", "부분", "시편", "절", "단락", "조항", "권"],
+    "zho": ["章节", "部分", "诗篇", "节", "段落", "条款", "卷", "章", "部", "篇", "回", "節"],
+    "jpn": ["章", "部", "詩編", "節", "段落", "条項", "巻", "話"],
+    "kor": ["장", "부분", "시편", "절", "단락", "조항", "권", "부", "편", "화"],
     "por": ["capítulo", "parte", "salmo", "seção", "parágrafo", "artigo", "tomo"],
     "tur": ["bölüm", "parça", "mezmur", "kısım", "paragraf", "madde", "cilt"],
     "hin": ["अध्याय", "भाग", "भजन", "अनुभाग", "अनुच्छेद", "धारा", "खंड"],
     "ben": ["অধ্যায়", "অংশ", "গীত", "অনুচ্ছেদ", "ধারা", "ধারা", "খণ্ড"],
-    "ara": ["فصل", "جزء", "مزمور", "قسم", "فقرة", "مادة", "مجلد"],
+    "ara": ["فصل", "جزء", "مزمور", "قسم", "فقرة", "مادة", "مجلد", "الفصل", "الجزء", "المزمور", "القسم", "الفقرة", "المادة", "المجلد"],
     "fas": ["فصل", "بخش", "مزمور", "قسمت", "بند", "ماده", "جلد"],
     "hun": ["fejezet", "rész", "zsoltár", "szakasz", "bekezdés", "cikk", "kötet"],
     "pol": ["rozdział", "część", "psalm", "sekcja", "akapit", "artykuł", "tom"],
@@ -710,7 +714,60 @@ chapter_word_mapping = {
     "jav": ["bab", "bagean", "mazmur", "bagéan", "paragraf", "artikel", "jilid"],
     "tam": ["அத்தியாயம்", "பகுதி", "சங்கீதம்", "பிரிவு", "பத்தி", "அம்சம்", "தொகுதி"],
     "tel": ["అధ్యాయం", "భాగం", "కీర్తన", "విభాగం", "పేరా", "ఆర్టికల్", "ఖండం"],
-    "yor": ["ori", "apa", "orin", "ipin", "abala", "abala", "iwe"]
+    "yor": ["ori", "apa", "orin", "ipin", "abala", "abala", "iwe"],
+    "ces": ["kapitola", "část", "žalm", "oddíl", "odstavec", "článek", "svazek", "díl"],
+    "slk": ["kapitola", "časť", "žalm", "oddiel", "odsek", "článok", "zväzok", "diel"],
+    "hrv": ["poglavlje", "dio", "psalam", "odjeljak", "odlomak", "članak", "svezak"],
+    "srp": ["поглавље", "глава", "део", "псалам", "одељак", "пасус", "члан", "том", "poglavlje", "glava", "deo", "psalam", "odeljak", "pasus", "član", "tom"],
+    "bul": ["глава", "част", "псалм", "раздел", "параграф", "член", "том"],
+    "ukr": ["розділ", "глава", "частина", "псалом", "підрозділ", "параграф", "стаття", "том"],
+    "bel": ["раздзел", "глава", "частка", "псальм", "падраздзел", "параграф", "артыкул", "том"],
+    "ron": ["capitolul", "capitol", "partea", "parte", "psalmul", "secțiunea", "secţiunea", "paragraful", "articolul", "volumul"],
+    "cat": ["capítol", "part", "salm", "secció", "paràgraf", "article", "volum"],
+    "glg": ["capítulo", "parte", "salmo", "sección", "parágrafo", "artigo", "tomo"],
+    "nld": ["hoofdstuk", "deel", "psalm", "sectie", "paragraaf", "artikel", "boek"],
+    "swe": ["kapitel", "del", "psalm", "avsnitt", "stycke", "artikel", "band"],
+    "dan": ["kapitel", "del", "salme", "afsnit", "stykke", "artikel", "bind"],
+    "nob": ["kapittel", "del", "salme", "avsnitt", "ledd", "artikkel", "bind"],
+    "fin": ["luku", "osa", "psalmi", "jakso", "kappale", "artikla", "nide"],
+    "est": ["peatükk", "osa", "psalm", "jagu", "lõik", "artikkel", "köide"],
+    "lav": ["nodaļa", "daļa", "psalms", "sadaļa", "rindkopa", "pants", "sējums"],
+    "lit": ["skyrius", "dalis", "psalmė", "skirsnis", "pastraipa", "straipsnis", "tomas"],
+    "ell": ["κεφάλαιο", "μέρος", "ψαλμός", "ενότητα", "παράγραφος", "άρθρο", "τόμος"]
+}
+
+# languages reading a roman number before a chapter word as an ordinal (IV. Kapitel = viertes Kapitel,
+# IV. fejezet = negyedik fejezet, IV luku = neljäs luku). num2words gives the masculine ordinal, 'endings' turn it
+# into the gender of the chapter word listed in 'genders' (any other word keeps the masculine one).
+# 'before': a word right before the numeral setting the ending instead of the gender (das vierte Kapitel, im vierten Kapitel)
+language_ordinal_before = {
+    "deu": {
+        "endings": {"m": [("e", "er")], "n": [("e", "es")]},
+        "genders": {"kapitel": "n", "teil": "m", "psalm": "m", "abschnitt": "m", "absatz": "m", "artikel": "m", "band": "m"},
+        "before": {
+            # nominative: weak -e (der zweite Teil, das vierte Kapitel)
+            "der": [], "die": [], "das": [], "dieser": [], "diese": [], "dieses": [], "jener": [], "jene": [], "jenes": [],
+            # accusative, dative, genitive: -en (den dritten Band, im vierten Kapitel, des zweiten Teils, einem fünften Teil)
+            "den": [("e", "en")], "dem": [("e", "en")], "des": [("e", "en")], "diesen": [("e", "en")], "diesem": [("e", "en")],
+            "im": [("e", "en")], "am": [("e", "en")], "vom": [("e", "en")], "zum": [("e", "en")], "beim": [("e", "en")], "zur": [("e", "en")],
+            "einen": [("e", "en")], "einem": [("e", "en")], "eines": [("e", "en")]
+        }
+    },
+    "ces": {"endings": {"f": [("ý", "á")], "n": [("ý", "é")]}, "genders": {"kapitola": "f", "část": "f"}},
+    "slk": {"endings": {"f": [("ý", "á"), ("y", "a")], "n": [("ý", "é"), ("y", "e")]}, "genders": {"kapitola": "f", "časť": "f"}},
+    "hrv": {"endings": {"f": [("i", "a")], "n": [("i", "o")]}, "genders": {"poglavlje": "n"}},
+    "lav": {"endings": {"f": [("ais", "ā")]}, "genders": {"nodaļa": "f", "daļa": "f", "sadaļa": "f", "rindkopa": "f"}},
+    "lit": {"endings": {"f": [("as", "a")]}, "genders": {"dalis": "f", "psalmė": "f", "pastraipa": "f"}},
+    "hun": {}, "tur": {}, "fin": {}, "est": {}, "dan": {}, "nob": {}
+}
+
+# characters written for a roman number, read as the latin letters inside a numeral only (never in a word):
+# unicode roman numerals (Ⅳ, Ⅻ), fullwidth letters (ＩＶ), cyrillic lookalikes typed on a cyrillic keyboard (ХІІ)
+roman_lookalikes = {
+    'Ⅰ': 'I', 'Ⅱ': 'II', 'Ⅲ': 'III', 'Ⅳ': 'IV', 'Ⅴ': 'V', 'Ⅵ': 'VI', 'Ⅶ': 'VII', 'Ⅷ': 'VIII',
+    'Ⅸ': 'IX', 'Ⅹ': 'X', 'Ⅺ': 'XI', 'Ⅻ': 'XII', 'Ⅼ': 'L', 'Ⅽ': 'C', 'Ⅾ': 'D', 'Ⅿ': 'M',
+    'Ｉ': 'I', 'Ｖ': 'V', 'Ｘ': 'X', 'Ｌ': 'L', 'Ｃ': 'C', 'Ｄ': 'D', 'Ｍ': 'M',
+    'І': 'I', 'Х': 'X', 'С': 'C', 'М': 'M'
 }
 
 specialchars_mapping = {

@@ -116,7 +116,9 @@ class ChatTTS(TTSUtils, TTSRegistry, name='chattts'):
                     installed = {}
             # e2a's own package lists are part of the marker: changing them gives existing venvs one install pass
             expected = {'source': settings['source'], 'device': torch_backend, 'torch': matrix_entry.get('last'), 'requirements': settings['requirements_exclude'] + settings['requirements_extra']}
-            if not os.path.exists(self.venv_python) or not os.path.isdir(self.src_dir) or any(installed.get(k) != v for k, v in expected.items()):
+            # a nightly torch / torchaudio / torchcodec DeviceInstaller put in the venv (torch_matrix release not published
+            # yet, .e2a_dev_pkgs.json) reinstalls once its stable build is out, asked once a day
+            if not os.path.exists(self.venv_python) or not os.path.isdir(self.src_dir) or any(installed.get(k) != v for k, v in expected.items()) or device_installer.dev_switch_due(self.venv_dir, self.venv_python):
                 uv_bin = device_installer.uv_bin
                 uv_pip = [uv_bin, 'pip', 'install', '--python', self.venv_python]
                 # the pinned source first, without the venv: its setup.py carries upstream's torch
@@ -207,9 +209,10 @@ class ChatTTS(TTSUtils, TTSRegistry, name='chattts'):
                 # that has a wheel there; the few pure-python sdist-only packages are let through
                 wheels_only = ['--only-binary', ':all:'] + [arg for pkg in settings['packages_sdist'] for arg in ('--no-binary', pkg)]
                 # 1. upstream's requirements and torch from the device's PyTorch index, in one resolution.
-                # Only for tags uv has a backend for: jetson / windows rocm go straight to the fallback.
+                # Only for tags uv has a backend for: jetson / windows rocm go straight to the fallback, and so do
+                # tags this uv does not know yet (cu134 / cu135 with uv 0.11), whose nightly torch only the fallback takes.
                 backend_ok = False
-                if re.fullmatch(r'auto|cpu|xpu|cu\d+|rocm[\d.]+', torch_backend):
+                if re.fullmatch(r'auto|cpu|xpu|cu\d+|rocm[\d.]+', torch_backend) and device_installer.uv_torch_backend_ok(torch_backend):
                     msg = legends['msg_venv_installing'].format(engine=tts_engine, pkgs=f'{tts_engine} requirements ({torch_line}, {torch_backend})')
                     print(msg)
                     if progress_bar is not None:

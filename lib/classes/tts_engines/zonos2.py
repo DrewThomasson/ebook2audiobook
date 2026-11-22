@@ -2,8 +2,9 @@ import json
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 from lib.classes.subprocess_pipe import SubprocessPipe
+from lib.classes.bug_reporter import bug_reporter
 from lib.classes.tts_engines.common.hf_download import hf_download
-from lib.conf import systems
+from lib.conf import systems, get_cpu_flags
 from lib.lang import legends
 
 class Zonos2(TTSUtils, TTSRegistry, name='zonos2'):
@@ -113,18 +114,8 @@ class Zonos2(TTSUtils, TTSRegistry, name='zonos2'):
                 candidates = ['macos-arm64', 'macos-arm64-metal', 'macos-arm64-cpu'] if machine == 'arm64' else (['macos-x86_64-vulkan'] if gpu_wanted else []) + ['macos-x86_64']
             else:
                 candidates = []
-            # CPU features the packages may need, with /proc/cpuinfo names on every OS
-            cpu_flags = set()
-            if os.path.exists('/proc/cpuinfo'):
-                with open('/proc/cpuinfo', 'r', encoding='utf-8', errors='replace') as f:
-                    features = re.search(r'^(?:Features|flags)\s*:\s*(.*)$', f.read(), re.M)
-                cpu_flags = set(features.group(1).split()) if features else set()
-            elif sys.platform == systems['WINDOWS']:
-                import ctypes
-                present = ctypes.windll.kernel32.IsProcessorFeaturePresent
-                # PF_SSE4_2_INSTRUCTIONS_AVAILABLE 38, PF_AVX2_INSTRUCTIONS_AVAILABLE 40 (AVX2 CPUs all have FMA, F16C, BMI2);
-                # arm64: PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE 43, the dot product, whose cores all have fp16 arithmetic too
-                cpu_flags = ({'sse4_2'} if present(38) else set()) | ({'avx2', 'fma', 'f16c', 'bmi2'} if present(40) else set()) | ({'asimddp', 'asimdhp'} if present(43) else set())
+            # CPU features the packages may need, with /proc/cpuinfo names on every OS (x86_64 emulated on arm64: SSE4.2)
+            cpu_flags = get_cpu_flags()
             glibc = platform.libc_ver()
             glibc_version = tuple(int(x) for x in re.findall(r'\d+', glibc[1])[:2]) if glibc[0] == 'glibc' and glibc[1] else (0, 0)
             machine_desc = f'{sys.platform} {machine}' + (f' JetPack {jetpack}' if jetpack else '') + (f' sm_{board_sm}' if board_sm else '')
@@ -265,6 +256,7 @@ class Zonos2(TTSUtils, TTSRegistry, name='zonos2'):
                             error = legends['error_zonos2_gpu_failed'].format(engine=tts_engine, package=self.package_name, error=e)
                             raise RuntimeError(error) from e
                         raise
+                    bug_reporter.event(f'{self.package_name} failed to start: {e}')
                     msg = legends['msg_zonos2_gpu_failed'].format(engine=tts_engine, package=self.package_name, error=e)
                     if show_alert is not None:
                         show_alert(self.session['id'], {'type': 'warning', 'msg': msg})
@@ -362,6 +354,7 @@ class Zonos2(TTSUtils, TTSRegistry, name='zonos2'):
                             # the worker's error carries the server's last log lines joined by ' | ': the last one is
                             # the cause (e.g. the Metal assertion), the rest is startup noise
                             error = str(reply.get('error') or '')
+                            bug_reporter.event(f'{self.package_name} died mid-sentence (crash {crashes}): {error}')
                             error = (error.split(': ', 1)[0] + ': ' + error.split(' | ')[-1]) if ' | ' in error else error
                             msg = legends['msg_zonos2_gpu_restart' if crashes < 2 else 'msg_zonos2_gpu_dropped'].format(engine=self.session['tts_engine'], package=self.package_name, error=error)
                             show_alert = getattr(sys.modules.get('lib.core'), 'show_alert', None)

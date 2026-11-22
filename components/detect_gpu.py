@@ -8,8 +8,24 @@ ROOT_DIR = os.path.dirname(SCRIPT_DIR)
 DEVICE_INFO_JSON = os.path.normpath(os.path.join(ROOT_DIR, '.device_info.json'))
 HSA_OVERRIDE_ENV = "HSA_OVERRIDE_GFX_VERSION"
 
-def handle_rocm_override()->str|None:
-    """Sets HSA_OVERRIDE_GFX_VERSION in this process before torch loads.
+def rocm_arch_list()->set[str]|None:
+    """GPU targets the installed ROCm torch was built for ('gfx1200', ...), read without starting the HIP runtime: HSA
+    reads HSA_OVERRIDE_GFX_VERSION once, when torch first touches the GPU. torch.cuda.get_arch_list() would start it,
+    torch._C._cuda_getArchFlags() is the build's own string (what torch.utils.cpp_extension reads on ROCm).
+    None when torch cannot say: not a ROCm build, or no such string."""
+    try:
+        import torch
+        flags = torch._C._cuda_getArchFlags() if getattr(torch.version, 'hip', None) else None
+    except Exception:
+        return None
+    if not flags:
+        return None
+    # 'gfx90a:xnack-' -> 'gfx90a'
+    return {flag.split(':', 1)[0] for flag in str(flags).split()}
+
+def handle_rocm_override(arch_list:set[str]|None=None)->str|None:
+    """Sets HSA_OVERRIDE_GFX_VERSION in this process before torch touches the GPU.
+    arch_list: the installed torch's GPU targets (rocm_arch_list()), None to decide from the DB alone.
     Returns the effective override (user-provided or resolved), or None."""
     if (override := os.environ.get(HSA_OVERRIDE_ENV)):
         return override
@@ -25,6 +41,10 @@ def handle_rocm_override()->str|None:
             rocmfix.GPU_DATABASE.update(rocmfix._validate_db(json.loads(rocmfix.DB_CACHE_FILE.read_text(encoding='utf-8'))))
         except Exception:
             pass  # no cache yet or corrupt cache: keep the fallback DB
+        # a GPU whose own target the installed torch was built for runs as itself, whatever the DB says: its entries
+        # follow the ROCm releases that lacked the target (the bundled RX 9060 XT, gfx1200 -> '12.0.1', native since
+        # ROCm 6.4.2), and a card the DB knows never gets the downloaded update. Under that override the first tensor
+        # moved to the GPU killed e2a (crash report ec3a0208c4c44215: segfault in stanza's model.to('cuda'))
         for attempt in range(2):
             overrides:set[str] = set()
             native_targets:set[str] = set()
@@ -33,6 +53,8 @@ def handle_rocm_override()->str|None:
                 info = rocmfix.GPU_DATABASE.get(gpu['pci_id'])
                 if info is None:
                     has_unknown = True
+                elif arch_list is not None and info.get('gfx_target') in arch_list:
+                    native_targets.add(info['gfx_target'])
                 elif info.get('override'):
                     overrides.add(info['override'])
                 elif info.get('supported'):
@@ -65,6 +87,29 @@ def rocm_denied_nodes()->list[str]:
             nodes.append(os.path.join('/dev/dri', os.path.basename(sys_node)))
     return [node for node in nodes if os.path.exists(node) and not os.access(node, os.R_OK | os.W_OK)]
 
+def hip_runtime(candidates:list[str])->dict:
+    """The system HIP runtime's device count and version ('--hip-runtime', from DeviceInstaller.check_hardware). Asked
+    here, in a child: a libamdhip64 loaded in e2a's process stays there, and torch imported later binds its own ROCm
+    libraries to it by soname (libamdhip64.so.7), running torch built for one ROCm on the system's other one.
+    The DB override is set first, as the system probe always had it; it does not leave this process"""
+    handle_rocm_override()
+    import ctypes
+    for lib_name in candidates:
+        try:
+            libhip = ctypes.CDLL(lib_name)
+        except OSError:
+            continue
+        try:
+            count = ctypes.c_int()
+            version = ctypes.c_int()
+            return {
+                'count': count.value if libhip.hipGetDeviceCount(ctypes.byref(count)) == 0 else 0,
+                'version': version.value if libhip.hipRuntimeGetVersion(ctypes.byref(version)) == 0 else None,
+            }
+        except AttributeError:
+            continue
+    return {}
+
 def main()->None:
     result = {'count': 0, 'backend': None, 'hsa_override': None, 'error': None}
     try:
@@ -81,7 +126,7 @@ def main()->None:
 
         # Run ROCm check & fallback before PyTorch loads
         if backend == 'rocm':
-            result['hsa_override'] = handle_rocm_override()
+            result['hsa_override'] = handle_rocm_override(rocm_arch_list())
             if (denied := rocm_denied_nodes()):
                 result['error'] = f"no read/write access to {', '.join(denied)}: user not in its group (render or video), relaunch ebook2audiobook.command or log out and back in"
 
@@ -101,4 +146,7 @@ def main()->None:
     print(json.dumps(result))
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 2 and sys.argv[1] == '--hip-runtime':
+        print(json.dumps(hip_runtime(json.loads(sys.argv[2]))))
+    else:
+        main()
