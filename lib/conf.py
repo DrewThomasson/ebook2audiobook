@@ -1,4 +1,4 @@
-import os, ssl, tempfile, sys, re
+import os, ssl, tempfile, sys, re, ipaddress
 from pathlib import Path
 
 debug_mode = False
@@ -303,6 +303,37 @@ def std_streams_utf8()->None:
         except (ValueError, OSError):
             pass
 std_streams_utf8()
+
+# ---------------------------------------------------------------------
+# Proxy bypass
+# ---------------------------------------------------------------------
+def no_proxy_host(entry:str)->str:
+    # one no_proxy entry in the form httpx takes, '' to leave it out. httpx turns every entry into a URLPattern on each
+    # Client(): a bracketed ipv6 ([::1], [::1]:8080) or an ipv6 network (fe80::/10, [fe80::]/10) raises InvalidURL
+    # there, and gradio builds one at import, so e2a died before its first line ("Invalid port: ':1]'").
+    # [::1] -> ::1, the form httpx and requests both match; its port is dropped, a bare ipv6 cannot carry one.
+    # An ipv6 network has no form httpx parses (requests skips it too): left out
+    host = entry.strip()
+    if host.startswith('['):
+        address, bracket, rest = host[1:].partition(']')
+        if not bracket or rest.startswith('/'):
+            return ''
+        host = address
+    if '/' in host and '://' not in host:
+        try:
+            if ipaddress.ip_network(host, strict=False).version == 6:
+                return ''
+        except ValueError:
+            pass
+    return host
+
+def no_proxy_patch()->None:
+    # a no_proxy set before e2a starts (user env, VPN or proxy client): before gradio's import below. Children inherit it
+    for name in ['no_proxy', 'NO_PROXY']:
+        if os.environ.get(name):
+            hosts = [no_proxy_host(entry) for entry in os.environ[name].split(',')]
+            os.environ[name] = ','.join(dict.fromkeys([host for host in hosts if host]))
+no_proxy_patch()
 
 # ---------------------------------------------------------------------
 # TLS trust
