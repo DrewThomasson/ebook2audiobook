@@ -13,7 +13,7 @@ if os.path.isfile(python_env_exec) and os.path.normcase(os.path.realpath(sys.pre
 examples = '''examples:
   check_audiobook_hallucinations.py audiobooks/cli/book.m4b
   check_audiobook_hallucinations.py audiobooks/cli/book.m4b --language fra --device cuda
-  check_audiobook_hallucinations.py audiobooks/cli --all'''
+  check_audiobook_hallucinations.py audiobooks/cli'''
 description = '''Report the sentences of an e2a audiobook that do not say their text: babble, a word or a phrase
 said twice or skipped, mumble before or after the text, a sentence too long or too short for its text.
 Report only: the audiobook is not changed.
@@ -21,15 +21,15 @@ It reads the .vtt e2a writes beside each audiobook (one cue per sentence), trans
 facebook/mms-1b-all (1162 languages, downloaded into models/tts on first use) and compares the letters of
 both texts, romanized (uroman, pykakasi for Japanese). The limits come from the book itself, from the
 medians of all its sentences: names or a hard text raise them for the whole book, a hallucination stands out.
-Each flagged sentence is printed as soon as it is found (block and sentence numbers as in e2a, problem), all of them in a
-table at the end, and every sentence with its measures is saved in <audiobook>.hallucinations.json.'''
+Each flagged sentence is printed as soon as it is found, all of them in a table at the end, by their block and
+sentence numbers as in e2a (from 0). Every sentence with its problem, its text, what was heard and its measures
+is saved in <audiobook>.hallucinations.json.'''
 parser = argparse.ArgumentParser(prog='check_audiobook_hallucinations.py', formatter_class=argparse.RawDescriptionHelpFormatter, epilog=examples, description=description)
 parser.add_argument('audiobooks', nargs='+', help='Audiobook files (m4b, mp3, flac...) with their .vtt beside them, or folders holding them')
 parser.add_argument('-l', '--language', default='', help="Language spoken, e2a ISO-639-3 code (default: the audiobook's language tag; set it for a translated book, its tag keeps the ebook's language)")
 parser.add_argument('--vtt', default='', help='Subtitles of the audiobook, single audiobook only (default: <audiobook>.vtt)')
 parser.add_argument('-o', '--output', default='', help='JSON report, single audiobook only (default: <audiobook>.hallucinations.json beside it)')
 parser.add_argument('--device', choices=['auto', 'cpu', 'cuda', 'rocm', 'xpu', 'mps', 'jetson'], default='auto', help='Device the speech recognizer runs on, named as in e2a (default: the one e2a was installed for, cpu when it cannot be used)')
-parser.add_argument('--all', action='store_true', help='List every sentence with its measures in the table at the end, not only the flagged ones')
 args = parser.parse_args()
 start_dir = os.getcwd()
 os.chdir(root_dir)
@@ -395,9 +395,8 @@ def verdict(r:dict, limits:dict)->Optional[str]:
         return f"does not match its text (CER {r['cer']:.2f}, {limits['cer']:.2f} at most)"
     return None
 
-def live_line(r:dict, reason:str)->str:
-    text = r['text'] if len(r['text']) <= 70 else r['text'][:69] + '…'
-    return f"  hallucination: block {r['block']}, sentence {r['sentence']}: {reason}\n      {text}"
+def live_line(r:dict)->str:
+    return f"  hallucination: block {r['block']}, sentence {r['sentence']}"
 
 def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
     import bisect
@@ -460,7 +459,7 @@ def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
                 reason = verdict(r, limits)
                 if reason:
                     r['live'] = True
-                    bar.write(live_line(r, reason))
+                    bar.write(live_line(r))
                 bar.update(1)
             i = j + 1
     limits = current_limits(samples)
@@ -476,48 +475,16 @@ def check_audiobook(checker:Checker, audiobook:str, vtt:str)->Optional[dict]:
         sentences=len(records), recognized=sum(1 for r in records if r['cer'] is not None),
         flagged=sum(1 for r in records if r['reason']), cleared=cleared, records=records)
 
-def display_width(text:str)->int:
-    # terminal columns: CJK characters take two, combining marks none
-    return sum(0 if unicodedata.combining(c) else 2 if unicodedata.east_asian_width(c) in 'WF' else 1 for c in text)
+def table(headers:list[str], rows:list[list[str]])->list[str]:
+    widths = [max(len(str(cell)) for cell in column) for column in zip(headers, *rows)]
 
-def wrap(text:str, width:int)->list[str]:
-    # greedy on display width, words kept whole when they fit, cut by character otherwise (CJK has no spaces)
-    lines = []
-    for paragraph in text.split('\n'):
-        line, used = '', 0
-        for token in re.findall(r'\S+\s*', paragraph):
-            for piece in ([token] if display_width(token.rstrip()) <= width else list(token)):
-                if used and used + display_width(piece.rstrip()) > width:
-                    lines.append(line.rstrip())
-                    line, used = '', 0
-                    piece = piece.lstrip()
-                line += piece
-                used += display_width(piece)
-        lines.append(line.rstrip())
-    return lines
-
-def table(headers:list[str], rows:list[list[str]], widths:list[int])->list[str]:
     def rule(left:str, middle:str, right:str)->str:
         return left + middle.join('─' * (w + 2) for w in widths) + right
 
-    def cells(row:list[str])->list[str]:
-        wrapped = [wrap(str(cell), w) for cell, w in zip(row, widths)]
-        height = max(len(lines) for lines in wrapped)
-        out = []
-        for k in range(height):
-            parts = []
-            for lines, w in zip(wrapped, widths):
-                text = lines[k] if k < len(lines) else ''
-                parts.append(' ' + text + ' ' * (w - display_width(text)) + ' ')
-            out.append('│' + '│'.join(parts) + '│')
-        return out
+    def line(cells:list)->str:
+        return '│' + '│'.join(f' {str(cell):>{w}} ' for cell, w in zip(cells, widths)) + '│'
 
-    out = [rule('┌', '┬', '┐')] + cells(headers) + [rule('├', '┼', '┤')]
-    for n, row in enumerate(rows):
-        if n:
-            out.append(rule('├', '┼', '┤'))
-        out += cells(row)
-    return out + [rule('└', '┴', '┘')]
+    return [rule('┌', '┬', '┐'), line(headers), rule('├', '┼', '┤')] + [line(row) for row in rows] + [rule('└', '┴', '┘')]
 
 def print_report(report:dict)->None:
     limits = report['limits']
@@ -527,20 +494,10 @@ def print_report(report:dict)->None:
     print(f"  limits: CER {limits['cer']:.2f}, {limits['burst']:.0f} wrong letters in a row, {limits['edge']:.0f} extra letters at an edge, length {rate}")
     if not report['exact_numbers']:
         print(f'  {approximate_note}')
-    shown = [r for r in report['records'] if r['reason'] or args.all]
-    if shown:
-        # block and sentence as e2a numbers them (from 0), the text column takes what the terminal leaves: each column
-        # takes its width + 3 (padding, border), plus the left border and the 2 spaces of indent
-        total = min(max(shutil.get_terminal_size((120, 24)).columns, 80), 200)
-        headers = ['Block', 'Sentence', 'Problem', 'Text, then what was heard']
-        widths = [5, 8, 26, 0]
-        widths[3] = max(20, total - sum(widths) - 3 * 4 - 3)
-        rows = []
-        for r in shown:
-            problem = r['reason'] or (f"ok: CER {r['cer']:.2f}, burst {r['burst']}, edge {r['edge']}" if r['cer'] is not None else 'ok: length only')
-            sentence = r['text'] + (f"\nheard: {r['heard'] or '(nothing)'}" if r['heard'] is not None else '')
-            rows.append([str(r['block']), str(r['sentence']), problem, sentence])
-        print('\n'.join('  ' + line for line in table(headers, rows, widths)))
+    # block and sentence as e2a numbers them (from 0); the problem, the text and what was heard are in the JSON
+    rows = [[r['block'], r['sentence']] for r in report['records'] if r['reason']]
+    if rows:
+        print('\n'.join('  ' + line for line in table(['Block', 'Sentence'], rows)))
     flagged = f"  {report['flagged']} sentence{'s' if report['flagged'] != 1 else ''} flagged" if report['flagged'] else '  No sentence flagged'
     if report['cleared']:
         flagged += f" ({report['cleared']} printed during the check cleared by the limits of the whole book)"

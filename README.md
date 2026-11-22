@@ -683,11 +683,10 @@ It reads the `.vtt` e2a writes beside each audiobook (one cue per sentence), tra
 letters of both texts, romanized, so any script works. The limits come from the book itself (the medians of all its
 sentences), names or a hard text raise them for the whole book while a hallucination stands out.
 Sentences under 10 letters and those still holding digits get the length check only, as does a language MMS does not know.
-Each flagged sentence is printed as soon as it is found with its block and sentence numbers, as e2a numbers them
-(from 0), and its problem, all of them again in a table at the end with their text and what was heard instead, and
-every sentence with its measures is saved in `<audiobook>.hallucinations.json`. While it runs, a sentence is judged on
-the sentences before it, the table on the whole book: a sentence printed early can be cleared at the end, the table
-says so. The numbers come from the `.vtt` (e2a names each cue `block <n> sentence <n>`); in an audiobook made before,
+Each flagged sentence is printed as soon as it is found, all of them again in a table at the end, by their block and
+sentence numbers as e2a numbers them (from 0). Every sentence with its problem, its text, what was heard instead and
+its measures is saved in `<audiobook>.hallucinations.json`. While it runs, a sentence is judged on the sentences before
+it, the table on the whole book: a sentence printed early can be cleared at the end, the line under the table says so. The numbers come from the `.vtt` (e2a names each cue `block <n> sentence <n>`); in an audiobook made before,
 the blocks are counted from its chapters, off after a block left out of the conversion.
    - **Linux/MacOS**
      ```bash
@@ -705,7 +704,7 @@ the blocks are counted from its chapters, off after a block left out of the conv
 
 ```bash
 usage: check_audiobook_hallucinations.py [-h] [-l LANGUAGE] [--vtt VTT] [-o OUTPUT]
-                                         [--device {auto,cpu,cuda,rocm,xpu,mps,jetson}] [--all]
+                                         [--device {auto,cpu,cuda,rocm,xpu,mps,jetson}]
                                          audiobooks [audiobooks ...]
 
 Report the sentences of an e2a audiobook that do not say their text: babble, a word or a phrase
@@ -715,8 +714,9 @@ It reads the .vtt e2a writes beside each audiobook (one cue per sentence), trans
 facebook/mms-1b-all (1162 languages, downloaded into models/tts on first use) and compares the letters of
 both texts, romanized (uroman, pykakasi for Japanese). The limits come from the book itself, from the
 medians of all its sentences: names or a hard text raise them for the whole book, a hallucination stands out.
-Each flagged sentence is printed as soon as it is found (block and sentence numbers as in e2a, problem), all of them in a
-table at the end, and every sentence with its measures is saved in <audiobook>.hallucinations.json.
+Each flagged sentence is printed as soon as it is found, all of them in a table at the end, by their block and
+sentence numbers as in e2a (from 0). Every sentence with its problem, its text, what was heard and its measures
+is saved in <audiobook>.hallucinations.json.
 
 positional arguments:
   audiobooks            Audiobook files (m4b, mp3, flac...) with their .vtt beside them, or folders holding
@@ -734,13 +734,11 @@ options:
   --device {auto,cpu,cuda,rocm,xpu,mps,jetson}
                         Device the speech recognizer runs on, named as in e2a (default: the one e2a was
                         installed for, cpu when it cannot be used)
-  --all                 List every sentence with its measures in the table at the end, not only the flagged
-                        ones
 
 examples:
   check_audiobook_hallucinations.py audiobooks/cli/book.m4b
   check_audiobook_hallucinations.py audiobooks/cli/book.m4b --language fra --device cuda
-  check_audiobook_hallucinations.py audiobooks/cli --all
+  check_audiobook_hallucinations.py audiobooks/cli
 ```
 
 <a id="cloned-voices"></a>
