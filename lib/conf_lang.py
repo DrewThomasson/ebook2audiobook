@@ -696,7 +696,7 @@ chapter_word_mapping = {
     "eng": ["chapter", "part", "psalm", "section", "paragraph", "article", "tome"],
     "fra": ["chapitre", "partie", "psaume", "section", "paragraphe", "article", "tome"],
     "spa": ["capítulo", "parte", "salmo", "sección", "párrafo", "artículo", "tomo"],
-    "deu": ["Kapitel", "Teil", "Psalm", "Abschnitt", "Absatz", "Artikel", "Band"],
+    "deu": ["Kapitel", "Teil", "Psalm", "Abschnitt", "Absatz", "Artikel", "Band", "Kapitels", "Teils", "Teiles", "Psalms", "Abschnitts", "Abschnittes", "Absatzes", "Artikels", "Bandes"],
     "ita": ["capitolo", "parte", "salmo", "sezione", "paragrafo", "articolo", "tomo"],
     "rus": ["глава", "часть", "псалом", "раздел", "параграф", "статья", "том"],
     "zho": ["章节", "部分", "诗篇", "节", "段落", "条款", "卷", "章", "部", "篇", "回", "節"],
@@ -738,9 +738,21 @@ chapter_word_mapping = {
 
 # languages reading a roman number before a chapter word as an ordinal (IV. Kapitel = viertes Kapitel,
 # IV. fejezet = negyedik fejezet, IV luku = neljäs luku). num2words gives the masculine ordinal, 'endings' turn it
-# into the gender of the chapter word listed in 'genders' (any other word keeps the masculine one)
+# into the gender of the chapter word listed in 'genders' (any other word keeps the masculine one).
+# 'before': a word right before the numeral setting the ending instead of the gender (das vierte Kapitel, im vierten Kapitel)
 language_ordinal_before = {
-    "deu": {"endings": {"m": [("e", "er")], "n": [("e", "es")]}, "genders": {"kapitel": "n", "teil": "m", "psalm": "m", "abschnitt": "m", "absatz": "m", "artikel": "m", "band": "m"}},
+    "deu": {
+        "endings": {"m": [("e", "er")], "n": [("e", "es")]},
+        "genders": {"kapitel": "n", "teil": "m", "psalm": "m", "abschnitt": "m", "absatz": "m", "artikel": "m", "band": "m"},
+        "before": {
+            # nominative: weak -e (der zweite Teil, das vierte Kapitel)
+            "der": [], "die": [], "das": [], "dieser": [], "diese": [], "dieses": [], "jener": [], "jene": [], "jenes": [],
+            # accusative, dative, genitive: -en (den dritten Band, im vierten Kapitel, des zweiten Teils, einem fünften Teil)
+            "den": [("e", "en")], "dem": [("e", "en")], "des": [("e", "en")], "diesen": [("e", "en")], "diesem": [("e", "en")],
+            "im": [("e", "en")], "am": [("e", "en")], "vom": [("e", "en")], "zum": [("e", "en")], "beim": [("e", "en")], "zur": [("e", "en")],
+            "einen": [("e", "en")], "einem": [("e", "en")], "eines": [("e", "en")]
+        }
+    },
     "ces": {"endings": {"f": [("ý", "á")], "n": [("ý", "é")]}, "genders": {"kapitola": "f", "část": "f"}},
     "slk": {"endings": {"f": [("ý", "á"), ("y", "a")], "n": [("ý", "é"), ("y", "e")]}, "genders": {"kapitola": "f", "časť": "f"}},
     "hrv": {"endings": {"f": [("i", "a")], "n": [("i", "o")]}, "genders": {"poglavlje": "n"}},

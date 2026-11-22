@@ -2852,6 +2852,9 @@ def get_title_roman_patterns(lang:str|None=None)->dict:
     word_after = numeral + r'(?:' + '|'.join(behind) + r')'
     edge = r'\p{Latin}\p{Cyrillic}\p{Greek}\p{Armenian}\p{Nd}\p{M}'
     title_start = r'(?P<pre>^[\s\-–—~*]*)'
+    # a paragraph used as a title may open with a word setting the ordinal's ending (Das IV. Kapitel)
+    before = list((language_ordinal_before.get(lang) or {}).get('before', {}))
+    title_start_before = r'(?P<pre>^[\s\-–—~*]*(?:(?i:' + _alt(before) + r')\s+)?)' if before else title_start
     return dict(
         # Chapter IV, Глава XII, Part II: The Return, anywhere in a heading
         word_first=re.compile(r'(?P<pre>' + word_first),
@@ -2859,7 +2862,7 @@ def get_title_roman_patterns(lang:str|None=None)->dict:
         word_first_start=re.compile(r'(?P<pre>^\s*' + word_first),
         # IV. fejezet, IV luku, XII. Bölüm, 第Ⅳ章, 제IV장: the chapter word behind, anywhere in a heading
         word_after=re.compile(r'(?P<pre>)(?<![' + edge + r'])' + word_after),
-        word_after_start=re.compile(title_start + word_after),
+        word_after_start=re.compile(title_start_before + word_after),
         # IV, XII. The Return, IV: Exile opening a heading: a numbering mark may follow, not a comma (I, Robot)
         bare_first=re.compile(title_start + numeral + r'(?=\s*(?:$|[.:\-–—]))'),
         # IV. standing alone in a paragraph used as a title, never prose (I, for one, agree)
@@ -2924,7 +2927,11 @@ def roman2number(title:str, lang:str|None=None, lang_iso1:str|None=None, at_star
         if word and ordinal_rules is not None and lang_iso1:
             try:
                 ordinal = num2words(value, lang=lang_iso1, to='ordinal')
-                endings = ordinal_rules.get('endings', {}).get(genders.get(word_key(word)), [])
+                # a word right before the numeral sets the ending (das vierte, im vierten), else the chapter word's gender (viertes)
+                prev = re.search(r'([\p{L}\p{M}]+)\s+$', m.string[:m.start('num')])
+                endings = ordinal_rules.get('before', {}).get(prev.group(1).casefold()) if prev else None
+                if endings is None:
+                    endings = ordinal_rules.get('endings', {}).get(genders.get(word_key(word)), [])
                 # the ordinal takes the numeral and its dot: IV. Kapitel -> viertes Kapitel
                 return f"{m.group('pre')}{' '.join(_inflect(w, endings) for w in ordinal.split())} "
             except Exception:
