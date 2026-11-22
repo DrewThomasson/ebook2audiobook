@@ -124,7 +124,9 @@ def build_interface(args:dict)->gr.Blocks:
                             gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value=legends['gr_audiobook_markdown'])
                             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=True)
                             gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=True, value=0.0)
-                            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='…', interactive=False, lines=3, max_lines=3, max_length=500)
+                            # its label stays hidden: header.js reads "block|sentence" there, in the UI language, for the block and
+                            # sentence numbers it shows beside the sentence playing
+                            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label=f"{legends['word_block']}|{legends['word_sentence']}", value='…', interactive=False, lines=3, max_lines=3, max_length=500)
                             with gr.Row(elem_id='gr_row_audiobook_edit', visible=False) as gr_row_audiobook_edit:
                                 gr_audiobook_edit_preview_btn = gr.Button(elem_id='gr_audiobook_edit_preview_btn', value='◉', elem_classes=['small-btn-green'], variant='secondary', interactive=True, scale=0, min_width=60)
                                 gr_audio_edit_kwargs = {"elem_id": "gr_audiobook_edit_player", "label": "", "type": "filepath", "autoplay": True, "interactive": False, "buttons": None, "waveform_options": gr.WaveformOptions(show_recording_waveform=False), "container": True, "visible": True, "scale": 2}
@@ -1134,6 +1136,7 @@ def build_interface(args:dict)->gr.Blocks:
                             gr.update(value=legends['gr_session_markdown']),
                             gr.update(value=legends['gr_progress_markdown']),
                             gr.update(value=legends['gr_audiobook_markdown']),
+                            gr.update(label=f"{legends['word_block']}|{legends['word_sentence']}"),
                             gr.update(label=legends['gr_xtts_temperature'], info=legends['gr_xtts_temperature_info']),
                             gr.update(label=legends['gr_xtts_length_penalty'], info=legends['gr_xtts_length_penalty_info']),
                             gr.update(label=legends['gr_xtts_num_beams'], info=legends['gr_xtts_num_beams_info']),
@@ -3885,7 +3888,7 @@ def build_interface(args:dict)->gr.Blocks:
                 gr_ebook_mode, gr_blocks_preview, gr_interlude_enabled, gr_language_markdown, gr_translate_enabled, gr_voice_markdown,
                 gr_voice_file, gr_voice_list, gr_device_markdown, gr_tts_rating, gr_models_markdown,
                 gr_custom_model_file, gr_output_markdown, gr_output_format_list, gr_output_channel_list, gr_output_split,
-                gr_output_split_hours_markdown, gr_session_markdown, gr_progress_markdown, gr_audiobook_markdown,
+                gr_output_split_hours_markdown, gr_session_markdown, gr_progress_markdown, gr_audiobook_markdown, gr_audiobook_sentence,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k,
                 gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_markdown_tab_bark_params, gr_bark_text_temp,
                 gr_bark_waveform_temp, gr_markdown_tab_zonos_params, gr_zonos_speaking_rate, gr_zonos_emotion_enabled,
