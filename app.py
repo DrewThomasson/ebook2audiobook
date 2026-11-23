@@ -533,7 +533,22 @@ valence, arousal (-1 to 1).""")
             print(error)
             sys.exit(1)
         try:
-            import lib.core as c
+            try:
+                import lib.core as c
+            except ModuleNotFoundError as e:
+                # a package install_python_packages() checked a moment ago is gone at import (bug 4ebb2b4c240669eb:
+                # argostranslate missing, gradio imported fine by lib.core then without metadata like coqui-tts): the env
+                # changed in between, e.g. another start's install pass, which the install lock only keeps from
+                # overlapping this start's pass. The pass runs again under the lock, so after any install in progress,
+                # puts back what is missing, and lib.core is imported once more. e2a's own modules: nothing to install
+                if args['script_mode'] != NATIVE or (e.name or '').split('.', 1)[0] == 'lib':
+                    raise
+                msg = legends['msg_import_missing_repair'].format(module=e.name)
+                print(msg)
+                if manager.install_python_packages() == 1:
+                    raise
+                importlib.invalidate_caches()
+                import lib.core as c
         except ImportError as e:
             # Windows Smart App Control / an App Control policy refusing an unsigned module (Python's, a package's)
             from lib.classes.bug_reporter import bug_reporter as reporter

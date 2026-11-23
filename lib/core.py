@@ -267,6 +267,7 @@ class SessionContext:
             "voice": None,
             "voice_dir": None,
             "voice_map": {},
+            "voice_default_alert": None,
             "ebook_selected": None,
             "custom_model": None,
             # set from the start, never None: events of the same session can run while the GUI restores it

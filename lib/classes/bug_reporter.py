@@ -6,7 +6,7 @@ from typing import Any
 
 class BugReporter:
     packages = [
-        'torch', 'torchaudio', 'torchcodec', 'torchcodec-xpu', 'transformers', 'coqui-tts', 'gradio', 'numpy',
+        'torch', 'torchaudio', 'torchcodec', 'torchcodec-xpu', 'torchvision', 'transformers', 'coqui-tts', 'gradio', 'numpy',
         'onnxruntime', 'onnxruntime-gpu', 'onnxruntime-openvino', 'onnxruntime-directml', 'stanza', 'pyannote-audio',
         'piper-tts', 'ptts', 'argostranslate'
     ]
