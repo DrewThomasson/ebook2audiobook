@@ -2,7 +2,7 @@ import json
 from lib.classes.tts_engines.common.headers import *
 from lib.classes.tts_engines.common.preset_loader import load_engine_presets
 from lib.classes.subprocess_pipe import SubprocessPipe
-from lib.conf import systems, archs, torch_matrix, default_pytorch_url, default_pytorch_nightly_url
+from lib.conf import systems, torch_matrix, default_pytorch_url, default_pytorch_nightly_url
 from lib.lang import legends
 
 class GptSovits(TTSUtils, TTSRegistry, name='gptsovits'):
@@ -96,28 +96,7 @@ class GptSovits(TTSUtils, TTSRegistry, name='gptsovits'):
                 # keep the worker off the GPU entirely
                 self.worker_env['CUDA_VISIBLE_DEVICES'] = '-1'
                 self.worker_env['HIP_VISIBLE_DEVICES'] = '-1'
-            # espeak-ng paths for phonemizer: worker_env replaces the subprocess
-            # environment, so resolve them here instead of relying on the launcher
-            espeak_lib = None
-            espeak_data = None
-            if sys.platform == systems['MACOS']:
-                espeak_prefix = '/opt/homebrew' if os.uname().machine == archs['ARM64'] else '/usr/local'
-                espeak_lib = os.path.join(espeak_prefix, 'lib', 'libespeak-ng.dylib')
-                espeak_data = os.path.join(espeak_prefix, 'share', 'espeak-ng-data')
-            elif sys.platform == systems['LINUX']:
-                espeak_data = '/usr/share/espeak-ng-data'
-                for candidate in (
-                    '/usr/lib/x86_64-linux-gnu/libespeak-ng.so.1',
-                    '/usr/lib64/libespeak-ng.so.1',
-                    '/usr/lib/libespeak-ng.so.1',
-                ):
-                    if os.path.exists(candidate):
-                        espeak_lib = candidate
-                        break
-            if espeak_lib and os.path.exists(espeak_lib):
-                self.worker_env['PHONEMIZER_ESPEAK_LIBRARY'] = espeak_lib
-            if espeak_data and os.path.isdir(espeak_data):
-                self.worker_env['ESPEAK_DATA_PATH'] = espeak_data
+            # espeak-ng for phonemizer: PHONEMIZER_ESPEAK_LIBRARY and ESPEAK_DATA_PATH come with os.environ (lib/conf.py)
             # device family and python come from e2a's own detection (.device_info.json, written by
             # DeviceInstaller): torch is never imported here
             from lib.classes.device_installer import DeviceInstaller

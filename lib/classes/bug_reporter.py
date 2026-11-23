@@ -323,26 +323,32 @@ print(json.dumps(out))
             value = pattern.sub(new, value)
         return value
 
+    def read_device_info(self)->dict:
+        try:
+            with open(os.path.join(self.app_root, '.device_info.json'), 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    def package_versions(self)->dict:
+        packages = {}
+        for name in self.packages:
+            try:
+                packages[name] = metadata.version(name)
+            except Exception:
+                pass
+        try:
+            for dist in metadata.distributions():
+                name = re.sub(r'[-_.]+', '-', (dist.metadata['Name'] or '').lower())
+                if self.native_re.match(name):
+                    packages[name] = dist.version
+        except Exception:
+            pass
+        return packages
+
     def system_info(self)->dict:
         if self.system is None:
-            device, packages, ram_gb = {}, {}, None
-            try:
-                with open(os.path.join(self.app_root, '.device_info.json'), 'r', encoding='utf-8') as f:
-                    device = json.load(f)
-            except Exception:
-                pass
-            for name in self.packages:
-                try:
-                    packages[name] = metadata.version(name)
-                except Exception:
-                    pass
-            try:
-                for dist in metadata.distributions():
-                    name = re.sub(r'[-_.]+', '-', (dist.metadata['Name'] or '').lower())
-                    if self.native_re.match(name):
-                        packages[name] = dist.version
-            except Exception:
-                pass
+            ram_gb = None
             try:
                 import psutil
                 ram_gb = round(psutil.virtual_memory().total / 1024**3, 1)
@@ -351,9 +357,15 @@ print(json.dumps(out))
             self.system = dict(
                 platform=platform.platform(), machine=platform.machine(), python=platform.python_version(),
                 script_mode=self.script_mode, in_docker=os.environ.get('IN_DOCKER') == '1' or os.path.exists('/.dockerenv'),
-                cpu_count=os.cpu_count(), ram_gb=ram_gb, device_info=device, gpus=self.gpu_list(),
-                env={k: os.environ[k] for k in self.env_keys if os.environ.get(k)}, packages=packages
+                cpu_count=os.cpu_count(), ram_gb=ram_gb, device_info={}, gpus=self.gpu_list(),
+                env={k: os.environ[k] for k in self.env_keys if os.environ.get(k)}, packages={}
             )
+        # read again at every report: the first call is often install()'s thread sending an earlier run's native crash
+        # log, before check_device_info() rewrites .device_info.json and before the device step and
+        # install_python_packages() install or swap packages. Cached from there, a later report of the same process
+        # listed the env as it was before that start's installs (crash report fde84426e3e1c1ec: argostranslate, gradio
+        # and numpy without a version, lib.core had already imported gradio). A new dict: a report thread may hold the last one
+        self.system = dict(self.system, device_info=self.read_device_info(), packages=self.package_versions())
         return self.system
 
     def gpu_list(self)->list:

@@ -18,6 +18,7 @@ TTS_ENGINES = {
     "OPENVOICE": "openvoice",
     "MELOTTS": "melotts",
     "CSM": "csm",
+    "KITTENTTS": "kittentts",
     "PHONON": "phonon",
     "XTTS": "xtts",
     "BARK": "bark",
@@ -59,7 +60,7 @@ TTS_ENGINES = {
 }
 
 # voice conversion: a voice file picked for a built-in voice engine (piper, vits, fairseq, glowtts, tacotron, orpheus, melotts,
-# phonon and the audio.cpp ones with clone False) turns its output into that voice, on audio.cpp's server (common/voice_conversion.py).
+# phonon, kittentts' mini / nano / pico models and the audio.cpp ones with clone False) turns its output into that voice, on audio.cpp's server (common/voice_conversion.py).
 # default_vc_model below picks one; the last part of its path is the zero-shot engine's tts_zs_key (loaded_tts, model_zs_cache).
 # task "vc": voice to voice. task "tts": the engine's voice clone speaks the sentence text again (no voice to voice).
 # files: GGUF in audiocpp_repo; engine: the files of that engine's "internal" preset instead (one download for both).
@@ -136,7 +137,7 @@ default_voice_separation_model = dict(repo='drewThomasson/htdemucs', name='htdem
 default_speaker = os.path.join(voices_dir, 'eng', 'adult', 'male', 'KumarDahl.wav')
 
 tts_engines_from_coqui = [TTS_ENGINES['XTTS'], TTS_ENGINES['BARK'], TTS_ENGINES['TORTOISE'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON'], TTS_ENGINES['YOURTTS']]
-tts_engines_with_inner_speaker = [TTS_ENGINES['PIPER'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON'], TTS_ENGINES['YOURTTS'], TTS_ENGINES['ORPHEUS'], TTS_ENGINES['OPENVOICE'], TTS_ENGINES['MELOTTS'], TTS_ENGINES['PHONON']]
+tts_engines_with_inner_speaker = [TTS_ENGINES['PIPER'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['GLOWTTS'], TTS_ENGINES['TACOTRON'], TTS_ENGINES['YOURTTS'], TTS_ENGINES['ORPHEUS'], TTS_ENGINES['OPENVOICE'], TTS_ENGINES['MELOTTS'], TTS_ENGINES['PHONON'], TTS_ENGINES['KITTENTTS']]
 tts_engines_with_custom_model = (TTS_ENGINES['PIPER'], TTS_ENGINES['XTTS'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['OMNIVOICE'], TTS_ENGINES['F5TTS'], TTS_ENGINES['ORPHEUS'], TTS_ENGINES['OPENVOICE'], TTS_ENGINES['MELOTTS'])
 
 # audio.cpp engines (0xShug0/audio.cpp): one native audiocpp_server package per platform, shared by every audio.cpp
@@ -841,6 +842,72 @@ default_engine_settings = {
         # 1B backbone + 0.1B depth decoder (bf16 from sm 8.0, fp16 below, fp32 on Pascal / GTX 16xx and cpu) + Mimi (fp32)
         "devices": torch_devices,
         "rating": {"VRAM": 4, "CPU": 1, "RAM": 8, "Realism": 4}
+    },
+    TTS_ENGINES['KITTENTTS']: {
+        # runs in its own uv venv (lib/classes/tts_engines/venvs/kittentts) behind a persistent worker, from the pinned
+        # source tree (the kittenml package). Two KittenTTS 2 families, through upstream's own classes:
+        #   kitten-tts-2: 1.7B ternary speech LM writing S3 codec tokens, decoded by chatterbox-turbo's s3gen (vendored in
+        #     kittenml). Built-in voices, and a voice file is cloned natively (its speaker embedding + its codec tokens and
+        #     Whisper transcript in the prompt)
+        #   kitten-tts-2-mini / nano / pico: 82M / 17M / 7M multilingual models (voice style vectors, iSTFTNet decoder), ONNX
+        #     int8 on CPU or their fp32 weights in torch on CUDA. Built-in voices only: a voice file converts their output with default_vc_model
+        # presets/kittentts_presets.py picks the model and its built-in voice per language
+        # repo: KittenTTS 2
+        "repo": "KittenML/kitten-tts-2",
+        "source": "https://github.com/KittenML/KittenTTS/archive/5802f6b956844919ecf210f4e55f4750a6ad7c6f.tar.gz",
+        "python": "3.12",
+        # package list = upstream's own requirements.txt (in the extracted tree), torch from the device's PyTorch index
+        # (--torch-backend, e2a's detected tag) or e2a's DeviceInstaller as fallback. Left out: what inference never imports
+        # (resemble-perth: chatterbox's own watermarker, hydra-core, pyloudnorm) and transformers (requirements_extra
+        # caps it). Names normalized as pip does.
+        "requirements_file": "requirements.txt",
+        "requirements_exclude": ["resemble-perth", "hydra-core", "pyloudnorm", "transformers"],
+        # transformers below 5.24: 5.24 passes the KV cache to forward as `cache` instead of `past_key_values`, and
+        # kittenml's speaker hook (speaker.py attach_speaker_head) then takes every decode step for the prefill: each new
+        # token's embedding is replaced by the speaker's and generation stops after a few syllables (5.23: whole sentences);
+        # misaki, spacy, num2words: the mini / nano / pico text frontend, in setup.py but missing from requirements.txt;
+        # en_core_web_sm: misaki's english G2P loads it, and spacy would pip-install it at first use (no pip in a uv venv);
+        # soxr: the worker resamples the voice reference for Whisper; hf_xet as for GPT-SoVITS (windows reports AMD64, so
+        # huggingface_hub's own marker misses it)
+        "requirements_extra": ["transformers>=4.55,<5.24", "misaki>=0.9.4", "spacy>=3.8", "num2words", "en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl", "soxr", "hf_xet>=1.1.3,<2.0.0; sys_platform == 'win32'"],
+        # every package installs as a wheel, so no platform ever needs a compiler; docopt (num2words) only exists as a
+        # pure-python source (without it the resolver falls back to num2words 0.5.6, from 2018)
+        "packages_sdist": ["docopt"],
+        # kitten-tts-2 weight packing: "packed" (lossless ternary, ~1 GB, upstream default) or "emb4" (~0.5 GB, quantised
+        # token embedding); decoder: "default" (s3gen's own flow) or "student_w4" (smaller distilled flow)
+        "weights": "packed",
+        "decoder": "default",
+        # s3gen weights kittenml fetches at load (vocoder.py), downloaded instead as a plain file under models/tts/kittentts
+        "s3gen": {"repo": "ResembleAI/chatterbox-turbo", "file": "s3gen_meanflow.safetensors"},
+        # mini / nano / pico ONNX weights: "int8" (upstream default) or "int4" (half the size)
+        "tiny_weights": "int8",
+        # reference transcription for cloning (the transcript is part of the prompt; upstream's own transcriber forces
+        # English), Whisper run on cpu; one copy under models/tts shared with the other engines using it
+        "asr_model": "openai/whisper-large-v3-turbo",
+        # the worker cuts a reference clip of at most ref_max seconds (upstream: 5-30 s, its built-in clips are 8-18 s)
+        "ref_max": 15.0,
+        # languages a model with a built-in voice exists for (presets/kittentts_presets.py) -> two-letter code (the tiny
+        # models' language argument). kitten-tts-2 also speaks Swedish, Danish, Finnish, Swahili with no built-in voice for
+        # them: mini serves those; Greek and Hebrew have neither, so they are not listed
+        "languages": {"eng": "en", "ara": "ar", "zho": "zh", "nld": "nl", "fra": "fr", "deu": "de", "hin": "hi", "ind": "id", "ita": "it", "jpn": "ja", "kor": "ko", "pol": "pl", "por": "pt", "rus": "ru", "spa": "es", "tur": "tr", "dan": "da", "fin": "fi", "swe": "sv", "swh": "sw"},
+        "samplerate": 24000,
+        # upstream defaults: kitten-tts-2 decode preset ("stable" or "expressive", sampling values from its config.json),
+        # per-chunk token budget (25 tokens per second), its english text normalizer (english only: upstream says it
+        # mangles other languages); mini / nano / pico speed
+        "preset": "stable",
+        "max_new_tokens": 1000,
+        "normalize": ["eng"],
+        "speed": 1.0,
+        "files": [],
+        # built-in voices (as Orpheus): "default" speaks with the preset's voice; a voice file is cloned by kitten-tts-2,
+        # converted with default_vc_model for mini / nano / pico
+        "voice": None,
+        "voices": {},
+        # kitten-tts-2: 1.7B LM in bf16 (fp32 on a GPU without bf16) + s3gen (~0.27B, fp32); upstream asks ~8 GB of VRAM or
+        # ~6 GB of RAM, its python package is not optimized for CPU (RTF ~4-6 measured on 4 cores). mini / nano / pico: ONNX
+        # int8, RTF ~0.05-0.3 measured on 4 cores
+        "devices": torch_devices,
+        "rating": {"VRAM": 6, "CPU": 1, "RAM": 8, "Realism": 5}
     },
     TTS_ENGINES['PHONON']: {
         # Phonon (gradium-ai/xn-ptts): the ptts wheel lives in python_env like coqui-tts (one abi3 Rust extension,
