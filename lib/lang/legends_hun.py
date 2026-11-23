@@ -509,6 +509,7 @@ legends = {
     'msg_reinstalling_incomplete': 'Hiányzó fájlokat tartalmazó csomagok újratelepítése: {pkgs}',
     'msg_install_lock_wait': 'Egy másik ebook2audiobook csomagokat telepít ide: {env}, várakozás a befejezésére…',
     'msg_removing_unusable_torchcodec': 'A(z) {version} torchcodec eltávolítása: a torchcodec nem működik a(z) {torch} torch-csal (2.9 alatt), a pyannote nélküle működik.',
+    'msg_removing_unusable_torchvision': 'A(z) {version} torchvision eltávolítása: nem töltődik be a(z) {torch} torch-csal, és elrontja a transformers működését, az ebook2audiobook nélküle is működik.',
     'msg_removing_obsolete': 'Az elavult {pkg} csomag eltávolítása…',
     'msg_remove_obsolete_failed': 'Az elavult {pkg} csomag eltávolítása sikertelen (nem kritikus): {e}',
     'error_numpy_install_failed': 'A numpy csomag telepítése sikertelen: {e}',

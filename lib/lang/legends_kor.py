@@ -509,6 +509,7 @@ legends = {
     'msg_reinstalling_incomplete': '파일이 누락된 패키지 재설치 중: {pkgs}',
     'msg_install_lock_wait': '다른 ebook2audiobook이 {env}에 패키지를 설치하는 중입니다. 완료될 때까지 기다리는 중…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} 제거 중: torch {torch}(2.9 미만)에서는 torchcodec이 실행되지 않으며, pyannote는 torchcodec 없이 작동합니다.',
+    'msg_removing_unusable_torchvision': 'torchvision {version} 제거 중: torch {torch}와 함께 로드되지 않고 transformers를 망가뜨립니다. ebook2audiobook은 이것 없이도 작동합니다.',
     'msg_removing_obsolete': '오래된 패키지 {pkg}을(를) 제거하는 중…',
     'msg_remove_obsolete_failed': '오래된 패키지 {pkg} 제거 실패(치명적이지 않음): {e}',
     'error_numpy_install_failed': 'numpy 패키지 설치 실패: {e}',

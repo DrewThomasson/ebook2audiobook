@@ -509,6 +509,7 @@ legends = {
     'msg_reinstalling_incomplete': 'जिन पैकेज में फ़ाइलें मौजूद नहीं हैं, उन्हें फिर से इंस्टॉल करना: {pkgs}',
     'msg_install_lock_wait': 'एक अन्य ebook2audiobook {env} में पैकेज इंस्टॉल कर रहा है, उसके पूरा होने की प्रतीक्षा की जा रही है…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} को हटाया जा रहा है: torch {torch} (2.9 से नीचे) के साथ कोई torchcodec नहीं चलता है, pyannote इसके बिना काम करता है।',
+    'msg_removing_unusable_torchvision': 'torchvision {version} हटाया जा रहा है: यह torch {torch} के साथ लोड नहीं होता और transformers को तोड़ देता है, ebook2audiobook इसके बिना काम करता है।',
     'msg_removing_obsolete': 'पुराना पैकेज {pkg} हटाया जा रहा है…',
     'msg_remove_obsolete_failed': 'पुराना पैकेज {pkg} हटाना विफल (गंभीर नहीं): {e}',
     'error_numpy_install_failed': 'numpy पैकेज इंस्टॉल करना विफल: {e}',

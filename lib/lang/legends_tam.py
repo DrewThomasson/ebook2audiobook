@@ -509,6 +509,7 @@ legends = {
     'msg_reinstalling_incomplete': 'கோப்புகள் இல்லாத தொகுப்புகளை மீண்டும் நிறுவுகிறது: {pkgs}',
     'msg_install_lock_wait': 'மற்றொரு ebook2audiobook {env} இல் தொகுப்புகளை நிறுவுகிறது, அது முடியும் வரை காத்திருக்கிறது…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} ஐ அகற்றுதல்: torch {torch} உடன் torchcodec இயங்காது (2.9 க்கு கீழே), pyannote அது இல்லாமல் இயங்கும்.',
+    'msg_removing_unusable_torchvision': 'torchvision {version} ஐ அகற்றுதல்: இது torch {torch} உடன் ஏற்றப்படாது, transformers ஐ உடைக்கிறது, ebook2audiobook இது இல்லாமல் இயங்கும்.',
     'msg_removing_obsolete': 'பழைய தொகுப்பு {pkg} நீக்கப்படுகிறது…',
     'msg_remove_obsolete_failed': 'பழைய தொகுப்பு {pkg} ஐ நீக்க முடியவில்லை (முக்கியமில்லை): {e}',
     'error_numpy_install_failed': 'numpy தொகுப்பை நிறுவ முடியவில்லை: {e}',

@@ -509,6 +509,7 @@ legends = {
     'msg_reinstalling_incomplete': 'Ponowna instalacja pakietów z brakującymi plikami: {pkgs}',
     'msg_install_lock_wait': 'Inny ebook2audiobook instaluje pakiety w {env}, oczekiwanie na zakończenie…',
     'msg_removing_unusable_torchcodec': 'Usuwanie torchcodec {version}: torchcodec nie działa z torch {torch} (poniżej 2.9), pyannote działa bez niego.',
+    'msg_removing_unusable_torchvision': 'Usuwanie torchvision {version}: nie ładuje się z torch {torch} i psuje transformers, ebook2audiobook działa bez niego.',
     'msg_removing_obsolete': 'Usuwanie przestarzałego pakietu {pkg}…',
     'msg_remove_obsolete_failed': 'Nie można usunąć przestarzałego pakietu {pkg} (niekrytyczne): {e}',
     'error_numpy_install_failed': 'Nie można zainstalować pakietu numpy: {e}',

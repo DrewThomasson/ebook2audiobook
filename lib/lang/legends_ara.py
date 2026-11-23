@@ -509,6 +509,7 @@ legends = {
     'msg_reinstalling_incomplete': 'إعادة تثبيت الحزم التي تحتوي على ملفات مفقودة: {pkgs}',
     'msg_install_lock_wait': 'يقوم ebook2audiobook آخر بتثبيت الحزم في {env}، جارٍ الانتظار حتى ينتهي…',
     'msg_removing_unusable_torchcodec': 'إزالة torchcodec {version}: لا يعمل torchcodec مع torch {torch} (أقل من 2.9)، ويعمل pyannote بدونه.',
+    'msg_removing_unusable_torchvision': 'إزالة torchvision {version}: لا يُحمَّل مع torch {torch} ويعطّل transformers، ويعمل ebook2audiobook بدونه.',
     'msg_removing_obsolete': 'جارٍ إزالة الحزمة القديمة {pkg}…',
     'msg_remove_obsolete_failed': 'فشلت إزالة الحزمة القديمة {pkg} (غير حرج): {e}',
     'error_numpy_install_failed': 'فشل تثبيت حزمة numpy: {e}',

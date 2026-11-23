@@ -2115,6 +2115,7 @@ class DeviceInstaller():
                 msg = legends['msg_all_packages_ok']
                 print(msg)
             self.remove_unusable_torchcodec()
+            self.remove_unusable_torchvision()
             if self.install_missing_dependencies() == 1:
                 return 1
             if self.repair_incomplete_packages() == 1:
@@ -2147,6 +2148,38 @@ class DeviceInstaller():
             subprocess.call(self._uv_pip('uninstall', 'torchcodec'))
         except Exception as e:
             error = f'remove_unusable_torchcodec(): {e}'
+            print(error)
+
+    def remove_unusable_torchvision(self)->None:
+        # e2a never installs torchvision, yet transformers imports it whenever it is installed (image_utils, which
+        # transformers.pipelines imports for every pipeline, text ones included). One left from another torch (installed
+        # by hand or by another tool, kept when install_device_packages() swaps torch for another tag) cannot load its
+        # _C library against the torch in place: its ops are never registered and the import dies with "operator
+        # torchvision::nms does not exist" (interludes: InterludeGenerator). e2a never imports it and
+        # install_missing_dependencies() skips torchvision, so it stays out
+        try:
+            torchvision_version = self.get_package_version('torchvision')
+            torch_version = self.get_package_version('torch')
+            if not torchvision_version or not torch_version:
+                return
+            # each torchvision release pins the torch it was built against ('torch==2.5.1'). A torch patch release keeps
+            # the ABI, so the same minor is enough
+            pinned = next((m.group(1) for req in (distribution('torchvision').requires or []) if (m := re.match(r'torch\s*\(?\s*==\s*([^\s,;)]+)', req))), None)
+            if pinned:
+                if self.version_tuple(pinned, 2) == self.version_tuple(self.release_version(torch_version), 2):
+                    return
+            else:
+                # no torch pin in its metadata (a source build): its import decides, in python_exec like cpu_baseline()
+                try:
+                    if subprocess.run([python_exec, '-c', 'import torchvision'], capture_output=True, timeout=120).returncode == 0:
+                        return
+                except (subprocess.TimeoutExpired, OSError):
+                    return
+            msg = legends['msg_removing_unusable_torchvision'].format(version=torchvision_version, torch=torch_version)
+            print(msg)
+            subprocess.call(self._uv_pip('uninstall', 'torchvision'))
+        except Exception as e:
+            error = f'remove_unusable_torchvision(): {e}'
             print(error)
 
     def lacks_record_files(self, dist:Any)->bool:

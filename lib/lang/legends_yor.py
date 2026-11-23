@@ -509,6 +509,7 @@ legends = {
     'msg_reinstalling_incomplete': 'Fífi àwọn àkójọpọ̀ tí àwọn fáìlì wọn kò sí padà sí i: {pkgs}',
     'msg_install_lock_wait': 'ebook2audiobook mìíràn ń fi àwọn package sí {env}, à ń dúró kí ó parí…',
     'msg_removing_unusable_torchcodec': 'Yíyọ torchcodec {version} kúrò: kò sí torchcodec tí ó ń ṣiṣẹ́ pẹ̀lú torch {torch} (ní ìsàlẹ̀ 2.9), pyannote ń ṣiṣẹ́ láìsí i.',
+    'msg_removing_unusable_torchvision': 'Ń yọ torchvision {version} kúrò: kò lè ṣiṣẹ́ pẹ̀lú torch {torch}, ó sì ń ba transformers jẹ́, ebook2audiobook ń ṣiṣẹ́ láìsí rẹ̀.',
     'msg_removing_obsolete': 'À ń yọ àpò àtijọ́ {pkg} kúrò…',
     'msg_remove_obsolete_failed': 'Yíyọ àpò àtijọ́ {pkg} kò ṣiṣẹ́ (kò léwu): {e}',
     'error_numpy_install_failed': 'Fífi àpò numpy sí i kò ṣiṣẹ́: {e}',

@@ -509,6 +509,7 @@ legends = {
     'msg_reinstalling_incomplete': '正在重新安装缺少文件的软件包：{pkgs}',
     'msg_install_lock_wait': '另一个 ebook2audiobook 正在 {env} 中安装软件包，正在等待其完成…',
     'msg_removing_unusable_torchcodec': '正在移除 torchcodec {version}：没有 torchcodec 与 torch {torch}（低于 2.9）一起运行，pyannote 在没有它时也能正常工作。',
+    'msg_removing_unusable_torchvision': '正在移除 torchvision {version}：它无法与 torch {torch} 一起加载，并会导致 transformers 出错，ebook2audiobook 不需要它也能正常工作。',
     'msg_removing_obsolete': '正在移除过时的包 {pkg}…',
     'msg_remove_obsolete_failed': '移除过时的包 {pkg} 失败（不影响运行）：{e}',
     'error_numpy_install_failed': '安装 numpy 包失败：{e}',
