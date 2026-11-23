@@ -2518,6 +2518,9 @@ def build_interface(args:dict)->gr.Blocks:
                         lang_dir = language if language != 'con' else 'con-'  # Bypass Windows CON reserved name
                         file_pattern = "*.wav"
                         default_fallback = None
+                        # an XTTS language gets the eng built-in voices, converted to it at conversion time
+                        # (_check_xtts_builtin_speakers): no accent left, so no warning about them either
+                        xtts_language = language in default_engine_settings[TTS_ENGINES['XTTS']].get('languages', {})
                         eng_options = []
                         bark_options = []
                         piper_options = []
@@ -2528,7 +2531,7 @@ def build_interface(args:dict)->gr.Blocks:
                             for base in [os.path.splitext(f.name)[0]]
                         ]
                         builtin_names = {t[0]: None for t in builtin_options}
-                        if language in default_engine_settings[TTS_ENGINES['XTTS']].get('languages', {}):
+                        if xtts_language:
                             eng_dir = Path(os.path.join(voices_dir, "eng"))
                             eng_options = [
                                 (base, str(f))
@@ -2649,10 +2652,11 @@ def build_interface(args:dict)->gr.Blocks:
                             selected_voice = (session.get('voice_map') or {}).get(session['ebook_selected'], session['voice'])
                         voice_options = options
                         # only the engine's default voice (conf_models.py default_speaker, voices/eng) for the TTS language,
-                        # the source one or the translation's: the speech gets that voice's accent until a voice in the
-                        # language is added. Told once per language and engine, this runs several times per change
+                        # the source one or the translation's, and not an XTTS language (whose conversion fixes the accent):
+                        # the speech gets that voice's accent until a voice in the language is added. Told once per
+                        # language and engine, this runs several times per change
                         alert_key = None
-                        if default_fallback:
+                        if default_fallback and not xtts_language:
                             voice_lang = os.path.relpath(os.path.abspath(default_fallback), os.path.abspath(voices_dir)).split(os.sep)[0]
                             if voice_lang != language:
                                 alert_key = f"{language}|{session['tts_engine']}"
