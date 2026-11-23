@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': '最多只能上传 {max} 个语音',
     'error_audio_format_invalid': '所选音频文件格式无效。',
     'msg_voice_added': '语音 {name} 已添加到语音列表',
+    'msg_voice_default_accent': '{engine} 没有{language}语音：其默认语音 {voice} 为{voice_language}，因此朗读会带有{voice_language}口音。请上传{language}语音样本以获得正确的口音。',
     'error_voice_upload_failed': '失败！请检查音频文件是否兼容。',
     'error_voice_builtin': '语音文件 {name} 是内置语音，无法删除。',
     'error_voice_custom_model': '语音文件 {name} 属于您的某个自定义模型，无法删除。',

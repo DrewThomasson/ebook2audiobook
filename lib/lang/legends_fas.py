@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'حداکثر می‌توانید {max} صدا بارگذاری کنید',
     'error_audio_format_invalid': 'قالب فایل صوتی انتخاب‌شده معتبر نیست.',
     'msg_voice_added': 'صدای {name} به فهرست صداها افزوده شد',
+    'msg_voice_default_accent': 'هیچ صدایی به زبان {language} برای {engine} وجود ندارد: صدای پیش‌فرض آن {voice} به زبان {voice_language} است، پس گفتار لهجه {voice_language} خواهد داشت. برای لهجه درست، یک نمونه صدا به زبان {language} بارگذاری کنید.',
     'error_voice_upload_failed': 'ناموفق! بررسی کنید که فایل صوتی شما سازگار باشد.',
     'error_voice_builtin': 'فایل صدای {name} یک صدای داخلی است و قابل حذف نیست.',
     'error_voice_custom_model': 'فایل صدای {name} متعلق به یکی از مدل‌های سفارشی شماست و قابل حذف نیست.',

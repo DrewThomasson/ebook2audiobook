@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'You are allowed to upload a max of {max} voices',
     'error_audio_format_invalid': 'The audio file format selected is not valid.',
     'msg_voice_added': 'Voice {name} added to the voices list',
+    'msg_voice_default_accent': 'No voice in {language} for {engine}: its default voice {voice} is {voice_language}, so the speech will have the {voice_language} accent. Upload a voice sample in {language} to get the right accent.',
     'error_voice_upload_failed': 'Failed! Check if your audio file is compatible.',
     'error_voice_builtin': 'Voice file {name} is a builtin voice and cannot be deleted.',
     'error_voice_custom_model': 'Voice file {name} is a voice of one of your custom models and cannot be deleted.',

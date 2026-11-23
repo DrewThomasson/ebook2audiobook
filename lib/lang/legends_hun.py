@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'Legfeljebb {max} hangot tölthet fel',
     'error_audio_format_invalid': 'A kiválasztott hangfájlformátum érvénytelen.',
     'msg_voice_added': '{name} hang hozzáadva a hanglistához',
+    'msg_voice_default_accent': 'Nincs hang a következő nyelven: {language} ({engine}). Az alapértelmezett hang ({voice}) nyelve: {voice_language}, ezért a beszéd ennek akcentusával szól. A helyes akcentushoz tölts fel egy hangmintát ezen a nyelven: {language}.',
     'error_voice_upload_failed': 'Sikertelen! Ellenőrizze, hogy a hangfájl kompatibilis-e.',
     'error_voice_builtin': 'A(z) {name} hangfájl beépített hang, nem törölhető.',
     'error_voice_custom_model': 'A(z) {name} hangfájl az egyik egyéni modelljének hangja, nem törölhető.',

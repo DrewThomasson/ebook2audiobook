@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'يُسمح لك برفع {max} أصوات كحد أقصى',
     'error_audio_format_invalid': 'تنسيق الملف الصوتي المحدد غير صالح.',
     'msg_voice_added': 'تمت إضافة الصوت {name} إلى قائمة الأصوات',
+    'msg_voice_default_accent': 'لا يوجد صوت بلغة {language} لمحرك {engine}: صوته الافتراضي {voice} باللغة {voice_language}، لذا سيكون الكلام بلكنة {voice_language}. ارفع عينة صوتية بلغة {language} للحصول على اللكنة الصحيحة.',
     'error_voice_upload_failed': 'فشل! تحقق من توافق ملفك الصوتي.',
     'error_voice_builtin': 'ملف الصوت {name} صوت مدمج ولا يمكن حذفه.',
     'error_voice_custom_model': 'ملف الصوت {name} صوت لأحد نماذجك المخصصة ولا يمكن حذفه.',

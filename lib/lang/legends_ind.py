@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'Anda hanya boleh mengunggah maksimal {max} suara',
     'error_audio_format_invalid': 'Format berkas audio yang dipilih tidak valid.',
     'msg_voice_added': 'Suara {name} ditambahkan ke daftar suara',
+    'msg_voice_default_accent': 'Tidak ada suara dalam {language} untuk {engine}: suara bawaannya {voice} berbahasa {voice_language}, sehingga ucapan akan beraksen {voice_language}. Unggah sampel suara dalam {language} untuk mendapatkan aksen yang tepat.',
     'error_voice_upload_failed': 'Gagal! Periksa apakah berkas audio Anda kompatibel.',
     'error_voice_builtin': 'Berkas suara {name} adalah suara bawaan dan tidak dapat dihapus.',
     'error_voice_custom_model': 'Berkas suara {name} adalah suara dari salah satu model kustom Anda dan tidak dapat dihapus.',

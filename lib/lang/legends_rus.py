@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'Можно загрузить не более {max} голосов',
     'error_audio_format_invalid': 'Выбранный формат аудиофайла недопустим.',
     'msg_voice_added': 'Голос {name} добавлен в список голосов',
+    'msg_voice_default_accent': 'Нет голоса на языке {language} для {engine}: его голос по умолчанию {voice} на языке {voice_language}, поэтому речь будет с акцентом {voice_language}. Загрузите образец голоса на языке {language}, чтобы получить правильный акцент.',
     'error_voice_upload_failed': 'Ошибка! Проверьте, совместим ли ваш аудиофайл.',
     'error_voice_builtin': 'Файл голоса {name} — встроенный голос, его нельзя удалить.',
     'error_voice_custom_model': 'Файл голоса {name} принадлежит одной из ваших пользовательских моделей, его нельзя удалить.',

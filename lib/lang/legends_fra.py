@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'Vous pouvez importer au maximum {max} voix',
     'error_audio_format_invalid': 'Le format du fichier audio sélectionné n\'est pas valide.',
     'msg_voice_added': 'Voix {name} ajoutée à la liste des voix',
+    'msg_voice_default_accent': 'Aucune voix en {language} pour {engine} : sa voix par défaut {voice} est en {voice_language}, la lecture aura donc l’accent {voice_language}. Importez un échantillon de voix en {language} pour obtenir le bon accent.',
     'error_voice_upload_failed': 'Échec ! Vérifiez que votre fichier audio est compatible.',
     'error_voice_builtin': 'Le fichier vocal {name} est une voix intégrée et ne peut pas être supprimé.',
     'error_voice_custom_model': 'Le fichier vocal {name} est une voix de l\'un de vos modèles personnalisés et ne peut pas être supprimé.',

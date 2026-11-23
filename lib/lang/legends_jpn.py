@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'アップロードできる音声は最大 {max} 件です',
     'error_audio_format_invalid': '選択された音声ファイルの形式は無効です。',
     'msg_voice_added': '音声 {name} を音声リストに追加しました',
+    'msg_voice_default_accent': '{engine} には{language}の音声がありません: 既定の音声 {voice} は{voice_language}のため、{voice_language}訛りになります。正しいアクセントにするには{language}の音声サンプルをアップロードしてください。',
     'error_voice_upload_failed': '失敗しました！音声ファイルに互換性があるか確認してください。',
     'error_voice_builtin': '音声ファイル {name} は組み込み音声のため削除できません。',
     'error_voice_custom_model': '音声ファイル {name} はカスタムモデルの音声のため削除できません。',

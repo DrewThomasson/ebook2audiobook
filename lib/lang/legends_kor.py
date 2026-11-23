@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': '음성은 최대 {max}개까지 업로드할 수 있습니다',
     'error_audio_format_invalid': '선택한 오디오 파일 형식이 올바르지 않습니다.',
     'msg_voice_added': '음성 {name}을(를) 음성 목록에 추가했습니다',
+    'msg_voice_default_accent': '{engine}에 {language} 음성이 없습니다: 기본 음성 {voice}은(는) {voice_language}이므로 {voice_language} 억양으로 읽힙니다. 올바른 억양을 위해 {language} 음성 샘플을 업로드하세요.',
     'error_voice_upload_failed': '실패했습니다! 오디오 파일이 호환되는지 확인하세요.',
     'error_voice_builtin': '음성 파일 {name}은(는) 기본 제공 음성이므로 삭제할 수 없습니다.',
     'error_voice_custom_model': '음성 파일 {name}은(는) 사용자 지정 모델의 음성이므로 삭제할 수 없습니다.',

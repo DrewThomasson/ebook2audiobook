@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'आप अधिकतम {max} आवाज़ें अपलोड कर सकते हैं',
     'error_audio_format_invalid': 'चुना गया ऑडियो फ़ाइल फ़ॉर्मेट मान्य नहीं है।',
     'msg_voice_added': 'आवाज़ {name} आवाज़ों की सूची में जोड़ी गई',
+    'msg_voice_default_accent': '{engine} के लिए {language} में कोई आवाज़ नहीं: इसकी डिफ़ॉल्ट आवाज़ {voice} {voice_language} में है, इसलिए बोली में {voice_language} लहजा होगा। सही लहजे के लिए {language} में आवाज़ का नमूना अपलोड करें।',
     'error_voice_upload_failed': 'विफल! जाँचें कि आपकी ऑडियो फ़ाइल संगत है या नहीं।',
     'error_voice_builtin': 'आवाज़ फ़ाइल {name} एक अंतर्निहित आवाज़ है और इसे हटाया नहीं जा सकता।',
     'error_voice_custom_model': 'आवाज़ फ़ाइल {name} आपके किसी कस्टम मॉडल की आवाज़ है और इसे हटाया नहीं जा सकता।',

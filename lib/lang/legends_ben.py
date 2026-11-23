@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'আপনি সর্বোচ্চ {max}টি কণ্ঠস্বর আপলোড করতে পারবেন',
     'error_audio_format_invalid': 'নির্বাচিত অডিও ফাইলের ফরম্যাট বৈধ নয়।',
     'msg_voice_added': 'কণ্ঠস্বর {name} তালিকায় যোগ করা হয়েছে',
+    'msg_voice_default_accent': '{engine} এর জন্য {language} ভাষায় কোনো কণ্ঠস্বর নেই: এর ডিফল্ট কণ্ঠস্বর {voice} {voice_language} ভাষার, তাই উচ্চারণে {voice_language} টান থাকবে। সঠিক উচ্চারণের জন্য {language} ভাষায় একটি কণ্ঠস্বরের নমুনা আপলোড করুন।',
     'error_voice_upload_failed': 'ব্যর্থ! আপনার অডিও ফাইল সামঞ্জস্যপূর্ণ কি না দেখুন।',
     'error_voice_builtin': 'কণ্ঠস্বর ফাইল {name} একটি অন্তর্নির্মিত কণ্ঠস্বর, এটি মোছা যাবে না।',
     'error_voice_custom_model': 'কণ্ঠস্বর ফাইল {name} আপনার একটি কাস্টম মডেলের কণ্ঠস্বর, এটি মোছা যাবে না।',

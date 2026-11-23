@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'Sampeyan mung oleh ngunggah paling akeh {max} swara',
     'error_audio_format_invalid': 'Format berkas audio sing dipilih ora valid.',
     'msg_voice_added': 'Swara {name} ditambahake menyang dhaptar swara',
+    'msg_voice_default_accent': 'Ora ana swara ing {language} kanggo {engine}: swara gawané {voice} nganggo {voice_language}, dadi omongané bakal duwé logat {voice_language}. Unggah conto swara ing {language} supaya logaté bener.',
     'error_voice_upload_failed': 'Gagal! Priksa apa berkas audio sampeyan kompatibel.',
     'error_voice_builtin': 'Berkas swara {name} iku swara gawan lan ora bisa dibusak.',
     'error_voice_custom_model': 'Berkas swara {name} iku swara saka salah siji model kustom sampeyan lan ora bisa dibusak.',

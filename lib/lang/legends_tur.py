@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'En fazla {max} ses yükleyebilirsiniz',
     'error_audio_format_invalid': 'Seçilen ses dosyası biçimi geçerli değil.',
     'msg_voice_added': '{name} sesi ses listesine eklendi',
+    'msg_voice_default_accent': '{engine} için {language} dilinde ses yok: varsayılan sesi {voice} {voice_language} dilinde, bu yüzden konuşma {voice_language} aksanlı olacak. Doğru aksan için {language} dilinde bir ses örneği yükleyin.',
     'error_voice_upload_failed': 'Başarısız! Ses dosyanızın uyumlu olup olmadığını kontrol edin.',
     'error_voice_builtin': '{name} ses dosyası yerleşik bir sestir ve silinemez.',
     'error_voice_custom_model': '{name} ses dosyası özel modellerinizden birine ait bir sestir ve silinemez.',

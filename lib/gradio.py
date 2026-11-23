@@ -1026,6 +1026,8 @@ def build_interface(args:dict)->gr.Blocks:
                             except Exception:
                                 session['translate_iso1'] = None
                         translate_visible = translate_enabled_state and bool(translate_options)
+                        # a page (re)load tells again that the voice list only holds the engine's English default voice
+                        session['voice_default_alert'] = None
                         # the engine list first: it may change the engine, and the device list follows the engine
                         tts_engine_update = _update_gr_tts_engine_list(session_id)
                         device_update = _update_gr_device_list(session_id)
@@ -2515,6 +2517,7 @@ def build_interface(args:dict)->gr.Blocks:
                         language = session['translate'] if session['translate_enabled'] and session['translate'] is not None else session['language']
                         lang_dir = language if language != 'con' else 'con-'  # Bypass Windows CON reserved name
                         file_pattern = "*.wav"
+                        default_fallback = None
                         eng_options = []
                         bark_options = []
                         piper_options = []
@@ -2581,6 +2584,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 default_voice = default_engine_settings[session['tts_engine']].get('voice')
                                 if default_voice and os.path.isfile(default_voice):
                                     options = [(os.path.splitext(os.path.basename(default_voice))[0], default_voice)]
+                                    default_fallback = default_voice
                         if session['voice'] is not None and isinstance(session.get('voice'), str):
                             if session['voice_dir'] not in session['voice']:
                                 if not any(v[1] == session['voice'] for v in options):
@@ -2644,6 +2648,24 @@ def build_interface(args:dict)->gr.Blocks:
                         if session.get('ebook_mode') == ebook_modes['DIRECTORY'] and session.get('ebook_selected'):
                             selected_voice = (session.get('voice_map') or {}).get(session['ebook_selected'], session['voice'])
                         voice_options = options
+                        # only the engine's default voice (conf_models.py default_speaker, voices/eng) for the TTS language,
+                        # the source one or the translation's: the speech gets that voice's accent until a voice in the
+                        # language is added. Told once per language and engine, this runs several times per change
+                        alert_key = None
+                        if default_fallback:
+                            voice_lang = os.path.relpath(os.path.abspath(default_fallback), os.path.abspath(voices_dir)).split(os.sep)[0]
+                            if voice_lang != language:
+                                alert_key = f"{language}|{session['tts_engine']}"
+                        if session.get('voice_default_alert') != alert_key:
+                            session['voice_default_alert'] = alert_key
+                            if alert_key:
+                                msg = legends['msg_voice_default_accent'].format(
+                                    language=language_mapping.get(language, {}).get('name', language),
+                                    engine=session['tts_engine'],
+                                    voice=os.path.splitext(os.path.basename(default_fallback))[0],
+                                    voice_language=language_mapping.get(voice_lang, {}).get('name', voice_lang)
+                                )
+                                show_alert(session_id, {'type': 'warning', 'msg': msg})
                         return gr.update(choices=options, value=selected_voice, label=legends['gr_voice_list'])
                 except Exception as e:
                     error = f'_update_gr_voice_list(): {e}!'

@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'Você pode enviar no máximo {max} vozes',
     'error_audio_format_invalid': 'O formato do arquivo de áudio selecionado não é válido.',
     'msg_voice_added': 'Voz {name} adicionada à lista de vozes',
+    'msg_voice_default_accent': 'Nenhuma voz em {language} para {engine}: a voz padrão {voice} é em {voice_language}, então a fala terá sotaque {voice_language}. Envie uma amostra de voz em {language} para obter o sotaque correto.',
     'error_voice_upload_failed': 'Falhou! Verifique se o seu arquivo de áudio é compatível.',
     'error_voice_builtin': 'O arquivo de voz {name} é uma voz nativa e não pode ser excluído.',
     'error_voice_custom_model': 'O arquivo de voz {name} é uma voz de um dos seus modelos personalizados e não pode ser excluído.',

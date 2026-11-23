@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'Puede subir un máximo de {max} voces',
     'error_audio_format_invalid': 'El formato del archivo de audio seleccionado no es válido.',
     'msg_voice_added': 'Voz {name} añadida a la lista de voces',
+    'msg_voice_default_accent': 'No hay ninguna voz en {language} para {engine}: su voz predeterminada {voice} está en {voice_language}, así que el habla tendrá acento {voice_language}. Sube una muestra de voz en {language} para obtener el acento correcto.',
     'error_voice_upload_failed': '¡Error! Compruebe que su archivo de audio es compatible.',
     'error_voice_builtin': 'El archivo de voz {name} es una voz integrada y no se puede eliminar.',
     'error_voice_custom_model': 'El archivo de voz {name} es una voz de uno de sus modelos personalizados y no se puede eliminar.',

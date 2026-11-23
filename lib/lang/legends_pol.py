@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'Możesz przesłać maksymalnie {max} głosów',
     'error_audio_format_invalid': 'Wybrany format pliku audio jest nieprawidłowy.',
     'msg_voice_added': 'Głos {name} dodano do listy głosów',
+    'msg_voice_default_accent': 'Brak głosu w języku {language} dla {engine}: jego domyślny głos {voice} jest w języku {voice_language}, więc mowa będzie miała akcent {voice_language}. Prześlij próbkę głosu w języku {language}, aby uzyskać właściwy akcent.',
     'error_voice_upload_failed': 'Niepowodzenie! Sprawdź, czy plik audio jest zgodny.',
     'error_voice_builtin': 'Plik głosu {name} to głos wbudowany i nie można go usunąć.',
     'error_voice_custom_model': 'Plik głosu {name} należy do jednego z Twoich własnych modeli i nie można go usunąć.',

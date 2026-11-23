@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'Ohùn {max} péré ni ẹ lè gbé sókè jù lọ',
     'error_audio_format_invalid': 'Ọ̀nà fáìlì ohùn tí ẹ yàn kò wúlò.',
     'msg_voice_added': 'A ti fi ohùn {name} kún àkójọ àwọn ohùn',
+    'msg_voice_default_accent': 'Kò sí ohùn ní èdè {language} fún {engine}: ohùn àìyípadà rẹ̀ {voice} jẹ́ èdè {voice_language}, nítorí náà ọ̀rọ̀ yóò ní ohùn àsẹnu {voice_language}. Gbé àpẹẹrẹ ohùn ní èdè {language} sókè láti ní ohùn àsẹnu tó tọ́.',
     'error_voice_upload_failed': 'Kò ṣiṣẹ́! Ẹ ṣàyẹ̀wò bóyá fáìlì ohùn yín bá ètò mu.',
     'error_voice_builtin': 'Fáìlì ohùn {name} jẹ́ ohùn tí a kọ́ sínú ètò, a kò lè pa á rẹ́.',
     'error_voice_custom_model': 'Fáìlì ohùn {name} jẹ́ ohùn ọ̀kan nínú àwọn àwòṣe àdáni yín, a kò lè pa á rẹ́.',

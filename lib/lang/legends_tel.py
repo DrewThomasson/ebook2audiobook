@@ -141,6 +141,7 @@ legends = {
     'error_max_custom_voices': 'మీరు గరిష్టంగా {max} స్వరాలను మాత్రమే అప్‌లోడ్ చేయగలరు',
     'error_audio_format_invalid': 'ఎంచుకున్న ఆడియో ఫైల్ ఫార్మాట్ చెల్లదు.',
     'msg_voice_added': 'స్వరం {name} స్వరాల జాబితాకు జోడించబడింది',
+    'msg_voice_default_accent': '{engine} కోసం {language} భాషలో వాయిస్ లేదు: దాని డిఫాల్ట్ వాయిస్ {voice} {voice_language} భాషలో ఉంది, కాబట్టి మాటల్లో {voice_language} యాస ఉంటుంది. సరైన యాస కోసం {language} భాషలో ఒక వాయిస్ నమూనాను అప్‌లోడ్ చేయండి.',
     'error_voice_upload_failed': 'విఫలమైంది! మీ ఆడియో ఫైల్ అనుకూలంగా ఉందో లేదో తనిఖీ చేయండి.',
     'error_voice_builtin': 'స్వర ఫైల్ {name} అంతర్నిర్మిత స్వరం, దాన్ని తొలగించలేరు.',
     'error_voice_custom_model': 'స్వర ఫైల్ {name} మీ కస్టమ్ మోడల్‌లలో ఒకదాని స్వరం, దాన్ని తొలగించలేరు.',
