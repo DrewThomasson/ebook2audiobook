@@ -509,7 +509,7 @@ legends = {
     'msg_reinstalling_incomplete': 'Nginstal maneh paket kanthi file sing ilang: {pkgs}',
     'msg_install_lock_wait': 'ebook2audiobook liyane lagi nginstal paket ing {env}, ngenteni nganti rampung…',
     'msg_removing_unusable_torchcodec': 'Mbusak torchcodec {version}: ora ana torchcodec sing mlaku karo torch {torch} (ngisor 2.9), pyannote bisa digunakake tanpa kuwi.',
-    'msg_removing_unusable_torchvision': 'Mbusak torchvision {version}: ora bisa dimuat karo torch {torch} lan ngrusak transformers, ebook2audiobook mlaku tanpa iku.',
+    'msg_removing_torchvision': 'Mbusak torchvision {version}: ebook2audiobook ora nggunakake, lan versi sing digawe kanggo torch liyane ngrusak transformers.',
     'msg_removing_obsolete': 'Mbusak paket lawas {pkg}…',
     'msg_remove_obsolete_failed': 'Gagal mbusak paket lawas {pkg} (ora fatal): {e}',
     'error_numpy_install_failed': 'Gagal masang paket numpy: {e}',

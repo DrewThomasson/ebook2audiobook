@@ -2115,7 +2115,7 @@ class DeviceInstaller():
                 msg = legends['msg_all_packages_ok']
                 print(msg)
             self.remove_unusable_torchcodec()
-            self.remove_unusable_torchvision()
+            self.remove_torchvision()
             if self.install_missing_dependencies() == 1:
                 return 1
             if self.repair_incomplete_packages() == 1:
@@ -2150,52 +2150,35 @@ class DeviceInstaller():
             error = f'remove_unusable_torchcodec(): {e}'
             print(error)
 
-    def remove_unusable_torchvision(self)->None:
-        # e2a never installs torchvision, yet transformers imports it whenever it is installed (image_utils, which
-        # transformers.pipelines imports for every pipeline, text ones included). One left from another torch (installed
-        # by hand or by another tool, kept when install_device_packages() swaps torch for another tag) cannot load its
-        # _C library against the torch in place: its ops are never registered and the import dies with "operator
-        # torchvision::nms does not exist" (interludes: InterludeGenerator). e2a never imports it and
-        # install_missing_dependencies() skips torchvision, so it stays out.
-        # transformers only asks importlib whether a torchvision folder is there (find_spec), never its metadata: a
-        # folder left without its dist-info (an uninstall cut short, files copied by hand) is imported all the same
-        import importlib.util
+    def remove_torchvision(self)->None:
+        # e2a never uses torchvision (no requirement of python_env pulls it in either), yet transformers imports it as
+        # soon as importlib finds a torchvision folder (image_utils, which transformers.pipelines imports for every
+        # pipeline, text ones included). One built for another torch (installed by hand or by another tool, kept when
+        # install_device_packages() swaps torch for another tag) cannot load its _C library against the torch in place:
+        # its ops are never registered and the import dies with "operator torchvision::nms does not exist" (interludes:
+        # InterludeGenerator). A folder left without its dist-info is imported all the same. So none is kept, whatever
+        # its version: uninstalled, then every trace deleted, uv pip uninstall only removing what RECORD lists.
+        # install_missing_dependencies() and repair_incomplete_packages() skip torchvision, so it stays out
+        import sysconfig
         try:
-            torch_version = self.get_package_version('torch')
-            spec = importlib.util.find_spec('torchvision')
-            if not torch_version or spec is None:
-                return
+            site_dirs = {p for p in (sysconfig.get_paths().get('purelib'), sysconfig.get_paths().get('platlib')) if p}
+            patterns = ('torchvision', 'torchvision.libs', 'torchvision-*.dist-info', 'torchvision-*.egg-info')
+            traces = sorted({path for site_dir in site_dirs for pattern in patterns for path in glob(os.path.join(site_dir, pattern))})
             torchvision_version = self.get_package_version('torchvision')
-            usable = False
-            # origin None: no __init__.py, a namespace package of leftover files (see is_pkg_importable()). Code files
-            # RECORD lists gone: repair_incomplete_packages() skips torchvision (dependency_skip_re), nothing puts them back
-            if spec.origin is not None and not self.package_incomplete('torchvision'):
-                # each torchvision release pins the torch it was built against ('torch==2.5.1'). A torch patch release
-                # keeps the ABI, so the same minor is enough
-                pinned = None
-                if torchvision_version:
-                    pinned = next((m.group(1) for req in (distribution('torchvision').requires or []) if (m := re.match(r'torch\s*\(?\s*==\s*([^\s,;)]+)', req))), None)
-                if pinned:
-                    usable = self.version_tuple(pinned, 2) == self.version_tuple(self.release_version(torch_version), 2)
-                else:
-                    # no metadata, or no torch pin in it (a source build): the import transformers runs decides, in
-                    # python_exec like cpu_baseline(). Undecided (timeout): kept
-                    try:
-                        usable = subprocess.run([python_exec, '-c', 'import torchvision.io'], capture_output=True, timeout=120).returncode == 0
-                    except (subprocess.TimeoutExpired, OSError):
-                        usable = True
-            if usable:
+            if not torchvision_version and not traces:
                 return
             if torchvision_version:
-                msg = legends['msg_removing_unusable_torchvision'].format(version=torchvision_version, torch=torch_version)
+                msg = legends['msg_removing_torchvision'].format(version=torchvision_version)
                 print(msg)
                 subprocess.call(self._uv_pip('uninstall', 'torchvision'))
-            # uv pip uninstall only removes what RECORD lists: a folder without dist-info, or files RECORD misses, stay
-            # and transformers still finds them
-            self.clean_pkg_dir('torchvision')
+            for path in traces:
+                if os.path.exists(path):
+                    msg = legends['msg_removing_leftover'].format(path=path)
+                    print(msg)
+                    shutil.rmtree(path, ignore_errors=True)
             importlib.invalidate_caches()
         except Exception as e:
-            error = f'remove_unusable_torchvision(): {e}'
+            error = f'remove_torchvision(): {e}'
             print(error)
 
     def lacks_record_files(self, dist:Any)->bool:
