@@ -141,7 +141,7 @@ legends = {
     'error_max_custom_voices': 'Du darfst maximal {max} Stimmen hochladen',
     'error_audio_format_invalid': 'Das ausgewählte Audioformat ist ungültig.',
     'msg_voice_added': 'Stimme {name} zur Stimmenliste hinzugefügt',
-    'msg_voice_default_accent': 'Keine Stimme auf {language} für {engine}: die Standardstimme {voice} ist {voice_language}, daher hat die Aussprache den Akzent dieser Sprache. Lade eine Stimmprobe auf {language} hoch, um den richtigen Akzent zu erhalten.',
+    'msg_voice_default_accent': 'Keine Stimme in {language} für {engine}: Die Standardstimme {voice} ist {voice_language}, daher hat die Sprachausgabe den Akzent {voice_language}. Laden Sie eine Sprachprobe in {language} hoch, um den richtigen Akzent zu erhalten.',
     'error_voice_upload_failed': 'Fehlgeschlagen! Prüfe, ob deine Audiodatei kompatibel ist.',
     'error_voice_builtin': 'Die Stimmdatei {name} ist eine integrierte Stimme und kann nicht gelöscht werden.',
     'error_voice_custom_model': 'Die Stimmdatei {name} gehört zu einem deiner eigenen Modelle und kann nicht gelöscht werden.',
