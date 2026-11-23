@@ -50,6 +50,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 	UV_PYTHON_INSTALL_DIR="/app/lib/classes/tts_engines/venvs/.python" \
 	UV_LINK_MODE="copy"
 
+# what the nvidia/cuda images declare: a host on the nvidia runtime mounts
+# the GPU and its driver (libcuda, nvidia-smi) only into a container asking
+# for them. No effect on CPU hardware, where nothing reads them.
+ENV NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
 # uv is required because device_installer.py now calls `uv pip ...`.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
