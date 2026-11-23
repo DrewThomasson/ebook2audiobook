@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_docker': 'Bu görüntü, {tag} için bir gece derlemesi çalıştırıyor ve artık kararlı olan şu şekilde yayınlandı: {pkgs}. Güncellenmiş görüntüyü çekin veya elde etmek için yeniden oluşturun.',
     'msg_reinstalling_incomplete': 'Eksik dosyaları olan paketler yeniden yükleniyor: {pkgs}',
     'msg_install_lock_wait': 'Başka bir ebook2audiobook {env} içine paket yüklüyor, bitmesi bekleniyor…',
+    'msg_import_missing_repair': '{module} modülü paket denetiminden sonra kayboldu: paketler yeniden denetleniyor…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} kaldırılıyor: torchcodec, torch {torch} (2.9\'nin altında) ile çalışmaz, pyannote onsuz çalışır.',
     'msg_removing_torchvision': 'torchvision {version} kaldırılıyor: ebook2audiobook bunu kullanmıyor ve başka bir torch için derlenmiş sürüm transformers kütüphanesini bozuyor.',
     'msg_removing_obsolete': 'Eski paket {pkg} kaldırılıyor…',

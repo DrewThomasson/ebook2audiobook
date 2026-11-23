@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_docker': 'Àwòrán yìí ń ṣiṣẹ́ ìkọ́lé alẹ́ fún {tag}, àti pé a ti ṣe àtẹ̀jáde èyí tí ó dúró ṣinṣin báyìí: {pkgs}. Fa àwòrán tí a ti ṣe àtúnṣe tàbí ṣe é ní àtúnkọ́ láti rí i gbà.',
     'msg_reinstalling_incomplete': 'Fífi àwọn àkójọpọ̀ tí àwọn fáìlì wọn kò sí padà sí i: {pkgs}',
     'msg_install_lock_wait': 'ebook2audiobook mìíràn ń fi àwọn package sí {env}, à ń dúró kí ó parí…',
+    'msg_import_missing_repair': 'Módù {module} sọnù lẹ́yìn àyẹ̀wò àwọn package: ń ṣe àyẹ̀wò àwọn package lẹ́ẹ̀kan sí i…',
     'msg_removing_unusable_torchcodec': 'Yíyọ torchcodec {version} kúrò: kò sí torchcodec tí ó ń ṣiṣẹ́ pẹ̀lú torch {torch} (ní ìsàlẹ̀ 2.9), pyannote ń ṣiṣẹ́ láìsí i.',
     'msg_removing_torchvision': 'Ń yọ torchvision {version} kúrò: ebook2audiobook kò lò ó, ẹ̀yà tí a kọ́ fún torch mìíràn sì ń ba transformers jẹ́.',
     'msg_removing_obsolete': 'À ń yọ àpò àtijọ́ {pkg} kúrò…',

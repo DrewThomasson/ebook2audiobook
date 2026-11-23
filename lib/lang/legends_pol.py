@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_docker': 'Ten obraz uruchamia nocną kompilację dla {tag}, a stabilna kompilacja została już opublikowana: {pkgs}. Pobierz zaktualizowany obraz lub zbuduj go ponownie, aby go uzyskać.',
     'msg_reinstalling_incomplete': 'Ponowna instalacja pakietów z brakującymi plikami: {pkgs}',
     'msg_install_lock_wait': 'Inny ebook2audiobook instaluje pakiety w {env}, oczekiwanie na zakończenie…',
+    'msg_import_missing_repair': 'Moduł {module} zniknął po sprawdzeniu pakietów: ponowne sprawdzanie pakietów…',
     'msg_removing_unusable_torchcodec': 'Usuwanie torchcodec {version}: torchcodec nie działa z torch {torch} (poniżej 2.9), pyannote działa bez niego.',
     'msg_removing_torchvision': 'Usuwanie torchvision {version}: ebook2audiobook go nie używa, a wersja zbudowana dla innego torch psuje transformers.',
     'msg_removing_obsolete': 'Usuwanie przestarzałego pakietu {pkg}…',

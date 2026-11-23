@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_docker': '此镜像运行{tag}的夜间版本，稳定版本现已发布：{pkgs}。拉取更新后的镜像或重新构建镜像以获取它。',
     'msg_reinstalling_incomplete': '正在重新安装缺少文件的软件包：{pkgs}',
     'msg_install_lock_wait': '另一个 ebook2audiobook 正在 {env} 中安装软件包，正在等待其完成…',
+    'msg_import_missing_repair': '模块 {module} 在软件包检查后丢失：正在重新检查软件包…',
     'msg_removing_unusable_torchcodec': '正在移除 torchcodec {version}：没有 torchcodec 与 torch {torch}（低于 2.9）一起运行，pyannote 在没有它时也能正常工作。',
     'msg_removing_torchvision': '正在移除 torchvision {version}：ebook2audiobook 不使用它，而为其他 torch 版本构建的 torchvision 会导致 transformers 出错。',
     'msg_removing_obsolete': '正在移除过时的包 {pkg}…',

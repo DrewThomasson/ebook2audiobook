@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_docker': 'এই ইমেজটি {tag}-এর জন্য একটি নাইটলি বিল্ড চালায় এবং স্থিতিশীলটি এখন প্রকাশিত হয়েছে: {pkgs}। আপডেট করা ইমেজটি পুল করুন বা এটি পেতে এটি পুনরায় বিল্ড করুন।',
     'msg_reinstalling_incomplete': 'যেসব প্যাকেজে ফাইল নেই সেগুলি পুনরায় ইনস্টল করা হচ্ছে: {pkgs}',
     'msg_install_lock_wait': 'আরেকটি ebook2audiobook {env}-এ প্যাকেজ ইনস্টল করছে, এটি শেষ হওয়ার জন্য অপেক্ষা করা হচ্ছে…',
+    'msg_import_missing_repair': 'প্যাকেজ যাচাইয়ের পরে মডিউল {module} পাওয়া যাচ্ছে না: প্যাকেজগুলি আবার যাচাই করা হচ্ছে…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} অপসারণ করা হচ্ছে: torch {torch} (2.9 এর নিচে) এর সাথে কোনও torchcodec চলে না, pyannote এটি ছাড়াই কাজ করে।',
     'msg_removing_torchvision': 'torchvision {version} সরানো হচ্ছে: ebook2audiobook এটি ব্যবহার করে না, এবং অন্য torch এর জন্য তৈরি সংস্করণ transformers ভেঙে দেয়।',
     'msg_removing_obsolete': 'পুরোনো প্যাকেজ {pkg} সরানো হচ্ছে…',

@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_docker': '이 이미지는 {tag}에 대한 야간 빌드를 실행하며, 이제 안정적인 빌드가 게시되었습니다: {pkgs}. 업데이트된 이미지를 가져오거나 다시 빌드하여 가져오세요.',
     'msg_reinstalling_incomplete': '파일이 누락된 패키지 재설치 중: {pkgs}',
     'msg_install_lock_wait': '다른 ebook2audiobook이 {env}에 패키지를 설치하는 중입니다. 완료될 때까지 기다리는 중…',
+    'msg_import_missing_repair': '패키지 확인 후 모듈 {module}이(가) 사라졌습니다: 패키지를 다시 확인하는 중…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} 제거 중: torch {torch}(2.9 미만)에서는 torchcodec이 실행되지 않으며, pyannote는 torchcodec 없이 작동합니다.',
     'msg_removing_torchvision': 'torchvision {version} 제거 중: ebook2audiobook은 이를 사용하지 않으며, 다른 torch용으로 빌드된 버전은 transformers를 망가뜨립니다.',
     'msg_removing_obsolete': '오래된 패키지 {pkg}을(를) 제거하는 중…',

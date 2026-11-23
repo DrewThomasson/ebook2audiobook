@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_docker': 'இந்த படம் {tag} க்கான இரவு நேர बिल्டை இயக்குகிறது, மேலும் நிலையான ஒன்று இப்போது வெளியிடப்பட்டுள்ளது: {pkgs}. புதுப்பிக்கப்பட்ட படத்தை இழுக்கவும் அல்லது அதைப் பெற மீண்டும் உருவாக்கவும்.',
     'msg_reinstalling_incomplete': 'கோப்புகள் இல்லாத தொகுப்புகளை மீண்டும் நிறுவுகிறது: {pkgs}',
     'msg_install_lock_wait': 'மற்றொரு ebook2audiobook {env} இல் தொகுப்புகளை நிறுவுகிறது, அது முடியும் வரை காத்திருக்கிறது…',
+    'msg_import_missing_repair': 'தொகுப்பு சரிபார்ப்புக்குப் பிறகு {module} தொகுதி காணவில்லை: தொகுப்புகள் மீண்டும் சரிபார்க்கப்படுகின்றன…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} ஐ அகற்றுதல்: torch {torch} உடன் torchcodec இயங்காது (2.9 க்கு கீழே), pyannote அது இல்லாமல் இயங்கும்.',
     'msg_removing_torchvision': 'torchvision {version} ஐ அகற்றுதல்: ebook2audiobook இதைப் பயன்படுத்துவதில்லை, வேறு torch க்காக உருவாக்கப்பட்ட பதிப்பு transformers ஐ உடைக்கிறது.',
     'msg_removing_obsolete': 'பழைய தொகுப்பு {pkg} நீக்கப்படுகிறது…',

@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_docker': 'Image ini menjalankan build malam hari untuk {tag}, dan build stabil kini telah dipublikasikan: {pkgs}. Ambil image yang diperbarui atau bangun ulang untuk mendapatkannya.',
     'msg_reinstalling_incomplete': 'Menginstal ulang paket dengan file yang hilang: {pkgs}',
     'msg_install_lock_wait': 'ebook2audiobook lain sedang memasang paket di {env}, menunggu hingga selesai…',
+    'msg_import_missing_repair': 'Modul {module} hilang setelah pemeriksaan paket: memeriksa paket lagi…',
     'msg_removing_unusable_torchcodec': 'Menghapus torchcodec {version}: tidak ada torchcodec yang berjalan dengan torch {torch} (di bawah 2.9), pyannote berfungsi tanpa itu.',
     'msg_removing_torchvision': 'Menghapus torchvision {version}: ebook2audiobook tidak menggunakannya, dan versi yang dibuat untuk torch lain merusak transformers.',
     'msg_removing_obsolete': 'Menghapus paket usang {pkg}…',

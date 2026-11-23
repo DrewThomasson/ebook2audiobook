@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_docker': 'Ez a kép a(z) {tag} éjszakai buildjét futtatja, és most közzétették a stabil verziót: {pkgs}. Húzza le a frissített képet, vagy építse újra, hogy megszerezze.',
     'msg_reinstalling_incomplete': 'Hiányzó fájlokat tartalmazó csomagok újratelepítése: {pkgs}',
     'msg_install_lock_wait': 'Egy másik ebook2audiobook csomagokat telepít ide: {env}, várakozás a befejezésére…',
+    'msg_import_missing_repair': 'A(z) {module} modul eltűnt a csomagellenőrzés után: a csomagok újraellenőrzése…',
     'msg_removing_unusable_torchcodec': 'A(z) {version} torchcodec eltávolítása: a torchcodec nem működik a(z) {torch} torch-csal (2.9 alatt), a pyannote nélküle működik.',
     'msg_removing_torchvision': 'A(z) {version} torchvision eltávolítása: az ebook2audiobook nem használja, és egy másik torch-hoz készült változat elrontja a transformers működését.',
     'msg_removing_obsolete': 'Az elavult {pkg} csomag eltávolítása…',
