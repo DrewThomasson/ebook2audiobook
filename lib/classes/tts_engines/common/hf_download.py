@@ -1,7 +1,9 @@
 import os, time, shutil, inspect, contextvars
 
 from typing import Any, Callable
+from lib.classes.bug_reporter import bug_reporter
 from lib.conf import interface_progress_interval, tts_dir
+from lib.lang import legends
 
 _hf_transfer = {'checked': False}
 
@@ -46,6 +48,12 @@ def hf_download(progress_bar:Callable|None, desc:str, **kwargs:Any)->str:
         try:
             return _hf_download_once(hf_hub_download, progress_bar, desc, **kwargs)
         except Exception as e:
+            # HF_HUB_OFFLINE set in the user's environment (e2a never sets it) and the file not on disk yet: huggingface_hub
+            # says to check the connection, which sends the user the wrong way (bug b14b3fb643d63ae6: the seed_vc GGUF of
+            # piper's voice conversion). No retry, the variable and where the file is expected instead
+            if bug_reporter.hf_offline(e):
+                error = legends['error_hf_offline'].format(file=os.path.basename(str(kwargs.get('filename'))), dir=target)
+                raise RuntimeError(error) from e
             free = 0
             probe = target
             while free == 0 and probe:

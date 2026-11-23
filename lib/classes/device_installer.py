@@ -208,7 +208,15 @@ class DeviceInstaller():
                 device_info = json.load(f)
         except (OSError, json.JSONDecodeError):
             return None
-        return device_info if isinstance(device_info, dict) else None
+        if not isinstance(device_info, dict):
+            return None
+        # a CUDA image on a container where the driver does not answer (E2A_CUDA_UNUSABLE, set by check_device_info in
+        # full_docker, inherited by the engine workers and their install children): the engine venvs take the CPU torch,
+        # 0.2 GB instead of 3.4 GB of CUDA torch no GPU can run here. Their marker ('device') puts the CUDA torch back
+        # once the container has the GPU again. The file stays as built
+        if os.environ.get('E2A_CUDA_UNUSABLE') == '1' and device_info.get('name') == devices['CUDA']['proc']:
+            device_info = {**device_info, 'name': devices['CPU']['proc'], 'tag': devices['CPU']['proc']}
+        return device_info
 
     def link_os_libgomp(self, env_dir:str, device_info:Union[dict, None])->None:
         # Jetson (aarch64, glibc's small static TLS reserve): a wheel's own libgomp copy (auditwheel renames it, e.g.
@@ -362,9 +370,53 @@ class DeviceInstaller():
                     except json.JSONDecodeError:
                         pass
             if device_info is not None:
-                devices[device_info['name'].upper()]['found'] = True
+                name = device_info['name']
+                # the image's device is the torch it was built with, not a GPU this container has: a CUDA image also runs
+                # without GPU (Hugging Face CPU hardware, docker run without --gpus) or on a driver older than its torch
+                # (cu13x on a driver < 580). Its CUDA is offered only when the driver answers here, else the container
+                # runs on CPU, which the CUDA torch does too. The file stays as built: the engine venvs take its tag
+                if name == devices['CUDA']['proc']:
+                    error = self.cuda_runtime_error(device_info.get('tag', ''))
+                    if error:
+                        print(error)
+                        name = devices['CPU']['proc']
+                        os.environ['E2A_CUDA_UNUSABLE'] = '1'
+                devices[name.upper()]['found'] = True
                 return json.dumps(device_info)
         return ''
+
+    def cuda_runtime_error(self, tag:str)->Union[str, None]:
+        # why the CUDA torch of this image cannot run here, None when it can: libcuda (the driver torch loads, mounted by
+        # the NVIDIA container toolkit or WSL) answers with a GPU, and its CUDA major is at least the tag's one (minor
+        # version compatibility: cu126 runs on any 12.x driver, cu13x needs a 13.x one). Asked in a child: no CUDA
+        # context in this process, the parent of every worker
+        probe = '\n'.join([
+            'import ctypes, sys',
+            'try:',
+            '    cuda = ctypes.CDLL("libcuda.so.1")',
+            'except OSError:',
+            '    sys.exit(1)',
+            'version, count = ctypes.c_int(0), ctypes.c_int(0)',
+            'cuda.cuDriverGetVersion(ctypes.byref(version))',
+            'if cuda.cuInit(0) == 0:',
+            '    cuda.cuDeviceGetCount(ctypes.byref(count))',
+            'print(version.value, count.value)'
+        ])
+        driver, count = 0, 0
+        try:
+            result = subprocess.run([sys.executable, '-I', '-c', probe], capture_output=True, text=True, timeout=60)
+            if result.returncode == 0:
+                driver, count = (int(v) for v in result.stdout.split())
+        except (OSError, subprocess.TimeoutExpired, ValueError):
+            driver, count = 0, 0
+        if count < 1:
+            return legends['msg_cuda_image_no_gpu'].format(tag=tag)
+        # cuDriverGetVersion: 1000 * major + 10 * minor, 12040 = CUDA 12.4
+        driver_major, driver_minor = driver // 1000, (driver % 1000) // 10
+        m = re.fullmatch(r'(?:win-)?cu(\d+)(\d)', tag)
+        if m and driver_major < int(m.group(1)):
+            return legends['msg_cuda_image_driver_old'].format(tag=tag, version=f'{driver_major}.{driver_minor}', major=m.group(1))
+        return None
 
     def get_package_version(self, pkg:str)->Union[str, bool]:
         try:
