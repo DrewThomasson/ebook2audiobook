@@ -1,4 +1,4 @@
-import os, ssl, tempfile, sys, re, ipaddress, platform
+import os, ssl, tempfile, sys, re, ipaddress, platform, shutil
 from pathlib import Path
 
 debug_mode = False
@@ -288,6 +288,49 @@ if DEVICE_SYSTEM == systems['WINDOWS']:
 if not any(_v in os.environ for _v in ('ROCR_VISIBLE_DEVICES', 'HIP_VISIBLE_DEVICES', 'CUDA_VISIBLE_DEVICES')):
     os.environ['ROCR_VISIBLE_DEVICES'] = '0'
     os.environ['HIP_VISIBLE_DEVICES'] = '0'
+
+# eSpeak-ng for phonemizer (lib/core.py, glowtts), Coqui's espeak backend, gptsovits and audiocpp's Kokoro.
+# On macOS ctypes.util.find_library only looks in ~/lib, /usr/local/lib, /lib and /usr/lib: Homebrew on Apple Silicon
+# lives in /opt/homebrew, so phonemizer raised "espeak not installed on your system" until the user exported
+# PHONEMIZER_ESPEAK_LIBRARY themselves. The launcher exported it only when the dylib was there at its start (never on the
+# run that brew-installed espeak-ng), took the prefix from the shell's arch (wrong under Rosetta) and an Intel binary path.
+# Resolved here for every entry point (launchers, a plain "python app.py", engine workers copying os.environ) before
+# anything imports phonemizer; a library or data folder already exported and present is kept
+def espeak_env()->None:
+    if DEVICE_SYSTEM == systems['MACOS']:
+        # this interpreter's arch first: an arm64 python cannot dlopen Rosetta brew's x86_64 dylib, nor the reverse
+        brew_prefixes = ['/opt/homebrew', '/usr/local'] if platform.machine() == archs['ARM64'] else ['/usr/local', '/opt/homebrew']
+        prefixes = list(dict.fromkeys([brew_prefixes[0], os.environ.get('HOMEBREW_PREFIX') or brew_prefixes[0], brew_prefixes[1], '/opt/local']))
+        libraries = [os.path.join(prefix, 'lib', 'libespeak-ng.dylib') for prefix in prefixes]
+    elif DEVICE_SYSTEM == systems['LINUX']:
+        libraries = [f'/usr/lib/{platform.machine()}-linux-gnu/libespeak-ng.so.1', '/usr/lib64/libespeak-ng.so.1', '/usr/lib/libespeak-ng.so.1', '/usr/lib/libespeak-ng.so']
+    else:
+        return
+    library = os.environ.get('PHONEMIZER_ESPEAK_LIBRARY', '')
+    if not os.path.isfile(library):
+        library = next((lib for lib in libraries if os.path.isfile(lib)), '')
+        if not library:
+            return
+        os.environ['PHONEMIZER_ESPEAK_LIBRARY'] = library
+    # the data of that library: <libdir>/espeak-ng-data (debian multiarch), <prefix>/share/espeak-ng-data (brew, others)
+    data = os.environ.get('ESPEAK_DATA_PATH', '')
+    if not (data and os.path.isfile(os.path.join(data, 'phontab'))):
+        lib_dir = os.path.dirname(library)
+        data_dirs = [os.path.join(lib_dir, 'espeak-ng-data'), os.path.join(os.path.dirname(lib_dir), 'share', 'espeak-ng-data')]
+        data = next((data_dir for data_dir in data_dirs if os.path.isfile(os.path.join(data_dir, 'phontab'))), '')
+        if data:
+            os.environ['ESPEAK_DATA_PATH'] = data
+    # Coqui's espeak backend runs the espeak-ng it finds on PATH (probed at import): a process started outside a login
+    # shell (launchd, IDE) has no /opt/homebrew/bin on it
+    binary = shutil.which('espeak-ng')
+    if not binary:
+        prefix_bin = os.path.join(os.path.dirname(os.path.dirname(library)), 'bin')
+        if os.path.isfile(os.path.join(prefix_bin, 'espeak-ng')):
+            os.environ['PATH'] = os.pathsep.join(path for path in [os.environ.get('PATH', ''), prefix_bin] if path)
+            binary = os.path.join(prefix_bin, 'espeak-ng')
+    if binary and not os.path.isfile(os.environ.get('PHONEMIZER_ESPEAK_PATH', '')):
+        os.environ['PHONEMIZER_ESPEAK_PATH'] = binary
+espeak_env()
 
 # PYTHONUTF8/PYTHONIOENCODING above only reach child processes: this interpreter opened its std streams at startup.
 # Started without the launcher and redirected (pipe, log file, IDE, task scheduler), Windows encodes them with the ANSI

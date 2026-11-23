@@ -45,31 +45,6 @@ export SETVARS_COMPLETED=""
 export TTS_CACHE="$SCRIPT_DIR/models"
 export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
 export TMPDIR="$SCRIPT_DIR/run"
-if [[ "${OSTYPE-}" == darwin* ]]; then
-    if [[ "$ARCH" == "arm64" ]]; then
-        BREW_PREFIX="/opt/homebrew"
-    else
-        BREW_PREFIX="/usr/local"
-    fi
-    if [[ -f "$BREW_PREFIX/lib/libespeak-ng.dylib" ]]; then
-		export PHONEMIZER_ESPEAK_PATH="/usr/local/bin/espeak-ng"
-        export PHONEMIZER_ESPEAK_LIBRARY="$BREW_PREFIX/lib/libespeak-ng.dylib"
-        export ESPEAK_DATA_PATH="$BREW_PREFIX/share/espeak-ng-data"
-    fi
-elif [[ "${OSTYPE-}" == linux* ]]; then
-    ESPEAK_LIB=""
-    for lib in /usr/lib/x86_64-linux-gnu/libespeak-ng.so.1 \
-               /usr/lib64/libespeak-ng.so.1 \
-               /usr/lib/libespeak-ng.so.1 \
-               /usr/lib/libespeak-ng.so; do
-        if [[ -f "$lib" ]]; then ESPEAK_LIB="$lib"; break; fi
-    done
-    if [[ -n "$ESPEAK_LIB" ]]; then
-		export PHONEMIZER_ESPEAK_PATH="/usr/bin/espeak-ng"
-        export PHONEMIZER_ESPEAK_LIBRARY="$ESPEAK_LIB"
-        export ESPEAK_DATA_PATH="/usr/share/espeak-ng-data"
-    fi
-fi
 NATIVE="native"
 BUILD_DOCKER="build_docker"
 FULL_DOCKER="full_docker"
@@ -411,9 +386,12 @@ install_programs() {
 		if ! command -v brew &> /dev/null; then
 			echo -e "\e[33mHomebrew is not installed. Installing Homebrew…\e[0m"
 			/usr/bin/env bash -c "$(curl -fsSL $BREW_INSTALLER_URL)"
+			# the installer puts brew in /opt/homebrew on Apple Silicon, /usr/local on Intel and under Rosetta (uname -m, as ARCH)
+			local brew_bin="/usr/local/bin/brew"
+			[[ "$ARCH" == "arm64" ]] && brew_bin="/opt/homebrew/bin/brew"
 			echo >> $HOME/.zprofile
-			echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
-			eval "$(/usr/local/bin/brew shellenv)"
+			echo "eval \"\$($brew_bin shellenv)\"" >> $HOME/.zprofile
+			eval "$($brew_bin shellenv)"
 			if ! grep -iqFx "homebrew" "$INSTALLED_LOG"; then echo "homebrew" >> "$INSTALLED_LOG"; fi
 		fi
 		if ! brew list --versions llvm@15 >/dev/null 2>&1; then
