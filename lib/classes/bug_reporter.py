@@ -14,7 +14,7 @@ class BugReporter:
     redact_keys = ['ebook', 'ebook_src', 'filename_noext', 'final_name', 'audiobook', 'output_dir', 'custom_model', 'voice', 'abs_url', 'abs_api_token']
     # GPU runtime libraries torch / onnxruntime load, listed when installed (their pins drift independently of torch)
     native_re = re.compile(r'^(?:nvidia-(?:cudnn|cublas|cuda-runtime|cuda-nvrtc|nvjitlink)(?:-cu\d+)?|rocm-sdk-core|intel-sycl-rt)$')
-    env_keys = ['CUDA_VISIBLE_DEVICES', 'NVIDIA_VISIBLE_DEVICES', 'NVIDIA_DRIVER_CAPABILITIES', 'HIP_VISIBLE_DEVICES', 'ROCR_VISIBLE_DEVICES', 'HSA_OVERRIDE_GFX_VERSION', 'ZE_AFFINITY_MASK', 'ONEAPI_DEVICE_SELECTOR', 'LD_LIBRARY_PATH', 'LD_PRELOAD']
+    env_keys = ['CUDA_VISIBLE_DEVICES', 'NVIDIA_VISIBLE_DEVICES', 'NVIDIA_DRIVER_CAPABILITIES', 'HIP_VISIBLE_DEVICES', 'ROCR_VISIBLE_DEVICES', 'HSA_OVERRIDE_GFX_VERSION', 'ZE_AFFINITY_MASK', 'ONEAPI_DEVICE_SELECTOR', 'LD_LIBRARY_PATH', 'LD_PRELOAD', 'HF_HUB_OFFLINE', 'TRANSFORMERS_OFFLINE']
     # GPU stack errors worth a self-test in a fresh process (plain "CUDA out of memory" is not: VRAM state says it all)
     gpu_error_re = re.compile(r'CUDNN_STATUS|CUBLAS_STATUS|CUFFT_|CUSOLVER_STATUS|CUDA error|CUDA driver|cuda runtime error|no kernel image|HIP error|hipError|MIOpen|miopenStatus|UR_RESULT_ERROR|PI_ERROR', re.IGNORECASE)
     # host RAM exhausted: torch's CPU allocator (Windows "not enough memory", Linux "can't allocate memory"), a C++
@@ -229,7 +229,7 @@ print(json.dumps(out))
         exc_type, exc, tb = exc_info if exc_info else sys.exc_info()
         if not self.url or not isinstance(exc, Exception) or exc_type.__module__ == 'gradio.exceptions' or getattr(exc, '_e2a_reported', False):
             return
-        if self.quitting(exc) or self.disk_full(exc) or self.app_control_blocked(exc):
+        if self.quitting(exc) or self.disk_full(exc) or self.app_control_blocked(exc) or self.hf_offline(exc):
             return
         try:
             exc._e2a_reported = True
@@ -704,6 +704,16 @@ print(json.dumps(out))
                 return True
             message = str(cur)
             if any(text in message for text in texts):
+                return True
+            cur, depth = cur.__cause__ or cur.__context__, depth + 1
+        return False
+
+    def hf_offline(self, exc:BaseException)->bool:
+        # HF_HUB_OFFLINE set by the user (e2a never sets it): huggingface_hub refused to download a model not on disk yet,
+        # the user's choice, not a bug. Its OfflineModeIsEnabled anywhere in the chain, whatever library asked for the file
+        cur, depth = exc, 0
+        while cur is not None and depth < 8:
+            if type(cur).__name__ == 'OfflineModeIsEnabled' and type(cur).__module__.startswith('huggingface_hub'):
                 return True
             cur, depth = cur.__cause__ or cur.__context__, depth + 1
         return False

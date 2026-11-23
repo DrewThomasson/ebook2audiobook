@@ -10,9 +10,22 @@ ARG PYTHON_VERSION=3.12
 # predates zesInit.
 FROM python:${PYTHON_VERSION}-slim-trixie
 
-ARG APP_VERSION=26.11.22
-ARG DEVICE_TAG=cpu
-ARG DOCKER_DEVICE_STR='{ "name": "cpu", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "cpu", "note": "default Hugging Face CPU device" }'
+ARG APP_VERSION=26.11.23
+# Hugging Face builds the image on a machine without GPU, whatever
+# hardware the Space runs on: nothing can be detected here. The image
+# is CUDA, and the GPU is detected when the container starts: CUDA on
+# GPU hardware, CPU on CPU hardware (the CUDA torch runs there too), so
+# a hardware change needs no rebuild. Space variables are passed as
+# build args, so DEVICE_TAG can be set in Settings > Variables and
+# secrets, then Factory rebuild:
+#   cu126  NVIDIA T4, L4, L40S, A10G, A100, H100 and CPU (default):
+#          CUDA 12.6 torch, runs on any 12.x driver
+#   cu132  same, needs a driver >= 580 on the Space (CPU otherwise)
+#   cpu    CPU only: a smaller image, no GPU ever
+# DOCKER_DEVICE_STR, when set, overrides DEVICE_TAG with a full
+# device_info json.
+ARG DEVICE_TAG=cu126
+ARG DOCKER_DEVICE_STR=''
 ARG DOCKER_PROGRAMS_STR="curl ffmpeg mediainfo nodejs npm espeak-ng sox tesseract-ocr"
 ARG CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 ARG ISO3_LANG=eng
@@ -36,6 +49,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
     IN_DOCKER=1 \
 	UV_PYTHON_INSTALL_DIR="/app/lib/classes/tts_engines/venvs/.python" \
 	UV_LINK_MODE="copy"
+
+# what the nvidia/cuda images declare: a host on the nvidia runtime mounts
+# the GPU and its driver (libcuda, nvidia-smi) only into a container asking
+# for them. No effect on CPU hardware, where nothing reads them.
+ENV NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility
 
 # uv is required because device_installer.py now calls `uv pip ...`.
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
@@ -119,6 +138,14 @@ RUN set -eux; \
     fi
 
 RUN set -eux; \
+    if [ -z "${DOCKER_DEVICE_STR}" ]; then \
+        case "${DEVICE_TAG}" in \
+            cpu) device_name=cpu ;; \
+            cu[0-9]*) device_name=cuda ;; \
+            *) echo "DEVICE_TAG='${DEVICE_TAG}' is not a Hugging Face device: cpu or cuXYZ (e.g. cu126)"; exit 1 ;; \
+        esac; \
+        DOCKER_DEVICE_STR="{\"name\": \"${device_name}\", \"os\": \"manylinux_2_28\", \"arch\": \"x86_64\", \"pyvenv\": [3, 12], \"tag\": \"${DEVICE_TAG}\", \"note\": \"Hugging Face ${device_name} device\"}"; \
+    fi; \
     ./ebook2audiobook.command --script_mode build_docker --docker_device "${DOCKER_DEVICE_STR}"; \
     rustup self uninstall -y 2>/dev/null || true; \
     apt-get update; \
