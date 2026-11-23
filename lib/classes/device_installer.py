@@ -2115,6 +2115,7 @@ class DeviceInstaller():
                 msg = legends['msg_all_packages_ok']
                 print(msg)
             self.remove_unusable_torchcodec()
+            self.remove_torchvision()
             if self.install_missing_dependencies() == 1:
                 return 1
             if self.repair_incomplete_packages() == 1:
@@ -2147,6 +2148,37 @@ class DeviceInstaller():
             subprocess.call(self._uv_pip('uninstall', 'torchcodec'))
         except Exception as e:
             error = f'remove_unusable_torchcodec(): {e}'
+            print(error)
+
+    def remove_torchvision(self)->None:
+        # e2a never uses torchvision (no requirement of python_env pulls it in either), yet transformers imports it as
+        # soon as importlib finds a torchvision folder (image_utils, which transformers.pipelines imports for every
+        # pipeline, text ones included). One built for another torch (installed by hand or by another tool, kept when
+        # install_device_packages() swaps torch for another tag) cannot load its _C library against the torch in place:
+        # its ops are never registered and the import dies with "operator torchvision::nms does not exist" (interludes:
+        # InterludeGenerator). A folder left without its dist-info is imported all the same. So none is kept, whatever
+        # its version: uninstalled, then every trace deleted, uv pip uninstall only removing what RECORD lists.
+        # install_missing_dependencies() and repair_incomplete_packages() skip torchvision, so it stays out
+        import sysconfig
+        try:
+            site_dirs = {p for p in (sysconfig.get_paths().get('purelib'), sysconfig.get_paths().get('platlib')) if p}
+            patterns = ('torchvision', 'torchvision.libs', 'torchvision-*.dist-info', 'torchvision-*.egg-info')
+            traces = sorted({path for site_dir in site_dirs for pattern in patterns for path in glob(os.path.join(site_dir, pattern))})
+            torchvision_version = self.get_package_version('torchvision')
+            if not torchvision_version and not traces:
+                return
+            if torchvision_version:
+                msg = legends['msg_removing_torchvision'].format(version=torchvision_version)
+                print(msg)
+                subprocess.call(self._uv_pip('uninstall', 'torchvision'))
+            for path in traces:
+                if os.path.exists(path):
+                    msg = legends['msg_removing_leftover'].format(path=path)
+                    print(msg)
+                    shutil.rmtree(path, ignore_errors=True)
+            importlib.invalidate_caches()
+        except Exception as e:
+            error = f'remove_torchvision(): {e}'
             print(error)
 
     def lacks_record_files(self, dist:Any)->bool:
