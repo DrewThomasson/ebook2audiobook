@@ -4,7 +4,7 @@ from typing import Callable
 root_dir = str(Path(__file__).resolve().parents[1])
 os.chdir(root_dir)
 sys.path.insert(0, root_dir)
-categories = ['common', 'xtts', 'bark', 'tortoise', 'vits', 'fairseq', 'glowtts', 'tacotron', 'yourtts', 'piper', 'zonos2', 'zonos3', 'audiocpp', 'audiocpp_server', 'gptsovits', 'f5tts', 'zipvoice', 'omnivoice', 'orpheus', 'sparktts', 'chattts', 'csm', 'openvoice', 'melotts', 'phonon', 'stanza', 'pyannote', 'demucs', 'interlude', 'argos', 'tessdata', 'jieba', 'voices']
+categories = ['common', 'xtts', 'bark', 'tortoise', 'vits', 'fairseq', 'glowtts', 'tacotron', 'yourtts', 'piper', 'zonos2', 'zonos3', 'audiocpp', 'audiocpp_server', 'gptsovits', 'f5tts', 'zipvoice', 'omnivoice', 'orpheus', 'sparktts', 'chattts', 'csm', 'kittentts', 'openvoice', 'melotts', 'phonon', 'stanza', 'pyannote', 'demucs', 'interlude', 'argos', 'tessdata', 'jieba', 'voices']
 parser = argparse.ArgumentParser(description='Download every model e2a uses into one folder laid out exactly like ./models (i.e. a USB key for offline installs).')
 parser.add_argument('models_dir', type=str, help='Target folder, i.e. /media/user/KEY/models or E:\\models')
 parser.add_argument('--only', type=str, default='', help=f"Comma list of categories: {','.join(categories)}")
@@ -92,6 +92,41 @@ def hf_folder(repo:str, local_dir:str, patterns:list|None=None, marker:bool=Fals
     snapshot_download(repo, local_dir=local_dir, allow_patterns=patterns)
     if marker:
         open(marker_file, 'w').close()
+
+def kittentts_kitten2(repo:str, local_dir:str, weights:str, decoder:str)->None:
+    # what the kittentts worker downloads for kitten-tts-2, under the same marker: kittenml's own selection
+    # (get_model._kitten2_files: the config's weight packing, lm tokenizer files, voices, speaker model, decoder)
+    import posixpath
+    from huggingface_hub import hf_hub_download, snapshot_download
+    marker_file = os.path.join(local_dir, f'.e2a_complete-{weights}-{decoder}')
+    if os.path.exists(marker_file):
+        return
+    with open(hf_hub_download(repo, 'config.json', local_dir=local_dir), 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    lm_dir = config.get('lm_dir', 'lm')
+    patterns = {'config.json'}
+    packed = {'packed': config.get('lm_packed'), 'emb4': config.get('lm_emb4')}.get(weights or config.get('default_weights', 'packed'))
+    patterns |= {packed, posixpath.join(lm_dir, '*.json'), posixpath.join(lm_dir, '*.txt')} if packed else {posixpath.join(lm_dir, '*')}
+    for key, default in (('voices', 'voices/voices.json'), ('speaker_embedding', 'speaker/model.safetensors')):
+        patterns.add(posixpath.join(posixpath.dirname(config.get(key, default)), '*'))
+    if decoder in config.get('decoders', {}):
+        patterns.add(config['decoders'][decoder])
+    snapshot_download(repo, local_dir=local_dir, allow_patterns=sorted(patterns))
+    open(marker_file, 'w').close()
+
+def kittentts_tiny(repo:str, local_dir:str, language:str, weights:str)->None:
+    # what the kittentts worker downloads for one mini / nano / pico language, under the same markers: its ONNX graph
+    # (cpu) and its fp32 safetensors (cuda), the vocab, its voices, the english G2P for english
+    from huggingface_hub import hf_hub_download, snapshot_download
+    with open(hf_hub_download(repo, 'config.json', local_dir=local_dir), 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    entry = config['languages'][language]
+    g2p_dir = config.get('g2p_dir', 'g2p')
+    for model_file in ((entry.get('model_files') or {'int8': entry['model_file']})[weights], entry['weights_file']):
+        marker_file = os.path.join(local_dir, f'.e2a_complete-{language}-{os.path.basename(model_file)}')
+        if not os.path.exists(marker_file):
+            snapshot_download(repo, local_dir=local_dir, allow_patterns=['config.json', config.get('vocab', 'vocab.json'), model_file, entry['voices']] + ([f'{g2p_dir}/*', f'{g2p_dir}/**'] if language == 'en' else []))
+            open(marker_file, 'w').close()
 
 def hf_cache_repo(repo:str)->None:
     from huggingface_hub import snapshot_download
@@ -426,6 +461,16 @@ if engine_wanted(TTS_ENGINES['CSM']):
     if csm['watermark']:
         add('csm', csm['silentcipher']['repo'], lambda: hf_folder(csm['silentcipher']['repo'], os.path.join(tts_dir, 'csm', csm['silentcipher']['repo'].replace('/', '--')), [f"{csm['silentcipher']['ckpt']}/*"], True))
     add('csm', f"whisper {csm['asr_model']}", lambda: hf_folder(csm['asr_model'], os.path.join(tts_dir, csm['asr_model'].replace('/', '--')), None, True))
+# kittentts: kitten-tts-2 (its s3gen vocoder weights, the reference Whisper) and each wanted mini / nano / pico language,
+# in the folders and under the markers the worker uses
+kt = default_engine_settings[TTS_ENGINES['KITTENTTS']]
+kt_checkpoints = [(lang, ckpt) for cfg in load_presets('kittentts').values() for lang, ckpt in cfg['checkpoints'].items() if wanted(lang)]
+if any(ckpt['family'] == 'kitten2' for lang, ckpt in kt_checkpoints):
+    add('kittentts', kt['repo'], lambda: kittentts_kitten2(kt['repo'], os.path.join(tts_dir, 'kittentts', kt['repo'].replace('/', '--')), kt['weights'], kt['decoder']))
+    add('kittentts', f"{kt['s3gen']['repo']}/{kt['s3gen']['file']}", lambda: hf_file(kt['s3gen']['repo'], kt['s3gen']['file'], os.path.join(tts_dir, 'kittentts', kt['s3gen']['repo'].replace('/', '--'))))
+    add('kittentts', f"whisper {kt['asr_model']}", lambda: hf_folder(kt['asr_model'], os.path.join(tts_dir, kt['asr_model'].replace('/', '--')), None, True))
+for repo, code in dict.fromkeys((ckpt['repo'], kt['languages'][lang]) for lang, ckpt in kt_checkpoints if ckpt['family'] == 'tiny'):
+    add('kittentts', f'{repo} {code}', lambda repo=repo, code=code: kittentts_tiny(repo, os.path.join(tts_dir, 'kittentts', repo.replace('/', '--')), code, kt['tiny_weights']))
 ov = default_engine_settings[TTS_ENGINES['OPENVOICE']]
 ov_languages = [lang for lang in ov['languages'] if wanted(lang)]
 ov_repos = list(dict.fromkeys(ckpt['repo'] for cfg in load_presets('openvoice').values() for lang, ckpt in cfg['checkpoints'].items() if wanted(lang)))
