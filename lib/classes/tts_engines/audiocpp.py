@@ -97,7 +97,7 @@ class AudioCpp(TTSUtils):
             self.worker_env = {k: v for k, v in os.environ.items() if k not in ('PYTHONHOME', 'PYTHONPATH', 'PYTHONSTARTUP', '__PYVENV_LAUNCHER__', 'OMP_NUM_THREADS')}
             self.worker_env['PYTHONUNBUFFERED'] = '1'
             if self.family_cfg['espeak']:
-                # Kokoro phonemizes through eSpeak-ng: the library and data e2a's launchers export (else eSpeak's own defaults)
+                # Kokoro phonemizes through eSpeak-ng: the library and data lib/conf.py resolves (else eSpeak's own defaults)
                 espeak_library = os.environ.get('PHONEMIZER_ESPEAK_LIBRARY', '')
                 espeak_data = os.environ.get('ESPEAK_DATA_PATH', '')
                 if espeak_library and os.path.isfile(espeak_library):
