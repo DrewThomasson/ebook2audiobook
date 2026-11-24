@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker': 'Ijin salah: ebook2audiobook ora bisa nulis ing folder iki sing dipasang saka host:\n{dirs}\nIng host SELinux (Fedora, RHEL...) lakokna kontainer nganggo --security-opt label=disable, utawa tambahi :z ing saben -v mount.\nYen ora, gawe folder host bisa ditulis dening pangguna kontainer, banjur miwiti maneh.',
     'error_launcher_required': 'Peluncuran salah: ebook2audiobook kudu tansah diwiwiti nganggo skrip peluncure:\n"./e2a.sh" kanggo Linux lan Mac utawa "e2a.cmd" kanggo Windows.\nMiwiti app.py kanthi langsung mung bisa digunakake sawise ebook2audiobook diinstal, nganggo python saka folder python_env.',
     'error_python_version': 'Peluncuran salah: versi Python sistem sampeyan ora kompatibel! (saiki: {version})\nKanggo masang lan/utawa nganggo ebook2audiobook kanthi bener, busak kabèh folder python_env\nbanjur lakokake "./ebook2audiobook.command" kanggo Linux lan Mac utawa "ebook2audiobook.cmd" kanggo Windows.',
+    'error_conf_outdated': 'Konfigurasi salah: {file} ora duwe {missing}, sing dibutuhake dening versi ebook2audiobook iki.\nIki asale saka versi sing luwih lawas, utawa wis diowahi kanthi mbusak entri.\nBaliake conf.py saka versi iki, banjur terapke maneh pangowahanmu dhewe.',
     'error_unrecognized_option': 'Kesalahan: opsi ora dikenal "{arg}"',
     'error_full_docker_internal': '{full} mung opsi internal kanggo docker dhéwé. Gunakake {build} yen arep nggawe image docker.',
     'error_share_headless': 'Opsi --share mung diidini ing mode non-headless.',

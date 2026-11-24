@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker': 'أذونات غير صحيحة: لا يمكن لـ ebook2audiobook الكتابة إلى هذه المجلدات المثبتة من المضيف:\n{dirs}\nعلى مضيف SELinux (Fedora، RHEL...)، شغّل الحاوية باستخدام --security-opt label=disable، أو أضف :z إلى كل -v mount.\nوإلا، اجعل مجلدات المضيف قابلة للكتابة لمستخدم الحاوية، ثم أعد التشغيل.',
     'error_launcher_required': 'إطلاق غير صحيح: يجب دائمًا بدء تشغيل ebook2audiobook باستخدام البرنامج النصي الخاص بإطلاقه:\n"./e2a.sh" لنظامي التشغيل Linux وMac أو "e2a.cmd" لنظام التشغيل Windows.\nلا يعمل بدء تشغيل app.py مباشرةً إلا بعد تثبيت ebook2audiobook، باستخدام بايثون الموجود في مجلد python_env الخاص به.',
     'error_python_version': 'تشغيل خاطئ: إصدار Python في نظامك غير متوافق! (الحالي: {version})\nلتثبيت ebook2audiobook و/أو استخدامه بشكل صحيح، احذف مجلد python_env بالكامل\nثم شغّل "./ebook2audiobook.command" لنظامي Linux وMac أو "ebook2audiobook.cmd" لنظام Windows.',
+    'error_conf_outdated': 'تكوين غير صحيح: يفتقر {file} إلى {missing}، وهو ما يحتاجه هذا الإصدار من ebook2audiobook.\nإنه من إصدار أقدم، أو تم تعديله مع إزالة الإدخالات.\nأعد conf.py هذا الإصدار، ثم طبّق تغييراتك عليه مرة أخرى.',
     'error_unrecognized_option': 'خطأ: خيار غير معروف "{arg}"',
     'error_full_docker_internal': '{full} خيار داخلي خاص بـ docker نفسه فقط. استخدم {build} إذا كنت تريد بناء صورة docker.',
     'error_share_headless': 'خيار --share مسموح فقط في الوضع غير headless.',

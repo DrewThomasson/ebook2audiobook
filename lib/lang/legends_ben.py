@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker': 'ভুল পারমিশন: ebook2audiobook হোস্ট থেকে মাউন্ট করা এই ফোল্ডারগুলিতে লিখতে পারে না:\n{dirs}\nএকটি SELinux হোস্ট (Fedora, RHEL...) -এ --security-opt label=disable দিয়ে কন্টেনার চালান, অথবা প্রতিটি -v মাউন্টে :z যোগ করুন।\nঅন্যথায়, কনটেইনার ব্যবহারকারীর জন্য হোস্ট ফোল্ডারগুলিকে রাইট্যাবল করুন, তারপর পুনরায় চালু করুন।',
     'error_launcher_required': 'ভুলভাবে চালু করা হয়েছে: ebook2audiobook সবসময় এর লঞ্চার স্ক্রিপ্ট দিয়ে চালু করতে হবে:\nLinux এবং Mac-এর জন্য "./e2a.sh" অথবা Windows-এর জন্য "e2a.cmd"।\nebook2audiobook ইনস্টল করা থাকলে এবং তার python_env ফোল্ডারের পাইথন থাকলে সরাসরি app.py চালু করা শুধুমাত্র একবারই কাজ করে।',
     'error_python_version': 'ভুলভাবে চালু: আপনার সিস্টেমের Python সংস্করণ সামঞ্জস্যপূর্ণ নয়! (বর্তমান: {version})\nebook2audiobook সঠিকভাবে ইনস্টল ও/বা ব্যবহার করতে python_env ফোল্ডারটি পুরোপুরি মুছুন\nএবং Linux ও Mac-এর জন্য "./ebook2audiobook.command" অথবা Windows-এর জন্য "ebook2audiobook.cmd" চালান।',
+    'error_conf_outdated': 'ভুল কনফিগারেশন: {file}-এর {missing} নেই, যা এই ভার্সনের ebook2audiobook-এর প্রয়োজন।\nএটি একটি পুরনো ভার্সন থেকে এসেছে, অথবা এন্ট্রিগুলি সরিয়ে দিয়ে এডিট করা হয়েছে।\nএই ভার্সনের conf.pyটি আবার আগের জায়গায় রাখুন, তারপর আবার তাতে আপনার নিজের পরিবর্তনগুলি প্রয়োগ করুন।',
     'error_unrecognized_option': 'ত্রুটি: অচেনা অপশন "{arg}"',
     'error_full_docker_internal': '{full} শুধু docker-এর নিজস্ব অভ্যন্তরীণ অপশন। docker ইমেজ তৈরি করতে {build} ব্যবহার করুন।',
     'error_share_headless': '--share অপশন শুধু non-headless মোডে অনুমোদিত।',

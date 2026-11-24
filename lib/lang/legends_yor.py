@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker': 'Àwọn àṣẹ tí kò tọ́: ebook2audiobook kò lè kọ ọ̀rọ̀ sí àwọn fọ́ọ̀dà wọ̀nyí tí a gbé kalẹ̀ láti ọ̀dọ̀ olùgbalejo:\n{dirs}\nLori olutọju SELinux (Fedora, RHEL...) ṣiṣẹ apoti pẹlu --security-opt label=disable, tabi fi :z kun si gbogbo -v mount.\nBí bẹ́ẹ̀ kọ́, jẹ́ kí olùlo kọ́ǹténà lè kọ̀wé sí àwọn fódà àgbà, lẹ́yìn náà tún bẹ̀rẹ̀.',
     'error_launcher_required': 'Ìbẹ̀rẹ̀ tí kò tọ́: ebook2audiobook gbọ́dọ̀ máa bẹ̀rẹ̀ nígbà gbogbo pẹ̀lú ìwé àkọsílẹ̀ ìbẹ̀rẹ̀ rẹ̀:\n"./e2a.sh" fún Linux àti Mac tàbí "e2a.cmd" fún Windows.\nBí o bá ti fi ebook2audiobook sílẹ̀ tán, bẹ̀rẹ̀ app.py lẹ́sẹ̀kẹsẹ̀ yóò ṣiṣẹ́ lẹ́ẹ̀kan ṣoṣo, pẹ̀lú python ti fódà python_env rẹ̀.',
     'error_python_version': 'Ìbẹ̀rẹ̀ tí kò tọ́: ẹ̀yà Python ẹ̀rọ yín kò bá a mu! (lọ́wọ́lọ́wọ́: {version})\nLáti fi sí i àti/tàbí lo ebook2audiobook dáadáa, ẹ pa gbogbo àpò python_env rẹ́\nkí ẹ sì ṣiṣẹ́ "./ebook2audiobook.command" fún Linux àti Mac tàbí "ebook2audiobook.cmd" fún Windows.',
+    'error_conf_outdated': 'Ìtò létòlétò tí kò tọ́: {file} kò ní {missing}, èyí tí ìkànnì ebook2audiobook yìí nílò.\nÓ wá láti ẹya àtijọ́, tàbí wọ́n ti ṣàtúnṣe rẹ̀ pẹ̀lú yíyọ àwọn ìkọ̀wé kúrò.\nFi conf.py ti ẹ̀yà yìí padà sí ipò, lẹ́yìn náà lo àwọn àyípadà tìrẹ sí i lẹ́ẹ̀kan síi.',
     'error_unrecognized_option': 'Àṣìṣe: àṣàyàn tí a kò mọ̀ "{arg}"',
     'error_full_docker_internal': '{full} jẹ́ àṣàyàn inú fún docker fúnra rẹ̀ nìkan. Ẹ lo {build} tí ẹ bá fẹ́ kọ́ àwòrán docker.',
     'error_share_headless': 'Àṣàyàn --share ni a gbà láàyè nìkan ní ipò tí kì í ṣe headless.',
