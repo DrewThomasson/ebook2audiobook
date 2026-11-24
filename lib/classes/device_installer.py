@@ -2683,7 +2683,12 @@ class DeviceInstaller():
             msg = legends['msg_torchcodec_exit_crash'].format(code=code)
             print(msg)
             return True
-        stderr_tail = '\n'.join(proc.stderr.strip().splitlines()[-20:])
+        # the tail, after every exception line of the chain above it: torchcodec re-raises a library that fails to load
+        # as 'Could not load this library', its cause ('libnvrtc.so.13: cannot open shared object file', the xpu image
+        # build) sat above the last 20 lines and never reached the log
+        lines = proc.stderr.strip().splitlines()
+        causes = [line for line in lines[:-20] if re.match(r'[A-Za-z_][\w.]*(Error|Exception): ', line)]
+        stderr_tail = '\n'.join(causes + lines[-20:])
         if stderr_tail:
             print(stderr_tail)
         if crashed:
@@ -2996,6 +3001,20 @@ class DeviceInstaller():
                 return installed_tag == wheel_tag or (installed_tag is not None and installed_tag.startswith(f'{wheel_tag}-'))
             return installed_tag == tag
 
+        def _cpu_torchcodec():
+            # the CPU torchcodec ('+cpu', from the cpu index) where the device's index has none, or only one its torch
+            # cannot load: e2a only decodes audio with it (torchaudio.load). ROCm, Vulkan (macOS: py-pkg's +vulkan
+            # build), XPU, and CUDA on Windows (cu128 / cu129 carry no Windows torchcodec, and since 0.12 one build
+            # serves every torch >= 2.11). PyPI's Linux torchcodec is the CUDA build: its libtorchcodec_image.so,
+            # loaded at import, links libtorch_cuda.so, libcudart.so.13 and libnvrtc.so.13, so on torch xpu the import
+            # failed (Docker-Build.yml's xpu image: 'Could not load this library: .../libtorchcodec_image.so'). The xpu
+            # index only mirrors the Linux CPU build, and under uv's first-index rule it hid PyPI's Windows wheel: the
+            # cpu index carries both
+            name = device_info['name']
+            if name == devices['VULKAN']['proc']:
+                return self.system != systems['MACOS']
+            return name in [devices['ROCM']['proc'], devices['XPU']['proc']] or (name == devices['CUDA']['proc'] and self.system == systems['WINDOWS'])
+
         def _needs_reinstall():
             # torch: base version + local tag must match what we'd install for this device. A nightly build of the
             # matrix release (2.16.0.devYYYYMMDD for 'last' 2.16.0) is that release until its stable build is out:
@@ -3021,9 +3040,15 @@ class DeviceInstaller():
             torchaudio_tag = m_ta.group(1) if m_ta else None
             if not _tag_ok(torchaudio_tag):
                 return True
-            # torchcodec: presence only (when torch >= 2.9 needs it)
-            if self.version_tuple(torch_version_matrix, 2) >= (2, 9) and not self.get_package_version('torchcodec'):
-                return True
+            # torchcodec: presence (when torch >= 2.9 needs it), and on Linux the CPU build where this step installs it:
+            # PyPI's is the CUDA build, which a torch without CUDA cannot load. Native XPU installs took it from PyPI
+            # until 26.11.25 and failed their torchcodec import, the presence check alone would keep it at every start
+            if self.version_tuple(torch_version_matrix, 2) >= (2, 9):
+                torchcodec_full = self.get_package_version('torchcodec')
+                if not torchcodec_full:
+                    return True
+                if torchcodec_version_matrix and self.system == systems['LINUX'] and _cpu_torchcodec() and not torchcodec_full.endswith(f"+{devices['CPU']['proc']}"):
+                    return True
             # the right versions with files gone (install cut short, antivirus): every check above passes and the first
             # import fails (torch without torch/amp/: "cannot import name 'amp' from partially initialized module
             # 'torch'"). repair_incomplete_packages() leaves the torch family to this step, which reinstalls it from the
@@ -3209,28 +3234,19 @@ class DeviceInstaller():
                                     torchcodec_wheel_url = f"{default_torchcodec_arm_url}/{tag}/torchcodec-{torchcodec_version_matrix}%2B{tag}-{tag_py}-{tag_py}-manylinux_2_27_{arch}.{os_env}_{arch}.whl"
                                     rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', torchcodec_wheel_url))
                                 else:
+                                    torchcodec_url_tag = 'cpu' if _cpu_torchcodec() else tag_dir.replace('win-', '')
                                     if device_info['name'] == devices['XPU']['proc']:
-                                        # all from PyPI: the xpu index only mirrors torchcodec's Linux CPU build, and under uv's
-                                        # first-index rule it hid PyPI's Windows wheel. Intel's plugin (torchcodec-xpu, with
-                                        # torchlib-xpu) is Linux only and follows torchcodec's versions, so it takes the same pin
-                                        torchcodec_pkgs = [f'torchcodec=={torchcodec_version_matrix}']
-                                        if self.system == systems['LINUX']:
-                                            torchcodec_pkgs += [f'torchcodec-xpu=={torchcodec_version_matrix}', 'torchlib-xpu']
-                                            msg = legends['msg_installing_torchcodec_xpu']
-                                        else:
-                                            msg = legends['msg_installing_torchcodec_xpu_no_plugin']
+                                        msg = legends['msg_installing_torchcodec_xpu'] if self.system == systems['LINUX'] else legends['msg_installing_torchcodec_xpu_no_plugin']
                                         print(msg)
-                                        rc = subprocess.call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', *torchcodec_pkgs))
-                                    else:
-                                        # the CPU build where the device's index has none: e2a only decodes audio with it
-                                        # (torchaudio.load). ROCm and Vulkan, and CUDA on Windows (cu128 / cu129 carry no
-                                        # Windows torchcodec, and since 0.12 one build serves every torch >= 2.11)
-                                        cpu_torchcodec = device_info['name'] in [devices['ROCM']['proc'], devices['VULKAN']['proc']] or (device_info['name'] == devices['CUDA']['proc'] and self.system == systems['WINDOWS'])
-                                        torchcodec_url_tag = 'cpu' if cpu_torchcodec else tag_dir.replace('win-', '')
-                                        # the nightly tree too, like torch: a 'codec' release not published yet (0.18.0)
-                                        # comes from its nightly build until the stable one is out
-                                        rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', self.release_range('torchcodec', torchcodec_version_matrix), '--index-url', f'{default_pytorch_url}/{torchcodec_url_tag}', '--extra-index-url', f'{default_pytorch_nightly_url}/{torchcodec_url_tag}', '--index-strategy', 'unsafe-best-match'))
-                                        stable_index['torchcodec'] = (f'torchcodec=={torchcodec_version_matrix}', f'{default_pytorch_url}/{torchcodec_url_tag}')
+                                    # the nightly tree too, like torch: a 'codec' release not published yet (0.18.0)
+                                    # comes from its nightly build until the stable one is out
+                                    rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', self.release_range('torchcodec', torchcodec_version_matrix), '--index-url', f'{default_pytorch_url}/{torchcodec_url_tag}', '--extra-index-url', f'{default_pytorch_nightly_url}/{torchcodec_url_tag}', '--index-strategy', 'unsafe-best-match'))
+                                    stable_index['torchcodec'] = (f'torchcodec=={torchcodec_version_matrix}', f'{default_pytorch_url}/{torchcodec_url_tag}')
+                                    if device_info['name'] == devices['XPU']['proc'] and self.system == systems['LINUX']:
+                                        # Intel's plugin (torchcodec-xpu, with torchlib-xpu) on top, from PyPI: Linux only, it
+                                        # follows torchcodec's versions so it takes the same pin. It links the CPU build's
+                                        # libtorchcodec_coreN.so, every symbol it needs is there
+                                        rc = subprocess.call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', f'torchcodec-xpu=={torchcodec_version_matrix}', 'torchlib-xpu'))
                                 if rc == 0:
                                     if not self.torchcodec_import_ok():
                                         return 1
