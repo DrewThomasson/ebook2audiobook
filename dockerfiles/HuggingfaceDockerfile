@@ -10,7 +10,7 @@ ARG PYTHON_VERSION=3.12
 # predates zesInit.
 FROM python:${PYTHON_VERSION}-slim-trixie
 
-ARG APP_VERSION=26.11.24
+ARG APP_VERSION=26.11.25
 # Hugging Face builds the image on a machine without GPU, whatever
 # hardware the Space runs on: nothing can be detected here. The image
 # is CUDA, and the GPU is detected when the container starts: CUDA on
