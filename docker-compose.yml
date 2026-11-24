@@ -11,7 +11,7 @@
 # it (missing: only when the tag is not there yet, always: at every up), and
 # E2A_IMAGE names another repository if needed (default
 # athomasson2/ebook2audiobook, which docker reads as docker.io/...). Docker Hub
-# carries cpu (amd64 + arm64), cu132, cu134, cu135, rocm7.2 and xpu (amd64):
+# carries cpu (amd64 + arm64), cu132, cu134, cu135, rocm7.2, rocm7.14 and xpu (amd64):
 #   E2A_PULL_POLICY=missing DEVICE_TAG=cu135 docker compose --profile cuda up
 # A local build gets the same name: `always` replaces it with the published
 # image of that tag. Set neither variable when building.
@@ -54,7 +54,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        APP_VERSION: ${APP_VERSION:-26.11.24}
+        APP_VERSION: ${APP_VERSION:-26.11.25}
         DEVICE_TAG: ${DEVICE_TAG:-cpu}
         # A null value means "resolve from the environment at build time, and
         # if unset leave the Dockerfile default alone". These are exactly the
