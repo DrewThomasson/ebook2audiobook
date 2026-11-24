@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker': '権限が正しくありません： ebook2audiobookは、ホストからマウントされた次のフォルダに書き込めません：\n{dirs}\nSELinuxホスト（Fedora、RHELなど）では、--security-opt label=disableを指定してコンテナを実行するか、各-vマウントに:zを追加します。\nそれ以外の場合は、コンテナユーザーがホストフォルダに書き込めるようにしてから、再起動してください。',
     'error_launcher_required': '起動が正しくありません：ebook2audiobookは常に起動スクリプトで起動する必要があります。\nLinuxおよびMacの場合は"./e2a.sh"、Windowsの場合は"e2a.cmd"。\napp.pyを直接起動できるのは、ebook2audiobookがpython_envフォルダのPythonとともにインストールされている場合に限り、1回のみです。',
     'error_python_version': '起動方法が正しくありません: システムの Python バージョンは互換性がありません！（現在: {version}）\nebook2audiobook を正しくインストール・使用するには python_env フォルダーを完全に削除し、\nLinux と Mac は "./ebook2audiobook.command"、Windows は "ebook2audiobook.cmd" を実行してください。',
+    'error_conf_outdated': '構成が正しくありません：{file}に、このバージョンのebook2audiobookに必要な{missing}がありません。\n古いバージョンからのものであるか、エントリが削除されて編集されたものです。\nこのバージョンのconf.pyを元に戻してから、再度独自の変更を適用してください。',
     'error_unrecognized_option': 'エラー: 認識できないオプション "{arg}"',
     'error_full_docker_internal': '{full} は docker 自身の内部専用オプションです。docker イメージをビルドするには {build} を使用してください。',
     'error_share_headless': '--share オプションは headless 以外のモードでのみ使用できます。',

@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker': '권한 오류: ebook2audiobook이 호스트에서 마운트된 다음 폴더에 쓸 수 없습니다.\n{dirs}\nSELinux 호스트(Fedora, RHEL...)에서 --security-opt label=disable로 컨테이너를 실행하거나 각 -v 마운트에 :z를 추가합니다.\n그렇지 않으면 컨테이너 사용자가 호스트 폴더에 쓸 수 있도록 설정한 다음 다시 시작하세요.',
     'error_launcher_required': '잘못된 실행: ebook2audiobook은 항상 런처 스크립트로 시작해야 합니다.\nLinux 및 Mac의 경우 "./e2a.sh", Windows의 경우 "e2a.cmd".\napp.py을(를) 직접 시작하는 것은 ebook2audiobook이 python_env 폴더의 Python으로 설치된 경우에만 한 번 작동합니다.',
     'error_python_version': '잘못된 실행: 시스템의 Python 버전이 호환되지 않습니다! (현재: {version})\nebook2audiobook을 올바르게 설치하거나 사용하려면 python_env 폴더를 완전히 삭제하고\nLinux와 Mac은 "./ebook2audiobook.command", Windows는 "ebook2audiobook.cmd"를 실행하세요.',
+    'error_conf_outdated': '잘못된 구성: {file}에 이 버전의 ebook2audiobook에 필요한 {missing}이(가) 없습니다.\n이전 버전에서 가져왔거나 항목이 삭제된 상태로 편집되었습니다.\n이 버전의 conf.py을(를) 다시 넣은 다음, 여기에 다시 본인만의 변경 사항을 적용하세요.',
     'error_unrecognized_option': '오류: 인식할 수 없는 옵션 "{arg}"',
     'error_full_docker_internal': '{full}은(는) docker 자체에서만 쓰는 내부 옵션입니다. docker 이미지를 빌드하려면 {build}을(를) 사용하세요.',
     'error_share_headless': '--share 옵션은 headless가 아닌 모드에서만 사용할 수 있습니다.',
