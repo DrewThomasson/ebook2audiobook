@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker': '权限错误：ebook2audiobook 无法写入从主机挂载的以下文件夹：\n{dirs}\n在SELinux主机（Fedora、RHEL……）上，使用--security-opt label=disable运行容器，或在每个-v挂载中添加:z。\n否则，请将主机文件夹设置为可供容器用户写入，然后重新启动。',
     'error_launcher_required': '启动错误：ebook2audiobook 必须始终通过其启动脚本启动：\nLinux 和 Mac 为"./e2a.sh"，Windows 为"e2a.cmd"。\n只有在安装了 ebook2audiobook 之后，才能使用其python_env文件夹中的 Python 直接启动app.py。',
     'error_python_version': '启动方式错误：系统的 Python 版本不兼容！（当前：{version}）\n要正确安装和/或使用 ebook2audiobook，请彻底删除 python_env 文件夹，\n然后运行 "./ebook2audiobook.command"（Linux 和 Mac）或 "ebook2audiobook.cmd"（Windows）。',
+    'error_conf_outdated': '配置有误：{file}缺少此版本的 ebook2audiobook 所需的{missing}。\n它来自旧版本，或者在编辑时删除了条目。\n将此版本的conf.py还原，然后再次对其应用您自己的更改。',
     'error_unrecognized_option': '错误：无法识别的选项 "{arg}"',
     'error_full_docker_internal': '{full} 仅是 docker 自身使用的内部选项。如需构建 docker 镜像，请使用 {build}。',
     'error_share_headless': '--share 选项仅允许在非 headless 模式下使用。',

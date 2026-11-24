@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker': 'مجوزهای نادرست: ebook2audiobook نمی‌تواند در این پوشه‌های متصل‌شده از میزبان بنویسد:\n{dirs}\nدر یک میزبان SELinux (Fedora، RHEL...)، کانتینر را با --security-opt label=disable اجرا کنید یا :z را به هر -v mount اضافه کنید.\nدر غیر این صورت، پوشه‌های میزبان را برای کاربر کانتینر قابل نوشتن کنید، سپس دوباره راه‌اندازی کنید.',
     'error_launcher_required': 'راه‌اندازی نادرست: ebook2audiobook همیشه باید با اسکریپت راه‌انداز خود راه‌اندازی شود:\n"./e2a.sh" برای لینوکس و مک یا "e2a.cmd" برای ویندوز.\nراه‌اندازی مستقیم app.py فقط زمانی امکان‌پذیر است که ebook2audiobook با پایتون موجود در پوشه python_env آن نصب شده باشد.',
     'error_python_version': 'اجرای نادرست: نسخه Python سیستم شما سازگار نیست! (فعلی: {version})\nبرای نصب و/یا استفاده درست از ebook2audiobook، پوشه python_env را کاملاً حذف کنید\nو "./ebook2audiobook.command" را برای Linux و Mac یا "ebook2audiobook.cmd" را برای Windows اجرا کنید.',
+    'error_conf_outdated': 'پیکربندی نادرست: {file} فاقد {missing} است که این نسخه از ebook2audiobook به آن نیاز دارد.\nاین فایل از یک نسخه قدیمی‌تر آمده است یا با حذف برخی موارد ویرایش شده است.\nconf.py این نسخه را برگردانید، سپس دوباره تغییرات خود را در آن اعمال کنید.',
     'error_unrecognized_option': 'خطا: گزینه ناشناخته "{arg}"',
     'error_full_docker_internal': '{full} فقط یک گزینه داخلی برای خود docker است. برای ساخت ایمیج docker از {build} استفاده کنید.',
     'error_share_headless': 'گزینه --share فقط در حالت غیر headless مجاز است.',

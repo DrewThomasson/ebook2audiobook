@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker': 'गलत परमिशन: ebook2audiobook इन फ़ोल्डरों में राइट नहीं कर सकता, जो होस्ट से माउंट किए गए हैं:\n{dirs}\nSELinux होस्ट (Fedora, RHEL...) पर कंटेनर को --security-opt label=disable के साथ चलाएँ या प्रत्येक -v माउंट में :z जोड़ें।\nअन्यथा कंटेनर यूज़र के लिए होस्ट फ़ोल्डर राइटेबल बनाएँ, फिर रीस्टार्ट करें।',
     'error_launcher_required': 'गलत लॉन्च: ebook2audiobook को हमेशा इसके लॉन्चर स्क्रिप्ट के साथ शुरू किया जाना चाहिए:\nLinux और Mac के लिए "./e2a.sh" या Windows के लिए "e2a.cmd"।\napp.py को सीधे स्टार्ट करना तभी काम करता है, जब ebook2audiobook इंस्टॉल किया गया हो, वह भी इसके python_env फ़ोल्डर के पायथन के साथ।',
     'error_python_version': 'गलत शुरुआत: आपके सिस्टम का Python संस्करण संगत नहीं है! (वर्तमान: {version})\nebook2audiobook को सही ढंग से इंस्टॉल और/या उपयोग करने के लिए python_env फ़ोल्डर पूरी तरह हटाएँ\nऔर Linux व Mac के लिए "./ebook2audiobook.command" या Windows के लिए "ebook2audiobook.cmd" चलाएँ।',
+    'error_conf_outdated': 'गलत कॉन्फ़िगरेशन: {file} में {missing} की कमी है, जिसकी इस ebook2audiobook वर्ज़न को ज़रूरत है।\nयह किसी पुराने वर्ज़न से आया है या फिर इसमें मौजूद कुछ एंट्री हटाकर इसे एडिट किया गया है।\nइस वर्ज़न के conf.py को वापस रखें, फिर उसमें अपने बदलाव फिर से लागू करें।',
     'error_unrecognized_option': 'त्रुटि: अपरिचित विकल्प "{arg}"',
     'error_full_docker_internal': '{full} केवल docker का आंतरिक विकल्प है। docker इमेज बनाने के लिए {build} का उपयोग करें।',
     'error_share_headless': '--share विकल्प केवल non-headless मोड में अनुमत है।',
