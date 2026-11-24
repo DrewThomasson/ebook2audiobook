@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_switch': 'A ti gbe ìkọ́lé tí ó dúró ṣinṣin jáde báyìí fún {tag}: {pkgs}. Yíyí àtòjọ́ ìdásílẹ̀ tí ó ń lọ ní alẹ́…',
     'msg_dev_stable_docker': 'Àwòrán yìí ń ṣiṣẹ́ ìkọ́lé alẹ́ fún {tag}, àti pé a ti ṣe àtẹ̀jáde èyí tí ó dúró ṣinṣin báyìí: {pkgs}. Fa àwòrán tí a ti ṣe àtúnṣe tàbí ṣe é ní àtúnkọ́ láti rí i gbà.',
     'msg_reinstalling_incomplete': 'Fífi àwọn àkójọpọ̀ tí àwọn fáìlì wọn kò sí padà sí i: {pkgs}',
+    'msg_incomplete_after_reinstall': 'ÌKÌLỌ̀: àwọn fáìlì {pkg} {version} ṣì sọnù lẹ́yìn ìgbàsílẹ̀ tuntun: {files}. Nǹkan kan lórí kọ̀ǹpútà yìí ń pa wọ́n rẹ́ bí wọ́n ṣe ń kọ wọ́n, nígbà púpọ̀ antivirus ni: dá wọn padà láti inú quarantine rẹ̀ tàbí fàyè gba {path} àti {cache} nínú rẹ̀, lẹ́yìn náà bẹ̀rẹ̀ ebook2audiobook lẹ́ẹ̀kan sí i.',
     'msg_install_lock_wait': 'ebook2audiobook mìíràn ń fi àwọn package sí {env}, à ń dúró kí ó parí…',
     'msg_import_missing_repair': 'Módù {module} sọnù lẹ́yìn àyẹ̀wò àwọn package: ń ṣe àyẹ̀wò àwọn package lẹ́ẹ̀kan sí i…',
     'msg_removing_unusable_torchcodec': 'Yíyọ torchcodec {version} kúrò: kò sí torchcodec tí ó ń ṣiṣẹ́ pẹ̀lú torch {torch} (ní ìsàlẹ̀ 2.9), pyannote ń ṣiṣẹ́ láìsí i.',

@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_switch': '{tag} için artık kararlı derleme yayınlandı: {pkgs}. Gece derlemesi değiştiriliyor…',
     'msg_dev_stable_docker': 'Bu görüntü, {tag} için bir gece derlemesi çalıştırıyor ve artık kararlı olan şu şekilde yayınlandı: {pkgs}. Güncellenmiş görüntüyü çekin veya elde etmek için yeniden oluşturun.',
     'msg_reinstalling_incomplete': 'Eksik dosyaları olan paketler yeniden yükleniyor: {pkgs}',
+    'msg_incomplete_after_reinstall': 'UYARI: {pkg} {version} paketinde yeni bir indirmeden sonra da eksik dosyalar var: {files}. Bu bilgisayardaki bir şey dosyaları yazılırken siliyor, çoğunlukla bir antivirüs: onları karantinasından geri yükleyin ya da içinde {path} ve {cache} konumlarına izin verin, ardından ebook2audiobook uygulamasını yeniden başlatın.',
     'msg_install_lock_wait': 'Başka bir ebook2audiobook {env} içine paket yüklüyor, bitmesi bekleniyor…',
     'msg_import_missing_repair': '{module} modülü paket denetiminden sonra kayboldu: paketler yeniden denetleniyor…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} kaldırılıyor: torchcodec, torch {torch} (2.9\'nin altında) ile çalışmaz, pyannote onsuz çalışır.',

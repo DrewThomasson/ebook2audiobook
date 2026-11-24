@@ -2181,14 +2181,18 @@ class DeviceInstaller():
             error = f'remove_torchvision(): {e}'
             print(error)
 
-    def lacks_record_files(self, dist:Any)->bool:
-        # a code file RECORD lists is gone. RECORD itself: Distribution.files leaves out the entries whose file is gone
-        # (python >= 3.12)
+    def missing_record_files(self, dist:Any)->list:
+        # the code files RECORD lists that are gone. RECORD itself: Distribution.files leaves out the entries whose
+        # file is gone (python >= 3.12)
         code_suffixes = ('.py', '.so', '.pyd', '.dll', '.dylib')
+        missing = []
         for row in csv.reader((dist.read_text('RECORD') or '').splitlines()):
             if row and row[0].endswith(code_suffixes) and not os.path.exists(dist.locate_file(row[0])):
-                return True
-        return False
+                missing.append(row[0])
+        return missing
+
+    def lacks_record_files(self, dist:Any)->bool:
+        return bool(self.missing_record_files(dist))
 
     def package_incomplete(self, pkg:str)->bool:
         # pkg installed but some of its code files are gone (see repair_incomplete_packages())
@@ -2224,9 +2228,22 @@ class DeviceInstaller():
             return 0
         msg = legends['msg_reinstalling_incomplete'].format(pkgs=', '.join(incomplete))
         print(msg)
+        # uv installs a wheel by linking the files it unpacked in its cache (hardlinks on Windows and Linux, clones on
+        # macOS): a file gone from site-packages is often gone from that unpacked copy too (deleted by an antivirus as
+        # uv wrote it, or by a temp cleaner, the cache living in the temp dir by default), and --reinstall-package, even
+        # with --refresh-package, links the same incomplete copy back. Every start reinstalled gradio without
+        # gradio/http_server.py and launch() failed with "cannot import name 'http_server' from 'gradio'" (bug
+        # 976b42dd9492ac2a). Their cache entries are cleaned first so the wheels are downloaded again (--no-cache
+        # when the cache cannot be cleaned).
         # --no-deps: the same version only gets its files back, its dependencies are install_missing_dependencies()'
         # job. Resolving them again puts the plain onnxruntime back next to onnxruntime-gpu (piper-tts -> onnxruntime)
-        cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir, '--no-deps')
+        cache_args = ['--cache-dir', self.pip_cache_dir]
+        try:
+            if subprocess.call([self.uv_bin, 'cache', 'clean', *cache_args, *incomplete], timeout=300) != 0:
+                cache_args = ['--no-cache']
+        except (subprocess.TimeoutExpired, OSError):
+            cache_args = ['--no-cache']
+        cmd = self._uv_pip('install', *cache_args, '--no-deps')
         for name in incomplete:
             cmd += ['--reinstall-package', name]
         try:
@@ -2236,6 +2253,18 @@ class DeviceInstaller():
             print(msg)
             return 1
         importlib.invalidate_caches()
+        # files still gone from freshly downloaded wheels: something on this machine deletes them as they are written.
+        # Not fatal here (the package may still work for e2a), the import that needs them fails with this said first
+        for name, ver in incomplete.items():
+            try:
+                dist = distribution(name)
+                missing = self.missing_record_files(dist)
+            except Exception:
+                continue
+            if missing:
+                files = ', '.join(missing[:5]) + (f' (+{len(missing) - 5})' if len(missing) > 5 else '')
+                msg = legends['msg_incomplete_after_reinstall'].format(pkg=name, version=ver, files=files, path=os.path.abspath(dist.locate_file('')), cache=self.pip_cache_dir)
+                print(msg)
         return 0
 
     # module name -> the distribution that provides it, for imports uv pip check cannot see: a package loaded
