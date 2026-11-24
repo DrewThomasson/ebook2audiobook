@@ -1,4 +1,4 @@
-import os, re, sys, csv, platform, shutil, subprocess, importlib, json, tempfile, time
+import os, re, sys, csv, platform, shutil, signal, subprocess, importlib, json, tempfile, time
 from functools import cached_property, wraps
 from typing import Any, Callable, Union
 from glob import glob
@@ -2181,14 +2181,18 @@ class DeviceInstaller():
             error = f'remove_torchvision(): {e}'
             print(error)
 
-    def lacks_record_files(self, dist:Any)->bool:
-        # a code file RECORD lists is gone. RECORD itself: Distribution.files leaves out the entries whose file is gone
-        # (python >= 3.12)
+    def missing_record_files(self, dist:Any)->list:
+        # the code files RECORD lists that are gone. RECORD itself: Distribution.files leaves out the entries whose
+        # file is gone (python >= 3.12)
         code_suffixes = ('.py', '.so', '.pyd', '.dll', '.dylib')
+        missing = []
         for row in csv.reader((dist.read_text('RECORD') or '').splitlines()):
             if row and row[0].endswith(code_suffixes) and not os.path.exists(dist.locate_file(row[0])):
-                return True
-        return False
+                missing.append(row[0])
+        return missing
+
+    def lacks_record_files(self, dist:Any)->bool:
+        return bool(self.missing_record_files(dist))
 
     def package_incomplete(self, pkg:str)->bool:
         # pkg installed but some of its code files are gone (see repair_incomplete_packages())
@@ -2224,9 +2228,22 @@ class DeviceInstaller():
             return 0
         msg = legends['msg_reinstalling_incomplete'].format(pkgs=', '.join(incomplete))
         print(msg)
+        # uv installs a wheel by linking the files it unpacked in its cache (hardlinks on Windows and Linux, clones on
+        # macOS): a file gone from site-packages is often gone from that unpacked copy too (deleted by an antivirus as
+        # uv wrote it, or by a temp cleaner, the cache living in the temp dir by default), and --reinstall-package, even
+        # with --refresh-package, links the same incomplete copy back. Every start reinstalled gradio without
+        # gradio/http_server.py and launch() failed with "cannot import name 'http_server' from 'gradio'" (bug
+        # 976b42dd9492ac2a). Their cache entries are cleaned first so the wheels are downloaded again (--no-cache
+        # when the cache cannot be cleaned).
         # --no-deps: the same version only gets its files back, its dependencies are install_missing_dependencies()'
         # job. Resolving them again puts the plain onnxruntime back next to onnxruntime-gpu (piper-tts -> onnxruntime)
-        cmd = self._uv_pip('install', '--cache-dir', self.pip_cache_dir, '--no-deps')
+        cache_args = ['--cache-dir', self.pip_cache_dir]
+        try:
+            if subprocess.call([self.uv_bin, 'cache', 'clean', *cache_args, *incomplete], timeout=300) != 0:
+                cache_args = ['--no-cache']
+        except (subprocess.TimeoutExpired, OSError):
+            cache_args = ['--no-cache']
+        cmd = self._uv_pip('install', *cache_args, '--no-deps')
         for name in incomplete:
             cmd += ['--reinstall-package', name]
         try:
@@ -2236,6 +2253,18 @@ class DeviceInstaller():
             print(msg)
             return 1
         importlib.invalidate_caches()
+        # files still gone from freshly downloaded wheels: something on this machine deletes them as they are written.
+        # Not fatal here (the package may still work for e2a), the import that needs them fails with this said first
+        for name, ver in incomplete.items():
+            try:
+                dist = distribution(name)
+                missing = self.missing_record_files(dist)
+            except Exception:
+                continue
+            if missing:
+                files = ', '.join(missing[:5]) + (f' (+{len(missing) - 5})' if len(missing) > 5 else '')
+                msg = legends['msg_incomplete_after_reinstall'].format(pkg=name, version=ver, files=files, path=os.path.abspath(dist.locate_file('')), cache=self.pip_cache_dir)
+                print(msg)
         return 0
 
     # module name -> the distribution that provides it, for imports uv pip check cannot see: a package loaded
@@ -2628,6 +2657,46 @@ class DeviceInstaller():
         if not isinstance(data, dict):
             return {'count': 0, 'backend': None, 'error': f'no answer on stdout: {proc.stdout.strip()[-200:]!r}'}
         return {'count': 0, 'backend': None, **data, 'probed': True}
+
+    def torchcodec_import_ok(self)->bool:
+        # torchcodec's own import in python_exec (the interpreter _uv_pip installs into), a marker on stdout once it is
+        # done. A python error is a real import failure, its traceback says why (a torchcodec built for another torch,
+        # an ffmpeg it cannot load). A native death is not one: after the marker the interpreter died at exit (the
+        # import worked), before it the torch stack died loading. During a docker image build (IN_DOCKER) that crash is
+        # the build host's, not the image's: no GPU, and an amd64 image built on an arm64 host (Docker-Build.yml's
+        # self-hosted macOS runner) runs under Rosetta / QEMU. The rocm7.2 image died there with no traceback at all
+        # while the same wheels import natively: the build goes on with a warning
+        marker = 'torchcodec import ok'
+        proc = subprocess.run([python_exec, '-c', f'from torchcodec.decoders import AudioDecoder; print({marker!r}, flush=True)'], capture_output=True, text=True)
+        if proc.returncode == 0:
+            return True
+        # POSIX reports a native crash as -signal, Windows as an NTSTATUS (0xc0000005 access violation)
+        crashed = proc.returncode < 0 or proc.returncode > 255
+        if proc.returncode < 0:
+            try:
+                code = signal.Signals(-proc.returncode).name
+            except ValueError:
+                code = f'signal {-proc.returncode}'
+        else:
+            code = f'exit code {proc.returncode:#x}' if crashed else f'exit code {proc.returncode}'
+        if marker in proc.stdout:
+            msg = legends['msg_torchcodec_exit_crash'].format(code=code)
+            print(msg)
+            return True
+        stderr_tail = '\n'.join(proc.stderr.strip().splitlines()[-20:])
+        if stderr_tail:
+            print(stderr_tail)
+        if crashed:
+            if os.environ.get('IN_DOCKER') == '1':
+                msg = legends['msg_torchcodec_crash_docker'].format(code=code)
+                print(msg)
+                return True
+            error = legends['error_torchcodec_crash'].format(code=code)
+            print(error)
+            return False
+        error = legends['error_torchcodec_import']
+        print(error)
+        return False
 
     def torch_probe_child(self)->Union[dict, None]:
         # run components/detect_gpu.py in a child process and parse its json line: None when the child could not run to
@@ -3163,11 +3232,7 @@ class DeviceInstaller():
                                         rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', self.release_range('torchcodec', torchcodec_version_matrix), '--index-url', f'{default_pytorch_url}/{torchcodec_url_tag}', '--extra-index-url', f'{default_pytorch_nightly_url}/{torchcodec_url_tag}', '--index-strategy', 'unsafe-best-match'))
                                         stable_index['torchcodec'] = (f'torchcodec=={torchcodec_version_matrix}', f'{default_pytorch_url}/{torchcodec_url_tag}')
                                 if rc == 0:
-                                    try:
-                                        subprocess.check_call([python_exec, '-c', 'from torchcodec.decoders import AudioDecoder'])
-                                    except subprocess.CalledProcessError:
-                                        error = legends['error_torchcodec_import']
-                                        print(error)
+                                    if not self.torchcodec_import_ok():
                                         return 1
                                 else:
                                     error = legends['error_torchcodec_missing']
