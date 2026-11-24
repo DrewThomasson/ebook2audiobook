@@ -1,4 +1,4 @@
-import os, re, sys, csv, platform, shutil, subprocess, importlib, json, tempfile, time
+import os, re, sys, csv, platform, shutil, signal, subprocess, importlib, json, tempfile, time
 from functools import cached_property, wraps
 from typing import Any, Callable, Union
 from glob import glob
@@ -2629,6 +2629,46 @@ class DeviceInstaller():
             return {'count': 0, 'backend': None, 'error': f'no answer on stdout: {proc.stdout.strip()[-200:]!r}'}
         return {'count': 0, 'backend': None, **data, 'probed': True}
 
+    def torchcodec_import_ok(self)->bool:
+        # torchcodec's own import in python_exec (the interpreter _uv_pip installs into), a marker on stdout once it is
+        # done. A python error is a real import failure, its traceback says why (a torchcodec built for another torch,
+        # an ffmpeg it cannot load). A native death is not one: after the marker the interpreter died at exit (the
+        # import worked), before it the torch stack died loading. During a docker image build (IN_DOCKER) that crash is
+        # the build host's, not the image's: no GPU, and an amd64 image built on an arm64 host (Docker-Build.yml's
+        # self-hosted macOS runner) runs under Rosetta / QEMU. The rocm7.2 image died there with no traceback at all
+        # while the same wheels import natively: the build goes on with a warning
+        marker = 'torchcodec import ok'
+        proc = subprocess.run([python_exec, '-c', f'from torchcodec.decoders import AudioDecoder; print({marker!r}, flush=True)'], capture_output=True, text=True)
+        if proc.returncode == 0:
+            return True
+        # POSIX reports a native crash as -signal, Windows as an NTSTATUS (0xc0000005 access violation)
+        crashed = proc.returncode < 0 or proc.returncode > 255
+        if proc.returncode < 0:
+            try:
+                code = signal.Signals(-proc.returncode).name
+            except ValueError:
+                code = f'signal {-proc.returncode}'
+        else:
+            code = f'exit code {proc.returncode:#x}' if crashed else f'exit code {proc.returncode}'
+        if marker in proc.stdout:
+            msg = legends['msg_torchcodec_exit_crash'].format(code=code)
+            print(msg)
+            return True
+        stderr_tail = '\n'.join(proc.stderr.strip().splitlines()[-20:])
+        if stderr_tail:
+            print(stderr_tail)
+        if crashed:
+            if os.environ.get('IN_DOCKER') == '1':
+                msg = legends['msg_torchcodec_crash_docker'].format(code=code)
+                print(msg)
+                return True
+            error = legends['error_torchcodec_crash'].format(code=code)
+            print(error)
+            return False
+        error = legends['error_torchcodec_import']
+        print(error)
+        return False
+
     def torch_probe_child(self)->Union[dict, None]:
         # run components/detect_gpu.py in a child process and parse its json line: None when the child could not run to
         # its end (missing python, timeout, unreadable output). Used before installing a GPU torch at all -- an access
@@ -3163,11 +3203,7 @@ class DeviceInstaller():
                                         rc = subprocess.check_call(self._uv_pip('install', '--reinstall', '--no-cache', '--no-deps', self.release_range('torchcodec', torchcodec_version_matrix), '--index-url', f'{default_pytorch_url}/{torchcodec_url_tag}', '--extra-index-url', f'{default_pytorch_nightly_url}/{torchcodec_url_tag}', '--index-strategy', 'unsafe-best-match'))
                                         stable_index['torchcodec'] = (f'torchcodec=={torchcodec_version_matrix}', f'{default_pytorch_url}/{torchcodec_url_tag}')
                                 if rc == 0:
-                                    try:
-                                        subprocess.check_call([python_exec, '-c', 'from torchcodec.decoders import AudioDecoder'])
-                                    except subprocess.CalledProcessError:
-                                        error = legends['error_torchcodec_import']
-                                        print(error)
+                                    if not self.torchcodec_import_ok():
                                         return 1
                                 else:
                                     error = legends['error_torchcodec_missing']
