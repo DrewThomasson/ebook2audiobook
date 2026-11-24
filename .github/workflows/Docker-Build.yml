@@ -230,6 +230,25 @@ jobs:
             -t "$ROCM_TAG_3" \
             --push .
 
+      # ==================== ROCm 7.14 Build (linux/amd64 only) ====================
+      # newest ROCm user space for recent AMD GPUs / drivers, rocm7.2 above stays the one for older host drivers (the
+      # image carries its ROCm in the torch wheel, the host only the amdgpu kernel driver). continue-on-error: above
+      # rocm_version_range's tested max, a failure must not stop the stable images below
+      - name: Build and Push ROCm 7.14 Docker Image
+        continue-on-error: true
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          ROCM_TAG_1="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH}-rocm7.14"
+          ROCM_TAG_2="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG}-rocm7.14"
+          ROCM_TAG_3="${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:rocm7.14"
+          docker buildx build --pull --platform linux/amd64 \
+            --build-arg DEVICE_TAG=rocm7.14 \
+            --build-arg DOCKER_DEVICE_STR='{"name": "rocm", "os": "manylinux_2_28", "arch": "x86_64", "pyvenv": [3, 12], "tag": "rocm7.14", "note": "ROCm 7.14"}' \
+            -t "$ROCM_TAG_1" \
+            -t "$ROCM_TAG_2" \
+            -t "$ROCM_TAG_3" \
+            --push .
+
       # ==================== Intel XPU Build (linux/amd64 only) ====================
       # amd64 only: Intel NEO / IGC / GMM release debs pulled by the Dockerfile xpu block are amd64 builds
       - name: Build and Push XPU Docker Image
