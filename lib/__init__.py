@@ -1,3 +1,20 @@
+import sys
+
+from . import conf
+
+# lib/conf.py is the file users are told to edit (README, the crash reports line) and to put back after an update: one
+# kept from an older version, or with an entry removed, lacks a device this version addresses by name, and e2a died far
+# from the cause (crash report d53d2fd414aa8596: KeyError 'VULKAN' in DeviceInstaller.vulkan_torch_ok, filed as a bug).
+# Checked here, the first code of any lib import (app.py, the launchers' DeviceInstaller calls, tools): a shipped
+# conf.py always passes
+conf_device_keys = ['CPU', 'CUDA', 'MPS', 'ROCM', 'XPU', 'JETSON', 'VULKAN']
+conf_missing = [f"devices['{key}']" for key in conf_device_keys if key not in getattr(conf, 'devices', {})]
+if conf_missing:
+    from .lang import legends
+    error = legends['error_conf_outdated'].format(file=conf.__file__, missing=', '.join(conf_missing))
+    print(error, file=sys.stderr)
+    sys.exit(1)
+
 from .conf import (
     DEVICE_SYSTEM, FULL_DOCKER, NATIVE, BUILD_DOCKER, workflow_id, fernet_key, fernet_data, audiobooks_cli_dir, audiobooks_gradio_dir,
     audiobooks_host_dir, debug_mode, default_audio_proc_samplerate, max_upload_size,

@@ -367,6 +367,7 @@ legends = {
     'error_dirs_not_writable_docker':'Wrong permissions: ebook2audiobook cannot write to these folders mounted from the host:\n{dirs}\nOn an SELinux host (Fedora, RHEL...) run the container with --security-opt label=disable, or add :z to each -v mount.\nOtherwise make the host folders writable for the container user, then restart.',
     'error_launcher_required':'Wrong launch: ebook2audiobook must always be started with its launcher script:\n"./e2a.sh" for Linux and Mac or "e2a.cmd" for Windows.\nStarting app.py directly works only once ebook2audiobook is installed, with the python of its python_env folder.',
     'error_python_version': 'Wrong launch: your OS Python version is not compatible! (current: {version})\nTo install and/or use ebook2audiobook correctly you must completely delete the python_env folder\nand run "./ebook2audiobook.command" for Linux and Mac or "ebook2audiobook.cmd" for Windows.',
+    'error_conf_outdated': 'Wrong configuration: {file} lacks {missing}, which this version of ebook2audiobook needs.\nIt comes from an older version, or was edited with entries removed.\nPut back the conf.py of this version, then apply your own changes to it again.',
     'error_unrecognized_option': 'Error: Unrecognized option "{arg}"',
     'error_full_docker_internal': '{full} is only an internal option for the docker itself. Use {build} if you need to build a docker image.',
     'error_share_headless': '--share option is only allowed in non-headless mode.',
