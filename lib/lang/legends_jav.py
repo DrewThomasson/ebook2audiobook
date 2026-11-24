@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_switch': 'Build stabil saiki wis diterbitake kanggo {tag}: {pkgs}. Ngganti build saben wengi...',
     'msg_dev_stable_docker': 'Gambar iki mbukak build wengi kanggo {tag}, lan sing stabil saiki wis diterbitake: {pkgs}. Tarik gambar sing wis dianyari utawa gawe maneh kanggo njaluk.',
     'msg_reinstalling_incomplete': 'Nginstal maneh paket kanthi file sing ilang: {pkgs}',
+    'msg_incomplete_after_reinstall': 'PÈNGET: {pkg} {version} isih kélangan file sawisé diundhuh anyar: {files}. Ana sing ing komputer iki mbusak file kasebut nalika lagi ditulis, biasané antivirus: balèkaké saka karantinané utawa idinaké {path} lan {cache} ing kono, banjur wiwiti ebook2audiobook maneh.',
     'msg_install_lock_wait': 'ebook2audiobook liyane lagi nginstal paket ing {env}, ngenteni nganti rampung…',
     'msg_import_missing_repair': 'Modul {module} ilang sawisé paket dipriksa: mriksa paket manèh…',
     'msg_removing_unusable_torchcodec': 'Mbusak torchcodec {version}: ora ana torchcodec sing mlaku karo torch {torch} (ngisor 2.9), pyannote bisa digunakake tanpa kuwi.',

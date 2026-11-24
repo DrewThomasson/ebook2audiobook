@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_switch': '{tag}の安定ビルドが公開されました：{pkgs}。ナイトリービルドを置き換えています…',
     'msg_dev_stable_docker': 'このイメージは{tag}のナイトリービルドを実行しており、安定版が公開されました：{pkgs}。更新されたイメージをプルするか、再ビルドして取得してください。',
     'msg_reinstalling_incomplete': 'ファイルが不足しているパッケージを再インストールしています：{pkgs}',
+    'msg_incomplete_after_reinstall': '警告: 新たにダウンロードした後も {pkg} {version} のファイルが不足しています: {files}。このコンピューター上の何か（多くの場合ウイルス対策ソフト）が書き込み時にそれらを削除しています。隔離から復元するか、{path} と {cache} を許可してから、ebook2audiobook を再起動してください。',
     'msg_install_lock_wait': '別の ebook2audiobook が {env} にパッケージをインストール中です。完了を待っています…',
     'msg_import_missing_repair': 'パッケージ確認後にモジュール {module} が見つかりません: パッケージを再確認しています…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version}を削除しています：torch {torch}（2.9未満）ではtorchcodecは動作せず、pyannoteはtorchcodecなしで動作します。',

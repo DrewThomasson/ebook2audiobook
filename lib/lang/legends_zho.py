@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_switch': '现已发布{tag}的稳定版本：{pkgs}。正在替换夜间版本……',
     'msg_dev_stable_docker': '此镜像运行{tag}的夜间版本，稳定版本现已发布：{pkgs}。拉取更新后的镜像或重新构建镜像以获取它。',
     'msg_reinstalling_incomplete': '正在重新安装缺少文件的软件包：{pkgs}',
+    'msg_incomplete_after_reinstall': '警告：重新下载后 {pkg} {version} 仍缺少文件：{files}。此计算机上的某个程序（通常是杀毒软件）在写入时删除了它们：请从其隔离区恢复这些文件，或在其中允许 {path} 和 {cache}，然后重新启动 ebook2audiobook。',
     'msg_install_lock_wait': '另一个 ebook2audiobook 正在 {env} 中安装软件包，正在等待其完成…',
     'msg_import_missing_repair': '模块 {module} 在软件包检查后丢失：正在重新检查软件包…',
     'msg_removing_unusable_torchcodec': '正在移除 torchcodec {version}：没有 torchcodec 与 torch {torch}（低于 2.9）一起运行，pyannote 在没有它时也能正常工作。',

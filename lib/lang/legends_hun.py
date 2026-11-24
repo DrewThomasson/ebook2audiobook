@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_switch': 'Stabil verzió mostantól elérhető a következőhöz: {tag}: {pkgs}. Az éjszakai verzió cseréje folyamatban…',
     'msg_dev_stable_docker': 'Ez a kép a(z) {tag} éjszakai buildjét futtatja, és most közzétették a stabil verziót: {pkgs}. Húzza le a frissített képet, vagy építse újra, hogy megszerezze.',
     'msg_reinstalling_incomplete': 'Hiányzó fájlokat tartalmazó csomagok újratelepítése: {pkgs}',
+    'msg_incomplete_after_reinstall': 'FIGYELEM: a(z) {pkg} {version} csomagból friss letöltés után is hiányoznak fájlok: {files}. Valami ezen a számítógépen törli őket írás közben, leggyakrabban egy vírusirtó: állítsa vissza őket a karanténjából, vagy engedélyezze benne a(z) {path} és {cache} mappát, majd indítsa újra az ebook2audiobookot.',
     'msg_install_lock_wait': 'Egy másik ebook2audiobook csomagokat telepít ide: {env}, várakozás a befejezésére…',
     'msg_import_missing_repair': 'A(z) {module} modul eltűnt a csomagellenőrzés után: a csomagok újraellenőrzése…',
     'msg_removing_unusable_torchcodec': 'A(z) {version} torchcodec eltávolítása: a torchcodec nem működik a(z) {torch} torch-csal (2.9 alatt), a pyannote nélküle működik.',

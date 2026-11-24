@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_switch': '이제 {tag}에 대한 안정 빌드가 게시되었습니다: {pkgs}. 야간 빌드 교체 중…',
     'msg_dev_stable_docker': '이 이미지는 {tag}에 대한 야간 빌드를 실행하며, 이제 안정적인 빌드가 게시되었습니다: {pkgs}. 업데이트된 이미지를 가져오거나 다시 빌드하여 가져오세요.',
     'msg_reinstalling_incomplete': '파일이 누락된 패키지 재설치 중: {pkgs}',
+    'msg_incomplete_after_reinstall': '경고: 새로 다운로드한 후에도 {pkg} {version}의 파일이 누락되어 있습니다: {files}. 이 컴퓨터의 무언가(대개 백신 프로그램)가 파일이 기록될 때 삭제하고 있습니다. 격리 항목에서 복원하거나 {path} 및 {cache}을(를) 허용한 다음 ebook2audiobook을 다시 시작하세요.',
     'msg_install_lock_wait': '다른 ebook2audiobook이 {env}에 패키지를 설치하는 중입니다. 완료될 때까지 기다리는 중…',
     'msg_import_missing_repair': '패키지 확인 후 모듈 {module}이(가) 사라졌습니다: 패키지를 다시 확인하는 중…',
     'msg_removing_unusable_torchcodec': 'torchcodec {version} 제거 중: torch {torch}(2.9 미만)에서는 torchcodec이 실행되지 않으며, pyannote는 torchcodec 없이 작동합니다.',

@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_switch': 'Ya se ha publicado la compilación estable para {tag}: {pkgs}. Reemplazando la compilación nocturna…',
     'msg_dev_stable_docker': 'Esta imagen ejecuta una compilación nocturna para {tag}, y la estable ya está publicada: {pkgs}. Extraiga la imagen actualizada o vuelva a compilarla para obtenerla.',
     'msg_reinstalling_incomplete': 'Reinstalando paquetes con archivos faltantes: {pkgs}',
+    'msg_incomplete_after_reinstall': 'ADVERTENCIA: a {pkg} {version} le siguen faltando archivos tras una descarga nueva: {files}. Algo en este equipo los elimina a medida que se escriben, casi siempre un antivirus: restáuralos desde su cuarentena o permite {path} y {cache} en él, y vuelve a iniciar ebook2audiobook.',
     'msg_install_lock_wait': 'Otro ebook2audiobook está instalando paquetes en {env}, esperando a que termine…',
     'msg_import_missing_repair': 'El módulo {module} desapareció después de la comprobación de paquetes: comprobando los paquetes de nuevo…',
     'msg_removing_unusable_torchcodec': 'Eliminando torchcodec {version}: ningún torchcodec se ejecuta con torch {torch} (inferior a 2.9), pyannote funciona sin él.',

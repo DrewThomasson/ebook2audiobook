@@ -508,6 +508,7 @@ legends = {
     'msg_dev_stable_switch': 'Version stable désormais publiée pour {tag} : {pkgs}. Remplacement de la version nightly…',
     'msg_dev_stable_docker': 'Cette image exécute une version nightly pour {tag}, et la version stable est maintenant publiée : {pkgs}. Téléchargez l\'image mise à jour ou reconstruisez-la pour l\'obtenir.',
     'msg_reinstalling_incomplete': 'Réinstallation des paquets avec des fichiers manquants : {pkgs}',
+    'msg_incomplete_after_reinstall': 'AVERTISSEMENT : il manque toujours des fichiers à {pkg} {version} après un nouveau téléchargement : {files}. Quelque chose sur cet ordinateur les supprime au moment où ils sont écrits, le plus souvent un antivirus : restaurez-les depuis sa quarantaine ou autorisez-y {path} et {cache}, puis relancez ebook2audiobook.',
     'msg_install_lock_wait': 'Un autre ebook2audiobook installe des paquets dans {env}, attente de la fin…',
     'msg_import_missing_repair': 'Le module {module} a disparu après la vérification des paquets : nouvelle vérification des paquets…',
     'msg_removing_unusable_torchcodec': 'Suppression de torchcodec {version} : aucun torchcodec ne fonctionne avec torch {torch} (inférieur à 2.9), pyannote fonctionne sans lui.',
