@@ -3161,43 +3161,21 @@ def foreign2latin(text:str, base_lang:str)->str:
         except Exception:
             return unidecode(word)
 
-    # Protect ALL SML tags using the global grammar
-    protected:dict[str, str] = {}
-    for i, m in enumerate(SML_TAG_PATTERN.finditer(text)):
-        key:str = f'__TTS_MARKER_{i}__'
-        protected[key] = m.group(0)
-        text = text.replace(m.group(0), key)
-    tokens:list[str] = re.findall(r"\w+|[^\w\s]", text, re.UNICODE)
-    buf:list[str] = []
-    for t in tokens:
-        if t in protected:
-            buf.append(t)
-        elif re.match(r"^\w+$", t):
-            buf.append(_romanize(t))
-        else:
-            buf.append(t)
-    out: str = ''
-    joiners = ("'", "\u2018", "\u2019")  # stay glued to the next word (contractions)
-    for i, t in enumerate(buf):
-        if i == 0:
-            out += t
-        else:
-            prev = buf[i - 1]
-            prev_is_word = bool(re.match(r"^\w+$", prev))
-            curr_is_word = bool(re.match(r"^\w+$", t))
-            prev_is_protected = prev in protected
-            curr_is_protected = t in protected
-            if prev_is_word and curr_is_word:
-                out += ' ' + t
-            elif prev_is_protected or curr_is_protected:
-                out += ' ' + t
-            elif not prev_is_word and not prev_is_protected and curr_is_word and prev not in joiners:
-                out += ' ' + t
-            else:
-                out += t
-    for k, v in protected.items():
-        out = out.replace(k, v)
-    return out
+    def _repl(m:re.Match)->str:
+        return _romanize(m.group())
+
+    # words are romanized in place, what is between them (hyphens, apostrophes, slashes, spaces) stays as written.
+    # rebuilding the spacing from split tokens glued a space after any sign (well-known -> well- known, and/or -> and/ or),
+    # the spacing of real punctuation (, . ! ?) is normalized later by normalize_text(). SML tags are never romanized
+    word_pattern = re.compile(r'\w+')
+    out:list[str] = []
+    last = 0
+    for m in SML_TAG_PATTERN.finditer(text):
+        out.append(word_pattern.sub(_repl, text[last:m.start()]))
+        out.append(m.group(0))
+        last = m.end()
+    out.append(word_pattern.sub(_repl, text[last:]))
+    return ''.join(out)
 
 def normalize_sml_tags(text:str)->tuple[bool, str]:
     out = []
