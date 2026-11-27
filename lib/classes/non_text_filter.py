@@ -82,7 +82,17 @@ class NonTextFilter:
         r'.*?\\end\{\1\*?\}',
         re.DOTALL,
     )
-    _LATEX_INLINE  = re.compile(r'\$\$.*?\$\$|\$[^\$\n]+\$|\\\(.*?\\\)|\\\[.*?\\\]', re.DOTALL)
+    # '$' is also a price sign and a block reaches the filter as one line: a pair of '$' is only math with tight
+    # delimiters (pandoc's rule), a math-looking body (_strip_latex) and a bounded length, which caps what a wrong
+    # match can remove. In doubt the text stays and is spoken.
+    _LATEX_INLINE  = re.compile(
+        r'(?<![\\$])\$\$(?!\$)(?P<display>(?:\\.|[^$\\]){1,1000}?)\$\$(?!\$)'
+        r'|(?<![\\$A-Za-z0-9])\$(?![\s$])(?P<inline>(?:\\.|[^$\\\n]){1,200}?)(?<!\s)\$(?![$A-Za-z0-9])'
+        r'|\\\(.*?\\\)|\\\[.*?\\\]',
+        re.DOTALL,
+    )
+    _LATEX_MARKUP   = re.compile(r'[\\^{}]')  # not '=' or '_': ordinary text has them too
+    _MATH_VARIABLE  = re.compile(r'[A-Za-z\u0370-\u03FF]')
     _CODE_FENCE    = re.compile(r'```.*?```|~~~.*?~~~', re.DOTALL)
     _CODE_INLINE   = re.compile(r'`[^`\n]+`')
     _URL           = re.compile(r'https?://\S+|www\.\S+|ftp://\S+')
@@ -135,7 +145,7 @@ class NonTextFilter:
 
         text = self._LATEX_BLOCK.sub(' ', text)
         text = self._CODE_FENCE.sub(' ', text)
-        text = self._LATEX_INLINE.sub(' ', text)
+        text = self._LATEX_INLINE.sub(self._strip_latex, text)
         text = self._CODE_INLINE.sub(' ', text)
         text = self._URL.sub(' ', text)
         text = self._FILE_PATH.sub(' ', text)
@@ -166,6 +176,17 @@ class NonTextFilter:
 
     def _restore_tags(self, text:str, store:list)->str:
         return self._PLACEHOLDER_RE.sub(lambda m: store[int(m.group(1))], text)
+
+    def _strip_latex(self, m:re.Match)->str:
+        body = m.group('display') or m.group('inline')
+        # no body: \(...\) or \[...\], which are never prices
+        if body is None or self._LATEX_MARKUP.search(body):
+            return ' '
+        # formulas without markup, like $x + y$: single letter variables only, never two letters in a row
+        letters = re.findall(r'\p{L}', body)
+        if letters and not re.search(r'\p{L}{2}', body) and all(self._MATH_VARIABLE.match(c) for c in letters):
+            return ' '
+        return m.group(0)
 
     def _strip_unicode_math(self, s:str)->str:
         ranges = self._MATH_UNICODE_RANGES
